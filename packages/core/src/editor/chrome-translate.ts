@@ -35,6 +35,8 @@ export type ChromeTranslate = (
  * placeholders and plural branches are filled from the values of the call, with the plural rules
  * of `lang`. A key that `overrides` does not hold reads `base`. `overrides` is a `Map`, because
  * its keys come from the caller: an object would answer `constructor` from its prototype.
+ *
+ * @internal
  */
 export function chromeTranslator(
   base: TFunction,
@@ -55,6 +57,8 @@ export function chromeTranslator(
  * `t` leaves unresolved, so a raw key never reaches the screen. A `t` that throws reads
  * `inherited` too, so a host's mistake does not unmount the editor: `onError` receives the key
  * and the error, for a warning in development. Without `t`, `inherited`.
+ *
+ * @internal
  */
 export function partTranslator(
   inherited: TFunction,
@@ -75,17 +79,20 @@ export function partTranslator(
 }
 
 /**
- * The development warning for a part whose `t` threw: once for each translator, so a `t` that
- * throws for every key prints one line. Returns the `onError` of `partTranslator`.
+ * The development warning for a part whose `t` threw: once for each part name in `warned`, so a
+ * `t` that throws for every key, or a new `t` on each render, prints one line. Each adapter
+ * keeps its own `warned` set. Returns the `onError` of `partTranslator`.
+ *
+ * @internal
  */
 export function warnPartTranslateError(
   part: string,
+  warned: Set<string>,
   warn: (message: string) => void
 ): (key: string, error: unknown) => void {
-  let warned = false;
   return (key, error) => {
-    if (warned) return;
-    warned = true;
+    if (warned.has(part)) return;
+    warned.add(part);
     const why = error instanceof Error ? error.message : String(error);
     warn(
       `[xlsx-editor] The t prop of ${part} threw for the key "${key}" (${why}), so the part ` +

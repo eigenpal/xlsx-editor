@@ -19,10 +19,14 @@
 //   above it. One with `i18n` builds its translator from the merged catalog.
 // - `useChromeTranslate` formats an override with the catalog's placeholder and plural rules
 //   (`chromeTranslator` in core), and reads the nearest part's `t` first, as PPTX Editor's does.
-// - `useTranslation()` keeps this adapter's `{ t }` shape. The direction is read with
-//   `useChromeDir()`; DOCX Editor also returns `catalogue`, `lang`, and `dir`.
+// - `useTranslation()` (in `context.ts`) returns `t`, `catalogue`, `lang`, and `dir`, as DOCX
+//   Editor's does; `t` there is the nearest part's `t` first, where DOCX Editor has no part `t`
+//   in its context. `useChromeDir()` gives the direction a provider decided.
 // - The parts set `dir` on their own element, and the grid gets none, so a right-to-left
-//   catalog never mirrors the cells. The packaged editor also sets it on its footer.
+//   catalog never mirrors the cells. The packaged editor also sets it on its footer. The
+//   surface keeps `direction: ltr` in the core stylesheet, also on a right-to-left host page.
+// - A part whose `t` throws reads the inherited catalog, and one development warning prints for
+//   each part name (`warnedParts`).
 
 import {
   createElement,
@@ -100,6 +104,12 @@ function scopeOf(
     return inherited;
   return { strings, lang, dir: direction, chromeDir, t };
 }
+
+/**
+ * The parts whose throwing `t` has printed its development warning: one line for each part
+ * name, also when the host passes a new `t` on each render.
+ */
+const warnedParts = new Set<string>();
 
 /** Props for `LocaleProvider`. @public */
 export interface LocaleProviderProps {
@@ -207,7 +217,7 @@ export function withChromeTranslate<P extends { readonly t?: ChromeTranslate | u
         partTranslator(
           inherited,
           t,
-          warnPartTranslateError(name, (message) => {
+          warnPartTranslateError(name, warnedParts, (message) => {
             if (isDevelopment()) console.warn(message);
           })
         ),

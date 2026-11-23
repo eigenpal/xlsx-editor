@@ -3,16 +3,29 @@
 // part inherits the direction of the host page. Adapter support, not a stable API.
 
 /**
- * Whether `el` lays out right to left: its computed `direction` is `rtl`, which covers a CSS
- * `direction`, a `dir` attribute, and `dir="auto"` over right-to-left text. The `dir` attribute
- * sets `direction` through the browser's own style sheet; a DOM without that style sheet, such
- * as a test DOM, reports `ltr`, so the nearest `dir` attribute of `rtl` also counts. The chrome
- * CSS selects mirrored icons with `:dir(rtl)`, which follows the `dir` attribute alone. @internal
+ * Whether `el` lays out right to left, by its computed `direction`. That covers a CSS
+ * `direction`, a `dir` attribute, and `dir="auto"` over right-to-left text, and a computed `ltr`
+ * is trusted, such as a wrapper with `direction: ltr` inside a right-to-left page.
+ *
+ * A browser maps the `dir` attribute to `direction` through its own style sheet. A DOM without
+ * that style sheet, such as a test DOM, reports `ltr` for an element with `dir="rtl"`, or no
+ * direction at all. Then the nearest `dir` attribute decides, unless an inline `direction`
+ * between it and `el` sets another. The chrome CSS selects mirrored icons with `:dir(rtl)`,
+ * which follows the `dir` attribute alone. @internal
  */
 export function isRightToLeft(el: Element): boolean {
   const view = el.ownerDocument.defaultView;
-  if (view?.getComputedStyle(el).direction === 'rtl') return true;
-  return el.closest('[dir]')?.getAttribute('dir')?.toLowerCase() === 'rtl';
+  const computed = view?.getComputedStyle(el).direction ?? '';
+  const marked = el.closest('[dir]');
+  const attribute = marked?.getAttribute('dir')?.toLowerCase();
+  const mapsDir =
+    !marked || attribute !== 'rtl' || view?.getComputedStyle(marked).direction === 'rtl';
+  if (computed && mapsDir) return computed === 'rtl';
+  for (let node: Element | null = el; node && node !== marked; node = node.parentElement) {
+    const inline = (node as HTMLElement).style?.direction;
+    if (inline === 'ltr' || inline === 'rtl') return inline === 'rtl';
+  }
+  return attribute === 'rtl';
 }
 
 /**

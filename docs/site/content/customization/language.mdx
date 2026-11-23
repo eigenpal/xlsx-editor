@@ -178,7 +178,7 @@ You can also pass a function of your own. A key that it leaves unresolved, by a 
 
 A catalog with `_dir: 'rtl'`, or with a right-to-left `_lang` such as `ar` or `he`, mirrors the chrome: the toolbar, the formula bar, the sheet tabs, the zoom control, the status message, the number format dialog, and the footer of the packaged editor. Each part sets `dir` on its own element, so the grid keeps its layout. The arrow keys follow the reading direction: in a right-to-left bar, the Left Arrow key moves to the next control, swatch, or tab. The sheet tab menu opens from the right edge, and its **Move left** and **Move right** items name the side that the sheet moves to. The undo and redo icons mirror.
 
-The grid keeps a left-to-right layout, also on a right-to-left host page. The cell reference and cell content fields of the formula bar set their direction from their text (`dir="auto"`): a formula or a reference reads left to right, and a text in a right-to-left script reads right to left.
+The grid keeps a left-to-right layout, also on a right-to-left host page. The cell editor in the grid and the cell reference and cell content fields of the formula bar set their direction from their text (`dir="auto"`): a formula or a reference reads left to right, and a text in a right-to-left script reads right to left.
 
 `LocaleProvider` takes `dir` to decide the direction of a region. `'ltr'` keeps a left-to-right chrome on a right-to-left host page. Without a decided direction, the chrome inherits the direction of the host page. `useChromeDir()` returns the decided direction, or `undefined`, for your own controls:
 

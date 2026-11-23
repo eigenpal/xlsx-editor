@@ -95,6 +95,12 @@ export function provideCatalogScope(
   return scope;
 }
 
+/**
+ * The parts whose throwing `t` has printed its development warning: one line for each part
+ * name, also when the host passes a new `t` on each render.
+ */
+const warnedParts = new Set<string>();
+
 const localeProviderProps = {
   /**
    * A partial catalog over the catalog above: the root's `locale`, an outer provider, or
@@ -207,7 +213,7 @@ export function usePartTranslation(
     partTranslator(
       inherited.value,
       t(),
-      warnPartTranslateError(part, (message) => {
+      warnPartTranslateError(part, warnedParts, (message) => {
         if (isDevelopment()) console.warn(message);
       })
     );

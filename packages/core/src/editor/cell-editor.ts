@@ -131,6 +131,9 @@ export class CellEditor {
     input.rows = 1;
     input.hidden = true;
     input.spellcheck = false;
+    // The text sets its own direction: a text in a right-to-left script edits right to left,
+    // and a formula or a number left to right, while the grid around it stays left to right.
+    input.dir = 'auto';
     input.setAttribute('autocomplete', 'off');
     input.setAttribute('autocapitalize', 'off');
     input.setAttribute('aria-label', label);

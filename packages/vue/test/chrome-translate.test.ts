@@ -327,10 +327,15 @@ describe('a t that throws', () => {
         if (key === 'zoom.zoomIn') throw new Error('broken');
         return undefined;
       };
-      const view = mount(() => parts({ t }));
+      const current = shallowRef<ChromeTranslate>(t);
+      const view = mount(() => parts({ t: current.value }));
       await tabsShow(view);
       expect(view.getByRole('button', { name: 'Zoom in' })).toBeTruthy();
       expect(view.getByRole('grid')).toBeTruthy();
+      // A new throwing t, as an inline function gives on each render, warns no second time.
+      current.value = (key) => t(key);
+      await nextTick();
+      expect(view.getByRole('button', { name: 'Zoom in' })).toBeTruthy();
       const lines = warnings.filter((line) => line.includes('The t prop of ZoomControl'));
       expect(lines.length).toBe(1);
       expect(lines[0]).toContain('"zoom.zoomIn" (broken)');
@@ -552,5 +557,15 @@ describe('direction', () => {
     } finally {
       for (const el of stubbed) delete (el as { getBoundingClientRect?: unknown }).getBoundingClientRect;
     }
+  });
+});
+
+describe('the in-cell editor', () => {
+  test('the cell editor sets its direction from its text', async () => {
+    const view = mount(() => parts({ locale: { _lang: 'ar' } }));
+    await tabsShow(view);
+    const input = view.container.querySelector('textarea.xlsx-cell-editor')!;
+    expect(input.getAttribute('dir')).toBe('auto');
+    expect(input.closest('.xlsx-surface')?.closest('[dir]')).toBeNull();
   });
 });

@@ -119,13 +119,17 @@ describe('partTranslator', () => {
     expect((errors[0]![1] as Error).message).toBe('broken');
   });
 
-  test('the warning for a t that throws prints once for each translator', () => {
+  test('the warning for a t that throws prints once for each part name', () => {
     const lines: string[] = [];
-    const onError = warnPartTranslateError('ZoomControl', (line) => lines.push(line));
-    onError('zoom.zoomIn', new Error('broken'));
-    onError('zoom.zoomOut', new Error('broken'));
+    const warned = new Set<string>();
+    const push = (line: string) => void lines.push(line);
+    warnPartTranslateError('ZoomControl', warned, push)('zoom.zoomIn', new Error('broken'));
+    warnPartTranslateError('ZoomControl', warned, push)('zoom.zoomOut', new Error('broken'));
+    warnPartTranslateError('SheetTabs', warned, push)('sheetTabs.add', 'text');
     expect(lines).toEqual([
       '[xlsx-editor] The t prop of ZoomControl threw for the key "zoom.zoomIn" (broken), so the ' +
+        'part shows the text of the catalog for each key that throws.',
+      '[xlsx-editor] The t prop of SheetTabs threw for the key "sheetTabs.add" (text), so the ' +
         'part shows the text of the catalog for each key that throws.',
     ]);
   });

@@ -283,7 +283,11 @@ export function moveBarFocus(e: FocusMoveKey): void {
   if (inBar(bar, target, '[data-popup]')) return;
   // Along the reading direction: in a right-to-left bar, ArrowLeft moves to the next control.
   const step = inlineStep(e.key, bar);
-  if (fieldOwnsKey(target, e.key, step === 1)) return;
+  // A field keeps an arrow until its caret is at that end of its text. The end follows the
+  // field's own direction, not the bar's: in a right-to-left field, ArrowLeft moves toward the
+  // end of the text.
+  const towardEnd = e.key === (isRightToLeft(target) ? 'ArrowLeft' : 'ArrowRight');
+  if (fieldOwnsKey(target, e.key, towardEnd)) return;
   const items = barItems(bar);
   const at = items.indexOf(target);
   if (at < 0) return;

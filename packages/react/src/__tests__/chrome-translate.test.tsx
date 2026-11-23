@@ -20,6 +20,7 @@ import {
   type Translations,
   type XlsxEditorInstance,
 } from '../index.ts';
+import { isRightToLeft } from '../../../core/src/editor/chrome-direction.ts';
 
 const fontsDir = join(
   dirname(
@@ -344,6 +345,9 @@ describe('a t that throws', () => {
       await ready(view);
       expect(view.getByRole('button', { name: 'Zoom in' })).toBeTruthy();
       expect(view.getByRole('grid')).toBeTruthy();
+      // A new throwing t, as an inline function gives on each render, warns no second time.
+      view.rerender(<Parts t={(key) => t(key)} />);
+      expect(view.getByRole('button', { name: 'Zoom in' })).toBeTruthy();
       const lines = warnings.filter((line) => line.includes('The t prop of ZoomControl'));
       expect(lines.length).toBe(1);
       expect(lines[0]).toContain('"zoom.zoomIn" (broken)');
@@ -584,6 +588,54 @@ describe('direction', () => {
     } finally {
       for (const el of stubbed)
         delete (el as { getBoundingClientRect?: unknown }).getBoundingClientRect;
+    }
+  });
+});
+
+describe('the in-cell editor and the reading direction', () => {
+  test('the cell editor sets its direction from its text', async () => {
+    const view = render(<Parts locale={{ _lang: 'ar' }} />);
+    await ready(view);
+    const input = view.container.querySelector('textarea.xlsx-cell-editor')!;
+    expect(input.getAttribute('dir')).toBe('auto');
+    expect(input.closest('.xlsx-surface')?.closest('[dir]')).toBeNull();
+  });
+
+  test('isRightToLeft trusts a left-to-right wrapper inside a right-to-left page', () => {
+    const page = document.createElement('div');
+    page.setAttribute('dir', 'rtl');
+    const mirrored = document.createElement('span');
+    const wrapper = document.createElement('div');
+    wrapper.style.direction = 'ltr';
+    const kept = document.createElement('span');
+    wrapper.append(kept);
+    page.append(mirrored, wrapper);
+    ('<span class="mirrored"></span><div style="direction: ltr"><span class="kept"></span></div>');
+    document.body.append(page);
+    try {
+      expect(isRightToLeft(mirrored)).toBe(true);
+      expect(isRightToLeft(kept)).toBe(false);
+    } finally {
+      page.remove();
+    }
+  });
+
+  test('isRightToLeft reads <html dir="rtl"> and a wrapper with direction: ltr', () => {
+    const root = document.documentElement;
+    root.setAttribute('dir', 'rtl');
+    const wrapper = document.createElement('div');
+    wrapper.style.direction = 'ltr';
+    const inner = document.createElement('span');
+    wrapper.append(inner);
+    const loose = document.createElement('span');
+    document.body.append(wrapper, loose);
+    try {
+      expect(isRightToLeft(loose)).toBe(true);
+      expect(isRightToLeft(inner)).toBe(false);
+    } finally {
+      root.removeAttribute('dir');
+      wrapper.remove();
+      loose.remove();
     }
   });
 });

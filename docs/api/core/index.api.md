@@ -427,7 +427,7 @@ export function chromeSlotId(group: {
 // @public
 export type ChromeTranslate = (key: string, params?: Readonly<Record<string, string | number>>) => string | undefined;
 
-// @public
+// @internal
 export function chromeTranslator(base: TFunction, overrides: ReadonlyMap<string, string> | undefined, lang: string): (key: string, params?: Readonly<Record<string, string | number>>) => string;
 
 // @public
@@ -1187,7 +1187,7 @@ export interface PartPastLimit {
     readonly part: string;
 }
 
-// @public
+// @internal
 export function partTranslator(inherited: TFunction, t: ChromeTranslate | undefined, onError?: (key: string, error: unknown) => void): TFunction;
 
 // @public
@@ -1704,8 +1704,8 @@ export interface ToolbarSlotRequest {
 // @public
 export function trapTabWithin(panel: HTMLElement, event: KeyboardEvent): boolean;
 
-// @public
-export function warnPartTranslateError(part: string, warn: (message: string) => void): (key: string, error: unknown) => void;
+// @internal
+export function warnPartTranslateError(part: string, warned: Set<string>, warn: (message: string) => void): (key: string, error: unknown) => void;
 
 // @internal
 export function watchFontErrors(instance: Pick<XlsxEditorInstance, 'subscribe' | 'snapshot' | 'fontReport'>, report: (failure: EditorFailure) => void): () => void;

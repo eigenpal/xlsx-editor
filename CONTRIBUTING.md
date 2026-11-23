@@ -418,6 +418,21 @@ Open a [GitHub issue](https://github.com/eigenpal/xlsx-editor/issues) with:
 - Expected and actual behavior.
 - A synthetic or sanitized `.xlsx` file, when relevant. Never attach a confidential workbook.
 
-Every issue needs a `Bug`, `Feature`, or `Task` type. Maintainers also assign one `area:*` label and one `priority:*` label. See "Issue conventions" in the [README](README.md#issue-conventions).
+### Issue conventions
+
+Every issue has a type (`Bug`, `Feature`, or `Task`), exactly one `area:*` label, and exactly one `priority:*` label. A `component:*` label is optional.
+
+| Label | Use it for |
+| --- | --- |
+| `area:fidelity` | The render or the saved file differs from the reference PDF or from ECMA-376 |
+| `area:performance` | Load, layout, scroll, edit, or save time, and memory use |
+| `area:collaboration` | Shared editing, convergence, presence, and reconnect |
+| `area:ux` | The editor chrome, keyboard, focus, and accessibility |
+| `area:developer-experience` | The public API, adapters, docs, examples, and errors |
+| `area:agent-ready` | The automation API and agent workflows |
+| `priority:high` | Data loss, a security issue, a broken save, or a common path that fails |
+| `priority:medium` | A wrong result on a common path with a workaround |
+| `priority:low` | An edge case or a cosmetic difference |
+| `component:<package>` | The package that holds the fix, for example `component:core` or `component:ooxml-core` |
 
 Follow [Security policy](SECURITY.md) for vulnerabilities.

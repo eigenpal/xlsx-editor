@@ -3,9 +3,10 @@
 // `FormulaBar.tsx`). The Vue twin of the React adapter's `chrome.tsx`. Each part reads its
 // slice of the editor snapshot (`useEditorState`), so it renders only when that slice changes,
 // and calls the editor; none holds state of its own. Chrome `mousedown` keeps the keyboard on
-// the grid (AGENTS.md "Conventions", focus stealing).
+// the grid (AGENTS.md "Conventions", focus stealing). Each part takes DOCX Editor's `t` prop and
+// sets the chrome direction on its element (`usePartTranslation` in `locale.ts`).
 
-import { defineComponent } from 'vue';
+import { defineComponent, type ExtractPublicPropTypes, type PropType } from 'vue';
 import {
   MAX_ZOOM,
   MIN_ZOOM,
@@ -14,21 +15,42 @@ import {
   statusSlice,
   statusView,
   zoomSlice,
+  type ChromeTranslate,
 } from '@xlsx-editor.dev/core/editor';
-import {
-  useEditorState,
-  useLayoutPart,
-  useTranslation,
-  useViewModeWaits,
-  useXlsxEditor,
-} from './context.ts';
+import { useEditorState, useLayoutPart, useViewModeWaits, useXlsxEditor } from './context.ts';
 import { ZoomInIcon, ZoomOutIcon } from './icons.tsx';
+import { usePartTranslation } from './locale.ts';
+
+const zoomControlProps = {
+  /**
+   * The label resolver of the control: a key and the values of its placeholders, as DOCX Editor's
+   * `t` prop. A key that it leaves unresolved reads the root's `locale`. Keep it stable, for
+   * example from `useChromeTranslate(overrides)`.
+   */
+  t: { type: Function as PropType<ChromeTranslate>, default: undefined },
+} as const;
+
+/** Props for `ZoomControl`, the twin of React's `ZoomControlProps`. @public */
+export type ZoomControlProps = ExtractPublicPropTypes<typeof zoomControlProps>;
+
+const statusMessageProps = {
+  /**
+   * The label resolver of the messages: a key and the values of its placeholders, as DOCX Editor's
+   * `t` prop. A key that it leaves unresolved reads the root's `locale`. Keep it stable, for
+   * example from `useChromeTranslate(overrides)`.
+   */
+  t: { type: Function as PropType<ChromeTranslate>, default: undefined },
+} as const;
+
+/** Props for `StatusMessage`, the twin of React's `StatusMessageProps`. @public */
+export type StatusMessageProps = ExtractPublicPropTypes<typeof statusMessageProps>;
 
 /** Zoom out, the zoom level (press to reset to 100%), and zoom in. @public */
 export const ZoomControl = defineComponent({
   name: 'ZoomControl',
-  setup() {
-    const { t } = useTranslation();
+  props: zoomControlProps,
+  setup(props) {
+    const { t, dir } = usePartTranslation('ZoomControl', () => props.t);
     const editor = useXlsxEditor();
     const snap = useEditorState(zoomSlice, sameSlice);
     return () => {
@@ -42,6 +64,7 @@ export const ZoomControl = defineComponent({
       return (
         <div
           class="xlsx-zoom"
+          dir={dir.value}
           role="group"
           aria-label={t('zoom.zoomLevel')}
           onMousedown={keepGridFocus}
@@ -117,8 +140,9 @@ function Notice(props: { on: boolean; short: boolean; text: string; brief: strin
  */
 export const StatusMessage = defineComponent({
   name: 'StatusMessage',
-  setup() {
-    const { t } = useTranslation();
+  props: statusMessageProps,
+  setup(props) {
+    const { t, dir } = usePartTranslation('StatusMessage', () => props.t);
     const snap = useEditorState(statusSlice, sameSlice);
     const modeWaits = useViewModeWaits();
     useLayoutPart('statusMessages');
@@ -134,7 +158,7 @@ export const StatusMessage = defineComponent({
       const view = statusView(snap.value, modeWaits.value, t);
       if (view.kind === 'strip')
         return (
-          <div class="xlsx-status-strip">
+          <div class="xlsx-status-strip" dir={dir.value}>
             {view.refusal ? <div class="xlsx-refusal">{view.refusal}</div> : null}
             {view.notices.map((n) => (
               <Notice key={n.id} on={n.on} short={n.short} text={n.text} brief={n.brief} />
@@ -143,7 +167,7 @@ export const StatusMessage = defineComponent({
         );
       // Without a grid, the live region announced each refusal already, so it is plain text.
       return (
-        <div class="xlsx-message">
+        <div class="xlsx-message" dir={dir.value}>
           <div role={view.role}>{view.text}</div>
           {view.refusals.map((text) => (
             <div key={text} class="xlsx-message-refusal">

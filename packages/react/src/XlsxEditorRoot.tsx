@@ -40,18 +40,19 @@ import {
 } from '@xlsx-editor.dev/core/editor';
 import type { TFunction, Translations } from '@xlsx-editor.dev/i18n';
 import {
+  CatalogContext,
   RootModeContext,
   ModeWaitsContext,
   LayoutPartsContext,
   TranslationContext,
   XlsxEditorContext,
-  translatorFor,
   useLayoutPart,
   useTranslation,
   useXlsxEditor,
   type LayoutParts,
 } from './context.ts';
 import { isDevelopment } from './is-development.ts';
+import { useCatalogScope } from './locale.tsx';
 import {
   ChromeDarkContext,
   ScopedByAncestorContext,
@@ -96,7 +97,11 @@ export interface XlsxEditorRootProps {
    * "View mode" in the README.
    */
   readonly mode?: EditorMode;
-  /** UI strings; English when omitted. A `null` entry falls back to English. */
+  /**
+   * UI strings; English when omitted. A missing or `null` entry falls back to the catalog of an
+   * outer `LocaleProvider`, else to English. `_lang` sets the plural rules, and `_dir` or a
+   * right-to-left `_lang` mirrors the chrome (`useChromeDir`).
+   */
   readonly locale?: Translations;
   /**
    * Color theme of the chrome, as on DOCX Editor's root. `'dark'` puts `.dark` beside
@@ -197,7 +202,11 @@ export const XlsxEditorRoot = forwardRef<XlsxEditorRef, XlsxEditorRootProps>(
       onFontError: props.onFontError,
     };
     const created = useRef({ fonts: props.fonts, numberLocale: props.numberLocale, mode });
-    const t: TFunction = useTranslatorOf(locale);
+    // The `locale` prop merges onto the catalog of an outer `LocaleProvider`, else English. The
+    // scope follows the content of the catalog, so an inline `locale={{...}}` builds no new
+    // translator on each render.
+    const scope = useCatalogScope(locale, undefined);
+    const t: TFunction = scope.t;
     const tRef = useRef(t);
     tRef.current = t;
     const modeRef = useRef(mode);
@@ -317,25 +326,19 @@ export const XlsxEditorRoot = forwardRef<XlsxEditorRef, XlsxEditorRootProps>(
       <XlsxEditorContext.Provider value={editor}>
         <RootModeContext.Provider value={mode}>
           <ModeWaitsContext.Provider value={modeWaits}>
-            <TranslationContext.Provider value={t}>
-              <LayoutPartsContext.Provider value={parts.current}>
-                <ChromeDarkContext.Provider value={dark}>{children}</ChromeDarkContext.Provider>
-              </LayoutPartsContext.Provider>
-            </TranslationContext.Provider>
+            <CatalogContext.Provider value={scope}>
+              <TranslationContext.Provider value={t}>
+                <LayoutPartsContext.Provider value={parts.current}>
+                  <ChromeDarkContext.Provider value={dark}>{children}</ChromeDarkContext.Provider>
+                </LayoutPartsContext.Provider>
+              </TranslationContext.Provider>
+            </CatalogContext.Provider>
           </ModeWaitsContext.Provider>
         </RootModeContext.Provider>
       </XlsxEditorContext.Provider>
     );
   }
 );
-
-/** A translator that follows the catalog's content, not its identity. */
-function useTranslatorOf(locale: Translations | undefined): TFunction {
-  const key = locale ? JSON.stringify(locale) : '';
-  const memo = useRef<{ key: string; t: TFunction } | null>(null);
-  if (memo.current?.key !== key) memo.current = { key, t: translatorFor(locale) };
-  return memo.current.t;
-}
 
 /** The props of `XlsxEditor.Viewport`. @public */
 export interface XlsxEditorViewportProps {

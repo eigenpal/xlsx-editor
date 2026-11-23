@@ -59,7 +59,6 @@ import {
   modeWaitsKey,
   provideXlsxEditor,
   rootModeKey,
-  translatorFor,
   useLayoutPart,
   useTranslation,
   useXlsxEditor,
@@ -68,6 +67,7 @@ import {
 } from './context.ts';
 import { provideChromeDark, provideScopedByAncestor, useChromeDark } from './color-mode.ts';
 import { isDevelopment } from './is-development.ts';
+import { provideCatalogScope } from './locale.ts';
 
 /** The faces that measure and paint text: bytes, or a function that loads them once. @public */
 export type XlsxEditorFonts = readonly FontSource[] | (() => Promise<readonly FontSource[]>);
@@ -93,7 +93,11 @@ const xlsxEditorRootProps = {
   numberLocale: { type: Object as PropType<NumberLocale>, default: undefined },
   /** `'edit'` (default) or `'view'`. A change applies without a reload. */
   mode: { type: String as PropType<EditorMode>, default: undefined },
-  /** UI strings; English when omitted. A `null` entry falls back to English. */
+  /**
+   * UI strings; English when omitted. A missing or `null` entry falls back to the catalog of an
+   * outer `LocaleProvider`, else to English. `_lang` sets the plural rules, and `_dir` or a
+   * right-to-left `_lang` mirrors the chrome (`useChromeDir`).
+   */
   locale: { type: Object as PropType<Translations>, default: undefined },
   /** The chrome color theme: `'light'` (default), `'dark'`, or `'system'`. */
   colorMode: { type: String as PropType<ColorMode>, default: undefined },
@@ -173,14 +177,19 @@ export const XlsxEditorRoot = defineComponent({
     provide(layoutPartsKey, parts);
     provideChromeDark(() => props.colorMode);
 
-    // The catalog's content, not its identity: an inline locale object makes a new value on
-    // each parent render and must not relabel the grid.
-    const t = shallowRef<TFunction>(translatorFor(props.locale));
+    // The `locale` prop merges onto the catalog of an outer `LocaleProvider`, else English. The
+    // scope follows the catalog's content, not its identity: an inline locale object makes a new
+    // value on each parent render and must not relabel the grid.
+    const scope = provideCatalogScope(
+      () => props.locale,
+      () => undefined
+    );
+    const t = shallowRef<TFunction>(scope.value.t);
     provide(xlsxTranslationKey, t);
     watch(
-      () => (props.locale ? JSON.stringify(props.locale) : ''),
-      () => {
-        t.value = translatorFor(props.locale);
+      () => scope.value.t,
+      (next) => {
+        t.value = next;
         // The grid label, the accessible stale words, and the cell editor label.
         if (editor.value) relabelEditor(editor.value);
       }

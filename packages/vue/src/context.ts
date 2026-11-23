@@ -12,6 +12,7 @@
 // as a React host reads `useEditorState` after `act`, sees the new state with no `nextTick`.
 
 import {
+  computed,
   getCurrentScope,
   inject,
   onMounted,
@@ -62,6 +63,32 @@ export function translatorFor(locale: Translations | undefined): TFunction {
   return createT(merged as LocaleStrings, typeof locale?._lang === 'string' ? locale._lang : 'en');
 }
 
+/** The catalog of one provider, merged onto the one above it. Internal. */
+export interface CatalogScope {
+  readonly strings: LocaleStrings;
+  /** The BCP 47 tag of the plural rules. */
+  readonly lang: string;
+  /** The direction of the strings: the decided chrome direction, else the catalog's. */
+  readonly dir: 'ltr' | 'rtl';
+  /** The direction a provider decided for the chrome; `undefined` keeps the host page's. */
+  readonly chromeDir: 'ltr' | 'rtl' | undefined;
+  /** The translator of `strings`. */
+  readonly t: TFunction;
+}
+
+const ENGLISH: CatalogScope = {
+  strings: en,
+  lang: 'en',
+  dir: 'ltr',
+  chromeDir: undefined,
+  t: translatorFor(undefined),
+};
+
+/** The catalog of the nearest provider: `XlsxEditorRoot` or `LocaleProvider`. Internal. */
+export const catalogKey: InjectionKey<Readonly<ShallowRef<CatalogScope>>> = Symbol('xlsxCatalog');
+/** The English catalog scope, outside every provider. Internal. */
+export const englishCatalog = shallowRef(ENGLISH);
+
 const nullEditor = shallowRef<XlsxEditorInstance | null>(null);
 const english = shallowRef<TFunction>(translatorFor(undefined));
 const noWait = shallowRef(false);
@@ -99,10 +126,23 @@ export function useXlsxEditor(): UseXlsxEditorReturn {
   return inject(xlsxEditorKey, nullEditor);
 }
 
-/** What `useTranslation` returns. @public */
+/** What `useTranslation` returns, after DOCX Editor's Vue `useTranslation`. @public */
 export interface UseTranslationReturn {
-  /** Translate a key. A render that calls it renders again when the root's `locale` changes. */
+  /**
+   * Translate a key: the nearest part's `t` first, else the nearest catalog. A render that calls
+   * it renders again when the catalog changes.
+   */
   readonly t: TFunction;
+  /** The merged catalog of the nearest provider: `XlsxEditorRoot` or `LocaleProvider`. */
+  readonly catalogue: Readonly<ShallowRef<LocaleStrings>>;
+  /** The BCP 47 tag of the catalog (`_lang`, `en` by default). Read at each access. */
+  readonly lang: string;
+  /**
+   * The direction of the strings: the direction a provider decided, else the catalog's. It is
+   * `'ltr'` when the chrome inherits a right-to-left host page; `useChromeDir()` returns
+   * `undefined` then. Read at each access.
+   */
+  readonly dir: 'ltr' | 'rtl';
 }
 
 /** The translator ref of the enclosing root, for a watcher that follows a locale change. Internal. */
@@ -110,10 +150,24 @@ export function useTranslator(): Readonly<ShallowRef<TFunction>> {
   return inject(xlsxTranslationKey, english);
 }
 
-/** The translator of the enclosing root. @public */
+/**
+ * The translator of the nearest provider, its catalog, its language tag, and its direction, the
+ * twin of React's `useTranslation`. @public
+ */
 export function useTranslation(): UseTranslationReturn {
   const base = inject(xlsxTranslationKey, english);
-  return { t: ((key, params) => base.value(key, params)) as TFunction };
+  const scope = inject(catalogKey, englishCatalog);
+  const catalogue = computed(() => scope.value.strings);
+  return {
+    t: ((key, params) => base.value(key, params)) as TFunction,
+    catalogue,
+    get lang() {
+      return scope.value.lang;
+    },
+    get dir() {
+      return scope.value.dir;
+    },
+  };
 }
 
 /**

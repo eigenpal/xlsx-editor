@@ -66,12 +66,15 @@ import {
   useState,
   type KeyboardEvent,
   type MouseEvent,
+  type ReactElement,
 } from 'react';
 import {
   RENAME_COMMIT_EVENT,
   disabledReasonText,
   focusAfterRelease,
   historyShortcutOf,
+  inlineStep,
+  isRightToLeft,
   keepGridFocus,
   listenSheetMenuDismiss,
   moveInSheetMenu,
@@ -90,9 +93,20 @@ import {
   type SheetCommandState,
   type SheetRenameBox,
 } from '@xlsx-editor.dev/core/editor';
-import type { EditorSheet } from '@xlsx-editor.dev/core/editor';
+import type { ChromeTranslate, EditorSheet } from '@xlsx-editor.dev/core/editor';
 import { useTranslation, useEditorState, useXlsxEditor } from './context.ts';
 import { AddIcon } from './icons.tsx';
+import { useChromeDir, withChromeTranslate } from './locale.tsx';
+
+/** Props for `XlsxEditor.SheetTabs`. @public */
+export interface SheetTabsProps {
+  /**
+   * The label resolver of the tabs, their menu, and the rename field: a key and the values of
+   * its placeholders, as DOCX Editor's `t` prop. A key that it leaves unresolved reads the
+   * root's `locale`. Keep it stable, for example from `useChromeTranslate(overrides)`.
+   */
+  readonly t?: ChromeTranslate;
+}
 
 /** An open tab menu: the sheet it acts on, and its left edge in the bar, in CSS pixels. */
 interface TabMenu {
@@ -102,11 +116,19 @@ interface TabMenu {
   readonly back: HTMLElement | null;
   /** Whether a key opened the menu: an action then focuses a tab. */
   readonly keyboard: boolean;
+  /** Whether the bar lays out right to left, where the earlier sheet is on the right. */
+  readonly rtl: boolean;
 }
 
 /** One tab for each visible worksheet, in workbook order, with the sheet actions. @public */
-export function SheetTabs() {
+export const SheetTabs: (props: SheetTabsProps) => ReactElement = withChromeTranslate(
+  SheetTabsPart,
+  'SheetTabs'
+);
+
+function SheetTabsPart() {
   const { t } = useTranslation();
+  const dir = useChromeDir();
   const editor = useXlsxEditor();
   const snap = useEditorState(tabsSlice, sameSlice);
   const bar = useRef<HTMLDivElement>(null);
@@ -209,6 +231,7 @@ export function SheetTabs() {
       left: sheetMenuLeft(bar.current, tab, clientX),
       back,
       keyboard: clientX === undefined,
+      rtl: bar.current !== null && isRightToLeft(bar.current),
     });
   };
   /** The rename box over the tab of the sheet named `name`, as the bar shows it now. */
@@ -274,7 +297,8 @@ export function SheetTabs() {
     // A chartsheet tab is disabled: the keys move between the worksheet tabs only.
     const sheets = tabs.filter((s) => s.worksheet);
     const position = sheets.findIndex((s) => s.index === sheet);
-    const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    // Along the reading direction: in a right-to-left bar, ArrowLeft moves to the next tab.
+    const step = inlineStep(e.key, e.currentTarget);
     const next =
       e.key === 'Home' ? 0 : e.key === 'End' ? sheets.length - 1 : step ? position + step : -1;
     if (position < 0 || next < 0 || next >= sheets.length) return;
@@ -354,6 +378,10 @@ export function SheetTabs() {
   // Move left and Move right go past the next visible tab: its workbook position (`to`).
   const renameState = stateOf('rename', sheet);
   const deleteState = stateOf('delete', sheet);
+  // The commands move a sheet earlier or later in the workbook. In a right-to-left bar the
+  // earlier sheet is on the right, so the words swap: the items name the side that they move to.
+  const moveEarlier = menu?.rtl ? 'sheetTabs.moveRight' : 'sheetTabs.moveLeft';
+  const moveLater = menu?.rtl ? 'sheetTabs.moveLeft' : 'sheetTabs.moveRight';
   const leftState = stateOf('moveLeft', sheet);
   const rightState = stateOf('moveRight', sheet);
   const keyboardMenu = menu?.keyboard ?? false;
@@ -395,7 +423,7 @@ export function SheetTabs() {
   const addLabel = t('sheetTabs.add');
 
   return (
-    <div className="xlsx-sheet-bar" ref={bar} onMouseDown={keepGridFocus}>
+    <div className="xlsx-sheet-bar" dir={dir} ref={bar} onMouseDown={keepGridFocus}>
       <div
         className="xlsx-sheet-tabs"
         role="tablist"
@@ -566,8 +594,8 @@ export function SheetTabs() {
             const shown = editor?.snapshot().activeSheet;
             if (keyboardMenu && shown !== undefined && shown >= 0) setFocusSheet(shown);
           })}
-          {item('moveLeft', t('sheetTabs.moveLeft'), leftState, () => moveTo(leftState.to!))}
-          {item('moveRight', t('sheetTabs.moveRight'), rightState, () => moveTo(rightState.to!))}
+          {item('moveLeft', t(moveEarlier), leftState, () => moveTo(leftState.to!))}
+          {item('moveRight', t(moveLater), rightState, () => moveTo(rightState.to!))}
         </div>
       ) : null}
     </div>
@@ -605,6 +633,7 @@ function RenameField({
   readonly label: string;
   readonly box: {
     readonly left: number;
+    readonly right?: number;
     readonly width: number;
     readonly maxWidth: number | undefined;
   };
@@ -661,7 +690,11 @@ function RenameField({
       aria-invalid={reasonId ? true : undefined}
       aria-describedby={reasonId}
       value={value}
-      style={{ left: box.left, minWidth: box.width, maxWidth: box.maxWidth }}
+      style={{
+        ...(box.right === undefined ? { left: box.left } : { left: 'auto', right: box.right }),
+        minWidth: box.width,
+        maxWidth: box.maxWidth,
+      }}
       size={Math.max(4, Math.min(value.length + 1, 31))}
       onChange={(e) => setValue(e.target.value)}
       onBlur={() => finish(true, false)}

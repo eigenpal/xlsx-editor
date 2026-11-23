@@ -243,7 +243,9 @@ Your own content inside the editor, such as a layout around its parts in `XlsxEd
 | `useEditorSnapshot()` | `UseEditorSnapshotReturn`: the whole snapshot |
 | `useEditorEvent(event, handler)` | `UseEditorEventReturn`: nothing. It calls `handler` on each `change` (content only), `selectionChange`, `rejection`, or `openFailure` event until the component unmounts |
 | `useEditorCommand(slotId)` | `UseEditorCommandReturn`: `execute`, which returns `true` when the engine ran the command and `false` on a refusal, and `isEnabled`, `isActive`, `disabledReason`, `hint`, and `value` as computed refs |
-| `useTranslation()` | `UseTranslationReturn`: `t`, in the locale of `XlsxEditorRoot` |
+| `useTranslation()` | `UseTranslationReturn`: `t`, `catalogue`, `lang`, and `dir` of the nearest catalog: the locale of `XlsxEditorRoot` or a `LocaleProvider` |
+| `useChromeTranslate(overrides?)` | `UseChromeTranslateReturn`: a computed `t` for the `t` prop of a part, with `overrides` first. See [Language](https://xlsx-editor.dev/docs/customization/language) |
+| `useChromeDir()` | `UseChromeDirReturn`: the chrome direction that a catalog or a `LocaleProvider` decided, or `undefined` |
 | `useViewModeWaits()` | `UseViewModeWaitsReturn`: `true` while a change of `mode` to view mode waits for the open cell edit |
 | `useEditorColorMode()` | `UseEditorColorModeReturn`: the resolved color mode of the chrome |
 | `useScopeClassName()` | `UseScopeClassNameReturn`: a computed ref to the scope classes that a part outside `XlsxEditorViewport` adds, such as a popup in `document.body`: `'xlsx-editor '` or `'xlsx-editor dark '`, and `''` inside the viewport. See [Appearance](https://xlsx-editor.dev/docs/customization/appearance) |

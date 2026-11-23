@@ -42,6 +42,23 @@ export function surfaceExtent(
   };
 }
 
+/**
+ * The extent that reaches both the focus and `cell`, for a scroll that reveals `cell`. A scroll
+ * past the old extent is cut to its end, and the container's scroll event then gives the cut
+ * offset back to the view, so a jump to a far column, such as from the name box, would stop
+ * short of it.
+ */
+export function extentReaching(
+  layout: SheetLayout,
+  facts: { readonly lastRow: number; readonly lastCol: number },
+  focus: GridPoint,
+  cell: GridPoint,
+  box: StageBox
+): SurfaceExtent {
+  const reach = { row: Math.max(focus.row, cell.row), col: Math.max(focus.col, cell.col) };
+  return surfaceExtent(layout, facts, reach, box);
+}
+
 /** What `SurfaceScroll` reads from the editor. */
 export interface SurfaceScrollHost {
   /** The scroll container, or null while no surface is mounted. */

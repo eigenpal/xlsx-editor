@@ -59,7 +59,16 @@
     },
     "XlsxEditorToolbar": {
       "reactProps": "XlsxEditorToolbarProps",
-      "paired": ["className", "hidden", "onSave", "onSaveStart", "opening", "overflow", "preset"],
+      "paired": [
+        "className",
+        "hidden",
+        "onSave",
+        "onSaveStart",
+        "opening",
+        "overflow",
+        "preset",
+        "t"
+      ],
       "deferredInVue": {},
       "reactCallbacksAsVueEmits": {},
       "reactRenderPropsAsVueSlots": {
@@ -121,6 +130,53 @@
       "reactRenderPropsAsVueSlots": {},
       "reactClassNameAsVueClass": {},
       "vueExclusive": {}
+    },
+    "FormulaBar": {
+      "reactProps": "FormulaBarProps",
+      "paired": ["t"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {},
+      "reactRenderPropsAsVueSlots": {},
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
+    },
+    "SheetTabs": {
+      "reactProps": "SheetTabsProps",
+      "paired": ["t"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {},
+      "reactRenderPropsAsVueSlots": {},
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
+    },
+    "ZoomControl": {
+      "reactProps": "ZoomControlProps",
+      "paired": ["t"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {},
+      "reactRenderPropsAsVueSlots": {},
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
+    },
+    "StatusMessage": {
+      "reactProps": "StatusMessageProps",
+      "paired": ["t"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {},
+      "reactRenderPropsAsVueSlots": {},
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
+    },
+    "LocaleProvider": {
+      "reactProps": "LocaleProviderProps",
+      "paired": ["dir", "i18n"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {},
+      "reactRenderPropsAsVueSlots": {
+        "children": "default"
+      },
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
     }
   },
   "propsUnchecked": {
@@ -142,6 +198,7 @@
       "ChromeGroupId",
       "ChromeHint",
       "ChromeSlotId",
+      "ChromeTranslate",
       "CLIPBOARD_TYPE",
       "ClipboardContent",
       "ColorMode",
@@ -166,9 +223,12 @@
       "FieldKeys",
       "FontSource",
       "FormulaBar",
+      "FormulaBarProps",
       "GridPoint",
       "GridRange",
       "GridSelection",
+      "LocaleProvider",
+      "LocaleProviderProps",
       "MAX_COLUMN_WIDTH",
       "MAX_CONTENT_FIELD_CHARS",
       "MAX_GO_TO_LENGTH",
@@ -176,8 +236,8 @@
       "MAX_RESIZE_NEW_ROWS",
       "MAX_ROW_HEIGHT",
       "MergeCommand",
-      "MergeCommandState",
       "mergeCommandState",
+      "MergeCommandState",
       "MergeOptions",
       "NUMBER_FORMAT_CODE_PROBLEM_KEYS",
       "NUMBER_FORMAT_SAMPLE",
@@ -187,11 +247,11 @@
       "NumberFormatChoiceValue",
       "NumberFormatCodeProblem",
       "numberFormatCodeProblem",
-      "NumberFormatDialogApplyStep",
       "numberFormatDialogApplyStep",
+      "NumberFormatDialogApplyStep",
       "numberFormatDialogCurrent",
-      "NumberFormatDialogStart",
       "numberFormatDialogStart",
+      "NumberFormatDialogStart",
       "NumberFormatListEntry",
       "numberFormatListView",
       "NumberFormatListView",
@@ -208,11 +268,13 @@
       "SavedWorkbook",
       "SheetCommand",
       "SheetCommandInput",
-      "SheetCommandState",
       "sheetCommandState",
+      "SheetCommandState",
       "SheetProtection",
       "SheetTabs",
+      "SheetTabsProps",
       "StatusMessage",
+      "StatusMessageProps",
       "ToolbarAction",
       "ToolbarActionProps",
       "ToolbarCommandState",
@@ -227,6 +289,8 @@
       "Translations",
       "translatorFor",
       "trapTabWithin",
+      "useChromeDir",
+      "useChromeTranslate",
       "useEditorColorMode",
       "UseEditorColorModeReturn",
       "useEditorCommand",
@@ -259,7 +323,8 @@
       "XlsxEditorToolbarSlotProps",
       "XlsxEditorViewport",
       "XlsxEditorViewportProps",
-      "ZoomControl"
+      "ZoomControl",
+      "ZoomControlProps"
     ],
     "reactNamesAsVueNames": {
       "XlsxEditorContext": "xlsxEditorKey",
@@ -269,6 +334,8 @@
     "deferredInVue": {},
     "reactExclusive": {},
     "vueExclusive": {
+      "UseChromeDirReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
+      "UseChromeTranslateReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
       "UseEditorEventReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
       "UseEditorSnapshotReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
       "UseEditorStateReturn": "Vue composables declare named return types (AGENTS.md, Public API).",

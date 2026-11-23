@@ -39,6 +39,7 @@ import { SheetTabs } from './SheetTabs.tsx';
 import { hasListener, useEditorState } from './context.ts';
 import { XlsxEditorToolbar } from './toolbar/Toolbar.tsx';
 import type { Translations } from '@xlsx-editor.dev/i18n';
+import { useChromeDir } from './locale.ts';
 
 const xlsxEditorProps = {
   /** The bytes of a workbook or a template package, as on `XlsxEditorRoot`. */
@@ -90,6 +91,7 @@ const Body = defineComponent({
   setup(props) {
     // The status alone: the body renders again only when it changes, not on each key of an edit.
     const status = useEditorState(statusOf);
+    const dir = useChromeDir();
     return () => [
       h(XlsxEditorToolbar, {
         ...(props.onSave ? { onSave: props.onSave } : {}),
@@ -99,7 +101,7 @@ const Body = defineComponent({
       h(FormulaBar),
       h(StatusMessage),
       h(XlsxEditorContent, status.value === 'ready' ? {} : { className: 'xlsx-canvas-idle' }),
-      h('div', { class: 'xlsx-footer' }, [h(SheetTabs), h(ZoomControl)]),
+      h('div', { class: 'xlsx-footer', dir: dir.value }, [h(SheetTabs), h(ZoomControl)]),
     ];
   },
 });

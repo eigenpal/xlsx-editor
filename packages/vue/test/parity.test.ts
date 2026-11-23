@@ -46,7 +46,8 @@ describe('check:parity-contract', () => {
 
   test('the value probes see the paired props that show in a part alone', () => {
     expect(shape.XlsxEditorViewport.values).toEqual({ label: true });
-    expect(shape.XlsxEditorToolbar.values).toEqual({ hidden: true, preset: true });
+    expect(shape.XlsxEditorToolbar.values).toEqual({ hidden: true, preset: true, t: true });
+    expect(shape.StatusMessage.values).toEqual({ t: true });
     expect(shape.XlsxEditorToolbarSlot.values).toEqual({ slotId: true, hidden: true, icon: true });
     expect(shape.XlsxEditorToolbarGroup.values).toEqual({
       id: true,

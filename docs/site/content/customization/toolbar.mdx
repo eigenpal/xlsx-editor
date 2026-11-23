@@ -309,7 +309,7 @@ const saveRow = () => h(SaveRow);
 - Application groups without a `priority` move to overflow before built-in groups.
 - The toolbar reads a part only as its direct child or in a Fragment, not in a component of your own.
 - Fonts, sizes, colors, and number formats need value controls. An ordinary command button cannot replace them, so `icon` and `asChild` have no effect on them.
-- The toolbar has no `t` prop. The labels follow the `locale` of the root. See [Language](/docs/customization/language).
+- The toolbar's `t` prop changes its labels, the labels of its parts, and its number format dialog. A key that `t` leaves unresolved follows the `locale` of the root. See [Language](/docs/customization/language#override-labels-in-one-part).
 - In a development build, the toolbar prints a warning for each part that cannot do what it says, such as an `asChild` part without one element child.
 
 ## Differences from DOCX Editor
@@ -318,7 +318,7 @@ const saveRow = () => h(SaveRow);
 - No built-in group is pinned. No workbook control is the only way to open a pane.
 - A disabled control or action stays focusable with `aria-disabled`, so the keyboard reaches its reason.
 - A press on an action row in the **More** panel keeps the panel open, as the built-in rows do.
-- The labels come from the root's `locale` catalog, which fills in values in the messages. DOCX Editor's `t` prop takes a key and returns a fixed string.
+- The `t` prop receives a key and the values of its placeholders, because the messages fill in values. DOCX Editor's toolbar `t` takes only the key.
 
 ## See also
 

@@ -5,6 +5,7 @@
 // the same way. Each key function reads a structural event, which a DOM event and a React
 // synthetic event both satisfy. Adapter support, not a stable API.
 
+import { inlineStep, isRightToLeft } from './chrome-direction.ts';
 import {
   CHROME_GROUPS,
   chromeSlotId,
@@ -280,7 +281,9 @@ export function moveBarFocus(e: FocusMoveKey): void {
   const bar = e.currentTarget as HTMLElement;
   // Only a control of the bar itself: a popup moves its own focus.
   if (inBar(bar, target, '[data-popup]')) return;
-  if (fieldOwnsKey(target, e.key, e.key === 'ArrowRight')) return;
+  // Along the reading direction: in a right-to-left bar, ArrowLeft moves to the next control.
+  const step = inlineStep(e.key, bar);
+  if (fieldOwnsKey(target, e.key, step === 1)) return;
   const items = barItems(bar);
   const at = items.indexOf(target);
   if (at < 0) return;
@@ -297,7 +300,7 @@ export function moveBarFocus(e: FocusMoveKey): void {
       ? before
       : e.key === 'End'
         ? after.reverse()
-        : e.key === 'ArrowRight'
+        : step === 1
           ? after
           : before.reverse();
   for (const item of tries) {
@@ -317,8 +320,11 @@ export function movePopupFocus(e: FocusMoveKey, selector: string, grid = false):
   const items = [...(e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>(selector)];
   const at = items.indexOf(target);
   const last = items.length - 1;
-  const forward = e.key === 'ArrowDown' || (grid && e.key === 'ArrowRight');
-  const back = e.key === 'ArrowUp' || (grid && e.key === 'ArrowLeft');
+  // Left and Right follow the reading direction: in a right-to-left palette, ArrowLeft moves to
+  // the next swatch, as in the bar (`moveBarFocus`).
+  const step = grid ? inlineStep(e.key, e.currentTarget as HTMLElement) : 0;
+  const forward = e.key === 'ArrowDown' || step === 1;
+  const back = e.key === 'ArrowUp' || step === -1;
   const next = forward
     ? Math.min(last, at + 1)
     : back
@@ -423,12 +429,19 @@ export function placePopup(root: HTMLElement, inline: boolean, selector: string)
   }
   const doc = popup.ownerDocument;
   const bound = (root.closest('.xlsx-editor') ?? doc.documentElement).getBoundingClientRect();
-  if (popup.getBoundingClientRect().right > bound.right) popup.dataset.align = 'end';
+  // The popup opens at the start of its trigger (`inset-inline-start`), so in a right-to-left
+  // toolbar it grows to the left: the start and the end edges swap.
+  const rtl = isRightToLeft(root);
+  const opened = popup.getBoundingClientRect();
+  if (rtl ? opened.left < bound.left : opened.right > bound.right) popup.dataset.align = 'end';
   const rect = popup.getBoundingClientRect();
   const trigger = root.getBoundingClientRect();
-  if (rect.left < bound.left) {
+  if (!rtl && rect.left < bound.left) {
     popup.style.left = `${Math.round((bound.left - trigger.left) / scale.x)}px`;
     popup.style.right = 'auto';
+  } else if (rtl && rect.right > bound.right) {
+    popup.style.right = `${Math.round((trigger.right - bound.right) / scale.x)}px`;
+    popup.style.left = 'auto';
   }
   const area = visibleArea(popup);
   const shows = area.bottom > area.top;

@@ -18,6 +18,7 @@
 //   pptx-editor/packages/react/src/dialog-parts.tsx at fe9415e1, so a text selection dragged
 //   out of the field does not close the dialog. The mousedown handler records where the press
 //   started; the source only stops the event there.
+// - The `dir` is the chrome direction (`useChromeDir`), as DOCX Editor's dialog mount sets it.
 // - `onRestoreFocus` lets the dialog choose where focus goes on close (the grid after an
 //   apply), and replaces `restoreFocus`.
 // - A key with `keyCode` 229 counts as composing, as `grid-keys.ts` reads it.
@@ -31,6 +32,7 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { isDialogBackdropPoint, trapTabWithin } from '@xlsx-editor.dev/core/editor';
 import { useChromeDark } from './color-mode.ts';
+import { useChromeDir } from './locale.tsx';
 
 /** Props of {@link DialogFrame}. */
 export interface DialogFrameProps {
@@ -69,6 +71,7 @@ export function DialogFrame({
   // Through `className`, not `classList.add`: React rewrites `class` on each render.
   const [ownScope, setOwnScope] = useState(false);
   const dark = useChromeDark();
+  const dir = useChromeDir();
   useLayoutEffect(() => {
     const panel = ref.current;
     if (!panel) return undefined;
@@ -100,6 +103,7 @@ export function DialogFrame({
       aria-modal="true"
       aria-label={label}
       data-xlsx-dialog={kind}
+      dir={dir}
       className={ownScope ? `xlsx-dialog xlsx-editor${dark ? ' dark' : ''}` : 'xlsx-dialog'}
       onCancel={(event) => {
         event.preventDefault();

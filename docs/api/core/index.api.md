@@ -4,6 +4,8 @@
 
 ```ts
 
+import { TFunction } from '@xlsx-editor.dev/i18n';
+
 // @public
 export interface ActiveCellFormat {
     // (undocumented)
@@ -421,6 +423,12 @@ export function chromeSlotId(group: {
 }, control: {
     readonly id: string;
 }): ChromeSlotId;
+
+// @public
+export type ChromeTranslate = (key: string, params?: Readonly<Record<string, string | number>>) => string | undefined;
+
+// @public
+export function chromeTranslator(base: TFunction, overrides: ReadonlyMap<string, string> | undefined, lang: string): (key: string, params?: Readonly<Record<string, string | number>>) => string;
 
 // @public
 export const CLIPBOARD_TYPE = "application/x-xlsx-editor";
@@ -913,6 +921,9 @@ export type HostWindow = Window & typeof globalThis;
 export function hostWindowOf(node: Node | null | undefined): HostWindow;
 
 // @internal
+export function inlineStep(key: string, el: Element): -1 | 0 | 1;
+
+// @internal
 export function insertFieldText(el: HTMLTextAreaElement, text: string): boolean;
 
 // @internal
@@ -930,6 +941,9 @@ export const isHexColor: (value: string | null | undefined) => value is string;
 
 // @public
 export function isHTMLElementNode(value: unknown): value is HTMLElement;
+
+// @internal
+export function isRightToLeft(el: Element): boolean;
 
 // @internal
 export function isToolbarButtonSlot(slot: string): boolean;
@@ -1174,6 +1188,9 @@ export interface PartPastLimit {
 }
 
 // @public
+export function partTranslator(inherited: TFunction, t: ChromeTranslate | undefined, onError?: (key: string, error: unknown) => void): TFunction;
+
+// @public
 export interface PasteData {
     readonly html?: boolean;
     readonly text?: string;
@@ -1392,11 +1409,11 @@ export interface SheetProtection {
 
 // @internal
 export interface SheetRenameBox {
-    // (undocumented)
     readonly left: number;
     readonly maxWidth: number | undefined;
     // (undocumented)
     readonly name: string;
+    readonly right?: number;
     // (undocumented)
     readonly width: number;
 }
@@ -1686,6 +1703,9 @@ export interface ToolbarSlotRequest {
 
 // @public
 export function trapTabWithin(panel: HTMLElement, event: KeyboardEvent): boolean;
+
+// @public
+export function warnPartTranslateError(part: string, warn: (message: string) => void): (key: string, error: unknown) => void;
 
 // @internal
 export function watchFontErrors(instance: Pick<XlsxEditorInstance, 'subscribe' | 'snapshot' | 'fontReport'>, report: (failure: EditorFailure) => void): () => void;

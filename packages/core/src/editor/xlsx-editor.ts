@@ -29,7 +29,7 @@ import { GridPointer } from './grid-pointer.ts';
 import { englishText } from './english.ts';
 import { followSheets, SheetCommands, sheetStepAnnouncement } from './sheet-commands.ts';
 import { WorkbookClipboard, type CopyResult, type PasteData } from './clipboard.ts';
-import { SurfaceScroll, surfaceExtent } from './scroll-extent.ts';
+import { SurfaceScroll, extentReaching, surfaceExtent } from './scroll-extent.ts';
 import { paintedGrid, runResize, type ResizeAxis } from './grid-resize.ts';
 import { runFit } from './grid-fit.ts';
 import {
@@ -875,7 +875,9 @@ class Editor implements XlsxEditorInstance {
     );
     view.scrollX = next.x;
     view.scrollY = next.y;
-    this.scroll.restore();
+    // The extent grows to the cell first, so the jump is not cut short (`extentReaching`).
+    if (!this.els) return this.scroll.restore();
+    this.scroll.size(extentReaching(layout, this.facts(), view.focus, cell, box), this.els.extent);
   }
 
   /** The words of the selection for the live region, after its sheet when the sheet changed. */

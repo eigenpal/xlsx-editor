@@ -37,7 +37,7 @@
 // The open edit keeps the complete text, so the field never gives a shortened text to the engine.
 
 import { useCallback, useId, useLayoutEffect, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, ReactElement } from 'react';
 import {
   MAX_GO_TO_LENGTH,
   composesKey,
@@ -54,15 +54,36 @@ import {
   showCaretLine,
   stepFieldHistory,
 } from '@xlsx-editor.dev/core/editor';
-import type { EditorSnapshot, XlsxEditorInstance } from '@xlsx-editor.dev/core/editor';
+import type {
+  ChromeTranslate,
+  EditorSnapshot,
+  XlsxEditorInstance,
+} from '@xlsx-editor.dev/core/editor';
 import { useTranslation, useEditorState, useXlsxEditor } from './context.ts';
+import { useChromeDir, withChromeTranslate } from './locale.tsx';
+
+/** Props for `XlsxEditor.FormulaBar`. @public */
+export interface FormulaBarProps {
+  /**
+   * The label resolver of the bar: a key and the values of its placeholders, as DOCX Editor's
+   * `t` prop. A key that it leaves unresolved reads the root's `locale`. Keep it stable, for
+   * example from `useChromeTranslate(overrides)`.
+   */
+  readonly t?: ChromeTranslate;
+}
 
 /**
  * The active cell's reference and content, both editable. The content is formula text, or the
  * value in a form that reads back, such as `2026-11-12` for a date. @public
  */
-export function FormulaBar() {
+export const FormulaBar: (props: FormulaBarProps) => ReactElement = withChromeTranslate(
+  FormulaBarPart,
+  'FormulaBar'
+);
+
+function FormulaBarPart() {
   const { t } = useTranslation();
+  const dir = useChromeDir();
   const editor = useXlsxEditor();
   const snap = useEditorState(formulaSlice, sameSlice);
   const composing = useRef(false);
@@ -147,7 +168,7 @@ export function FormulaBar() {
   const lines = shortened ? 1 : text.split('\n').length;
   const reason = invalid && refusal ? refusalText(refusal, t, snap.numberLocale) : '';
   return (
-    <div className="xlsx-formula-bar" onMouseDown={keepGridFocus}>
+    <div className="xlsx-formula-bar" dir={dir} onMouseDown={keepGridFocus}>
       <NameBox reference={snap.ref ?? ''} contentField={field} />
       <div
         className="xlsx-cell-content-box"
@@ -155,6 +176,9 @@ export function FormulaBar() {
         onMouseDown={(e) => pressFieldBox(field.current, e)}
       >
         <textarea
+          // The text sets its own direction, as in the cell: a formula reads left to right in a
+          // right-to-left chrome, and a text keeps the direction of its script.
+          dir="auto"
           ref={bindField}
           className="xlsx-cell-content"
           name="xlsx-cell-content"
@@ -270,6 +294,9 @@ function NameBox(props: {
     <>
       <input
         className="xlsx-name-box"
+        // The text sets its own direction: a reference reads left to right in a right-to-left
+        // chrome, and a defined name keeps the direction of its script.
+        dir="auto"
         name="xlsx-name-box"
         type="text"
         spellCheck={false}

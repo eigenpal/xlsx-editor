@@ -1,7 +1,11 @@
 // Copied from docx-editor/packages/i18n/src/index.ts at a0825f1f (EigenPal). Differences: the
-// package is `@xlsx-editor.dev/i18n` with English only. The writing direction and platform-shortcut
-// helpers are left out until chrome needs them: `_dir` stays in the catalog type for parity,
-// reserved, and nothing reads it. The disabled-reason helper is not here: the engine resolves its
+// package is `@xlsx-editor.dev/i18n` with English only. The writing direction helpers are in
+// `direction.ts`, as in DOCX Editor; the platform-shortcut helpers are left out until chrome needs
+// them. `formatMessage` is exported, where DOCX Editor keeps it private: the adapters'
+// `useChromeTranslate` formats an override with it, because the messages here take values. It
+// reads only the own values of `vars`, so a placeholder named after an object method stays
+// as written. The
+// disabled-reason helper is not here: the engine resolves its
 // own reasons to catalog text (`disabledReasonText` in `@xlsx-editor.dev/core/editor`), so the
 // adapters need no second copy. The adapter text names only what exists: the React adapter, its
 // `useTranslation` hook, the `locale` prop of its root, and the engine's English fallback
@@ -110,8 +114,9 @@ export type PartialLocaleStrings = DeepPartial<LocaleStrings> & {
   // while still accepting arbitrary strings at runtime.
   _lang?: LocaleCode | (string & {});
   /**
-   * Reserved for the writing direction of the interface strings, as DOCX Editor's catalogs
-   * carry it. It has no effect: the chrome is laid out left to right, and only English ships.
+   * The writing direction of the interface strings. `'rtl'` mirrors the editor chrome, and
+   * `'ltr'` keeps a left-to-right chrome on a right-to-left host page. Without it, a
+   * right-to-left `_lang` mirrors the chrome ({@link chromeDirection}).
    */
   _dir?: 'ltr' | 'rtl' | (string & {});
 };
@@ -193,7 +198,20 @@ function parseBranches(branchStr: string): Record<string, string> {
   return parsed;
 }
 
-function formatMessage(
+/**
+ * Format one message as `t()` does: fill the `{name}` placeholders from `vars`, and pick the
+ * branch of each ICU `{count, plural, ...}` with `Intl.PluralRules` for `lang` (`=N` matches
+ * first). A placeholder with no value stays as written. Use it for a message that is not in a
+ * catalog, such as an override of one key.
+ *
+ * @example
+ * ```ts
+ * formatMessage('{count, plural, one {# sheet} other {# sheets}}', { count: 2 }); // '2 sheets'
+ * ```
+ *
+ * @public
+ */
+export function formatMessage(
   template: string,
   vars?: Record<string, string | number>,
   lang?: string
@@ -209,7 +227,7 @@ function formatMessage(
     // already tolerates the leading whitespace now folded into the capture.
     /\{(\w+),\s*plural,((?:[^{}]|\{[^{}]*\})*)\}/g,
     (full, varName, branchStr) => {
-      const count = Number(vars[varName]);
+      const count = Number(Object.hasOwn(vars, varName) ? vars[varName] : undefined);
       if (isNaN(count)) return full;
       const parsed = parseBranches(branchStr);
       const exact = parsed[`=${count}`];
@@ -226,10 +244,14 @@ function formatMessage(
   );
 
   return result.replace(/\{(\w+)\}/g, (_, key) => {
-    const val = vars[key];
+    // Own values only: a placeholder named `constructor` or `toString` never reads the
+    // prototype of `vars`.
+    const val = Object.hasOwn(vars, key) ? vars[key] : undefined;
     return val !== undefined ? String(val) : `{${key}}`;
   });
 }
+
+export { catalogDirection, chromeDirection, localeDirection } from './direction.ts';
 
 /**
  * The signature of `t()`: look up a translation by dot-notation key,

@@ -48,11 +48,13 @@ import {
   type SavedWorkbook,
   type ToolbarArrangement,
   type ToolbarHost,
+  type ChromeTranslate,
 } from '@xlsx-editor.dev/core/editor';
 import { ToolbarAction, ToolbarSeparator } from './action.tsx';
 import { TOOLBAR_PARTS, type ToolbarNamedParts } from './named-parts.tsx';
 import type { TFunction } from '@xlsx-editor.dev/i18n';
-import { useEditorState, useTranslation, useTranslator, useXlsxEditor } from '../context.ts';
+import { useEditorState, useTranslation, useXlsxEditor } from '../context.ts';
+import { usePartTranslation } from '../locale.ts';
 import { ChromeIcon, toolbarHostKey, translateKey } from './slot.tsx';
 import { GroupMenu, popupTriggerKeys, usePopup, type PartLayout } from './parts.tsx';
 import { ICON_MORE } from './icons.ts';
@@ -122,6 +124,13 @@ const xlsxEditorToolbarProps = {
   preset: { type: Boolean, default: true },
   /** Appended after the `xlsx-toolbar` class. A host `class` also works. */
   className: { type: String, default: undefined },
+  /**
+   * The label resolver of the toolbar, its parts, its "More" panel, and its number format
+   * dialog: a key and the values of its placeholders, as DOCX Editor's `t` prop. A key that it
+   * leaves unresolved reads the root's `locale`. Keep it stable, for example from
+   * `useChromeTranslate(overrides)`: a new function measures the bar again.
+   */
+  t: { type: Function as PropType<ChromeTranslate>, default: undefined },
   /**
    * Slot ids to leave out, such as `['file.save']`. A group whose slots are all hidden is left
    * out with its separator. The order of the list does not matter.
@@ -290,8 +299,7 @@ const XlsxEditorToolbarRoot = defineComponent({
   inheritAttrs: false,
   props: xlsxEditorToolbarProps,
   setup(props, { attrs, slots }) {
-    const { t } = useTranslation();
-    const translator = useTranslator();
+    const { t, translator, dir } = usePartTranslation('XlsxEditorToolbar', () => props.t);
     const editor = useXlsxEditor();
     // A press reads `opening` at its call, so a press and the state of each control agree. A
     // change of a prop gives a new host, so each control reads its state again.
@@ -414,6 +422,8 @@ const XlsxEditorToolbarRoot = defineComponent({
                 {...attrs}
                 ref={bar}
                 role="toolbar"
+                // The chrome direction, else a host `dir` attribute: never `undefined` over it.
+                dir={dir.value ?? (attrs['dir'] as string | undefined)}
                 aria-label={t('formattingBar.label')}
                 class={['xlsx-toolbar', props.className, attrs.class]}
                 {...(measuring ? { 'data-overflow': '' } : {})}

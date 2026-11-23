@@ -5,6 +5,7 @@
 // Vue sheet tabs act the same. Adapter support, not a stable API.
 
 import type { EditorSheet } from './editor-model.ts';
+import { isRightToLeft } from './chrome-direction.ts';
 import { windowScale } from './host-frame.ts';
 import type { XlsxEditorInstance } from './xlsx-editor.ts';
 
@@ -56,7 +57,13 @@ export function moveInSheetMenu(menu: HTMLElement, key: string): boolean {
  */
 export interface SheetRenameBox {
   readonly name: string;
+  /** The left edge of the field in the bar, in its CSS pixels. */
   readonly left: number;
+  /**
+   * In a right-to-left bar, the distance of the field's right edge from the bar's right edge:
+   * the field then grows to the left, over its tab. Undefined in a left-to-right bar.
+   */
+  readonly right?: number;
   readonly width: number;
   /** Undefined when the bar has no add button to measure. */
   readonly maxWidth: number | undefined;
@@ -98,18 +105,30 @@ export function sheetRenameBox(
   const left = Math.max(0, lo, Math.min((tabBox.left - origin) / scale, hi));
   // The field ends before the add button, so the button stays in reach.
   const add = parts.add?.getBoundingClientRect();
+  if (parts.bar && isRightToLeft(parts.bar)) {
+    // Mirrored: the distances run from the bar's right edge, and the add button is on the left.
+    const end = box?.right ?? 0;
+    const rLo = listBox ? (end - listBox.right) / scale : 0;
+    const rHi = listBox ? Math.max(rLo, (end - listBox.left) / scale - tabWidth) : Infinity;
+    const right = Math.max(0, rLo, Math.min((end - tabBox.right) / scale, rHi));
+    const room = add ? Math.max(tabWidth, (end - add.right) / scale - right - 2) : undefined;
+    return { name, left, right, width: tabWidth, maxWidth: room };
+  }
   const room = add ? Math.max(tabWidth, (add.left - origin) / scale - left - 2) : undefined;
   return { name, left, width: tabWidth, maxWidth: room };
 }
 
 /**
  * Where the tab menu opens in the bar `bar`, in its CSS pixels from the bar's left edge: at the
- * pointer (`clientX`), or at the tab's left edge when a key opens it. Inside a host that scales
+ * pointer (`clientX`), or at the tab's start edge when a key opens it (the right edge in a
+ * right-to-left bar, where `openSheetMenu` puts the menu's right edge at this point). Inside a host that scales
  * the editor, window pixels are converted to the bar's pixels. @internal
  */
 export function sheetMenuLeft(bar: HTMLElement | null, tab: HTMLElement, clientX?: number): number {
   const box = bar?.getBoundingClientRect();
-  const x = clientX ?? tab.getBoundingClientRect().left;
+  // In a right-to-left bar, a key opens the menu at the tab's right edge, its start.
+  const tabBox = tab.getBoundingClientRect();
+  const x = clientX ?? (isRightToLeft(tab) ? tabBox.right : tabBox.left);
   const scale = bar ? windowScale(bar).x : 1;
   return Math.max(0, (x - (box?.left ?? 0)) / scale);
 }
@@ -172,7 +191,9 @@ export function openSheetMenu(
   editor: Pick<XlsxEditorInstance, 'focus'> | null
 ): () => void {
   const room = (bar?.clientWidth ?? 0) - el.offsetWidth;
-  el.style.left = `${Math.max(0, Math.min(left, room))}px`;
+  // In a right-to-left bar, the menu grows to the left of its point, as its items read.
+  const start = bar && isRightToLeft(bar) ? left - el.offsetWidth : left;
+  el.style.left = `${Math.max(0, Math.min(start, room))}px`;
   el.querySelector<HTMLElement>(SHEET_MENU_ITEM)?.focus();
   const back = opening.back;
   return () => {

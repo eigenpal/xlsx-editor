@@ -8,6 +8,18 @@
 type AnyRecord = Record<string, unknown>;
 
 // @public
+export function catalogDirection(catalog: {
+    readonly _lang?: unknown;
+    readonly _dir?: unknown;
+} | null | undefined): 'ltr' | 'rtl' | undefined;
+
+// @public
+export function chromeDirection(dir: 'ltr' | 'rtl' | undefined, catalog: {
+    readonly _lang?: unknown;
+    readonly _dir?: unknown;
+} | null | undefined, inherited: 'ltr' | 'rtl' | undefined): 'ltr' | 'rtl' | undefined;
+
+// @public
 export function createT(strings: LocaleStrings, lang?: string): TFunction;
 
 // @public
@@ -580,7 +592,13 @@ const enJson: {
 };
 
 // @public
+export function formatMessage(template: string, vars?: Record<string, string | number>, lang?: string): string;
+
+// @public
 export type LocaleCode = 'en';
+
+// @public
+export function localeDirection(tag: string | null | undefined): 'ltr' | 'rtl';
 
 // @public
 export const locales: Record<LocaleCode, PartialLocaleStrings>;

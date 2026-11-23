@@ -65,7 +65,9 @@ const selected = useEditorState((s) => s.selectionRef);
 | `useEditorEvent(event, handler)` | `UseEditorEventReturn` | Subscribes until the component unmounts. |
 | `useEditorCommand(slot)` | `UseEditorCommandReturn` | One toolbar command. See [Connect a command button](#connect-a-command-button). |
 | `useEditorColorMode()` | `UseEditorColorModeReturn` | `colorMode`: `'light'` or `'dark'`, after `'system'` resolves. |
-| `useTranslation()` | `UseTranslationReturn` | `t`, in the locale of `XlsxEditorRoot`. See [Language](/docs/customization/language). |
+| `useTranslation()` | `UseTranslationReturn` | `t`, the translator of the nearest catalog (the root's `locale` or a `LocaleProvider`), `catalogue`, a ref to the merged catalog, and `lang` and `dir`, read at each access. See [Language](/docs/customization/language). |
+| `useChromeTranslate(overrides?)` | `UseChromeTranslateReturn` | A computed `t` for a part's `t` prop: the nearest part's `t` or catalog, with `overrides` first. `overrides` can be a map, a ref, or a getter. See [Language](/docs/customization/language#override-labels-in-one-part). |
+| `useChromeDir()` | `UseChromeDirReturn` | A computed ref to the chrome direction that a catalog or a `LocaleProvider` decided, or `undefined`. |
 | `useViewModeWaits()` | `UseViewModeWaitsReturn` | `true` while a change of `mode` to view mode waits for the open cell edit. |
 
 ### `useEditorEvent`

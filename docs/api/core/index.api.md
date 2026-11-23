@@ -532,6 +532,12 @@ export function disabledReasonText(reason: ChromeDisabledReason, t: EditorTransl
 export function displayName(name: string): string;
 
 // @public
+export interface DocumentChange {
+    readonly revision: number;
+    readonly source?: 'load' | 'close';
+}
+
+// @public
 export const EDIT_REFUSAL_CODES: readonly ['unknown-sheet', 'bad-reference', 'bad-value', 'text-too-long', 'bad-size', 'merge-one-cell', 'merge-overlap', 'merge-drops-values', 'bad-position', 'invalid-sheet', 'shared-formula', 'unreadable-formula', 'formula-syntax', 'r1c1-formula', 'unsupported-function', 'unknown-formula-reference', 'invalid-character', 'unsupported-package', 'cell-alternate-content', 'bad-format', 'unreadable-number-format', 'range-too-large', 'clear-too-large', 'decimals-too-large', 'decimals-unchanged', 'style-limit', 'invalid-part', 'locked', 'structure-blocked', 'sheet-range-blocked', 'grid-full', 'stale-revision', 'save-failed', 'sheet-name-invalid', 'sheet-name-too-long', 'sheet-name-taken', 'sheet-name-ambiguous', 'last-sheet', 'nothing-to-undo', 'nothing-to-redo', 'not-editable', 'whole-sheet', 'merged-range', 'paste-html', 'copy-too-large', 'copy-conditional-limit', 'copy-array-formula', 'copy-unreadable-formula', 'copy-wrapped-formula', 'paste-unreadable-formula', 'paste-name-scope', 'cut-wrapped-value', 'cut-expired', 'copy-expired', 'paste-reference-outside', 'too-many-rows', 'resize-anchor', 'view-mode', 'composing', 'edit-pending', 'edit-dropped', 'loading', 'go-to-reference', 'go-to-name', 'go-to-sheet'];
 
 // @public
@@ -556,6 +562,14 @@ export interface EditorCommandSlice {
 
 // @internal
 export function editorCommandSlice(snapshot: EditorSnapshot, slot: ChromeSlotId, host: ToolbarHost, t: EditorTranslate): EditorCommandSlice;
+
+// @public
+export interface EditorEvents {
+    change: (change: DocumentChange) => void;
+    openFailure: (failure: EditorFailure, snapshot: EditorSnapshot) => void;
+    rejection: (refusal: EditRefusal, snapshot: EditorSnapshot) => void;
+    selectionChange: (snapshot: EditorSnapshot) => void;
+}
 
 // @public
 export interface EditorFailure {
@@ -1647,6 +1661,7 @@ export interface XlsxEditorInstance {
     load(bytes: Uint8Array | ArrayBuffer): Promise<EditorSnapshot>;
     mergeCells(options?: MergeOptions): EditResult;
     moveSheet(index: number, to: number): EditResult;
+    on<E extends keyof EditorEvents>(event: E, handler: EditorEvents[E]): () => void;
     paste(data: PasteData): EditResult;
     redo(): EditResult;
     renameSheet(index: number, name: string): EditResult;

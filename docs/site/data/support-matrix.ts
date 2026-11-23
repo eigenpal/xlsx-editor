@@ -30,6 +30,7 @@ import { MERGE_FEATURES } from './support-matrix-merge.ts';
 import { FORMULA_SAVE_FEATURES } from './support-matrix-formula-save.ts';
 import { LIMIT_FEATURES } from './support-matrix-limits.ts';
 import { REFUSAL_FEATURES } from './support-matrix-refusals.ts';
+import { CUSTOMIZATION_FEATURES } from './support-matrix-customization.ts';
 
 export const SUPPORT_STATUSES = ['supported', 'partial', 'unsupported'] as const;
 export type SupportStatus = (typeof SUPPORT_STATUSES)[number];
@@ -636,18 +637,7 @@ export const supportFeatures: readonly SupportFeature[] = [
       ],
     },
   },
-  {
-    id: 'viewer.chrome-theme',
-    name: 'Chrome color mode and theme scope',
-    category: 'viewer',
-    status: 'supported',
-    notes:
-      'The `colorMode` prop sets a light, dark, or system theme for the chrome. The grid keeps the colors of the workbook. `useScopeClassName()` gives the scope classes for a part that you build outside the viewport, such as a popup in `document.body`. That part then reads the same `--doc-*` tokens and follows the color mode.',
-    docsLink: '/docs/customization/appearance',
-    evidence: {
-      tests: ['packages/react/src/__tests__/adapter.test.tsx', 'packages/vue/test/adapter.test.ts'],
-    },
-  },
+  ...CUSTOMIZATION_FEATURES,
   ...LIMIT_FEATURES,
   // --- Editing ----------------------------------------------------------------
   {

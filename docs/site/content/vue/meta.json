@@ -1,4 +1,4 @@
 {
   "title": "Vue",
-  "pages": ["index"]
+  "pages": ["index", "composables"]
 }

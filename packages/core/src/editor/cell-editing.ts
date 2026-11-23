@@ -150,6 +150,8 @@ export class CellEditing {
   /** What `#refusal` stopped (`RefusedBy`), or undefined for another edit. */
   #refusedBy: RefusedBy | undefined = undefined;
   #dropped = false;
+  /** The stored `edit-dropped` refusal of the last drop, which a settled load shows again. */
+  #dropRefusal: EditRefusal | null = null;
   readonly #host: EditingHost;
 
   constructor(host: EditingHost) {
@@ -207,6 +209,11 @@ export class CellEditing {
 
   get refusal(): EditRefusal | null {
     return this.#refusal;
+  }
+
+  /** The stored `edit-dropped` refusal while the drop shows (`dropped`), else null. */
+  get dropRefusal(): EditRefusal | null {
+    return this.#dropped ? this.#dropRefusal : null;
   }
 
   /** The workbook and the shown sheet that an edit applies to, or null when none is ready. */
@@ -304,11 +311,14 @@ export class CellEditing {
   /**
    * The load settled, ready or failed: close the editor and forget the refusals of the load,
    * but keep `edit-dropped` (and `dropped`) when the load dropped an edit with changed text,
-   * so the user still sees that the typed text was not stored. It is not announced again.
+   * so the user still sees that the typed text was not stored. It is not announced again. It is
+   * the object stored at the drop, also when a `loading` refusal replaced it during the load, so
+   * the `rejection` event, which fires once for each refusal object, does not fire again.
    */
   settleLoad(): void {
     this.#close();
-    this.#refusal = this.#dropped ? { code: 'edit-dropped' } : null;
+    // `#dropped` is set only by `drop`, which sets `#dropRefusal` too.
+    this.#refusal = this.#dropped ? this.#dropRefusal : null;
   }
 
   /** A save wrote `bytes`: forget an older refusal, which no longer applies. */
@@ -336,6 +346,7 @@ export class CellEditing {
     if (!changed) return;
     this.#dropped = true;
     this.#refuse({ code: 'edit-dropped' });
+    this.#dropRefusal = this.#refusal;
   }
 
   /**
@@ -931,10 +942,12 @@ export class CellEditing {
     // A refused command after the load settled is the next command: the drop is no longer
     // shown. While a load runs, the drop stays shown with the `loading` refusal.
     if (!this.#host.loading() && refused.code !== 'edit-dropped') this.#dropped = false;
+    // A new object for each refused command, also for a shared constant refusal, so the
+    // `rejection` event (one for each refusal object) reports each one.
     const refusal: EditRefusal =
       this.#host.loading() && refused.code !== 'edit-dropped'
         ? { code: 'loading', ...(refused.command ? { command: refused.command } : {}) }
-        : refused;
+        : { ...refused };
     // A refusal that each key repeats alike (`ONCE`) is announced once, not again for each
     // key, until a selection or another refusal replaces it. Another message is another
     // refusal: a `locked` refusal by another rule, or with another subject, is announced. So

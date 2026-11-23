@@ -1,0 +1,111 @@
+---
+title: 'Composables'
+description: 'Connect Vue controls to XLSX editor state, commands, and events with composables.'
+category: 'Vue'
+---
+
+Call these composables during `setup()` in components inside `XlsxEditorRoot`, in a layout that you compose from the parts. The packaged `<XlsxEditor>` takes no children: with it, use the `ready` event, which passes the editor, and `editor.on(event, handler)` for events, as [Editor events](/docs/customization/events#subscribe-on-the-packaged-editor) shows. Each composable exports a named return type, `Use<Name>Return`. The composables are the twins of the [React hooks](/docs/react/hooks): they take the same arguments and return refs for the state.
+
+## Connect a command button
+
+This button runs a toolbar command and shows why the command cannot run:
+
+```vue
+<script setup lang="ts">
+import { useEditorCommand } from '@xlsx-editor.dev/vue';
+
+const bold = useEditorCommand('font.bold');
+</script>
+
+<template>
+  <button
+    :aria-disabled="!bold.isEnabled.value || undefined"
+    :aria-pressed="bold.isActive.value"
+    :title="bold.disabledReason.value ?? 'Bold'"
+    @mousedown.prevent
+    @click="bold.execute()"
+  >
+    B
+  </button>
+</template>
+```
+
+`useEditorCommand(slot: MaybeRefOrGetter<ChromeSlotId>): UseEditorCommandReturn` takes a slot ID of the toolbar, or a ref or getter that returns one. The state follows the slot.
+
+| Member | Type | Description |
+| --- | --- | --- |
+| `execute(value?)` | `boolean` | Runs the command, with the picked value of a value slot. Returns `true` when the editor ran it. |
+| `isActive` | `ComputedRef<boolean>` | Command state at the active cell. |
+| `isEnabled` | `ComputedRef<boolean>` | Whether the command can run. |
+| `disabledReason` | `ComputedRef<string \| null>` | Why the command cannot run, as text in the root locale. |
+| `hint` | `ComputedRef<string \| null>` | A hint for an enabled command, as text in the root locale. |
+| `value` | `ComputedRef<string \| null>` | Current value for value slots, such as a font name or a color as `RRGGBB`. |
+
+## Read state and events
+
+`useEditorState` returns one slice of the snapshot as a ref. The ref changes only when that slice changes:
+
+```vue
+<script setup lang="ts">
+import { useEditorState } from '@xlsx-editor.dev/vue';
+
+const selected = useEditorState((s) => s.selectionRef);
+</script>
+
+<template>
+  <span>{{ selected ?? 'No selection' }}</span>
+</template>
+```
+
+| Composable | Returns | Notes |
+| --- | --- | --- |
+| `useEditorState(selector, isEqual?, deps?)` | `UseEditorStateReturn<T>` | Selected snapshot value. `deps` names a source whose change reads the slice again. |
+| `useEditorSnapshot()` | `UseEditorSnapshotReturn` | The whole snapshot. |
+| `useXlsxEditor()` | `UseXlsxEditorReturn` | A ref to the editor, or `null` before it mounts. |
+| `useEditorEvent(event, handler)` | `UseEditorEventReturn` | Subscribes until the component unmounts. |
+| `useEditorCommand(slot)` | `UseEditorCommandReturn` | One toolbar command. See [Connect a command button](#connect-a-command-button). |
+| `useEditorColorMode()` | `UseEditorColorModeReturn` | `colorMode`: `'light'` or `'dark'`, after `'system'` resolves. |
+| `useTranslation()` | `UseTranslationReturn` | `t`, in the locale of `XlsxEditorRoot`. See [Language](/docs/customization/language). |
+| `useViewModeWaits()` | `UseViewModeWaitsReturn` | `true` while a change of `mode` to view mode waits for the open cell edit. |
+
+### `useEditorEvent`
+
+`useEditorEvent(event, handler)` calls `handler` each time the event occurs, until the component unmounts:
+
+```vue
+<script setup lang="ts">
+import { refusalText, useEditorEvent, useTranslation } from '@xlsx-editor.dev/vue';
+
+const emit = defineEmits<{ refused: [text: string] }>();
+const { t } = useTranslation();
+
+useEditorEvent('rejection', (refusal, snapshot) =>
+  emit('refused', refusalText(refusal, t, snapshot.numberLocale))
+);
+</script>
+
+<template>
+  <span hidden />
+</template>
+```
+
+| Event | Handler | Occurs when |
+| --- | --- | --- |
+| `change` | `(change) => void` | An edit applies, an undo or a redo runs, a load settles, or the workbook closes. `change` is a `DocumentChange`: its `source` is `'load'` or `'close'` for those causes, and absent for edits, undo, and redo. |
+| `selectionChange` | `(snapshot) => void` | The shown sheet or the selection changes, also when a load settles or the workbook closes. |
+| `rejection` | `(refusal, snapshot) => void` | The editor refuses a command, an edit, or a save. |
+| `openFailure` | `(failure, snapshot) => void` | A workbook does not open. |
+
+The `change` event fires only for content changes, while the root's `change` emit fires after every state change. The composable calls `editor.on(event, handler)`, which you can also call on an instance outside a root. [Editor events](/docs/customization/events) gives the rules of each event.
+
+## Limits
+
+- Call composables in `setup()` inside `XlsxEditorRoot`. Outside it, `useXlsxEditor()` holds `null`.
+- `canUndo` reports undo availability, not unsaved changes. Compare `revision` with the revision of your last save.
+- `disabledReason` and `hint` are text in the root locale. They change when the root's `locale` prop changes.
+
+## See also
+
+- [Hooks](/docs/react/hooks): the React twins of these composables.
+- [Editor events](/docs/customization/events)
+- [Vue README](https://github.com/eigenpal/xlsx-editor/blob/main/packages/vue/README.md#composables)

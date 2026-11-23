@@ -20,8 +20,10 @@ import { CopyResult } from '@xlsx-editor.dev/core/editor';
 import { CSSProperties } from 'react';
 import { CUSTOM_NUMBER_FORMAT_PREFIX } from '@xlsx-editor.dev/core/editor';
 import { DecimalSteps } from '@xlsx-editor.dev/core/editor';
+import { DocumentChange } from '@xlsx-editor.dev/core/editor';
 import { EditMove } from '@xlsx-editor.dev/core/editor';
 import { editMoveOf } from '@xlsx-editor.dev/core/editor';
+import { EditorEvents } from '@xlsx-editor.dev/core/editor';
 import { EditorFailure } from '@xlsx-editor.dev/core/editor';
 import { EditorMode } from '@xlsx-editor.dev/core/editor';
 import { EditorSheet } from '@xlsx-editor.dev/core/editor';
@@ -123,6 +125,8 @@ export { CUSTOM_NUMBER_FORMAT_PREFIX }
 
 export { DecimalSteps }
 
+export { DocumentChange }
+
 export { EditMove }
 
 export { editMoveOf }
@@ -136,6 +140,8 @@ export interface EditorCommandState {
     readonly isEnabled: boolean;
     readonly value: string | null;
 }
+
+export { EditorEvents }
 
 export { EditorFailure }
 
@@ -282,6 +288,9 @@ export interface UseEditorColorModeReturn {
 
 // @public
 export function useEditorCommand(slot: ChromeSlotId): EditorCommandState;
+
+// @public
+export function useEditorEvent<E extends keyof EditorEvents>(event: E, handler: EditorEvents[E]): void;
 
 // @public
 export function useEditorSnapshot(): EditorSnapshot;

@@ -61,9 +61,9 @@ describe('a save of the demo', () => {
     expect(boldIn(await demo.save('toolbar'))).toBe(true);
     expect(boldIn(await demo.save('keys'))).toBe(true);
     // The keys save from the top bar too.
-    act(() => demo.workbookList.focus());
+    act(() => demo.openInput.focus());
     const before = demo.saved.length;
-    demo.saveKey(demo.workbookList);
+    demo.saveKey(demo.openInput);
     await waitFor(() => expect(demo.saved.length).toBe(before + 1), { timeout: WAIT_MS });
     expect(boldIn(demo.saved.at(-1)!)).toBe(true);
     // A held key saves once: its repeats stay in the page.
@@ -169,9 +169,9 @@ describe('a save of the demo', () => {
 
   test('a workbook that opens with the headings option on shows its headings and saves its own flags', async () => {
     const demo = await mountDemo();
-    demo.selectWorkbook('basic-values');
+    demo.pickFixture('basic-values');
     await demo.showsSheet('Values');
-    demo.selectWorkbook('sample');
+    demo.pickSample();
     await demo.showsSheet(SAMPLE_SHEET);
     expect(demo.headingsBox.checked).toBe(true);
     expect(demo.headingsShown()).toBe(true);

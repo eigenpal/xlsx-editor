@@ -1,7 +1,7 @@
 // The demo: a Vite app over the workspace sources. `bun run demo` at the repository root starts
 // it. The HarfBuzz runtime and the font package find their files with
 // `new URL(file, import.meta.url)`, which dependency pre-bundling would break, so they are
-// excluded from it. The server may read the repository root, for the committed fixtures.
+// excluded from it. The server may read the repository root, for the workspace sources.
 //
 // The packages export their built `dist/`. The aliases point the demo at the sources, so
 // `bun install && bun run demo` works from a clean clone with no package build, as in

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@xlsx-editor.dev/core": "workspace:*",
+    "@xlsx-editor.dev/i18n": "workspace:*",
     "@xlsx-editor.dev/react": "workspace:*",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

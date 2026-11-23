@@ -1,11 +1,12 @@
 // The demo's check that the editor can show a workbook, made before the load: a load that
 // fails closes the open workbook. It copies the rule of `openingSheet` in
 // packages/core/src/editor/editor-model.ts, which `XlsxEditorInstance.load` uses.
-// `open-check.test.ts` keeps the two equal.
+// `open-check.test.ts` keeps the two equal. It uses no adapter, so the React and Vue demos both
+// check a file with it.
 
 import { displayName } from '@xlsx-editor.dev/core/editor';
 import { readXlsxSteps, workbookIndex, type readXlsx } from '@xlsx-editor.dev/core/store';
-import { translatorFor } from '@xlsx-editor.dev/react';
+import { createT, en } from '@xlsx-editor.dev/i18n';
 import { runInTasks, whileWanted } from './steps-in-tasks.ts';
 
 type WorkbookIndex = NonNullable<ReturnType<typeof workbookIndex>>;
@@ -18,7 +19,7 @@ export const hasSheetToShow = (index: WorkbookIndex): boolean =>
 type PackageRejection = Extract<ReturnType<typeof readXlsx>, { ok: false }>['error'];
 
 /** The editor's English strings, for the limit values that its own message names. */
-const t = translatorFor(undefined);
+const t = createT(en);
 
 /** The limit of a part that does not read, by the reason of the bounded XML reader. */
 const PART_LIMITS = {

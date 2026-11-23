@@ -1,6 +1,6 @@
 {
   "name": "@xlsx-editor.dev/core",
-  "version": "0.0.0",
+  "version": "0.1.0-beta.0",
   "description": "Framework-agnostic core for XLSX Editor: SpreadsheetML package read and save, the canonical document tree, the cell format cascade, grid layout, paint, and the editor contract that the adapters render.",
   "type": "module",
   "sideEffects": [
@@ -66,7 +66,7 @@
   },
   "dependencies": {
     "@docx-editor.dev/fonts": "^2.38.0",
-    "@xlsx-editor.dev/i18n": "^0.0.0",
+    "@xlsx-editor.dev/i18n": "^0.1.0-beta.0",
     "fast-xml-parser": "^5.12.1",
     "fflate": "^0.8.2"
   },

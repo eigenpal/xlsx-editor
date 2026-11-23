@@ -12,6 +12,7 @@ import {
   type ChromeSlotId,
 } from './chrome-controls.ts';
 import { visibleArea, windowScale } from './host-frame.ts';
+import { TOOLBAR_COLLAPSE_ORDER, collapseOrder } from './toolbar-arrange.ts';
 import { scrollIntoNearestScroller } from './scroll-nearest.ts';
 
 /**
@@ -32,22 +33,56 @@ export function toolbarGroups(hidden: readonly ChromeSlotId[] = []): readonly Ch
 /** The width of the "More" button with its gap, in CSS pixels. */
 const MORE_WIDTH = 40;
 
+/** One group of the bar, as the collapse rule reads it. @internal */
+export interface ToolbarFitGroup {
+  readonly id: string;
+  /** The host's collapse priority, else the group's place in `TOOLBAR_COLLAPSE_ORDER`. */
+  readonly priority?: number | undefined;
+  /** A pinned group stays in the bar at every width. */
+  readonly pinned?: boolean | undefined;
+}
+
+/** Nothing collapses. Shared, so an answer with nothing hidden keeps one identity. */
+const NONE: readonly string[] = [];
+
 /**
- * How many groups the bar shows: all of them while a group has no measured width, so the next
- * render measures it, and else as many as fit (`groupsThatFit`). @internal
+ * The ids of the groups that leave the bar for the "More" panel, in bar order. Nothing leaves
+ * while a group has no measured width, so the next render measures it, nor when every group
+ * fits in `width` (0 or less: no measure yet). Else groups leave in `collapseOrder` (a lower
+ * priority first, a group with no priority before every built-in group), one whole group at a
+ * time, until the rest and the More button fit. A pinned group never leaves. Each group after
+ * the first is charged its gap, as DOCX Editor's `useToolbarOverflow.ts` charges `groupGaps`,
+ * and so is the More button. With the default priorities, the groups that stay are the
+ * longest start of the bar that fits, as `groupsThatFit` counts it. @internal
  */
-export function shownGroupCount(
-  groups: readonly { readonly id: string }[],
+export function toolbarCollapse(
+  groups: readonly ToolbarFitGroup[],
   widths: ReadonlyMap<string, number>,
   width: number,
   gap = 0
-): number {
-  if (groups.some((g) => !widths.has(g.id))) return groups.length;
-  return groupsThatFit(
-    groups.map((g) => widths.get(g.id) ?? 0),
-    width,
-    gap
+): readonly string[] {
+  if (groups.some((g) => !widths.has(g.id))) return NONE;
+  const sizes = groups.map((g) => widths.get(g.id) ?? 0);
+  const total = sizes.reduce((a, b) => a + b, 0) + gap * Math.max(0, groups.length - 1);
+  if (width <= 0 || total <= width) return NONE;
+  let used = MORE_WIDTH + sizes.reduce((a, b) => a + gap + b, 0);
+  const priorities = new Map<string, number>();
+  for (const g of groups)
+    if (g.priority !== undefined && !Number.isNaN(g.priority)) priorities.set(g.id, g.priority);
+  const pinned = new Set(groups.filter((g) => g.pinned).map((g) => g.id));
+  const hidden = new Set<string>();
+  const order = collapseOrder(
+    groups.map((g) => g.id),
+    TOOLBAR_COLLAPSE_ORDER,
+    priorities
   );
+  for (const id of order) {
+    if (used <= width) break;
+    if (pinned.has(id)) continue;
+    hidden.add(id);
+    used -= gap + (widths.get(id) ?? 0);
+  }
+  return groups.filter((g) => hidden.has(g.id)).map((g) => g.id);
 }
 
 /**
@@ -89,14 +124,15 @@ function barSpace(el: HTMLElement): { width: number; gap: number } {
 export const TOOLBAR_FIXED_ATTRIBUTE = 'data-toolbar-fixed';
 
 /**
- * Measure the groups that the bar `el` shows into `widths`, and return how many groups of
- * `groups` fit beside the fixed block (`TOOLBAR_FIXED_ATTRIBUTE`). @internal
+ * Measure the groups that the bar `el` shows into `widths`, and return the ids of the groups of
+ * `groups` that leave the bar so the rest fit beside the fixed block (`TOOLBAR_FIXED_ATTRIBUTE`),
+ * by `toolbarCollapse`. @internal
  */
 export function measureToolbar(
   el: HTMLElement,
-  groups: readonly { readonly id: string }[],
+  groups: readonly ToolbarFitGroup[],
   widths: Map<string, number>
-): number {
+): readonly string[] {
   // A box is in window pixels and the bar's space in its CSS pixels, which differ inside a host
   // that scales the editor.
   const scale = windowScale(el).x;
@@ -105,13 +141,14 @@ export function measureToolbar(
     widths.set(g.dataset.group ?? '', g.getBoundingClientRect().width / scale);
   const space = barSpace(el);
   const fixed = el.querySelector(`:scope > [${TOOLBAR_FIXED_ATTRIBUTE}]`);
-  // `groupsThatFit` reads a width of 0 or less as a bar with no measure yet, which shows every
-  // group. A measured bar that the fixed block fills keeps a width of 1, so it shows none.
+  // `toolbarCollapse` reads a width of 0 or less as a bar with no measure yet, which shows every
+  // group. A measured bar that the fixed block fills keeps a width of 1, so it shows only the
+  // pinned groups.
   const width =
     fixed && space.width > 0
       ? Math.max(1, space.width - fixed.getBoundingClientRect().width / scale - space.gap)
       : space.width;
-  return shownGroupCount(groups, widths, width, space.gap);
+  return toolbarCollapse(groups, widths, width, space.gap);
 }
 
 /**
@@ -152,6 +189,17 @@ export interface FocusMoveKey {
 // that change its value, and an input that acts as a button keeps no key.
 
 const BAR_ITEMS = 'button, input, select, textarea, a[href], [tabindex]';
+
+/**
+ * The controls of the "More" panel that take the focus when it opens from the keyboard: the
+ * controls of the bar (`BAR_ITEMS`), so a host element of `asChild` (a `<span role="button">`
+ * with a Tab stop, a link) counts as a built-in button does. A control with `disabled` takes
+ * no focus, so it is left out; a built-in control that is off stays (`aria-disabled`). @internal
+ */
+export const TOOLBAR_PANEL_ITEMS =
+  'button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
+  'textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"]):not([disabled]), ' +
+  '[role="button"]:not([disabled])';
 
 /**
  * The controls of the bar `bar` in order, at any depth: not those of a popup, a dialog, or a

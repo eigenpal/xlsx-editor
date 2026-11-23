@@ -6,13 +6,23 @@
 import { describe, expect, test } from 'bun:test';
 import { GlobalWindow } from 'happy-dom';
 import {
+  TOOLBAR_COLLAPSE_ORDER,
   arrangeToolbar,
   arrangeToolbarGroups,
+  collapseOrder,
   toolbarGroupHeading,
+  toolbarGroupPriority,
   type ToolbarArrangement,
 } from '../toolbar-arrange.ts';
-import { TOOLBAR_FIXED_ATTRIBUTE, measureToolbar, observeToolbar } from '../toolbar-layout.ts';
-import { CHROME_GROUPS } from '../chrome-controls.ts';
+import {
+  TOOLBAR_FIXED_ATTRIBUTE,
+  groupsThatFit,
+  measureToolbar,
+  observeToolbar,
+  toolbarCollapse,
+} from '../toolbar-layout.ts';
+import { CHROME_GROUPS, CHROME_SLOT_IDS } from '../chrome-controls.ts';
+import { TOOLBAR_NAMED_PARTS, isToolbarButtonSlot } from '../toolbar-named-parts.ts';
 
 const BUILT_IN = CHROME_GROUPS.map((g) => g.id);
 const ids = (a: ToolbarArrangement) => a.groups.map((g) => g.id);
@@ -286,7 +296,14 @@ describe('arrangeToolbar', () => {
     });
     expect(ids(a)).toEqual(['history', 'review', 'late', ...BUILT_IN.slice(1), 'share']);
     const review = a.groups.find((g) => g.id === 'review')!;
-    expect(review).toEqual({ id: 'review', chrome: null, label: 'Review', labelKey: undefined });
+    expect(review).toEqual({
+      id: 'review',
+      chrome: null,
+      label: 'Review',
+      labelKey: undefined,
+      priority: undefined,
+      pinned: false,
+    });
     expect(a.problems).toEqual([]);
   });
 
@@ -426,27 +443,45 @@ describe('the bar with a fixed block', () => {
   const groups = ['a', 'b', 'c', 'd'].map((id) => ({ id }));
 
   test('the groups fit in the room that the fixed block leaves', () => {
-    expect(measureToolbar(bar(400, ['a', 'b', 'c', 'd']), groups, new Map())).toBe(4);
+    expect(measureToolbar(bar(400, ['a', 'b', 'c', 'd']), groups, new Map())).toEqual([]);
     // 400 less 150 leaves 250: the More button (40) and two groups.
-    expect(measureToolbar(bar(400, ['a', 'b', 'c', 'd'], 150), groups, new Map())).toBe(2);
+    expect(measureToolbar(bar(400, ['a', 'b', 'c', 'd'], 150), groups, new Map())).toEqual([
+      'c',
+      'd',
+    ]);
   });
 
   test('in a host that scales the editor, the fixed block is measured in CSS pixels', () => {
     // At scale 2, the block shows 300 window pixels wide but takes 150 of the 400 CSS pixels.
-    expect(measureToolbar(bar(400, ['a', 'b', 'c', 'd'], 150, 0, 2), groups, new Map())).toBe(2);
+    expect(measureToolbar(bar(400, ['a', 'b', 'c', 'd'], 150, 0, 2), groups, new Map())).toEqual([
+      'c',
+      'd',
+    ]);
   });
 
   test('the fixed block is charged its gap, as each group is', () => {
     // 400 less 140 and one gap of 10 leaves 250. The More button (40), a gap, and one group
     // take 150; a second group with its gap would take 260.
-    expect(measureToolbar(bar(400, ['a', 'b', 'c', 'd'], 140, 10), groups, new Map())).toBe(1);
+    expect(measureToolbar(bar(400, ['a', 'b', 'c', 'd'], 140, 10), groups, new Map())).toEqual([
+      'b',
+      'c',
+      'd',
+    ]);
     // With no gap, the same bar holds two groups.
-    expect(measureToolbar(bar(400, ['a', 'b', 'c', 'd'], 140), groups, new Map())).toBe(2);
+    expect(measureToolbar(bar(400, ['a', 'b', 'c', 'd'], 140), groups, new Map())).toEqual([
+      'c',
+      'd',
+    ]);
   });
 
   test('a fixed block that fills the bar leaves no group, and an unmeasured bar shows all', () => {
-    expect(measureToolbar(bar(400, ['a', 'b', 'c', 'd'], 500), groups, new Map())).toBe(0);
-    expect(measureToolbar(bar(0, ['a', 'b', 'c', 'd'], 150), groups, new Map())).toBe(4);
+    expect(measureToolbar(bar(400, ['a', 'b', 'c', 'd'], 500), groups, new Map())).toEqual([
+      'a',
+      'b',
+      'c',
+      'd',
+    ]);
+    expect(measureToolbar(bar(0, ['a', 'b', 'c', 'd'], 150), groups, new Map())).toEqual([]);
   });
 
   test('only the groups and the fixed block of the bar count, not host content with their marks', () => {
@@ -460,7 +495,7 @@ describe('the bar with a fixed block', () => {
     block.getBoundingClientRect = () => ({ width: 1000 }) as DOMRect;
     el.querySelector('[data-group="c"]')!.append(block);
     const widths = new Map<string, number>();
-    expect(measureToolbar(el, groups, widths)).toBe(4);
+    expect(measureToolbar(el, groups, widths)).toEqual([]);
     expect(widths.get('a')).toBe(100);
   });
 
@@ -485,5 +520,215 @@ describe('the bar with a fixed block', () => {
     } finally {
       view.ResizeObserver = original;
     }
+  });
+});
+
+describe('the collapse order', () => {
+  test('the built-in groups collapse from the end of the bar, and every one is declared', () => {
+    expect([...TOOLBAR_COLLAPSE_ORDER].sort()).toEqual([...BUILT_IN].sort());
+    expect(collapseOrder(BUILT_IN)).toEqual([...BUILT_IN].reverse());
+    expect(toolbarGroupPriority('file')).toBe(10);
+    expect(toolbarGroupPriority('history')).toBe(90);
+    expect(toolbarGroupPriority('share')).toBeUndefined();
+  });
+
+  test('a group with no priority leaves first, in reverse bar order', () => {
+    expect(collapseOrder(['history', 'a', 'font', 'b'])).toEqual(['b', 'a', 'font', 'history']);
+  });
+
+  test('a priority sorts a group among the built-in groups, and overrides a built-in one', () => {
+    const priorities = new Map([
+      ['share', 85],
+      ['file', 95],
+    ]);
+    expect(collapseOrder(['history', 'font', 'file', 'share'], TOOLBAR_COLLAPSE_ORDER, priorities))
+      // font 80, share 85, history 90, file 95.
+      .toEqual(['font', 'share', 'history', 'file']);
+  });
+
+  test('two groups with the same priority: the one further along the bar leaves first', () => {
+    const priorities = new Map([
+      ['a', 50],
+      ['b', 50],
+    ]);
+    expect(collapseOrder(['a', 'b'], TOOLBAR_COLLAPSE_ORDER, priorities)).toEqual(['b', 'a']);
+  });
+
+  test('NaN counts as no priority', () => {
+    expect(collapseOrder(['history', 'a'], TOOLBAR_COLLAPSE_ORDER, new Map([['a', NaN]]))).toEqual([
+      'a',
+      'history',
+    ]);
+  });
+});
+
+describe('toolbarCollapse', () => {
+  const all = (ids: readonly string[], width = 100) => new Map(ids.map((id) => [id, width]));
+
+  test('with the default order, the groups that stay are the start that groupsThatFit counts', () => {
+    const groups = BUILT_IN.map((id) => ({ id }));
+    for (const width of [0, 150, 300, 499, 700, 900, 1000]) {
+      const hidden = toolbarCollapse(groups, all(BUILT_IN), width, 4);
+      const count = groupsThatFit(
+        BUILT_IN.map(() => 100),
+        width,
+        4
+      );
+      expect(hidden).toEqual(BUILT_IN.slice(count));
+    }
+  });
+
+  test('a host group with no priority leaves before every built-in group', () => {
+    // The host group stands after history, at the start, and still leaves first.
+    const groups = [{ id: 'history' }, { id: 'share' }, { id: 'font' }, { id: 'file' }];
+    // 400 holds three groups beside the More button (40), not four.
+    expect(toolbarCollapse(groups, all(groups.map((g) => g.id)), 399)).toEqual(['share']);
+  });
+
+  test('a priority keeps a host group longer than built-in groups with a lower one', () => {
+    const groups = [
+      { id: 'history' },
+      { id: 'font' },
+      { id: 'share', priority: 95 },
+      { id: 'file' },
+    ];
+    // Two groups and the More button fit in 250: file (10) and font (80) leave, share stays.
+    expect(toolbarCollapse(groups, all(groups.map((g) => g.id)), 250)).toEqual(['font', 'file']);
+  });
+
+  test('a pinned group never leaves, also when nothing else fits', () => {
+    const groups = [{ id: 'history' }, { id: 'share', pinned: true }, { id: 'file' }];
+    expect(toolbarCollapse(groups, all(groups.map((g) => g.id)), 150)).toEqual(['history', 'file']);
+    expect(toolbarCollapse(groups, all(groups.map((g) => g.id)), 1)).toEqual(['history', 'file']);
+  });
+
+  test('a pinned built-in group stays while the groups after it leave', () => {
+    const groups = [{ id: 'history' }, { id: 'font' }, { id: 'file', pinned: true }];
+    expect(toolbarCollapse(groups, all(groups.map((g) => g.id)), 250)).toEqual(['font']);
+  });
+});
+
+describe('arrangeToolbar with priorities, pinned groups, and overflow content', () => {
+  test('a group carries the priority and the pinned flag of its request', () => {
+    const a = arrangeToolbar({
+      groups: [
+        { id: 'share', content: true, priority: 15, pinned: true },
+        { id: 'file', content: false, priority: 95 },
+        { id: 'font', content: false, priority: NaN },
+      ],
+    });
+    const share = a.groups.find((g) => g.id === 'share');
+    expect(share?.priority).toBe(15);
+    expect(share?.pinned).toBe(true);
+    expect(a.groups.find((g) => g.id === 'file')?.priority).toBe(95);
+    expect(a.groups.find((g) => g.id === 'font')?.priority).toBeUndefined();
+    expect(a.groups.find((g) => g.id === 'history')?.pinned).toBe(false);
+    expect(a.problems).toEqual([]);
+  });
+
+  test('a change of priority or pinned changes the key, so the bar measures again', () => {
+    const base = arrangeToolbar({ groups: [{ id: 'share', content: true }] });
+    const ranked = arrangeToolbar({ groups: [{ id: 'share', content: true, priority: 15 }] });
+    const pinned = arrangeToolbar({ groups: [{ id: 'share', content: true, pinned: true }] });
+    expect(new Set([base.key, ranked.key, pinned.key]).size).toBe(3);
+  });
+
+  test('overflow content keeps a built-in group with no control left', () => {
+    const a = arrangeToolbar({
+      hidden: ['file.save'],
+      groups: [{ id: 'file', content: false, overflowContent: true }],
+    });
+    expect(ids(a)).toContain('file');
+    expect(controls(a, 'file')).toEqual([]);
+  });
+
+  test('a host group with overflow content and no children is left out, with a problem', () => {
+    const a = arrangeToolbar({
+      groups: [{ id: 'share', content: false, overflowContent: true }],
+    });
+    expect(ids(a)).not.toContain('share');
+    expect(a.problems.join('\n')).toContain('"share" has overflowContent but no children');
+  });
+});
+
+describe('arrangeToolbar with changed controls', () => {
+  test('icon, asChild, and className change a button slot where it stands', () => {
+    const a = arrangeToolbar({
+      slots: [
+        { slotId: 'font.bold', hidden: false, content: false, icon: true },
+        { slotId: 'cells.insertRows', hidden: false, content: false, asChild: true },
+        { slotId: 'font.size', hidden: false, content: false, className: true },
+      ],
+    });
+    expect([...a.customized].sort()).toEqual(['cells.insertRows', 'font.bold', 'font.size']);
+    expect(a.replaced.size).toBe(0);
+    expect(a.problems).toEqual([]);
+  });
+
+  test('icon and asChild on a value control are ignored, with a problem', () => {
+    const a = arrangeToolbar({
+      slots: [
+        { slotId: 'font.size', hidden: false, content: false, icon: true },
+        { slotId: 'fill.color', hidden: false, content: false, asChild: true },
+      ],
+    });
+    expect(a.customized.size).toBe(0);
+    expect(a.problems).toHaveLength(2);
+    expect(a.problems[0]).toContain('"font.size" has icon, but the slot is not a button');
+  });
+
+  test('asChild with children on a value slot replaces the control, with a problem', () => {
+    const a = arrangeToolbar({
+      slots: [{ slotId: 'font.size', hidden: false, content: true, asChild: true }],
+    });
+    expect([...a.replaced]).toEqual(['font.size']);
+    expect(a.problems).toHaveLength(1);
+    expect(a.problems[0]).toContain('"font.size" has asChild, but the slot is not a button');
+  });
+
+  test('content wins over icon and className, with a problem', () => {
+    const a = arrangeToolbar({
+      slots: [{ slotId: 'font.bold', hidden: false, content: true, icon: true, className: true }],
+    });
+    expect([...a.replaced]).toEqual(['font.bold']);
+    expect(a.customized.size).toBe(0);
+    expect(a.problems).toHaveLength(2);
+  });
+
+  test('a hidden or listed slot is not customized', () => {
+    const a = arrangeToolbar({
+      hidden: ['font.italic'],
+      slots: [
+        { slotId: 'font.bold', hidden: true, content: false, icon: true },
+        { slotId: 'font.italic', hidden: false, content: false, icon: true },
+      ],
+    });
+    expect(a.customized.size).toBe(0);
+  });
+
+  test('customized slots change the key', () => {
+    const a = arrangeToolbar({});
+    const b = arrangeToolbar({
+      slots: [{ slotId: 'font.bold', hidden: false, content: false, icon: true }],
+    });
+    expect(a.key).not.toBe(b.key);
+  });
+});
+
+describe('TOOLBAR_NAMED_PARTS', () => {
+  test('names each toolbar slot exactly once, with PascalCase names', () => {
+    const slots = Object.values(TOOLBAR_NAMED_PARTS);
+    expect([...slots].sort()).toEqual([...CHROME_SLOT_IDS].sort());
+    expect(new Set(slots).size).toBe(slots.length);
+    for (const name of Object.keys(TOOLBAR_NAMED_PARTS)) expect(name).toMatch(/^[A-Z][A-Za-z]+$/);
+  });
+
+  test('a button part is a slot of the icon shape', () => {
+    expect(isToolbarButtonSlot('font.bold')).toBe(true);
+    expect(isToolbarButtonSlot('cells.deleteRows')).toBe(true);
+    expect(isToolbarButtonSlot('font.family')).toBe(false);
+    expect(isToolbarButtonSlot('fill.color')).toBe(false);
+    expect(isToolbarButtonSlot('number.custom')).toBe(false);
+    expect(isToolbarButtonSlot('nope')).toBe(false);
   });
 });

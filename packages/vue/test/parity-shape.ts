@@ -1,6 +1,6 @@
 // After pptx-editor/packages/vue/test/parity-shape.ts at d4502552 (EigenPal). Differences: the
 // probes mount the XLSX Editor parts (the editor, its root, viewport, content, toolbar, and the
-// toolbar's slot and group parts), and the value probes check the paired props that show in a
+// toolbar's slot, group, action, and separator parts), and the value probes check the paired props that show in a
 // part alone (`label` of the viewport, `hidden` and `preset` of the toolbar, and the props of the
 // slot and group parts that render without a bar). The
 // probe helpers and the shape that `check:parity-contract` reads are the same.
@@ -137,6 +137,10 @@ export async function vueAdapterShape(contract?: ParityContract): Promise<VueAda
           props: { hidden: true },
           shows: (s) => s.querySelector('[data-slot="font.bold"]') === null,
         },
+        icon: {
+          props: { icon: h('b', { id: 'xlsx-parity-icon' }) },
+          shows: (s) => s.querySelector('[data-slot="font.bold"] #xlsx-parity-icon') !== null,
+        },
       },
     },
     XlsxEditorToolbarGroup: {
@@ -164,6 +168,34 @@ export async function vueAdapterShape(contract?: ParityContract): Promise<VueAda
         },
       },
     },
+    ToolbarAction: {
+      component: vue.ToolbarAction,
+      props: { label: 'Probe action' },
+      wrap: inViewport,
+      values: {
+        label: {
+          props: { label: 'Probe label' },
+          shows: (s) => s.querySelector('button[aria-label="Probe label"]') !== null,
+        },
+        icon: {
+          props: { icon: h('b', { id: 'xlsx-parity-icon' }) },
+          shows: (s) => s.querySelector('button #xlsx-parity-icon') !== null,
+        },
+        active: {
+          props: { active: true },
+          shows: (s) => s.querySelector('button[aria-pressed="true"][data-active]') !== null,
+        },
+        disabled: {
+          props: { disabled: true },
+          shows: (s) => s.querySelector('button[aria-disabled="true"]') !== null,
+        },
+        disabledReason: {
+          props: { disabled: true, disabledReason: 'Probe reason' },
+          shows: (s) => s.querySelector('button[title="Probe reason"]') !== null,
+        },
+      },
+    },
+    ToolbarSeparator: { component: vue.ToolbarSeparator, wrap: inViewport },
   };
 
   type Probe = (typeof probes)[string];

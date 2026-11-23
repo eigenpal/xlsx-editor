@@ -20,7 +20,7 @@ import {
   MAX_ROWS,
   groupsThatFit,
   parseFontSize,
-  shownGroupCount,
+  toolbarCollapse,
   toolbarGroups,
 } from '@xlsx-editor.dev/core/editor';
 
@@ -747,12 +747,13 @@ describe('hidden slots', () => {
   });
 });
 
-describe('shownGroupCount', () => {
-  test('shows every group while one has no width, so the next render measures it', () => {
+describe('toolbarCollapse', () => {
+  test('hides nothing while one group has no width, so the next render measures it', () => {
     const groups = toolbarGroups();
-    expect(shownGroupCount(groups, new Map([['history', 100]]), 120)).toBe(groups.length);
+    expect(toolbarCollapse(groups, new Map([['history', 100]]), 120)).toEqual([]);
     const all = new Map(groups.map((g) => [g.id, 100]));
-    expect(shownGroupCount(groups, all, 240)).toBe(2);
+    // The default order keeps the start of the bar: the groups after the second leave.
+    expect(toolbarCollapse(groups, all, 240)).toEqual(groups.slice(2).map((g) => g.id));
   });
 });
 

@@ -113,20 +113,20 @@ defineProps<{ bytes?: Uint8Array }>();
 
 Keep `StatusMessage` in your layout. It is the only part that shows the text of the editor state, such as the reason for a refused edit. Composables run only in a descendant of `XlsxEditorRoot`.
 
-`XlsxEditorToolbar` takes the parts `XlsxEditorToolbar.Slot` and `XlsxEditorToolbar.Group` in its default slot, as React's toolbar takes them as children. The following sample replaces the save control, removes the underline control, and adds a host group after the history group. Use the component of the sample in place of `<XlsxEditorToolbar />` in your layout, inside `XlsxEditorViewport`. `:preset="false"` renders only the default slot. The [Toolbar and keyboard](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md#toolbar-parts) guide describes the rules:
+`XlsxEditorToolbar` takes the named parts (`XlsxEditorToolbar.Bold`, ...), `XlsxEditorToolbar.Slot`, `XlsxEditorToolbar.Group`, `XlsxEditorToolbar.Action`, and `XlsxEditorToolbar.Separator` in its default slot, as React's toolbar takes them as children. The following sample replaces the save control, removes the underline control, and adds a host group after the history group. Use the component of the sample in place of `<XlsxEditorToolbar />` in your layout, inside `XlsxEditorViewport`. `:preset="false"` renders only the default slot. The [Toolbar and keyboard](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md#toolbar-parts) guide describes the rules:
 
 ```vue
 <script setup lang="ts">
 import { XlsxEditorToolbar } from '@xlsx-editor.dev/vue';
 // Your own components.
-import SaveToDriveButton from './SaveToDriveButton.vue';
+import SaveToCloudButton from './SaveToCloudButton.vue';
 import ShareButton from './ShareButton.vue';
 </script>
 
 <template>
   <XlsxEditorToolbar>
     <XlsxEditorToolbar.Slot slot-id="file.save">
-      <SaveToDriveButton />
+      <SaveToCloudButton />
     </XlsxEditorToolbar.Slot>
     <XlsxEditorToolbar.Slot slot-id="font.underline" hidden />
     <XlsxEditorToolbar.Group id="share" label="Share" after="history">

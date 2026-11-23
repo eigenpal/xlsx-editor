@@ -1,0 +1,134 @@
+---
+title: 'Layout'
+description: 'Arrange the XLSX editor toolbar, formula bar, grid, sheet tabs, and application panels, and control zoom.'
+category: 'Customization'
+---
+
+Compose editor parts inside your own grid or flex layout. `XlsxEditor.Root` creates no wrapper element. `XlsxEditor.Viewport` renders the element with the classes `xlsx-editor` and `xlsx-editor-viewport`. That element scopes the styles, names the landmark region, and holds the chrome parts and the grid.
+
+## Arrange the editor
+
+This grid puts an application panel beside the editor. The viewport needs a bounded height: here it fills the grid row, and `min-height: 0` lets it shrink.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+import { XlsxEditor } from '@xlsx-editor.dev/react';
+import '@xlsx-editor.dev/core/styles/editor.css';
+
+export function LedgerWorkspace({ bytes }: { bytes: Uint8Array }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', height: 600 }}>
+      <XlsxEditor.Root document={bytes}>
+        <XlsxEditor.Viewport style={{ height: '100%', minHeight: 0 }}>
+          <XlsxEditor.Toolbar />
+          <XlsxEditor.FormulaBar />
+          <XlsxEditor.StatusMessage />
+          <XlsxEditor.Content />
+          <div className="xlsx-footer">
+            <XlsxEditor.SheetTabs />
+            <XlsxEditor.ZoomControl />
+          </div>
+        </XlsxEditor.Viewport>
+      </XlsxEditor.Root>
+      <aside className="ledger-panel">{/* Application panel */}</aside>
+    </div>
+  );
+}
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<script setup lang="ts">
+import {
+  FormulaBar,
+  SheetTabs,
+  StatusMessage,
+  XlsxEditorContent,
+  XlsxEditorRoot,
+  XlsxEditorToolbar,
+  XlsxEditorViewport,
+  ZoomControl,
+} from '@xlsx-editor.dev/vue';
+import '@xlsx-editor.dev/core/styles/editor.css';
+
+defineProps<{ bytes: Uint8Array }>();
+</script>
+
+<template>
+  <div :style="{ display: 'grid', gridTemplateColumns: '1fr 320px', height: '600px' }">
+    <XlsxEditorRoot :document="bytes">
+      <XlsxEditorViewport :style="{ height: '100%', minHeight: 0 }">
+        <XlsxEditorToolbar />
+        <FormulaBar />
+        <StatusMessage />
+        <XlsxEditorContent />
+        <div class="xlsx-footer">
+          <SheetTabs />
+          <ZoomControl />
+        </div>
+      </XlsxEditorViewport>
+    </XlsxEditorRoot>
+    <aside class="ledger-panel"><!-- Application panel --></aside>
+  </div>
+</template>
+```
+
+</Framework>
+</FrameworkTabs>
+
+Place each chrome part anywhere inside `XlsxEditor.Viewport`, in any order, or omit it.
+
+| Part | Requirement |
+| --- | --- |
+| `XlsxEditor.Viewport` | Bounded height. Without a height in `style` or `className`, the grid has a height of 0. Its width never follows its content, so give it a width from its container, such as a grid column. It accepts `className`, `style`, and `label`. |
+| `XlsxEditor.Content` | The grid. No application controls inside it. |
+| `XlsxEditor.StatusMessage` | Keep it in the layout. It is the only part that shows the reason for a refused edit. |
+| `XlsxEditor.Toolbar`, `.FormulaBar`, `.SheetTabs`, `.ZoomControl` | Optional chrome parts. The toolbar takes parts, as [Toolbar](/docs/customization/toolbar) describes. |
+| An element with the `xlsx-footer` class | The footer region that F6 visits. |
+
+To read the editor state in your own panel, place the panel inside `XlsxEditor.Root` and call `useEditorState` or `useEditorCommand`. In Vue, a composable runs only in a descendant of `XlsxEditorRoot`.
+
+## Control zoom
+
+The `ZoomControl` part sets the zoom of the sheet. To set it from your own code, call `setZoom` on the editor instance. The zoom is a scale factor from 0.1 to 4, where 1 is 100%.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+<XlsxEditor.Root document={bytes} onReady={(editor) => editor.setZoom(1.25)}>
+  {/* parts */}
+</XlsxEditor.Root>
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<XlsxEditorRoot :document="bytes" @ready="(editor) => editor.setZoom(1.25)">
+  <!-- parts -->
+</XlsxEditorRoot>
+```
+
+</Framework>
+</FrameworkTabs>
+
+Zoom changes only the view. It never changes the saved column widths, row heights, or the zoom that the workbook stores.
+
+## Limits
+
+- Keep the classes that `Viewport` supplies (`xlsx-editor` and `xlsx-editor-viewport`). The chrome styles and the keyboard find the editor through them.
+- A chrome part outside `XlsxEditor.Viewport` has no styles. Place the chrome parts inside it. To theme a popup of your own outside the viewport, use `useScopeClassName`, as [Appearance](/docs/customization/appearance) describes.
+- Changing `fonts` keeps the editor instance, the selection, and the undo history. A new `document` opens another workbook.
+- For the props of each part, see [Layout and props](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md).
+
+## See also
+
+- [Toolbar](/docs/customization/toolbar)
+- [Appearance](/docs/customization/appearance)
+- [Language](/docs/customization/language)
+- [Accessibility](/docs/accessibility)

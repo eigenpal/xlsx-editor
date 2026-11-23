@@ -22,7 +22,7 @@ In development, `XlsxEditor.Root` logs one warning when the layout has `XlsxEdit
 
 ## Named exports
 
-Each part is also a named export: `XlsxEditorRoot`, `XlsxEditorViewport`, `XlsxEditorContent`, `XlsxEditorToolbar`, `XlsxEditorToolbarSlot`, `XlsxEditorToolbarGroup`, `FormulaBar`, `SheetTabs`, `ZoomControl`, and `StatusMessage`. The `XlsxEditorNamespace` type describes `XlsxEditor` with its parts, and the `XlsxEditorToolbarNamespace` type describes `XlsxEditor.Toolbar` with its parts.
+Each part is also a named export: `XlsxEditorRoot`, `XlsxEditorViewport`, `XlsxEditorContent`, `XlsxEditorToolbar`, `XlsxEditorToolbarSlot`, `XlsxEditorToolbarGroup`, `ToolbarAction`, `ToolbarSeparator`, `FormulaBar`, `SheetTabs`, `ZoomControl`, and `StatusMessage`. The `XlsxEditorNamespace` type describes `XlsxEditor` with its parts, and the `XlsxEditorToolbarNamespace` type describes `XlsxEditor.Toolbar` with its parts.
 
 ## Root props
 

@@ -12,9 +12,9 @@ Each guide holds the samples and the rules of its API. The Vue parts take the sa
 
 | Guide | Use it to | API |
 | --- | --- | --- |
-| [Build your own layout](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/README.md#build-your-own-layout) | Arrange the chrome parts around the grid | `XlsxEditor.Root`, `.Viewport`, `.Content`, and the chrome parts |
+| [Layout](/docs/customization/layout) | Arrange the chrome parts around the grid, and control zoom | `XlsxEditor.Root`, `.Viewport`, `.Content`, and the chrome parts |
 | [Layout and props](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md) | Read the props of each part, and keep the status message in your layout | `XlsxEditor.Viewport`, `XlsxEditor.StatusMessage` |
-| [Toolbar parts](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md#toolbar-parts) | Hide, replace, or add toolbar controls | `hidden`, `preset`, `XlsxEditor.Toolbar.Slot`, `XlsxEditor.Toolbar.Group` |
+| [Toolbar](/docs/customization/toolbar) | Hide, change, replace, or add toolbar controls, and set how groups collapse | Named parts such as `XlsxEditor.Toolbar.Bold`, `hidden`, `preset`, `XlsxEditor.Toolbar.Slot`, `.Group`, `.Action`, `.Separator` |
 | [Controls of your own](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md#controls-of-your-own) | Bind your own control to a toolbar command | `useEditorCommand(slotId)` |
 | [Appearance](/docs/customization/appearance) | Set the color tokens, the corner radius, and the font of the chrome, and theme your own popups | `--doc-*` tokens, `className`, `useScopeClassName()` |
 | [Color mode](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#color-mode) | Set the light, dark, or system theme of the chrome | `colorMode`, `useEditorColorMode()` |
@@ -29,6 +29,8 @@ Each guide holds the samples and the rules of its API. The Vue parts take the sa
 ## Next steps
 
 - [Appearance](/docs/customization/appearance): theme the chrome and your own popups.
+- [Layout](/docs/customization/layout): arrange the parts around the grid.
+- [Toolbar](/docs/customization/toolbar): change the toolbar controls.
 - [Editor events](/docs/customization/events): react to content, selection, refusal, and open events.
 - [Language](/docs/customization/language): translate the interface.
 - [Accessibility](/docs/accessibility): the keyboard, the screen reader, and the host page.

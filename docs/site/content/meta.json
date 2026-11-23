@@ -8,6 +8,8 @@
     "installation",
     "customization",
     "customization/appearance",
+    "customization/layout",
+    "customization/toolbar",
     "customization/events",
     "customization/language",
     "xlsx-fidelity",

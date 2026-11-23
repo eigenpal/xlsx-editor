@@ -47,13 +47,22 @@ describe('check:parity-contract', () => {
   test('the value probes see the paired props that show in a part alone', () => {
     expect(shape.XlsxEditorViewport.values).toEqual({ label: true });
     expect(shape.XlsxEditorToolbar.values).toEqual({ hidden: true, preset: true });
-    expect(shape.XlsxEditorToolbarSlot.values).toEqual({ slotId: true, hidden: true });
+    expect(shape.XlsxEditorToolbarSlot.values).toEqual({ slotId: true, hidden: true, icon: true });
     expect(shape.XlsxEditorToolbarGroup.values).toEqual({
       id: true,
       label: true,
       labelKey: true,
       hidden: true,
     });
+    expect(shape.ToolbarAction.values).toEqual({
+      label: true,
+      icon: true,
+      active: true,
+      disabled: true,
+      disabledReason: true,
+    });
+    expect(shape.ToolbarAction.classNameLands).toBe(true);
+    expect(shape.ToolbarSeparator.classNameLands).toBe(true);
   });
 
   test('a prop inherited through extends must be classified', () => {

@@ -249,15 +249,22 @@ export {
   parseFontSize,
   placePopup,
   popupTriggerAction,
-  shownGroupCount,
   TOOLBAR_FIXED_ATTRIBUTE,
+  TOOLBAR_PANEL_ITEMS,
+  toolbarCollapse,
   toolbarGroups,
   type FocusMoveKey,
+  type ToolbarFitGroup,
 } from './toolbar-layout.ts';
 export {
   arrangeToolbar,
   arrangeToolbarGroups,
+  collapseOrder,
+  TOOLBAR_COLLAPSE_ORDER,
+  TOOLBAR_PINNED_GROUPS,
   toolbarGroupHeading,
+  toolbarAsChildProblem,
+  toolbarGroupPriority,
   type ArrangedToolbarGroup,
   type ToolbarArrangement,
   type ToolbarGroupRequest,
@@ -265,6 +272,11 @@ export {
   type ToolbarPartNames,
   type ToolbarSlotRequest,
 } from './toolbar-arrange.ts';
+export {
+  isToolbarButtonSlot,
+  TOOLBAR_NAMED_PARTS,
+  type ToolbarPartName,
+} from './toolbar-named-parts.ts';
 export {
   SHEET_MENU_ITEM,
   listenSheetMenuDismiss,

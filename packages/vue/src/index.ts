@@ -73,6 +73,19 @@ export { StatusMessage, ZoomControl } from './chrome.tsx';
 export { FormulaBar } from './FormulaBar.tsx';
 export { SheetTabs } from './SheetTabs.tsx';
 export type { XlsxEditorToolbarNamespace, XlsxEditorToolbarProps } from './toolbar/Toolbar.tsx';
+export {
+  ToolbarAction,
+  type ToolbarActionProps,
+  ToolbarSeparator,
+  type ToolbarSeparatorProps,
+} from './toolbar/action.tsx';
+export type {
+  ToolbarNamedParts,
+  ToolbarPartComponent,
+  ToolbarPartProps,
+  ToolbarSlotPartComponent,
+  ToolbarSlotPartProps,
+} from './toolbar/named-parts.tsx';
 export type {
   XlsxEditorContentProps,
   XlsxEditorFonts,

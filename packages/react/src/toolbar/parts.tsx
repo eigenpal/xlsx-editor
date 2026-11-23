@@ -14,6 +14,8 @@
 // (`data-inline`), so the panel's scroll box never clips it.
 
 import {
+  createContext,
+  useContext,
   useEffect,
   useId,
   useLayoutEffect,
@@ -21,6 +23,7 @@ import {
   useMemo,
   useState,
   type KeyboardEvent,
+  type ReactElement,
   type ReactNode,
 } from 'react';
 import {
@@ -45,9 +48,38 @@ import { ChromeIcon, translateKey, useToolbarSlot, type ToolbarSlot } from './sl
 import { useDropdownClose } from './useDropdownClose.ts';
 import { useNumberFormatDialogOpener } from './NumberFormatDialog.tsx';
 import { ICON_CHECK, ICON_FIELD_CARET, ICON_MENU_CARET } from './icons.ts';
+import { renderAsChild } from './as-child.tsx';
 
 /** How a part renders: in the bar, or as a full-width row of the overflow panel. */
 export type PartLayout = 'bar' | 'row';
+
+/**
+ * The changes that a `Toolbar.Slot` or a named part makes to the built-in control of its slot,
+ * after `SlotOverrideContext` of pptx-editor/packages/react/src/slot-override.ts at 70052cf1
+ * (EigenPal): an icon in place of the registry icon and the host element that renders the
+ * control (button slots only), and a class name for the control or the trigger of a value
+ * control.
+ */
+export interface SlotOverride {
+  readonly slot: string;
+  readonly icon?: ReactNode;
+  readonly className?: string;
+  readonly asChild?: ReactElement | null;
+}
+
+/** The override of the control that renders inside it. */
+export const SlotOverrideContext = createContext<SlotOverride | null>(null);
+
+/** The override of `slot`, or null: an override of another slot never reaches this control. */
+function useSlotOverride(slot: string): SlotOverride | null {
+  const override = useContext(SlotOverrideContext);
+  return override?.slot === slot ? override : null;
+}
+
+/** A base class with the override's class name after it. */
+function withClass(base: string, override: SlotOverride | null): string {
+  return override?.className ? `${base} ${override.className}` : base;
+}
 
 /**
  * The attributes that every slot control carries. A disabled control stays focusable
@@ -86,28 +118,44 @@ export function ToolbarButton({
 }) {
   const s = useToolbarSlot(slot);
   const reasonId = useId();
+  const override = useSlotOverride(slot);
+  const shared = {
+    className: withClass(layout === 'row' ? 'xlsx-toolbar-row' : 'xlsx-toolbar-button', override),
+    'aria-label': s.label,
+    ...(s.control.toggle ? { 'aria-pressed': s.isActive } : {}),
+    ...slotAttributes(s, reasonId),
+    // A held Enter repeats the click of a button; a command such as a decimal step would
+    // run on each repeat, so only the first press runs it. The guard applies to every toolbar
+    // button, undo and redo too. Intended difference from
+    // docx-editor/packages/react/src/components/Toolbar.tsx at 2741998e (EigenPal), whose
+    // buttons have no repeat guard.
+    onKeyDown: (e: KeyboardEvent<HTMLElement>) => {
+      if (e.key === 'Enter' && e.repeat) e.preventDefault();
+    },
+    // A disabled control also stops the default of its element, so an `asChild` link does not
+    // navigate.
+    onClick: (e: { preventDefault(): void }) => {
+      if (s.isEnabled) s.execute();
+      else e.preventDefault();
+    },
+  };
+  const reason = <ReasonText id={reasonId} reason={s.description} />;
+  // `asChild`: the host element renders the control, with its state and press merged in.
+  if (override?.asChild)
+    return (
+      <>
+        {renderAsChild(override.asChild, shared)}
+        {reason}
+      </>
+    );
+  const icon = override?.icon ?? <ChromeIcon paths={s.control.paths} />;
+  // A slot with no icon (a menu item of the registry) shows its label in the bar too.
+  const text = layout === 'row' || (override?.icon == null && !s.control.paths);
   return (
-    <button
-      type="button"
-      className={layout === 'row' ? 'xlsx-toolbar-row' : 'xlsx-toolbar-button'}
-      aria-label={s.label}
-      {...(s.control.toggle ? { 'aria-pressed': s.isActive } : {})}
-      {...slotAttributes(s, reasonId)}
-      // A held Enter repeats the click of a button; a command such as a decimal step would
-      // run on each repeat, so only the first press runs it. The guard applies to every toolbar
-      // button, undo and redo too. Intended difference from
-      // docx-editor/packages/react/src/components/Toolbar.tsx at 2741998e (EigenPal), whose
-      // buttons have no repeat guard.
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' && e.repeat) e.preventDefault();
-      }}
-      onClick={() => {
-        if (s.isEnabled) s.execute();
-      }}
-    >
-      <ChromeIcon paths={s.control.paths} />
-      {layout === 'row' ? <span>{s.label}</span> : null}
-      <ReasonText id={reasonId} reason={s.description} />
+    <button type="button" {...shared}>
+      {icon}
+      {text ? <span>{s.label}</span> : null}
+      {reason}
     </button>
   );
 }
@@ -212,6 +260,7 @@ function Trigger({
 }) {
   const { t } = useTranslation();
   const reasonId = useId();
+  const override = useSlotOverride(s.slot);
   const attributes = slotAttributes(s, reasonId);
   const after = s.description;
   const title =
@@ -223,7 +272,7 @@ function Trigger({
   return (
     <button
       type="button"
-      className={className}
+      className={withClass(className, override)}
       aria-haspopup={kind}
       aria-expanded={popup.open}
       aria-controls={popup.open ? popup.id : undefined}
@@ -504,11 +553,12 @@ export function NumberFormatDialogButton({ layout = 'bar' }: { readonly layout?:
   const s = useToolbarSlot('number.custom');
   const dialog = useNumberFormatDialogOpener();
   const reasonId = useId();
+  const override = useSlotOverride('number.custom');
   if (!dialog) return null;
   return (
     <button
       type="button"
-      className={layout === 'row' ? 'xlsx-toolbar-row' : 'xlsx-toolbar-button'}
+      className={withClass(layout === 'row' ? 'xlsx-toolbar-row' : 'xlsx-toolbar-button', override)}
       aria-label={s.label}
       aria-haspopup="dialog"
       {...slotAttributes(s, reasonId)}

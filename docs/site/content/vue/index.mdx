@@ -41,6 +41,8 @@ The React guides describe the parts in detail, and the Vue parts behave the same
 | A callback prop, such as `onSave` or `onChange` | An event without the `on` prefix, such as `@save` or `@change` |
 | `XlsxEditor.Root`, `XlsxEditor.Viewport`, `XlsxEditor.Content` | `XlsxEditorRoot`, `XlsxEditorViewport`, `XlsxEditorContent`. Each part is also a static of `XlsxEditor`, as in React |
 | `XlsxEditor.Toolbar.Slot` with `slotId` | `XlsxEditorToolbar.Slot` with `slot-id` |
+| `XlsxEditor.Toolbar.Bold` and the other named parts | `XlsxEditorToolbar.Bold` and the other named parts |
+| `XlsxEditor.Toolbar.Action` with `onSelect` | `XlsxEditorToolbar.Action` with `@select` |
 | A hook, such as `useEditorCommand` | A composable of the same name. It returns refs for the state, and plain functions such as `execute` and `t` |
 | `useRef<XlsxEditorRef>` | `useTemplateRef<XlsxEditorRef>` |
 | `className` | `class` |
@@ -51,7 +53,7 @@ The React guides describe the parts in detail, and the Vue parts behave the same
 | --- | --- | --- |
 | Configure the packaged editor | `XlsxEditor` props and events | [Props and events](https://github.com/eigenpal/xlsx-editor/blob/main/packages/vue/README.md#props-and-events) |
 | Arrange or replace the chrome | `XlsxEditorRoot`, `XlsxEditorViewport`, `XlsxEditorContent`, `XlsxEditorToolbar`, and the other parts | [Build your own layout](https://github.com/eigenpal/xlsx-editor/blob/main/packages/vue/README.md#build-your-own-layout) |
-| Change the toolbar and read each key | `XlsxEditorToolbar` props, `XlsxEditorToolbar.Slot`, and `XlsxEditorToolbar.Group` | [Toolbar and keyboard](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md) |
+| Change the toolbar and read each key | `XlsxEditorToolbar` props, the named parts, `XlsxEditorToolbar.Slot`, `.Group`, `.Action`, and `.Separator` | [Toolbar](/docs/customization/toolbar), [Toolbar and keyboard](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md) |
 | Edit cells from code, and save | `XlsxEditorRef`, `getEditor()`, and `save()` | [Edit cells](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/editing-cells.md) |
 | Format cells, and insert or delete rows and columns | The editor instance and `useEditorCommand` | [Format cells and change the structure](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/formatting-and-structure.md) |
 | Add, rename, and move sheets, copy and paste, and set sizes | The editor instance | [Sheets, clipboard, and sizes](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/sheets-clipboard-and-sizes.md) |

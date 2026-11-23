@@ -1,14 +1,28 @@
+<p align="center">
+  <a href="https://www.xlsx-editor.dev/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/eigenpal/xlsx-editor/main/.github/assets/readme-logo-dark.svg" />
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/eigenpal/xlsx-editor/main/.github/assets/readme-logo-light.svg" />
+      <img src="https://raw.githubusercontent.com/eigenpal/xlsx-editor/main/.github/assets/readme-logo-light.svg" alt="XLSX Editor by EigenPal" width="320" height="90" />
+    </picture>
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@xlsx-editor.dev/vue"><img src="https://img.shields.io/npm/v/@xlsx-editor.dev/vue.svg?style=flat-square&color=107C41" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/@xlsx-editor.dev/vue"><img src="https://img.shields.io/npm/dm/@xlsx-editor.dev/vue.svg?style=flat-square&color=107C41" alt="npm downloads" /></a>
+  <a href="https://github.com/eigenpal/xlsx-editor/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue.svg?style=flat-square&color=107C41" alt="license" /></a>
+</p>
+
 # @xlsx-editor.dev/vue
 
-The Vue 3 adapter for XLSX Editor. It is the twin of `@xlsx-editor.dev/react`, in the shape of the Vue adapters of DOCX Editor and PPTX Editor. It renders the workbook editor of `@xlsx-editor.dev/core` with its chrome: the toolbar, the formula bar, the grid, the sheet tabs, and the zoom control. The adapter holds no workbook state; the engine owns it.
+The Vue 3 adapter for XLSX Editor. It is the twin of `@xlsx-editor.dev/react`. `XlsxEditorRoot` owns the engine instance, `XlsxEditorViewport` scopes the styles, and `XlsxEditorContent` attaches the grid. The toolbar, formula bar, sheet tabs, and zoom control read the engine through composables and hold no workbook state.
 
-The Vue parts have the same props, markup, and behavior as the React parts. `scripts/parity/parity.contract.json` maps each React prop, ref member, and export to its Vue twin, and `bun run check:parity` keeps the two adapters in step.
-
-`@xlsx-editor.dev/core` is a peer dependency, so one dependency tree loads one copy of the engine.
+The Vue parts have the same props, markup, and behavior as the React parts. A part on React's `XlsxEditor.*` namespace is `XlsxEditor<Part>` or the part name in Vue, for example `XlsxEditorToolbar` or `FormulaBar`. A parity check maps each React prop, ref member, and export to its Vue twin.
 
 ## Install
 
-Install the package with its peer dependencies:
+Install the package with its peer dependencies. `@xlsx-editor.dev/core` is a peer, so one dependency tree loads one copy of the engine:
 
 ```bash
 npm install @xlsx-editor.dev/vue @xlsx-editor.dev/core vue
@@ -18,7 +32,7 @@ Install all `@xlsx-editor.dev` packages at the same minor version. The adapter a
 
 The type declarations need TypeScript 5.7 or later, with `moduleResolution` set to `bundler` or `node16`.
 
-The editor measures text with a WebAssembly text shaper. With Vite, use version 7.0.0 or later. `vite build` and the Vite 8 dev server handle the text shaper's `harfbuzz.wasm` and the font files with no setup. The Vite 7 dev server needs the `optimizeDeps` setting that the core README shows. If your bundler does not emit the files, serve them yourself, as [Serve the text shaper](https://github.com/eigenpal/xlsx-editor/blob/main/packages/core/README.md#serve-the-text-shaper) in the core README describes.
+The editor measures text with a WebAssembly text shaper. With Vite, use version 7.0.0 or later. `vite build` and the Vite 8 dev server handle the text shaper's `harfbuzz.wasm` and the font files with no setup. The Vite 7 dev server needs the `optimizeDeps` setting that the core README shows. If your bundler does not emit the files, serve them yourself. See [Serve the text shaper](https://github.com/eigenpal/xlsx-editor/blob/main/packages/core/README.md#serve-the-text-shaper) in the core README.
 
 ## Show a workbook
 
@@ -53,11 +67,11 @@ onBeforeUnmount(() => request.abort());
 
 To open a file that the user picks, pass `await file.arrayBuffer()` as `document`.
 
-The editor needs a browser. If your app renders on a server, render the editor only in the browser, for example in the `<ClientOnly>` component of Nuxt.
+The editor needs a browser. If your app renders on a server, render the editor only in the browser. In Nuxt, use the `<ClientOnly>` component.
 
 Set the height on the editor itself, with `style` or `class`. The grid fills the editor and scrolls inside it. A height on a parent element is not enough: without its own height, the grid has a height of 0. In development, the editor logs a warning when the stylesheet is missing.
 
-If a workbook does not open, the editor shows the reason in `StatusMessage`. To read the reason in code, listen to `change`. Its `status` is `failed`, `failure.code` is `package`, `fonts`, or `no-worksheet`, and `failure.detail` gives the engine's reason for your logs, as [Open a workbook](https://github.com/eigenpal/xlsx-editor/blob/main/packages/core/README.md#open-a-workbook) in the core README describes.
+If a workbook does not open, the editor shows the reason in `StatusMessage`. To read the reason in code, listen to `change`. Its `status` is `failed`, and `failure.code` is `package`, `fonts`, or `no-worksheet`. `failure.detail` gives the engine's reason for your logs, as [Open a workbook](https://github.com/eigenpal/xlsx-editor/blob/main/packages/core/README.md#open-a-workbook) in the core README describes.
 
 Without a `fonts` prop, the editor fetches the packaged substitute fonts of `@docx-editor.dev/fonts`. It never fetches anything that a workbook names.
 
@@ -97,7 +111,7 @@ defineProps<{ bytes?: Uint8Array }>();
 </template>
 ```
 
-Keep `StatusMessage` in your layout. It is the only part that shows the text of the editor state, such as the reason an edit was refused. Composables run only in a descendant of `XlsxEditorRoot`.
+Keep `StatusMessage` in your layout. It is the only part that shows the text of the editor state, such as the reason for a refused edit. Composables run only in a descendant of `XlsxEditorRoot`.
 
 `XlsxEditorToolbar` takes the parts `XlsxEditorToolbar.Slot` and `XlsxEditorToolbar.Group` in its default slot, as React's toolbar takes them as children. The following sample replaces the save control, removes the underline control, and adds a host group after the history group. Use the component of the sample in place of `<XlsxEditorToolbar />` in your layout, inside `XlsxEditorViewport`. `:preset="false"` renders only the default slot. The [Toolbar and keyboard](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md#toolbar-parts) guide describes the rules:
 
@@ -202,7 +216,7 @@ function keep() {
 </template>
 ```
 
-`save()` returns `null` before the editor mounts, when no workbook is open, while a workbook loads, after a load fails, and when the editor cannot store an open cell edit. Call the editing commands on the editor instance that `getEditor()` returns.
+`save()` returns `null` before the editor mounts, when no workbook is open, and while a workbook loads. It also returns `null` after a load fails, and when the editor cannot store an open cell edit. Call the editing commands on the editor instance that `getEditor()` returns.
 
 ## View mode
 
@@ -213,8 +227,8 @@ To show a workbook without letting the user change it, pass `mode="view"`. The d
 The editor shares the page with your app:
 
 - Every rule in the stylesheet selects an `xlsx-` class first. The rules do not style elements outside the editor.
-- The editor chrome sets the styles it needs. If you import the stylesheet after your app's CSS reset, such as Tailwind preflight, the reset does not change the chrome.
-- In a container with a `transform` or `scale` property that moves or scales the editor, such as a drawer or a side panel, toolbar lists open at their controls. A press on the grid selects the cell under the pointer, a column or row resize follows the pointer, and the sheet tab menu opens at the pointer.
+- The editor chrome sets the styles it needs. If you import the stylesheet after your app's CSS reset, the reset does not change the chrome.
+- The editor can be in a container with a `transform` or `scale` property, such as a drawer or a side panel. There, toolbar lists open at their controls. A press on the grid selects the cell under the pointer. A column or row resize follows the pointer, and the sheet tab menu opens at the pointer.
 - In a container that clips its overflow, toolbar lists stay in the visible part of the container.
 - More than one editor can be on a page. Control+S (Command+S on macOS) saves only the editor that holds the focus.
 
@@ -255,11 +269,12 @@ const bold = useEditorCommand('font.bold');
 </template>
 ```
 
-The composables read the same core functions as the React hooks, so both adapters show the same enabled state and the same refusal reasons. `XlsxEditorRoot` holds one editor subscription and shares it with every composable in it. For each export, see the [API report](https://github.com/eigenpal/xlsx-editor/blob/main/docs/api/vue/index.api.md).
+The composables read the same core functions as the React hooks. So both adapters show the same enabled state and refusal reasons. `XlsxEditorRoot` holds one editor subscription and shares it with every composable in it. For each export, see the [API report](https://github.com/eigenpal/xlsx-editor/blob/main/docs/api/vue/index.api.md).
 
-## Demo
+## Docs and demo
 
-Run `bun run dev:vue` in the repository to start the Vue demo of `examples/vue`.
+- [Vue adapter](https://github.com/eigenpal/xlsx-editor/blob/main/docs/site/content/vue/index.mdx): install, mount, and the map from the React API to Vue.
+- Live demo: `bun run dev:vue` in the repository (`examples/vue`).
 
 ## License
 

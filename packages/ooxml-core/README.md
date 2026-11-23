@@ -1,8 +1,18 @@
+<p align="center">
+  <a href="https://www.xlsx-editor.dev/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/eigenpal/xlsx-editor/main/.github/assets/readme-logo-dark.svg" />
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/eigenpal/xlsx-editor/main/.github/assets/readme-logo-light.svg" />
+      <img src="https://raw.githubusercontent.com/eigenpal/xlsx-editor/main/.github/assets/readme-logo-light.svg" alt="XLSX Editor by EigenPal" width="320" height="90" />
+    </picture>
+  </a>
+</p>
+
 # @eigenpal/ooxml-core
 
-The format-neutral OOXML layer of the EigenPal editors. It holds the code between the bytes of an OOXML (ECMA-376) file and a bounded XML tree, the text units, and the DrawingML color and geometry math. It has no SpreadsheetML, PresentationML, or WordprocessingML knowledge.
+The format-neutral OOXML layer of the EigenPal editors. It holds the code between the bytes of an OOXML (ECMA-376) file and a bounded XML tree. It also holds the text units and the DrawingML color and geometry math. It has no SpreadsheetML, PresentationML, or WordprocessingML knowledge.
 
-This package is private. The XLSX Editor engine inlines its code and its types at build time, so package consumers do not need a separate install. Do not import it from an adapter package or from an example.
+This package is private. The XLSX Editor engine inlines its code and its types at build time. Package consumers do not install it. Do not import it from an adapter package or from an example.
 
 ## What it holds
 
@@ -30,14 +40,18 @@ This package is private. The XLSX Editor engine inlines its code and its types a
 
 Every module is a copy of the same file in PPTX Editor (`eigenpal/pptx-editor`, `packages/ooxml-core/`) at commit `8dc88c4d`. The first line of each file names that source. Below that line, the file is equal to its PPTX Editor source. The exceptions are `index.ts`, whose header names this product, and `drawingml-preset-geometry.generated.ts`, which this repository generates.
 
-PPTX Editor copied most modules from DOCX Editor (`eigenpal/docx-editor`). Their second header line names the DOCX Editor path and commit, and the fixes that DOCX Editor does not have yet. The DrawingML color and geometry modules and `image-size.ts` are PPTX Editor's own. For the full history of each module, see the PPTX Editor README of this package.
+PPTX Editor copied most modules from DOCX Editor (`eigenpal/docx-editor`). Their second header line names the DOCX Editor path and commit. It also names the fixes that DOCX Editor does not have yet. The DrawingML color and geometry modules and `image-size.ts` are PPTX Editor's own. For the full history of each module, see the PPTX Editor README of this package.
 
-SpreadsheetML uses DrawingML for drawings, charts, and the theme, so XLSX Editor keeps the DrawingML modules. The theme color math for cells is different. SpreadsheetML cell colors use `tint` in HLS space (ECMA-376 Part 1, 18.8.19), so that math lives in the engine, not here.
+SpreadsheetML uses DrawingML for drawings, charts, and the theme, so XLSX Editor keeps the DrawingML modules. The theme color math for cells is different. SpreadsheetML cell colors use `tint` in HLS space (ECMA-376 Part 1, 18.8.19). That math lives in the engine, not here.
 
 ## Rules
 
 - No imports from `@xlsx-editor.dev/*` and no SpreadsheetML names. If a module needs either, it belongs in `packages/core`.
 - DOM-free. `src/tsconfig.json` compiles `src/` without the DOM library.
-- A fix here is a security fix for every product. Name the fix in the commit message and in the file header, and send it to the PPTX Editor and DOCX Editor teams.
+- A fix here is a security fix for every product. Name the fix in the commit message and in the file header. Send it to the PPTX Editor and DOCX Editor teams.
 - Keep each copied module equal to its source. `bun run test:docx-shared` runs DOCX Editor's tests of these modules against this package and reports any drift. It needs a local DOCX Editor checkout, and it reads that checkout without changing it.
 - Put a test of one module in `src/__tests__/`. Put a test that needs a workbook, the package model, or a fixture in `packages/core`.
+
+## License
+
+Apache-2.0. See [LICENSE](LICENSE). The preset shape geometry and the preset color names are ECMA-376 tables. The Ecma copyright notice covers them, not Apache-2.0.

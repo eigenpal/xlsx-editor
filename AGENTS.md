@@ -183,7 +183,7 @@ Preserve format identifiers, namespace URIs, content types, npm package names, O
 - **History.** The git history becomes public. Private plans, investigation notes, and review records stay in `local/`. Fold review rounds into the commit that they fix; do not file them as separate commits or issues.
 - **PRs.** Short title with a conventional-commit prefix. The body is the minimum the diff does not show, in the sections of `.github/pull_request_template.md`. A PR that resolves an issue ends its body with `Fixes #N`. No `@`-mentions, file lists, tooling footers, or emojis.
 - **Commits.** Conventional commits: `fix(core): ...`, `feat(react): ...`, `docs: ...`. A fix that closes an issue ends its subject with `(fixes #N)`.
-- **Issues.** Exactly one `area:*` label, one `priority:*` label, and a native type: `gh issue create --type Bug|Feature|Task --label "area:...,priority:..."`. The taxonomy is in `README.md`.
+- **Issues.** Exactly one `area:*` label, one `priority:*` label, and a native type: `gh issue create --type Bug|Feature|Task --label "area:...,priority:..."`. The taxonomy is in `CONTRIBUTING.md`, "Issue conventions".
 - **Styling.** All chrome CSS and color tokens live in the core stylesheet. Use `--doc-*` tokens, never hex or rgba. The workbook canvas is not themed.
 - **Shared code.** Code taken from DOCX Editor or PPTX Editor keeps a header with its source path and commit, and lists each intended difference.
 - **TypeScript.** `typecheck` runs `bun check`. The `typescript` dependency stays on version 6. Declaration builds use `typescript7`.

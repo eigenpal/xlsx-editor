@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://xlsx-editor.dev/">
+  <a href="https://www.xlsx-editor.dev/">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="./.github/assets/readme-logo-dark.svg" />
       <source media="(prefers-color-scheme: light)" srcset="./.github/assets/readme-logo-light.svg" />
@@ -8,105 +8,138 @@
   </a>
 </p>
 
-# xlsx-editor.dev
+<p align="center">
+  <a href="https://www.npmjs.com/package/@xlsx-editor.dev/core"><img src="https://img.shields.io/npm/v/@xlsx-editor.dev/core.svg?style=flat-square&color=107C41" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/@xlsx-editor.dev/core"><img src="https://img.shields.io/npm/dm/@xlsx-editor.dev/core.svg?style=flat-square&color=107C41" alt="npm downloads" /></a>
+  <a href="https://github.com/eigenpal/xlsx-editor/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0_%2B_Pro-blue.svg?style=flat-square&color=107C41" alt="license" /></a>
+  <a href="https://preview.xlsx-editor.dev/"><img src="https://img.shields.io/badge/Live_Demo-107C41?style=flat-square" alt="Demo" /></a>
+</p>
 
-An open-source editor and rendering engine for `.xlsx` workbooks, based on ECMA-376 (SpreadsheetML). It is part of the EigenPal editor family with [DOCX Editor](https://github.com/eigenpal/docx-editor) and [PPTX Editor](https://github.com/eigenpal/pptx-editor), and follows their architecture and security rules. Its packages take the same SDK shape: `@xlsx-editor.dev/core`, `@xlsx-editor.dev/react`, `@xlsx-editor.dev/vue`, and `@xlsx-editor.dev/i18n`.
+**XLSX Editor** is a WYSIWYG editor and rendering engine for `.xlsx` workbooks. Use it to open, edit, render, and save workbooks in the browser. It uses the ECMA-376 (Office Open XML) format. It is part of the EigenPal editor family, with [DOCX Editor](https://www.docx-editor.dev/) and [PPTX Editor](https://www.pptx-editor.dev/).
 
-To use the editor, read the [documentation](docs/site/content/index.mdx) and [XLSX fidelity](docs/site/content/xlsx-fidelity.mdx). The docs site renders the [support matrix](docs/site/data/support-matrix.ts) on that page: what the editor shows, edits, and saves.
+<p align="center">
+  <a href="https://preview.xlsx-editor.dev/">Live demo</a> | <a href="docs/site/content/index.mdx">Documentation</a> | <a href="https://www.docx-editor.dev/"><img src="./.github/assets/docx-editor-icon.svg" alt="" width="14" height="20" align="middle" /></a> <a href="https://www.docx-editor.dev/">DOCX Editor</a> | <a href="https://www.pptx-editor.dev/"><img src="./.github/assets/pptx-editor-icon.svg" alt="" width="24" height="20" align="middle" /></a> <a href="https://www.pptx-editor.dev/">PPTX Editor</a> | <a href="https://www.xlsx-editor.dev/"><img src="./.github/assets/xlsx-editor-icon.svg" alt="" width="24" height="20" align="middle" /></a> <a href="https://www.xlsx-editor.dev/">XLSX Editor</a>
+</p>
 
-The repository holds the engine (`packages/core`), its React and Vue adapters, the shared string catalog, the format-neutral OOXML layer (`packages/ooxml-core`), the SpreadsheetML reference material, the fixtures with their reference PDFs, and the repository tooling. The production plan is the OpenSpec change in [`openspec/changes/typed-ooxml-workbook-editor/`](openspec/changes/typed-ooxml-workbook-editor/). The OpenSpec change in [`openspec/changes/workbook-structure-editing/`](openspec/changes/workbook-structure-editing/) adds the sheet operations, the clipboard of a cell range, and the resize of columns and rows. The OpenSpec change in [`openspec/changes/workbook-fills-and-styles/`](openspec/changes/workbook-fills-and-styles/) paints pattern and gradient fills, and measures cell formats under cell style formats.
+## Quick start
+
+Install the adapter for your framework and its required engine peer:
+
+```bash
+npm install @xlsx-editor.dev/react @xlsx-editor.dev/core   # React
+npm install @xlsx-editor.dev/vue @xlsx-editor.dev/core     # Vue
+```
+
+See the [React](#react) or [Vue](#vue) quick start.
+
+For server use on Node.js, use `^20.16.0 || >=22.3.0`. Browser applications can use the packages with their build tool.
+
+## Features
+
+| Feature | Description |
+| --- | --- |
+| [Rendering](docs/site/content/xlsx-fidelity.mdx) | Show values, number formats, fonts, fills, borders, and merged cells. |
+| [Cell editing](packages/react/docs/editing-cells.md) | Edit values and formulas, apply formats, and insert or delete rows and columns, with undo and redo. |
+| [Save and reopen](docs/site/content/xlsx-fidelity.mdx#round-trip-contract) | Save the workbook with no loss of the content that the editor does not change. |
+| [React and Vue](#react) | Use either adapter with the same engine. |
+
+XLSX Editor is in early development. The [XLSX fidelity](docs/site/content/xlsx-fidelity.mdx) page lists what is supported.
 
 ## Packages
 
-If you build an app, install the React adapter, the engine, and React:
+| Package | Description | Docs |
+| --- | --- | --- |
+| [`@xlsx-editor.dev/react`](https://www.npmjs.com/package/@xlsx-editor.dev/react) | React editor components and hooks. | [React adapter](packages/react/README.md) |
+| [`@xlsx-editor.dev/vue`](https://www.npmjs.com/package/@xlsx-editor.dev/vue) | Vue 3 editor components and composables. | [Vue adapter](packages/vue/README.md) |
+| [`@xlsx-editor.dev/core`](https://www.npmjs.com/package/@xlsx-editor.dev/core) | The engine: read, lay out, paint, edit, and save. | [Core engine](packages/core/README.md) |
+| [`@xlsx-editor.dev/i18n`](https://www.npmjs.com/package/@xlsx-editor.dev/i18n) | Interface strings. | [Translations](packages/i18n/README.md) |
+| [`@xlsx-editor.dev/editor-api`](packages/editor-api/README.md) | A supported subset of the Office.js workbook API for server editing. | [Workbook automation](packages/editor-api/README.md) |
 
-```bash
-npm install @xlsx-editor.dev/react @xlsx-editor.dev/core react react-dom
+`@xlsx-editor.dev/editor-api` uses the EigenPal Pro License. See the [license terms](packages/editor-api/LICENSE.md).
+
+## React
+
+Import the stylesheet once, pass the workbook bytes to the editor, and give the editor a height:
+
+```tsx
+import { XlsxEditor } from '@xlsx-editor.dev/react';
+import '@xlsx-editor.dev/react/styles.css';
+
+export function App({ workbook }: { workbook: Uint8Array }) {
+  return <XlsxEditor document={workbook} style={{ height: '100vh' }} />;
+}
 ```
 
-| Package | What it holds |
-| --- | --- |
-| [`@xlsx-editor.dev/core`](packages/core/README.md) | The engine: read, layout, paint, edit, and save of a workbook in a browser. Read and save also run on a server. |
-| [`@xlsx-editor.dev/react`](packages/react/README.md) | The React editor component, with its toolbar, and the hooks |
-| [`@xlsx-editor.dev/vue`](packages/vue/README.md) | The Vue 3 editor component, with its toolbar, and the composables |
-| [`@xlsx-editor.dev/i18n`](packages/i18n/README.md) | The UI strings of the editor, with the English catalog |
+Set the height on the editor itself. A height on a parent element is not sufficient. For Next.js, load the editor with `dynamic(..., { ssr: false })`, as [Use with Next.js](packages/react/README.md#use-with-nextjs) shows.
+
+Full docs: [React adapter](packages/react/README.md) · [Layout and props](packages/react/docs/layout-and-props.md).
+
+## Vue
+
+Pass the same workbook bytes through the Vue adapter:
+
+```vue
+<script setup lang="ts">
+import { XlsxEditor } from '@xlsx-editor.dev/vue';
+import '@xlsx-editor.dev/vue/styles.css';
+
+defineProps<{ workbook: Uint8Array }>();
+</script>
+
+<template>
+  <XlsxEditor :document="workbook" style="height: 100vh" />
+</template>
+```
+
+For Nuxt and server-side rendering, show the editor only in the browser. The editor requires browser APIs.
+
+Full docs: [Vue adapter](packages/vue/README.md) · [Props and events](packages/vue/README.md#props-and-events).
+
+## Documentation
+
+- [Introduction](docs/site/content/index.mdx) and [quickstart](docs/site/content/quickstart.mdx): install the editor, open a workbook, and save it.
+- [Installation](docs/site/content/installation.mdx): packages, peer dependencies, styles, bundlers, and fonts.
+- [Customization](docs/site/content/customization/index.mdx): layout, toolbar, color mode, number locale, fonts, and language.
+- [Editor API](docs/site/content/editor-api/index.mdx): read and write cell values from code on a server.
+- [XLSX fidelity](docs/site/content/xlsx-fidelity.mdx): what the editor shows, edits, and saves.
+- [Known approximations](docs/site/content/known-approximations.mdx) and [workbook limits](docs/site/content/workbook-limits.mdx): where the render differs, and the limits of a file that opens.
+- [Accessibility](docs/site/content/accessibility.mdx): the keyboard, the screen reader, and the host page.
+
+The [`react`](packages/react/README.md) and [`vue`](packages/vue/README.md) READMEs list every part.
 
 ## Development
 
-You need [Bun](https://bun.sh/) (the version in `.bun-version`) and [Node.js](https://nodejs.org/) 24.
+Install the toolchain in [Contributing](CONTRIBUTING.md#prerequisites), then run these commands from the repository root:
 
 ```bash
-git clone https://github.com/eigenpal/xlsx-editor.git
-cd xlsx-editor
 bun install
+bun run demo         # React demo: localhost:5180
+bun run dev:vue      # Vue demo: localhost:5181
 bun run test
 ```
 
-## Run the demo
+The demo opens a sample workbook. You can also open the committed fixtures or a file of your own, edit it, and save it. The [repository map](docs/repo-map.md) lists the packages and what to read for each task.
 
-The demo in `examples/vite/` shows a workbook in the React editor, with its toolbar. It opens a sample workbook at start. From the **Workbook** list, you can also open the committed fixtures, or you can open a file that you pick. You can edit values and formats, and insert and delete rows and columns.
-
-- To write the edited workbook to a file, select **Save** in the page header or in the toolbar, or press Control+S (Command+S on macOS). In a browser with a file save picker, you pick the file. In another browser, the demo downloads the file. The demo cannot confirm a download, so if the workbook has unsaved edits, it still asks before you leave the page.
-- In the grid, Tab moves between the cells. To leave the grid from any cell, press Escape, then Tab. If Escape ends a pending copy or cut or cancels a cell edit, press Escape again before Tab. After that Escape, a cue over the grid says to press Tab or Shift+Tab. To move the focus among the page header, the toolbar, the grid, and the sheet tabs, press F6, or Shift+F6 to go back. To close a message, press Escape.
-- **Show all headings** is on by default. It shows the row and column headings of every sheet, also in a file that hides them, so you can select whole rows and columns. It changes only the view, not the saved file.
-- **View only** switches the editor to view mode, where edits are refused.
-- The sun and moon buttons switch the page between the light and the dark theme. The workbook keeps its own colors. The page starts light, or in the theme that you picked before, or in the theme of a `?theme=dark` or `?theme=light` address.
-- Before you open another workbook or leave the page with unsaved edits, the demo asks first.
-
-After `bun install`, run this command:
-
-```bash
-bun run demo
-```
-
-Then open `http://localhost:5180/` in a browser.
-
-To run the smoke check of the demo in Playwright Chromium, run `bun run test:e2e`. If you do not have Chromium for Playwright, install it first with `bunx playwright install chromium`. The flows of the demo run as happy-dom tests in `bun run test`. To rebuild the sample workbook or the demo icons, see [Demo sample and icons](CONTRIBUTING.md#demo-sample-and-icons).
-
-For setup, checks, and pull requests, see [Contributing to xlsx-editor.dev](CONTRIBUTING.md). For the rules that every contributor and agent follows, see [Agent instructions](AGENTS.md).
-
-## Repository layout
-
-| Path | What it holds |
-| --- | --- |
-| `packages/ooxml-core/` | `@eigenpal/ooxml-core`: bounded zip and XML reading, OPC names, sinks, limits, text units, and DrawingML color and geometry math. Private |
-| `packages/core/` | `@xlsx-editor.dev/core`, the engine: the store, the cascade, the layout, the paint, and the workbook editor |
-| `packages/react/` | `@xlsx-editor.dev/react`: the React adapter of the workbook editor |
-| `packages/vue/` | `@xlsx-editor.dev/vue`: the Vue 3 adapter of the workbook editor, the twin of the React adapter |
-| `packages/i18n/` | `@xlsx-editor.dev/i18n`: the shared string catalog |
-| `examples/vite/` | The demo that `bun run demo` starts |
-| `examples/vue/` | The Vue demo that `bun run dev:vue` starts |
-| `reference/` | ECMA-376 schemas and preset geometry, and quick references for SpreadsheetML and theme colors |
-| `openspec/` | The active OpenSpec changes and their requirements |
-| `fixtures/` | The synthetic workbooks that scripts build, their reference PDFs, and the save-check records |
-| `scripts/` | Repository gates and tools: the test runner, the line caps, lint rules, the security grep, the terminology check, the adapter parity checks, the fixture builder, schema validation, the fidelity harness, the save check, the support-matrix check, the sample workbook, and the demo check |
-| `docs/` | The repository map, the preserved content, the API reports, and the docs site source (`docs/site/`). The site pages include the [known approximations](docs/site/content/known-approximations.mdx) and the [workbook limits](docs/site/content/workbook-limits.mdx). |
-
-## Issue conventions
-
-Every issue has a type (`Bug`, `Feature`, or `Task`), exactly one `area:*` label, and exactly one `priority:*` label. A `component:*` label is optional.
-
-| Label | Use it for |
-| --- | --- |
-| `area:fidelity` | The render or the saved file differs from the reference PDF or from ECMA-376 |
-| `area:performance` | Load, layout, scroll, edit, or save time, and memory use |
-| `area:collaboration` | Shared editing, convergence, presence, and reconnect |
-| `area:ux` | The editor chrome, keyboard, focus, and accessibility |
-| `area:developer-experience` | The public API, adapters, docs, examples, and errors |
-| `area:agent-ready` | The automation API and agent workflows |
-| `priority:high` | Data loss, a security issue, a broken save, or a common path that fails |
-| `priority:medium` | A wrong result on a common path with a workaround |
-| `priority:low` | An edge case or a cosmetic difference |
-| `component:<package>` | The package that holds the fix, for example `component:core` or `component:ooxml-core` |
+Examples: [Vite](examples/vite) | [Vue](examples/vue)
 
 ## Contributing
 
-Read [Contributing to xlsx-editor.dev](CONTRIBUTING.md). You must sign the [Contributor License Agreement](CLA.md).
+See [Contributing](CONTRIBUTING.md) for setup, tests, and the [Contributor License Agreement](CLA.md) (CLA). The rules for every contributor are in [Agent instructions](AGENTS.md).
 
 ## License
 
-The repository uses [Apache 2.0](LICENSE), except for the material that the license scope notice in [`LICENSE`](LICENSE) excludes. The core package bundles ECMA-376 tables, and the Ecma copyright notice covers them. The files under `reference/ecma-376/` are Ecma International material; see [`reference/README.md`](reference/README.md). A package directory with its own `LICENSE.md` file uses the terms in that file. Third-party material keeps its own terms.
+The repository uses [Apache 2.0](LICENSE), except for the files that the license scope notice in [`LICENSE`](LICENSE) excludes. [`@xlsx-editor.dev/editor-api`](packages/editor-api/LICENSE.md) uses the EigenPal Pro License: production use requires a commercial agreement. Contact [licensing@eigenpal.com](mailto:licensing@eigenpal.com). Third-party material keeps its own terms.
 
-## Security
+## Security and feedback
 
-To report a vulnerability, see [Security policy](SECURITY.md).
+Report vulnerabilities through the [security policy](SECURITY.md). For other bugs, open a [GitHub issue](https://github.com/eigenpal/xlsx-editor/issues) with the steps to reproduce and a synthetic or sanitized workbook. Never attach confidential workbooks.
+
+---
+
+<p align="center">
+  <a href="https://www.docx-editor.dev/"><img src="./.github/assets/docx-editor-icon.svg" alt="" width="21" height="30" align="middle" /></a> <a href="https://www.docx-editor.dev/"><b>DOCX Editor</b></a>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://www.pptx-editor.dev/"><img src="./.github/assets/pptx-editor-icon.svg" alt="" width="36" height="30" align="middle" /></a> <a href="https://www.pptx-editor.dev/"><b>PPTX Editor</b></a>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://www.xlsx-editor.dev/"><img src="./.github/assets/xlsx-editor-icon.svg" alt="" width="36" height="30" align="middle" /></a> <a href="https://www.xlsx-editor.dev/"><b>XLSX Editor</b></a>
+</p>

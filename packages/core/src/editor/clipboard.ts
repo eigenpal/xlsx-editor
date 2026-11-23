@@ -58,7 +58,6 @@ import {
   MAX_FORMAT_NEW_CELLS,
   arrayFormulaIn,
   MAX_ROWS,
-  protectionRefusal,
   type CellInput,
   type Element,
   type FormulaWriteProblem,
@@ -79,6 +78,7 @@ import {
   type CheckBudget,
   type NumberLocale,
 } from '../cascade/index.ts';
+import { protectionChecks } from '../store/store/sheet-protection.ts';
 import { clearOps } from '../automation/index.ts';
 import type { CellEditing, EditTarget, RefusedBy, RunHistory } from './cell-editing.ts';
 import { refusalOf, type EditRefusal, type EditResult } from './cell-input.ts';
@@ -511,8 +511,9 @@ export class WorkbookClipboard {
     if (cut) {
       const box = [start.row, start.col, end.row, end.col] as const;
       const ops = clearOps(target.entry.name, selectionRef(target.selection), 'all');
+      const refusal = protectionChecks();
       for (const op of ops) {
-        const locked = protectionRefusal(target.pkg, op);
+        const locked = refusal(target.pkg, op);
         if (locked) return refuse(refusalOf(locked));
       }
       // A cell whose only value is in `mc:AlternateContent` is refused too: the copy cannot

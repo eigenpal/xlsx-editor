@@ -13,6 +13,7 @@ import {
   pastLimitText,
   type PartPastLimit,
 } from '@xlsx-editor.dev/core/editor';
+import { MAX_STORED_SHEET_NAME } from '@xlsx-editor.dev/core/store';
 import { buildXlsx, c, row } from '../../../scripts/fixtures/builder.ts';
 import { DEFAULT_ZIP_LIMITS, ZIP_RATIO_EXEMPT_BYTES } from '../../ooxml-core/src/zip.ts';
 import {
@@ -56,6 +57,7 @@ describe('the message of a file past a limit', () => {
     expect(text('xml.maxElements')).toEndWith(SMALLER);
     expect(text('zip.maxRatio')).not.toContain('Try');
     expect(text('xml.maxDepth')).not.toContain('Try');
+    expect(text('workbook.maxSheetNameLength')).not.toContain('Try');
   });
 
   test('a very long part name is cut to 64 characters, as each name from the file', () => {
@@ -110,6 +112,9 @@ describe('the message of a file past a limit', () => {
     expect(limit('xml.maxBytes')).toContain(`${XML_HARD_MAX_BYTES / MiB} MiB of XML`);
     expect(limit('xml.maxElements')).toContain(`${count(XML_DEFAULT_MAX_ELEMENTS)} elements`);
     expect(limit('xml.maxDepth')).toContain(`${MAX_XML_DEPTH} nested levels`);
+    expect(limit('workbook.maxSheetNameLength')).toContain(
+      `${count(MAX_STORED_SHEET_NAME)} UTF-16 code units in one sheet name`
+    );
   });
 
   test('the editor shows it when a shared string table passes a limit', async () => {

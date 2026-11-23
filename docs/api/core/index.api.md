@@ -580,7 +580,7 @@ export interface EditorEvents {
 export interface EditorFailure {
     readonly code: 'package' | 'fonts' | 'no-worksheet';
     readonly detail?: string;
-    readonly limit?: 'zip.maxEntries' | 'zip.maxTotalBytes' | 'zip.maxRatio' | 'xml.maxBytes' | 'xml.maxElements' | 'xml.maxDepth';
+    readonly limit?: 'zip.maxEntries' | 'zip.maxTotalBytes' | 'zip.maxRatio' | 'xml.maxBytes' | 'xml.maxElements' | 'xml.maxDepth' | 'workbook.maxSheetNameLength';
     readonly part?: string;
     readonly substituteFailures?: readonly SubstituteFontFailure[];
 }
@@ -1443,7 +1443,7 @@ export interface StatusNotice {
 export const statusSlice: (s: EditorSnapshot) => {
     status: "empty" | "failed" | "loading" | "ready";
     failure: "fonts" | "no-worksheet" | "package" | undefined;
-    failureLimit: "xml.maxBytes" | "xml.maxDepth" | "xml.maxElements" | "zip.maxEntries" | "zip.maxRatio" | "zip.maxTotalBytes" | undefined;
+    failureLimit: "workbook.maxSheetNameLength" | "xml.maxBytes" | "xml.maxDepth" | "xml.maxElements" | "zip.maxEntries" | "zip.maxRatio" | "zip.maxTotalBytes" | undefined;
     failurePart: string | undefined;
     partsPastLimit: readonly PartPastLimit[];
     refusal: EditRefusal | null;

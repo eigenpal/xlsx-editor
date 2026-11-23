@@ -69,7 +69,6 @@ import {
   cellKey,
   columnFormatAt,
   formatCellRef,
-  protectionRefusal,
   readSheetProtection,
   readXlsx,
   rowFormat,
@@ -89,7 +88,7 @@ import {
 import { parseCellRef } from '../store/cell-ref.ts';
 import type { Element } from '../store/package/tree.ts';
 import { holdsWrappedValue } from '../store/store/cells.ts';
-import { lockReader } from '../store/store/sheet-protection.ts';
+import { lockReader, protectionChecks } from '../store/store/sheet-protection.ts';
 import { hostWork, memoized, readMemo, type ReadMemo } from './host-memo.ts';
 import { formatIndex } from '../store/workbook/inherited-format.ts';
 import { sheetsByKey } from '../store/workbook/workbook-index.ts';
@@ -779,8 +778,9 @@ function firstRefusedWrite(
 
 /** The first cell, as `A1`, that the protection of its worksheet refuses a value write of. */
 function lockedCell(pkg: XlsxPackage, ops: readonly WorkbookOp[]): string | undefined {
+  const refusal = protectionChecks();
   for (const op of ops)
-    if (op.op === 'setCellValue' && protectionRefusal(pkg, op)?.lock === 'cell') return op.ref;
+    if (op.op === 'setCellValue' && refusal(pkg, op)?.lock === 'cell') return op.ref;
   return undefined;
 }
 

@@ -10,6 +10,7 @@ import {
 import {
   binaryPartOf,
   canonicalPackageFingerprint,
+  MAX_STORED_SHEET_NAME,
   readXlsx,
   relationshipsOf,
   xmlPartOf,
@@ -73,6 +74,30 @@ describe('bounded package read', () => {
     });
     const read = readXlsx(bytes);
     expect(read.ok ? null : read.error.reason).toBe('not-a-workbook');
+  });
+
+  // `x:sheet/@name` (`CT_Sheet`, ECMA-376 Part 1, 18.2.19) has no length limit in the standard.
+  // The read takes a stored name of at most 32,767 UTF-16 code units, the most text of one cell.
+  test('a stored sheet name of more than 32,767 code units refuses the workbook', () => {
+    const named = (name: string) =>
+      readXlsx(
+        buildXlsx({
+          sheets: [
+            { name: 'First', rows: row(1, [c('A1', 1)]) },
+            { name, rows: row(1, [c('A1', 2)]) },
+          ],
+        })
+      );
+    expect(MAX_STORED_SHEET_NAME).toBe(32_767);
+    const longest = named('N'.repeat(32_767));
+    expect(longest.ok).toBe(true);
+    if (longest.ok) expect(workbookIndex(longest.pkg)?.sheets[1]?.name.length).toBe(32_767);
+    const past = named('N'.repeat(32_768));
+    expect(past.ok ? null : past.error).toEqual({
+      reason: 'workbook',
+      detail: 'sheet-name-too-long',
+      limit: 'workbook.maxSheetNameLength',
+    });
   });
 });
 

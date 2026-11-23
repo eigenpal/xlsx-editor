@@ -107,7 +107,8 @@
       "zipMaxRatio": "a compression ratio of 200, which applies above 8 MiB of content",
       "xmlMaxBytes": "64 MiB of XML",
       "xmlMaxElements": "10,000,000 elements",
-      "xmlMaxDepth": "256 nested levels"
+      "xmlMaxDepth": "256 nested levels",
+      "workbookMaxSheetNameLength": "32,767 UTF-16 code units in one sheet name"
     },
     "pastLimit": {
       "styles": "The part {part} is too large or too complex to show, so every cell shows the default format. On a sheet that is not protected, Paste, Clear formats, and Clear all give the default format. Every other format change is refused. A save keeps the part as it is.",

@@ -18,7 +18,11 @@ import {
 } from '../../../packages/ooxml-core/src/xml-reader.ts';
 import { buildXlsx, type FixtureSheet } from '../../../scripts/fixtures/builder.ts';
 import { openingSheet, editorSheets } from '../../../packages/core/src/editor/editor-model.ts';
-import { readXlsx, workbookIndex } from '../../../packages/core/src/store/index.ts';
+import {
+  MAX_STORED_SHEET_NAME,
+  readXlsx,
+  workbookIndex,
+} from '../../../packages/core/src/store/index.ts';
 import { hasSheetToShow, readForOpen, readProblem, whyNotOpen } from './open-check.ts';
 
 const sheet = (name: string, state?: FixtureSheet['state']): FixtureSheet => ({
@@ -158,6 +162,13 @@ describe('the limit values of the messages and of docs/site/content/workbook-lim
     expect(part('too-large')).toEndWith(`${size(XML_HARD_MAX_BYTES)} of XML`);
     expect(part('too-many-elements')).toEndWith(`${count(XML_DEFAULT_MAX_ELEMENTS)} elements`);
     expect(part('too-deep')).toEndWith(`${MAX_XML_DEPTH} nested levels`);
+    expect(
+      readProblem({
+        reason: 'workbook',
+        detail: 'sheet-name-too-long',
+        limit: 'workbook.maxSheetNameLength',
+      })
+    ).toEndWith(`${count(MAX_STORED_SHEET_NAME)} UTF-16 code units in one sheet name`);
   });
 
   test('the page gives the value of each constant', () => {

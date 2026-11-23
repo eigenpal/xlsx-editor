@@ -23,7 +23,13 @@ import {
   XML_HARD_MAX_BYTES,
   type ZipLimits,
 } from '@eigenpal/ooxml-core';
-import { parseXmlPart, parseXmlPartSteps, type XmlPart, type XmlPartRejection } from './tree.ts';
+import {
+  parseXmlPart,
+  parseXmlPartSteps,
+  type Element,
+  type XmlPart,
+  type XmlPartRejection,
+} from './tree.ts';
 import { canonicalFingerprint, bytesFingerprint } from '../package-write/serialize.ts';
 import { attr, children, elements } from './query.ts';
 import { CONTENT_TYPE, NS, REL } from './namespaces.ts';
@@ -46,6 +52,9 @@ export interface XlsxPackage {
  * - `no-content-types`: the archive has no `[Content_Types].xml` part.
  * - `not-a-workbook`: the package has no workbook part of a known content type. `detail` gives
  *   the content type that was found, or what is missing.
+ * - `workbook`: the workbook part passes a limit of the read. `limit` names it:
+ *   `workbook.maxSheetNameLength` for a stored sheet name of more than `MAX_STORED_SHEET_NAME`
+ *   UTF-16 code units.
  * - `xml`: the XML of the part `partName` is malformed or crosses a limit. `detail` gives the
  *   XML reader's reason.
  */
@@ -58,6 +67,11 @@ export type PackageRejection =
     }
   | { readonly reason: 'no-content-types' }
   | { readonly reason: 'not-a-workbook'; readonly detail?: string }
+  | {
+      readonly reason: 'workbook';
+      readonly detail: 'sheet-name-too-long';
+      readonly limit: 'workbook.maxSheetNameLength';
+    }
   | { readonly reason: 'xml'; readonly partName: string; readonly detail: XmlPartRejection };
 
 export type PackageResult =
@@ -240,7 +254,36 @@ export function* readXlsxSteps(
       ok: false,
       error: { reason: 'not-a-workbook', detail: 'the main part is not x:workbook' },
     };
+  if (hasLongSheetName(root))
+    return {
+      ok: false,
+      error: {
+        reason: 'workbook',
+        detail: 'sheet-name-too-long',
+        limit: 'workbook.maxSheetNameLength',
+      },
+    };
   return { ok: true, pkg };
+}
+
+/**
+ * The longest sheet name that a read takes (`workbook.maxSheetNameLength`): 32,767 UTF-16 code
+ * units, as the file stores the name. The schema types `x:sheet/@name` (`CT_Sheet`, ECMA-376
+ * Part 1, 18.2.19) as `ST_Xstring` (22.9.2.19), and the standard states no length limit. The
+ * length counts the stored name, so each `_xHHHH_` escape counts as its seven stored code
+ * units. The value is the most text that one cell holds (`MAX_CELL_TEXT`), so a sheet name
+ * never holds more text than a cell. It is far above the 31 code units that a new name may
+ * have (`MAX_SHEET_NAME`), so a stored name that is longer than a new name still opens. Each op
+ * on a sheet names it, so the limit also bounds the cost of each sheet name lookup.
+ */
+export const MAX_STORED_SHEET_NAME = 32_767;
+
+/** Whether a sheet name of a workbook part passes `MAX_STORED_SHEET_NAME`. */
+function hasLongSheetName(root: Element): boolean {
+  for (const sheets of children(root, 'x:sheets'))
+    for (const sheet of children(sheets, 'x:sheet'))
+      if ((attr(sheet, 'name')?.length ?? 0) > MAX_STORED_SHEET_NAME) return true;
+  return false;
 }
 
 // ---------------------------------------------------------------- content types

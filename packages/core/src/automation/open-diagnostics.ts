@@ -31,6 +31,7 @@ export type WorkbookOpenDiagnosticCode =
   | 'open.xml-part-size-limit'
   | 'open.xml-depth-limit'
   | 'open.xml-element-limit'
+  | 'open.sheet-name-limit'
   | 'open.invalid-limits'
   | 'open.content-types-invalid'
   | 'open.missing-workbook'
@@ -47,7 +48,8 @@ export type WorkbookOpenLimit =
   | 'zip.maxRatio'
   | 'xml.maxBytes'
   | 'xml.maxElements'
-  | 'xml.maxDepth';
+  | 'xml.maxDepth'
+  | 'workbook.maxSheetNameLength';
 
 /**
  * Every zip and XML reason of the reader, by type: a new reader reason fails the type check here
@@ -97,6 +99,7 @@ export function xmlLimitOf(reason: string): XmlPartLimit | undefined {
 /** The reader limit that a refused open passed, or undefined when it passed none. */
 export function openLimitOf(error: PackageRejection): WorkbookOpenLimit | undefined {
   if (error.reason === 'xml') return xmlLimitOf(error.detail);
+  if (error.reason === 'workbook') return error.limit;
   if (error.reason !== 'zip') return undefined;
   return error.detail === 'too-many-entries' ? 'zip.maxEntries' : error.limit;
 }
@@ -123,6 +126,8 @@ function codeOf(
       return 'open.content-types-invalid';
     case 'not-a-workbook':
       return 'open.missing-workbook';
+    case 'workbook':
+      return 'open.sheet-name-limit';
     case 'zip':
     case 'xml':
       if (error.detail === 'too-large') {

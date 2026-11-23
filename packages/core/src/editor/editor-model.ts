@@ -130,7 +130,8 @@ export interface EditorFailure {
     | 'zip.maxRatio'
     | 'xml.maxBytes'
     | 'xml.maxElements'
-    | 'xml.maxDepth';
+    | 'xml.maxDepth'
+    | 'workbook.maxSheetNameLength';
   /**
    * With the code `fonts`, the packaged substitute faces that did not load while other faces
    * did. Only `onFontError` passes such a failure: the workbook opens, and `snapshot().failure`

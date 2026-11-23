@@ -131,6 +131,7 @@ const OPEN_HINTS: Readonly<Record<WorkbookOpenDiagnosticCode, string>> = {
   'open.xml-part-size-limit': `One XML part is larger than the per-part size limit. ${FIXED_LIMIT}`,
   'open.xml-depth-limit': `An XML part nests deeper than the depth limit. ${FIXED_LIMIT}`,
   'open.xml-element-limit': `An XML part has more elements than the element limit. ${FIXED_LIMIT}`,
+  'open.sheet-name-limit': `A sheet name is longer than the sheet name limit. ${FIXED_LIMIT}`,
   'open.invalid-limits': 'The limits of the reader are not valid numbers.',
   'open.content-types-invalid':
     'The file has no valid [Content_Types].xml part, so it is not a usable Office package. ' +

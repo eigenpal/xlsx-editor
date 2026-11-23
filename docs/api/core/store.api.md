@@ -488,6 +488,9 @@ export const MAX_ROW_HEIGHT = 409;
 export const MAX_ROWS = 1048576;
 
 // @public
+export const MAX_STORED_SHEET_NAME = 32767;
+
+// @public
 export const MAX_STYLE_RECORDS = 64000;
 
 // @public
@@ -686,6 +689,10 @@ export type PackageRejection = {
 } | {
     readonly reason: 'not-a-workbook';
     readonly detail?: string;
+} | {
+    readonly reason: 'workbook';
+    readonly detail: 'sheet-name-too-long';
+    readonly limit: 'workbook.maxSheetNameLength';
 } | {
     readonly reason: 'xml';
     readonly partName: string;

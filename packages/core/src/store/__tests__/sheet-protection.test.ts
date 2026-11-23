@@ -10,7 +10,11 @@ import { attr, child } from '../package/query.ts';
 import { saveXlsx } from '../package-write/save.ts';
 import { WorkbookDocumentStore } from '../store/document-store.ts';
 import type { WorkbookOp } from '../store/ops.ts';
-import { lockReader, readSheetProtection } from '../store/sheet-protection.ts';
+import {
+  lockReader,
+  protectionWorkTestRecorder,
+  readSheetProtection,
+} from '../store/sheet-protection.ts';
 import { rangeBounds } from '../store/clear-range.ts';
 import { cellKey, sheetIndex } from '../workbook/sheet-index.ts';
 import { formatIndex } from '../workbook/inherited-format.ts';
@@ -383,5 +387,69 @@ describe('a workbook protection', () => {
   test('allows sheet ops when lockStructure is false or absent, or with no element', () => {
     for (const attrs of ['lockStructure="0"', 'lockWindows="1"', undefined])
       for (const op of sheetOps) expect(code(storeWith(attrs), [op])).toBe('ok');
+  });
+});
+
+// The protection checks of a transaction run once, not for each op (`protectionChecks`). The
+// counts are exact on every machine, so the test needs no wall-clock limit. Sheet `P` holds the
+// rules of `storeOf`: column C is unlocked by its column format (xf 1), and B1 has xf 1.
+describe('the protection checks of a transaction', () => {
+  const N = 2000;
+  const work = protectionWorkTestRecorder();
+  const writes = (sheet: string, col = 'C'): WorkbookOp[] =>
+    Array.from({ length: N }, (_, i) => set(`${col}${i + 1}`, sheet));
+
+  test('N cell writes on a protected sheet resolve it, and read its protection, once', () => {
+    const store = storeOf();
+    work.reset();
+    expect(code(store, writes('P'))).toBe('ok');
+    expect(work.sheetResolves).toBe(1);
+    expect(work.protectionReads).toBe(1);
+    // Every new cell of column C takes xf 1: one read of its protection.
+    expect(work.formatReads).toBe(1);
+    expect(work.styleReads).toBe(0);
+  });
+
+  test('a cell format with no protection is read once, with its cell style once', () => {
+    const store = storeOf();
+    const formatted = (s: number): WorkbookOp[] =>
+      Array.from({ length: N }, (_, i) => ({
+        op: 'setCellFormatIndex',
+        sheet: 'P',
+        ref: `E${i + 1}`,
+        index: s,
+      }));
+    // xf 3 has no `x:protection` and no `@applyProtection`: it takes the protection of cell
+    // style 0, as format 0 of each new cell in column E does. The format changes nothing of
+    // the protection, so `formatCells="0"` allows it.
+    const allowed = storeOf('formatCells="0"');
+    work.reset();
+    expect(code(allowed, formatted(3))).toBe('ok');
+    expect(work.sheetResolves).toBe(1);
+    expect(work.protectionReads).toBe(1);
+    expect(work.formatReads).toBe(2);
+    expect(work.styleReads).toBe(1);
+    // The same checks refuse the same run when the sheet does not allow format edits.
+    expect(code(store, formatted(3))).toBe('locked');
+  });
+
+  test('N cell writes on a sheet with no protection resolve it, and read it, once', () => {
+    const store = storeOf();
+    work.reset();
+    expect(code(store, writes('Free', 'A'))).toBe('ok');
+    expect(work.sheetResolves).toBe(1);
+    expect(work.protectionReads).toBe(1);
+    expect(work.formatReads).toBe(0);
+  });
+
+  test('a locked cell after N allowed writes still refuses the whole transaction', () => {
+    const store = storeOf();
+    const before = store.revision;
+    work.reset();
+    expect(code(store, [...writes('P'), set('A1')])).toBe('locked');
+    expect(store.revision).toBe(before);
+    expect(work.sheetResolves).toBe(1);
+    // A1 has format 0, locked by default: one more cell format read.
+    expect(work.formatReads).toBe(2);
   });
 });

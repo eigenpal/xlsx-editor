@@ -25,6 +25,7 @@ import {
   type WorkbookOp,
 } from '../store/index.ts';
 import type { NumberLocale } from '../cascade/index.ts';
+import { protectionChecks } from '../store/store/sheet-protection.ts';
 import {
   MAX_COLS,
   MAX_ROWS,
@@ -603,8 +604,9 @@ export class CellEditing {
     const target = this.#host.target();
     if (!target) return this.#refuse({ code: 'not-editable' });
     if (check) {
+      const protectionRefusalOf = protectionChecks();
       for (const op of ops) {
-        const locked = protectionRefusal(target.pkg, op);
+        const locked = protectionRefusalOf(target.pkg, op);
         if (locked) return this.#settle(command, { ok: false, rejection: locked });
       }
       const refusal = check(target);

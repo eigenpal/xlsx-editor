@@ -45,6 +45,8 @@ export function readProblem(error: PackageRejection): string {
       return 'the package has no content types part';
     case 'not-a-workbook':
       return 'the package is not a workbook';
+    case 'workbook':
+      return `the workbook passes the limit of ${t('status.limits.workbookMaxSheetNameLength')}`;
     case 'xml': {
       const detail = error.detail;
       // The file sets the name: show it as the editor's own messages do.

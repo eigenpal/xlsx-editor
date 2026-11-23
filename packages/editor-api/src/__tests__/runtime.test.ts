@@ -436,6 +436,24 @@ describe('load options and lifetime', () => {
     expect(limited.debugInfo.innerError?.message).toContain('fixed');
   });
 
+  test('a sheet name past its limit refuses the open with workbook.maxSheetNameLength', async () => {
+    const name = 'secret'.repeat(5462);
+    const bytes = buildXlsx({
+      sheets: [
+        { name: 'Data', rows: '' },
+        { name, rows: '' },
+      ],
+    });
+    const limited = await expectRefusal(
+      open(bytes),
+      'ResourceLimitExceeded',
+      'open.sheet-name-limit'
+    );
+    expect(limited.limit).toBe('workbook.maxSheetNameLength');
+    expect(limited.debugInfo.innerError?.message).toContain('fixed');
+    expectNoEcho(limited, ['secret']);
+  });
+
   test('each refused open names its diagnostic, and a hint with no file content', async () => {
     const text = (value: string) => new TextEncoder().encode(value);
     const types =

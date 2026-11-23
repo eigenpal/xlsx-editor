@@ -34,15 +34,30 @@
 // sheet op (`addSheet`, `renameSheet`, `deleteSheet`, `moveSheet`) is then refused with
 // `locked` and the rule `workbook`. The store does not enforce `@lockWindows` or
 // `@lockRevision`, and keeps its password hash as the file holds it.
+//
+// A transaction checks each of its ops (`applyOps`), so a paste or a script of many cell writes
+// does the checks once, not for each op (`protectionChecks`): it resolves the worksheet of each
+// sheet name (`x:sheet/@name`, `CT_Sheet`, 18.2.19) once, reads the `x:sheetProtection` of each
+// worksheet part once, and reads the protection of each cell format (`x:cellXfs`, 18.8.10) and
+// of each cell style format (`x:cellStyleXfs`, 18.8.9) once. The caches live as long as the
+// checks of one transaction, and an edit that replaces a part makes a new key.
 
 import type { Element, XmlPart } from '../package/tree.ts';
-import { xmlPartOf, type XlsxPackage } from '../package/package.ts';
+import {
+  partOf,
+  relsPartName,
+  xmlPartOf,
+  type PackagePart,
+  type XlsxPackage,
+} from '../package/package.ts';
 import { attr, boolAttr, child } from '../package/query.ts';
 import { cellKey, sheetIndex, type SheetIndex } from '../workbook/sheet-index.ts';
 import {
   sheetByName,
   styleLists,
   workbookIndex,
+  type SheetEntry,
+  type StyleLists,
   type WorkbookIndex,
 } from '../workbook/workbook-index.ts';
 import { formatIndex, inheritedFormat } from '../workbook/inherited-format.ts';
@@ -124,8 +139,44 @@ export const STRUCTURE_PERMIT: Readonly<Record<StructuralOpName, keyof SheetProt
   deleteColumns: 'allowDeleteColumns',
 };
 
-/** What the protection of a worksheet allows, or null when `@sheet` is not true. */
+// Work counters for tests, as `sheetIndexTestRecorder` (`workbook/sheet-index.ts`): a count is
+// exact on every machine, a wall-clock limit is not.
+const work = { sheetResolves: 0, protectionReads: 0, formatReads: 0, styleReads: 0 };
+
+/**
+ * @internal Counts the work of the protection checks: the sheet names resolved to a worksheet
+ * (`sheetResolves`), the `x:sheetProtection` reads (`protectionReads`), and the protection reads
+ * of a cell format (`formatReads`) and of a cell style format (`styleReads`).
+ */
+export function protectionWorkTestRecorder(): Readonly<typeof work> & { reset(): void } {
+  return {
+    get sheetResolves() {
+      return work.sheetResolves;
+    },
+    get protectionReads() {
+      return work.protectionReads;
+    },
+    get formatReads() {
+      return work.formatReads;
+    },
+    get styleReads() {
+      return work.styleReads;
+    },
+    reset() {
+      work.sheetResolves = 0;
+      work.protectionReads = 0;
+      work.formatReads = 0;
+      work.styleReads = 0;
+    },
+  };
+}
+
+/**
+ * What the protection of a worksheet allows, or null when `@sheet` is not true
+ * (`CT_SheetProtection`, ECMA-376 Part 1, 18.3.1.85).
+ */
 export function readSheetProtection(root: Element | undefined): SheetProtection | null {
+  work.protectionReads += 1;
   const el = child(root, 'x:sheetProtection');
   if (boolAttr(el, 'sheet') !== true) return null;
   // An attribute that is true, or absent (its default), locks its action.
@@ -141,28 +192,53 @@ export function readSheetProtection(root: Element | undefined): SheetProtection 
   };
 }
 
-/** The `x:protection` of a cell format, with the cell style fallback. */
-function xfProtection(
-  xfs: readonly Element[],
-  styleXfs: readonly Element[],
-  s: number
-): Element | undefined {
-  const xf = xfs[s] ?? xfs[0];
-  const protection = child(xf, 'x:protection');
-  if (protection || boolAttr(xf, 'applyProtection') === true) return protection;
-  return child(styleXfs[formatIndex(attr(xf, 'xfId')) ?? 0], 'x:protection');
-}
+/** The lock and the hidden state of cell formats, by cell format index. */
+type LockReader = ReturnType<typeof lockReaderOf>;
 
-/** The lock and the hidden state of the cell formats of a package, by cell format index. */
-export function lockReader(pkg: XlsxPackage, index: WorkbookIndex) {
-  const lists = styleLists(pkg, index);
-  const protection = (s: number) => xfProtection(lists.cellXfs, lists.cellStyleXfs, s);
+/**
+ * The lock and the hidden state of the cell formats of one styles part, by cell format index.
+ * The `x:protection` (`CT_CellProtection`, 18.8.33) of each cell format (`x:cellXfs`, 18.8.10)
+ * and of each cell style format (`x:cellStyleXfs`, 18.8.9) is read once for each reader.
+ */
+function lockReaderOf(lists: StyleLists) {
+  const xfs = lists.cellXfs;
+  const styleXfs = lists.cellStyleXfs;
+  // The `x:protection` of each cell format and of each cell style format, by index. A key that
+  // is present with the value undefined is a format with no `x:protection`.
+  const byFormat = new Map<number, Element | undefined>();
+  const byStyle = new Map<number, Element | undefined>();
+  const styleProtection = (xfId: number): Element | undefined => {
+    if (byStyle.has(xfId)) return byStyle.get(xfId);
+    work.styleReads += 1;
+    const el = child(styleXfs[xfId], 'x:protection');
+    byStyle.set(xfId, el);
+    return el;
+  };
+  // A cell format with no `x:protection` and no `@applyProtection` takes the protection of its
+  // cell style (`@xfId`).
+  const protection = (s: number): Element | undefined => {
+    if (byFormat.has(s)) return byFormat.get(s);
+    work.formatReads += 1;
+    const xf = xfs[s] ?? xfs[0];
+    const own = child(xf, 'x:protection');
+    const el =
+      own || boolAttr(xf, 'applyProtection') === true
+        ? own
+        : styleProtection(formatIndex(attr(xf, 'xfId')) ?? 0);
+    byFormat.set(s, el);
+    return el;
+  };
   return {
-    count: lists.cellXfs.length,
+    count: xfs.length,
     // `@locked` is true by default, and `@hidden` false (`CT_CellProtection`, 18.8.33).
     locked: (s: number) => boolAttr(protection(s), 'locked') !== false,
     hidden: (s: number) => boolAttr(protection(s), 'hidden') === true,
   };
+}
+
+/** The lock and the hidden state of the cell formats of a package, by cell format index. */
+export function lockReader(pkg: XlsxPackage, index: WorkbookIndex): LockReader {
+  return lockReaderOf(styleLists(pkg, index));
 }
 
 /** The cell format index of a cell, or of the row or column format when it does not exist. */
@@ -197,11 +273,7 @@ const locked = (
 });
 
 /** The first locked cell that a value edit of `box` changes, or undefined. Sparse. */
-function firstLocked(
-  sheet: SheetIndex,
-  box: RangeBox,
-  lock: ReturnType<typeof lockReader>
-): string | undefined {
+function firstLocked(sheet: SheetIndex, box: RangeBox, lock: LockReader): string | undefined {
   const [top, left, bottom, right] = box;
   // One cell: the cell that exists, or the format that a new cell takes.
   if (top === bottom && left === right)
@@ -217,8 +289,74 @@ function firstLocked(
   return undefined;
 }
 
+/** The reads of the protection checks, which `protectionChecks` caches. */
+interface ProtectionReads {
+  /** The sheet with a name (`sheetByName`). */
+  entry(pkg: XlsxPackage, index: WorkbookIndex, name: string): SheetEntry | undefined;
+  /** What the protection of a worksheet part allows (`readSheetProtection`). */
+  protection(part: XmlPart): SheetProtection | null;
+  /** The lock reader of the cell formats of the package (`lockReader`). */
+  lock(pkg: XlsxPackage, index: WorkbookIndex): LockReader;
+}
+
+/**
+ * The protection checks of one transaction: a function that gives the refusal of an op by the
+ * protection of its sheet, or null, as `protectionRefusal` does. Its caches live as long as the
+ * function, so N cell writes on one sheet resolve the sheet name once, read the protection of
+ * each worksheet part once, and read the protection of each cell format once.
+ *
+ * - A sheet name resolves once while the workbook part and its relationship part stay the same
+ *   objects: only an edit of the sheet list (`x:sheets`, 18.2.20) or of those relationships can
+ *   change the worksheet that a name finds, and that edit replaces the part.
+ * - The protection is read once for each worksheet part object. An edit makes a new part object.
+ * - The protection of each cell format is read once while the cell format lists (`x:cellXfs`,
+ *   18.8.10, and `x:cellStyleXfs`, 18.8.9) stay the same objects.
+ */
+export function protectionChecks(): (pkg: XlsxPackage, op: WorkbookOp) => OpRejection | null {
+  // The names resolved against one workbook part and one relationship part. A Map keeps a
+  // file-supplied name such as `__proto__` a plain key.
+  let names:
+    | {
+        readonly main: XmlPart | undefined;
+        readonly rels: PackagePart | undefined;
+        readonly byName: Map<string, SheetEntry | undefined>;
+      }
+    | undefined;
+  const protections = new Map<XmlPart, SheetProtection | null>();
+  let locks: { readonly lists: StyleLists; readonly reader: LockReader } | undefined;
+  const reads: ProtectionReads = {
+    entry(pkg, index, name) {
+      const main = xmlPartOf(pkg, index.mainPart);
+      const rels = partOf(pkg, relsPartName(index.mainPart));
+      if (!names || names.main !== main || names.rels !== rels)
+        names = { main, rels, byName: new Map() };
+      if (names.byName.has(name)) return names.byName.get(name);
+      work.sheetResolves += 1;
+      const entry = sheetByName(index, name);
+      names.byName.set(name, entry);
+      return entry;
+    },
+    protection(part) {
+      if (protections.has(part)) return protections.get(part)!;
+      const protection = readSheetProtection(part.root);
+      protections.set(part, protection);
+      return protection;
+    },
+    lock(pkg, index) {
+      const lists = styleLists(pkg, index);
+      if (locks?.lists !== lists) locks = { lists, reader: lockReaderOf(lists) };
+      return locks.reader;
+    },
+  };
+  return (pkg, op) => refusalOf(pkg, op, reads);
+}
+
 /** The refusal of an op by the protection of its sheet, or null. */
 export function protectionRefusal(pkg: XlsxPackage, op: WorkbookOp): OpRejection | null {
+  return protectionChecks()(pkg, op);
+}
+
+function refusalOf(pkg: XlsxPackage, op: WorkbookOp, reads: ProtectionReads): OpRejection | null {
   if (SHEET_LIST_OPS.has(op.op)) {
     const index = workbookIndex(pkg);
     const protection = index ? readWorkbookProtection(pkg, index) : null;
@@ -232,10 +370,10 @@ export function protectionRefusal(pkg: XlsxPackage, op: WorkbookOp): OpRejection
   }
   if (!('sheet' in op)) return null;
   const index = workbookIndex(pkg);
-  const entry = index ? sheetByName(index, op.sheet) : undefined;
+  const entry = index ? reads.entry(pkg, index, op.sheet) : undefined;
   const part = xmlPartOf(pkg, entry?.partName);
   if (!index || !part) return null;
-  const protection = readSheetProtection(part.root);
+  const protection = reads.protection(part);
   if (!protection) return null;
   const name = entry!.name;
   const permit = Object.hasOwn(STRUCTURE_PERMIT, op.op)
@@ -247,7 +385,7 @@ export function protectionRefusal(pkg: XlsxPackage, op: WorkbookOp): OpRejection
     // A paste writes the format of each cell: a format that the cell already shows changes
     // nothing, so only a new format is refused.
     const box = rangeBounds(op.ref);
-    const lock = lockReader(pkg, index);
+    const lock = reads.lock(pkg, index);
     const now = box ? formatAt(sheetIndex(part), box[0], box[1], lock.count) : undefined;
     if (now === op.index) return null;
     if (!protection.allowFormatCells)
@@ -277,7 +415,7 @@ export function protectionRefusal(pkg: XlsxPackage, op: WorkbookOp): OpRejection
   if (op.op !== 'setCellValue' && op.op !== 'clearValues') return null;
   const box = rangeBounds(op.ref);
   if (!box) return null;
-  const cell = firstLocked(sheetIndex(part), box, lockReader(pkg, index));
+  const cell = firstLocked(sheetIndex(part), box, reads.lock(pkg, index));
   return cell ? locked(name, `cell ${cell} is locked`, 'cell') : null;
 }
 

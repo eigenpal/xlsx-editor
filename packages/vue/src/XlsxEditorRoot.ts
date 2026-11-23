@@ -106,7 +106,10 @@ export type XlsxEditorRootProps = ExtractPublicPropTypes<typeof xlsxEditorRootPr
 export const xlsxEditorRootEmits = {
   /** Once per editor, after the first open of `document` settles. */
   ready: (_editor: XlsxEditorInstance) => true,
-  /** After every change of the editor state, with the new snapshot. */
+  /**
+   * After every change of the editor state, with the new snapshot: a content change and a view
+   * change alike. The `change` event of `useEditorEvent` fires for content changes only.
+   */
   change: (_snapshot: EditorSnapshot) => true,
   /** When the fonts that measure and paint text do not load. */
   fontError: (_failure: EditorFailure) => true,

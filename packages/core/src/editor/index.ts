@@ -25,6 +25,7 @@ export {
   type ResolvedColorMode,
 } from './color-mode.ts';
 export { createXlsxEditor, type XlsxEditorInstance } from './xlsx-editor.ts';
+export type { DocumentChange, EditorEvents } from './editor-events.ts';
 export type { SavedWorkbook } from './editor-instance.ts';
 export {
   CUT_REFUSAL_CODES,

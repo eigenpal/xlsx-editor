@@ -118,6 +118,7 @@ export {
   workbookNumberFormatCodes,
 } from '@xlsx-editor.dev/core/editor';
 export { type EditorCommandState, useEditorCommand } from './useEditorCommand.ts';
+export { useEditorEvent } from './customization-hooks.ts';
 export type {
   ActiveCellFormat,
   CellEditMode,
@@ -129,7 +130,9 @@ export type {
   ClipboardContent,
   CopyResult,
   DecimalSteps,
+  DocumentChange,
   EditMove,
+  EditorEvents,
   EditorFailure,
   EditorMode,
   EditorSheet,

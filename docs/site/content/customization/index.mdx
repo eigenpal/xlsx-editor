@@ -22,11 +22,13 @@ Each guide holds the samples and the rules of its API. The Vue parts take the sa
 | [Number locale](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#number-locale) | Set the separators, the built-in format codes, and the currency symbol | `numberLocale` |
 | [Font changes](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#font-changes) | Replace the faces that measure and paint text | `fonts`, `onFontError` |
 | [Serve the text shaper](https://github.com/eigenpal/xlsx-editor/blob/main/packages/core/README.md#serve-the-text-shaper) | Serve the faces and the shaper from your own address | `setHarfBuzzWasmUrl`, `FontSource` |
+| [Editor events](/docs/customization/events) | Run your own code on a content change, a selection change, a refused edit, or a failed open | `useEditorEvent(event, handler)`, `editor.on(event, handler)` |
 | [Language](/docs/customization/language) | Translate the interface | `locale`, `useTranslation()` |
-| [Hooks](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#hooks), [Vue composables](https://github.com/eigenpal/xlsx-editor/blob/main/packages/vue/README.md#composables) | Read the editor state in your own parts | `useEditorState`, `useEditorColorMode`, and the other hooks |
+| [Hooks](/docs/react/hooks), [Vue composables](/docs/vue/composables) | Read the editor state in your own parts | `useEditorState`, `useEditorColorMode`, and the other hooks |
 
 ## Next steps
 
 - [Appearance](/docs/customization/appearance): theme the chrome and your own popups.
+- [Editor events](/docs/customization/events): react to content, selection, refusal, and open events.
 - [Language](/docs/customization/language): translate the interface.
 - [Accessibility](/docs/accessibility): the keyboard, the screen reader, and the host page.

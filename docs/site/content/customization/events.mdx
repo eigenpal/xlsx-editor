@@ -1,0 +1,181 @@
+---
+title: 'Editor events'
+description: 'Run your own code when the workbook content, the selection, a refused edit, or a failed open changes in the XLSX editor.'
+category: 'Customization'
+---
+
+The editor reports four typed events. Use them to save on a content change, to follow the selection in your own panel, to show a refused edit in your own message, or to log a failed open.
+
+| Event | Fires when | Handler arguments |
+| --- | --- | --- |
+| `change` | The workbook content changes: an edit, an undo, or a redo. A load that settles and a close also fire it. | `(change)` |
+| `selectionChange` | The shown sheet or the selection changes, also when a load settles or the workbook closes. | `(snapshot)` |
+| `rejection` | The editor refuses a command, an edit, or a save. | `(refusal, snapshot)` |
+| `openFailure` | A workbook does not open. | `(failure, snapshot)` |
+
+A zoom change, a mode change, and the text of an open cell edit fire no event. A change to view mode that commits an open cell edit with changed text fires `change` for that commit. Nothing fires for the state at the time that you subscribe.
+
+`selectionChange` fires only when the shown sheet or the selection changes. State that depends on the selection, such as `activeFormat`, does not fire it on its own. Read that state with `useEditorState`.
+
+A handler that throws does not stop the other handlers or the editor. The editor runs every handler, and reports each error as an uncaught error.
+
+## Subscribe on the packaged editor
+
+The packaged `<XlsxEditor>` takes no children. Subscribe with `editor.on(event, handler)` in its `onReady` callback (the `ready` event in Vue). `onReady` fires after the first open settles, so its events start after that open. The subscription ends when the editor is destroyed.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+import { XlsxEditor } from '@xlsx-editor.dev/react';
+
+export function Workbook({ bytes }: { bytes: Uint8Array }) {
+  return (
+    <XlsxEditor
+      document={bytes}
+      style={{ height: 600 }}
+      onReady={(editor) => {
+        editor.on('change', (change) => {
+          if (!change.source) console.log('edited', change.revision);
+        });
+      }}
+    />
+  );
+}
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<script setup lang="ts">
+import { XlsxEditor, type XlsxEditorInstance } from '@xlsx-editor.dev/vue';
+
+defineProps<{ bytes: Uint8Array }>();
+
+function onReady(editor: XlsxEditorInstance) {
+  editor.on('change', (change) => {
+    if (!change.source) console.log('edited', change.revision);
+  });
+}
+</script>
+
+<template>
+  <XlsxEditor :document="bytes" style="height: 600px" @ready="onReady" />
+</template>
+```
+
+</Framework>
+</FrameworkTabs>
+
+## Subscribe in a component
+
+In a layout that you compose from `XlsxEditor.Root` (`XlsxEditorRoot` in Vue), call `useEditorEvent(event, handler)` in a component inside the root. The subscription starts when the editor mounts and ends when the component unmounts.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+import { XlsxEditor, refusalText, useEditorEvent, useTranslation } from '@xlsx-editor.dev/react';
+
+function EditorEvents({ onSave }: { onSave: (revision: number) => void }) {
+  const { t } = useTranslation();
+  useEditorEvent('change', (change) => {
+    // A load or a close is not an edit: do not save for it.
+    if (!change.source) onSave(change.revision);
+  });
+  useEditorEvent('rejection', (refusal, snapshot) => {
+    console.warn(refusalText(refusal, t, snapshot.numberLocale));
+  });
+  useEditorEvent('openFailure', (failure) => {
+    console.error(failure.code, failure.detail);
+  });
+  return null;
+}
+
+export function Workbook({ bytes }: { bytes: Uint8Array }) {
+  return (
+    <XlsxEditor.Root document={bytes}>
+      <XlsxEditor.Viewport style={{ height: 600 }}>
+        <XlsxEditor.Toolbar />
+        <XlsxEditor.FormulaBar />
+        <XlsxEditor.Content />
+        <XlsxEditor.SheetTabs />
+        <XlsxEditor.StatusMessage />
+      </XlsxEditor.Viewport>
+      <EditorEvents onSave={(revision) => console.log('save', revision)} />
+    </XlsxEditor.Root>
+  );
+}
+```
+
+A new handler on each render does not subscribe again. The hook calls the latest handler.
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<!-- EditorEvents.vue: put it inside XlsxEditorRoot. -->
+<script setup lang="ts">
+import { refusalText, useEditorEvent, useTranslation } from '@xlsx-editor.dev/vue';
+
+const emit = defineEmits<{ save: [revision: number] }>();
+const { t } = useTranslation();
+
+useEditorEvent('change', (change) => {
+  // A load or a close is not an edit: do not save for it.
+  if (!change.source) emit('save', change.revision);
+});
+useEditorEvent('rejection', (refusal, snapshot) => {
+  console.warn(refusalText(refusal, t, snapshot.numberLocale));
+});
+useEditorEvent('openFailure', (failure) => {
+  console.error(failure.code, failure.detail);
+});
+</script>
+
+<template>
+  <slot />
+</template>
+```
+
+Call `useEditorEvent` in `setup`. The subscription ends with the component.
+
+</Framework>
+</FrameworkTabs>
+
+## Subscribe without an adapter
+
+`editor.on(event, handler)` subscribes to an editor instance directly. It returns the unsubscribe function. The adapter hooks call it, so both report the same events. The `EditorEvents` type lists the events and their handlers.
+
+```ts
+const off = editor.on('selectionChange', (snapshot) => {
+  console.log(snapshot.selectionRef);
+});
+// Later:
+off();
+```
+
+## Content changes and state changes
+
+The root's `onChange` prop (the `change` emit in Vue) fires after every change of the editor state, also a selection or a zoom change. The `change` event fires only when the workbook content changes. Use the event to save or to mark the workbook as changed. Keep `onChange` to render state of your own from each snapshot.
+
+The `change` event passes a `DocumentChange` with two fields. Read the new state with `editor.snapshot()` or `useEditorState`.
+
+- `revision`: the content revision after the change, the same number as `snapshot().revision`. It starts again at 0 on each open. Compare it with a revision that you kept, such as the revision of your last save, only while no change with the source `'load'` came between them.
+- `source`: `'load'` when a load settles, and `'close'` when the workbook closes. It is absent for an edit, an undo, and a redo. Do not start a save or other external work for a change with a `source`.
+
+A failed open fires `change` with the source `'load'`, and also `openFailure`.
+
+## Refused edits
+
+`rejection` reads `snapshot.refusal`. It fires once for each refused command, also when the editor refuses the same command again for the same reason. It does not fire again while the same refusal stays in the snapshot. While a workbook loads, each command is refused with the code `loading`. That refusal fires once for each run of the same refused command: a repeat with the same text does not fire until another refusal comes between, while a save or another command fires again. When a load drops an open cell edit, it fires once with the code `edit-dropped`, also when a `loading` refusal came between the drop and the end of the load.
+
+The snapshot fields `formatRefusal`, `structureRefusal`, `clearRefusal`, and `sheetEditRefusal` do not fire `rejection`. They say why a command would be refused for the current selection, so the toolbar can disable it. Read them with `useEditorState` or `useEditorCommand`.
+
+Show the text of a refusal with `refusalText`. The editor already announces each refusal in its live region, so do not announce it again in a live region of your own.
+
+## Next steps
+
+- [Language](/docs/customization/language): translate the interface and the refusal text.
+- [Hooks](/docs/react/hooks) and [Composables](/docs/vue/composables): read the editor state in your own parts.

@@ -15,6 +15,7 @@ import type {
 } from './editor-model.ts';
 import type { NumberLocale } from '../cascade/index.ts';
 import type { FontReport } from './substitute-fonts.ts';
+import type { EditorEvents } from './editor-events.ts';
 
 /**
  * The result of {@link XlsxEditorInstance.saveInTasks}.
@@ -76,6 +77,20 @@ export interface XlsxEditorInstance {
   detach(): void;
   /** Called after every change of `snapshot()`. Returns the unsubscribe function. */
   subscribe(listener: () => void): () => void;
+  /**
+   * Call `handler` each time `event` happens, as DOCX Editor's `on`: a content change, a
+   * selection change, a refused command, or a failed open (`EditorEvents`). Returns the
+   * unsubscribe function. Nothing fires for the state at the call. Unlike `subscribe`, which
+   * runs after every state change, each event fires only when its part of the state moves.
+   *
+   * @example
+   * ```ts
+   * const off = editor.on('change', (change) => {
+   *   if (!change.source) void upload(editor.save());
+   * });
+   * ```
+   */
+  on<E extends keyof EditorEvents>(event: E, handler: EditorEvents[E]): () => void;
   snapshot(): EditorSnapshot;
   /**
    * Show a sheet by its position in `snapshot().sheets`. Hidden sheets and chartsheets refuse. An

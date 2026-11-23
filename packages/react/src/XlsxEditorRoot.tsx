@@ -118,7 +118,7 @@ export interface XlsxEditorRootProps {
    * Editor's `onChange` does, compare `snapshot.revision` with the last one. DOCX Editor
    * passes a document change and PPTX Editor the instance; this editor passes the snapshot,
    * because it is the one immutable state object that chrome renders, and it carries the
-   * revision.
+   * revision. The `change` event of `useEditorEvent` fires for content changes only.
    */
   readonly onChange?: (snapshot: EditorSnapshot) => void;
   /**

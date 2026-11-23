@@ -1,0 +1,129 @@
+---
+title: 'Hooks'
+description: 'Connect React controls to XLSX editor state, commands, and events with hooks.'
+category: 'React'
+---
+
+Call these hooks from components inside `<XlsxEditor.Root>`, in a layout that you compose from the parts. The packaged `<XlsxEditor>` takes no children: with it, use the `onReady` callback, which receives the editor, and `editor.on(event, handler)` for events, as [Editor events](/docs/customization/events#subscribe-on-the-packaged-editor) shows. The types in these signatures, such as `ChromeSlotId`, `EditorSnapshot`, `EditorEvents`, and `XlsxEditorInstance`, are exported from `@xlsx-editor.dev/react`.
+
+## Connect a command button
+
+This button runs a toolbar command and shows why the command cannot run:
+
+```tsx
+import { useEditorCommand } from '@xlsx-editor.dev/react';
+
+function BoldButton() {
+  const bold = useEditorCommand('font.bold');
+  return (
+    <button
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={() => bold.execute()}
+      aria-disabled={!bold.isEnabled || undefined}
+      aria-pressed={bold.isActive}
+      title={bold.disabledReason ?? 'Bold'}
+    >
+      B
+    </button>
+  );
+}
+```
+
+Prevent the default action of `mousedown`, so the control does not take the focus from the grid. `useEditorCommand(slot: ChromeSlotId): EditorCommandState` takes a slot ID of the toolbar, as [Controls of your own](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md#controls-of-your-own) describes.
+
+| Member | Type | Description |
+| --- | --- | --- |
+| `execute(value?)` | `boolean` | Runs the command, with the picked value of a value slot. Returns `true` when the editor ran it. |
+| `isActive` | `boolean` | Command state at the active cell, such as bold on a bold cell. |
+| `isEnabled` | `boolean` | Whether the command can run. |
+| `disabledReason` | `string \| null` | Why the command cannot run, as text in the root locale. |
+| `hint` | `string \| null` | A hint for an enabled command, as text in the root locale. |
+| `value` | `string \| null` | Current value for value slots, such as a font name or a color as `RRGGBB`. |
+
+## Read state and events
+
+`useEditorState` subscribes to one slice of the snapshot. The component renders only when that slice changes:
+
+```tsx
+import { useEditorState } from '@xlsx-editor.dev/react';
+
+function SelectionLabel() {
+  const selected = useEditorState((s) => s.selectionRef);
+  return <span>{selected ?? 'No selection'}</span>;
+}
+```
+
+Pass a comparator for an object slice. Common fields include `status`, `sheets`, `activeSheet`, `selection`, `selectionRef`, `activeCell`, `activeFormat`, `mode`, `canUndo`, `canRedo`, `revision`, and `refusal`.
+
+| Hook | Returns | Notes |
+| --- | --- | --- |
+| `useEditorState(selector, isEqual?)` | `T` | Selected snapshot value. Before the editor mounts, the selector reads an empty snapshot. |
+| `useEditorSnapshot()` | `EditorSnapshot` | The whole snapshot, read again after each change. |
+| `useXlsxEditor()` | `XlsxEditorInstance \| null` | `null` before creation and outside a root. |
+| `useEditorEvent(event, handler)` | `void` | Subscribes for the component lifetime. |
+| `useEditorCommand(slot)` | `EditorCommandState` | One toolbar command. See [Connect a command button](#connect-a-command-button). |
+| `useEditorColorMode()` | `{ colorMode }` | `'light'` or `'dark'`, after `'system'` resolves. |
+| `useTranslation()` | `{ t }` | The translator for the root's `locale`. See [Language](/docs/customization/language). |
+| `useViewModeWaits()` | `boolean` | `true` while a change of the `mode` prop to view mode waits for the open cell edit. |
+
+### `useEditorEvent`
+
+`useEditorEvent(event, handler)` calls `handler` each time the event occurs, while the component is mounted. A new handler on each render does not subscribe again; the hook calls the latest one:
+
+```tsx
+import { refusalText, useEditorEvent, useTranslation } from '@xlsx-editor.dev/react';
+
+function RefusalToast({ show }: { show: (text: string) => void }) {
+  const { t } = useTranslation();
+  useEditorEvent('rejection', (refusal, snapshot) =>
+    show(refusalText(refusal, t, snapshot.numberLocale))
+  );
+  return null;
+}
+```
+
+| Event | Handler | Occurs when |
+| --- | --- | --- |
+| `change` | `(change) => void` | An edit applies, an undo or a redo runs, a load settles, or the workbook closes. `change` is a `DocumentChange`: its `source` is `'load'` or `'close'` for those causes, and absent for edits, undo, and redo. |
+| `selectionChange` | `(snapshot) => void` | The shown sheet or the selection changes, also when a load settles or the workbook closes. |
+| `rejection` | `(refusal, snapshot) => void` | The editor refuses a command, an edit, or a save. |
+| `openFailure` | `(failure, snapshot) => void` | A workbook does not open. |
+
+The `change` event fires only for content changes, while the root's `onChange` prop fires after every state change. The hook calls `editor.on(event, handler)`, which you can also call on an instance outside a root. [Editor events](/docs/customization/events) gives the rules of each event.
+
+### `useXlsxEditor`
+
+Use the instance for actions and one-time reads:
+
+```tsx
+import { useXlsxEditor } from '@xlsx-editor.dev/react';
+
+function SaveButton({ upload }: { upload: (bytes: Uint8Array) => Promise<void> }) {
+  const editor = useXlsxEditor();
+  return (
+    <button
+      disabled={!editor}
+      onClick={() => {
+        const bytes = editor?.save();
+        if (bytes) void upload(bytes);
+      }}
+    >
+      Save
+    </button>
+  );
+}
+```
+
+A direct `snapshot()` call does not subscribe the component. Use `useEditorState` for values that you render.
+
+## Limits
+
+- Call hooks inside `XlsxEditor.Root`. Outside it, `useXlsxEditor()` returns `null`.
+- `canUndo` reports undo availability, not unsaved changes. Compare `revision` with the revision of your last save.
+- `disabledReason` and `hint` are text in the root locale. They change when the root's `locale` prop changes.
+
+## See also
+
+- [Composables](/docs/vue/composables): the Vue twins of these hooks.
+- [Editor events](/docs/customization/events)
+- [Layout and props](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md)

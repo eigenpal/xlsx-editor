@@ -241,6 +241,7 @@ Your own content inside the editor, such as a layout around its parts in `XlsxEd
 | `useXlsxEditor()` | `UseXlsxEditorReturn`: a ref to the editor, or null before it mounts |
 | `useEditorState(selector, isEqual?, deps?)` | `UseEditorStateReturn<T>`: the selected slice of the snapshot, updated only when it changes. `deps` names a source whose change reads the slice again |
 | `useEditorSnapshot()` | `UseEditorSnapshotReturn`: the whole snapshot |
+| `useEditorEvent(event, handler)` | `UseEditorEventReturn`: nothing. It calls `handler` on each `change` (content only), `selectionChange`, `rejection`, or `openFailure` event until the component unmounts |
 | `useEditorCommand(slotId)` | `UseEditorCommandReturn`: `execute`, which returns `true` when the engine ran the command and `false` on a refusal, and `isEnabled`, `isActive`, `disabledReason`, `hint`, and `value` as computed refs |
 | `useTranslation()` | `UseTranslationReturn`: `t`, in the locale of `XlsxEditorRoot` |
 | `useViewModeWaits()` | `UseViewModeWaitsReturn`: `true` while a change of `mode` to view mode waits for the open cell edit |

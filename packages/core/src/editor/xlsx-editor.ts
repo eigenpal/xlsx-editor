@@ -80,10 +80,11 @@ import {
 export type { XlsxEditorInstance } from './editor-instance.ts';
 import type { Opened } from './opened-workbook.ts';
 import { workbookBytes } from './workbook-bytes.ts';
+import { EditorListeners } from './editor-events.ts';
 
 class Editor implements XlsxEditorInstance {
   private readonly options: XlsxEditorOptions;
-  private readonly listeners = new Set<() => void>();
+  private readonly events = new EditorListeners(this, () => this.edits.dropRefusal);
   private state: EditorSnapshot = EMPTY_SNAPSHOT;
   private opened: Opened | null = null;
   private active = -1;
@@ -148,7 +149,7 @@ class Editor implements XlsxEditorInstance {
           editChanged: this.edits.changed,
           composing: this.edits.composing,
         };
-        for (const l of [...this.listeners]) l();
+        this.events.notify();
       },
       schedule: () => this.schedule(),
       render: () => this.render(),
@@ -208,10 +209,8 @@ class Editor implements XlsxEditorInstance {
     return this.state;
   }
 
-  subscribe(listener: () => void): () => void {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  }
+  readonly subscribe: XlsxEditorInstance['subscribe'] = this.events.subscribe;
+  readonly on: XlsxEditorInstance['on'] = this.events.on;
 
   // Without a translator, the English catalog, as DOCX Editor's core does (`createT(en)`).
   private readonly t = (key: string, params?: Readonly<Record<string, string | number>>): string =>
@@ -256,7 +255,7 @@ class Editor implements XlsxEditorInstance {
       numberLocale: this.numberLocale,
       ...patch,
     };
-    for (const l of [...this.listeners]) l();
+    this.events.notify();
   }
 
   // ------------------------------------------------------------------ open
@@ -779,7 +778,7 @@ class Editor implements XlsxEditorInstance {
     this.detach();
     this.release();
     this.destroyed = true;
-    this.listeners.clear();
+    this.events.clear();
   }
 
   private registerFaces(): void {

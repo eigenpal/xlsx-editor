@@ -40,6 +40,7 @@
 import type { XlsxPackage } from '../package/package.ts';
 import { applyOps, type HistoryOp, type OpRejection, type WorkbookOp } from './ops.ts';
 import { touchedPartViolation } from './part-checks.ts';
+import { reportListenerError } from './listener-error.ts';
 import { sameNode } from './calc.ts';
 import { sheetByName, sheetNameKey, workbookIndex } from '../workbook/workbook-index.ts';
 import type { RangeBox } from './clear-range.ts';
@@ -237,19 +238,6 @@ export function changedParts(a: XlsxPackage, b: XlsxPackage): string[] {
   for (const [name, part] of b.parts) if (a.parts.get(name) !== part) out.push(name);
   for (const name of a.parts.keys()) if (!b.parts.has(name)) out.push(name);
   return out;
-}
-
-function reportListenerError(error: unknown): void {
-  const host = globalThis as {
-    reportError?: (e: unknown) => void;
-    queueMicrotask?: (task: () => void) => void;
-  };
-  if (typeof host.reportError === 'function') host.reportError(error);
-  else if (typeof host.queueMicrotask === 'function')
-    host.queueMicrotask(() => {
-      throw error;
-    });
-  else void Promise.reject(error);
 }
 
 /** The transactional document store of one workbook. */

@@ -1,4 +1,4 @@
-// The Vue twin of `examples/vite`, local only: `bun run dev:vue` at the repository root starts it.
+// The Vue twin of `examples/vite`: `bun run dev:vue` at the repository root starts it.
 // It builds against the workspace sources, so `bun install && bun run dev:vue` works from a clean
 // clone with no package build. It serves the public files of the React demo (`publicDir`), so
 // both demos open the same sample workbook. The HarfBuzz runtime and the font package find their
@@ -6,8 +6,7 @@
 // are excluded from it.
 //
 // After pptx-editor/examples/vue/vite.config.ts at d4502552 (EigenPal). Differences: the scope is
-// `@xlsx-editor.dev`, with no Pro, PDF export, or base path, and port 5181 is next to the React
-// demo's 5180.
+// `@xlsx-editor.dev`, with no Pro or PDF export, and port 5181 is next to the React demo's 5180.
 
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
@@ -19,6 +18,8 @@ const pkg = (path: string): string =>
 export default defineConfig({
   root: fileURLToPath(new URL('.', import.meta.url)),
   plugins: [vue()],
+  // The hosted build serves each demo under its own path (`bun run build:demos`).
+  base: process.env.VITE_BASE_PATH ?? '/',
   publicDir: fileURLToPath(new URL('../vite/public', import.meta.url)),
   resolve: {
     alias: [

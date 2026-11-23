@@ -23,8 +23,8 @@ Read these in order before you change anything:
 | `packages/i18n/` | `@xlsx-editor.dev/i18n`, the strings of the chrome. `en.json` is the source of truth. See its [README](../packages/i18n/README.md) |
 | `packages/react/` | `@xlsx-editor.dev/react`, the React adapter: the root, the viewport, the grid, and the chrome parts. Core is its peer. See its [README](../packages/react/README.md) |
 | `packages/vue/` | `@xlsx-editor.dev/vue`, the Vue 3 adapter: the twin of the React adapter, with the same props, ref members, and chrome parts. Core is its peer. See its [README](../packages/vue/README.md) |
-| `examples/vite/` | The demo: a Vite page with the React editor. It opens the sample workbook (`public/sample.xlsx`) at start, and also the committed fixtures and a picked file. `bun run demo` serves it on port 5180 |
-| `examples/vue/` | The Vue demo: a Vite page with the Vue editor. It opens the same sample workbook and a picked file. `bun run dev:vue` serves it on port 5181. It is for local use only |
+| `examples/vite/` | The demo: a Vite page with the React editor. It opens the sample workbook (`public/sample.xlsx`) at start, and also the committed fixtures and a picked file. `bun run demo` serves it on port 5180. `bun run build:demos` builds both demos into `examples/dist/`, the React demo at `/react/` and the Vue demo at `/vue/`. The root `vercel.json` deploys that folder |
+| `examples/vue/` | The Vue demo: a Vite page with the Vue editor. It opens the same sample workbook and a picked file. `bun run dev:vue` serves it on port 5181 |
 | `packages/ooxml-core/` | `@eigenpal/ooxml-core`, the format-neutral OOXML layer. Private. See its [README](../packages/ooxml-core/README.md) for each module and where it comes from |
 | `reference/ecma-376/` | ECMA-376 files, unmodified except one derived name list: the Transitional schemas (Part 4), seven Strict schemas (Part 1), the DrawingML preset geometry, and the predefined function names of Part 1, 18.17.7. See [`reference/README.md`](../reference/README.md) |
 | `reference/quick-ref/` | Short SpreadsheetML and theme color summaries, written for this project |

@@ -112,6 +112,8 @@ bun test --preload ./scripts/test/preload-dom.ts packages/react/src/__tests__/fi
 Other test commands:
 
 - `bun run test` runs one `bun test` process per test file over a pool of workers, as CI does. CI splits the files over three `unit` jobs (`--shard 1/3` to `3/3`), balanced by the durations that each push to `main` records, and runs each source check (`lint`, `typecheck`, `policy`, `xsd`, `build`, `fidelity`, `e2e`, `changeset`) as a job of its own. It includes the adapter tests in `packages/react` and `packages/vue`, and preloads happy-dom for those files only.
+
+  CI runs on the standard GitHub-hosted `ubuntu-24.04` runners. Each job has 4 vCPUs, and `bun run test` starts one worker for each CPU (`availableParallelism()`), up to the memory cap. Pull requests from forks run the same jobs with no repository secrets; only the sticky comments of the `package-size` job and the speed bench need a branch of this repository, and a fork pull request finds those numbers in the job artifacts. The durations cache key names the runner (`test-durations-ubuntu-2404-`), so a change of runner starts a new balance instead of a split measured on other machines. Until the first push to `main` on a new runner saves durations, each shard splits by file count.
 - `bun run test:changed` runs only the test files that your change can affect. Add `--list` to print them.
 - `bun run test:serial` runs the suite serially in two processes: the DOM-free packages and scripts, then `packages/react` and `packages/vue` with the DOM preload. Use it to find a test that depends on file order or leaves module state behind.
 - `bun run test:dom` runs the adapter tests in one process with the DOM preload, as PPTX Editor does. Use it to find a test that leaves state on `document`.

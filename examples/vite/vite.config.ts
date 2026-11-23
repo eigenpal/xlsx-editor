@@ -18,6 +18,8 @@ const pkg = (path: string): string =>
 export default defineConfig({
   root: fileURLToPath(new URL('.', import.meta.url)),
   plugins: [react()],
+  // The hosted build serves each demo under its own path (`bun run build:demos`).
+  base: process.env.VITE_BASE_PATH ?? '/',
   resolve: {
     alias: [
       {

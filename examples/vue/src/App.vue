@@ -105,7 +105,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warn));
 
 void open(
   async () => {
-    const response = await fetch('/sample.xlsx');
+    const response = await fetch(`${import.meta.env.BASE_URL}sample.xlsx`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.arrayBuffer();
   },

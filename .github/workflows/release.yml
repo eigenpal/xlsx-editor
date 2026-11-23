@@ -1,0 +1,345 @@
+name: Release
+
+# Adapted from pptx-editor/.github/workflows/release.yml at 8e843068. Differences: no canary
+# channel (changesets refuses a snapshot release in prerelease mode), no collaboration
+# baseline step, and the test and build steps of this repository's ci.yml.
+#
+# 1. Every push to main with pending changesets in `.changeset/` opens or updates a
+#    "chore: release" PR with the version bumps and CHANGELOG entries applied.
+# 2. When that PR is merged, the same flow sees no pending changesets and publishes.
+#
+# Prerelease mode. While `.changeset/pre.json` exists, `changeset version` writes prerelease
+# versions (for example 0.1.0-beta.0, then 0.1.0-beta.1), and `changeset publish` publishes
+# them to the dist-tag that the file names (`beta`), never to `latest`. Run
+# `bun changeset pre exit` in a pull request to make the next release a stable one.
+#
+# `mode` picks the path. On the publish path, `checks` and `build` must pass first, and
+# `release` publishes exactly the dist that `build` validated. On the PR-update path they
+# are skipped: `changeset version` only rewrites versions, and every contributing PR
+# already ran CI.
+#
+# `release` runs on a GitHub-hosted runner and publishes with npm trusted publishing
+# (OIDC), so no long-lived npm token exists. npm binds each package's trusted publisher to
+# this file name, `release.yml`. npm signs provenance only for public repositories, so
+# provenance follows the repository's visibility. Every job that can publish requires main,
+# so a manual run on another branch never updates the release PR or publishes.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  # Pending changesets: the PR-update path (checks and build skip). None: the publish path.
+  mode:
+    name: Detect release mode
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      mode: ${{ steps.mode.outputs.mode }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Detect pending changesets
+        id: mode
+        run: node scripts/release-mode.mjs
+      - name: Refuse releases outside main
+        if: ${{ github.ref != 'refs/heads/main' }}
+        env:
+          REF: ${{ github.ref }}
+        run: echo "::warning::Releases run only from main. This run on $REF stops after mode detection."
+
+  # The same plan as CI's `unit-plan`: read the newest durations cache once and hand that
+  # one copy to every test shard, so `--balance` splits by measured time.
+  test-plan:
+    name: Prepublish test plan
+    needs: mode
+    if: ${{ github.ref == 'refs/heads/main' && needs.mode.outputs.mode == 'publish' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      planned: ${{ steps.restore.outputs.cache-matched-key != '' }}
+    steps:
+      - name: Restore test durations
+        id: restore
+        uses: actions/cache/restore@v6
+        with:
+          path: test-durations.json
+          key: test-durations-ubuntu-2404-${{ github.run_id }}
+          restore-keys: test-durations-ubuntu-2404-
+      - name: Hand the durations to the shards
+        if: steps.restore.outputs.cache-matched-key != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-test-durations-plan
+          path: test-durations.json
+          if-no-files-found: error
+          retention-days: 3
+
+  checks:
+    name: Prepublish ${{ matrix.label }}
+    needs: [mode, test-plan]
+    if: ${{ github.ref == 'refs/heads/main' && needs.mode.outputs.mode == 'publish' }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - label: lint
+            command: bun run lint && bun run format:check && bun run check:security
+          - label: typecheck
+            command: bun run typecheck
+          # The same three shards as CI. Without a plan, every shard falls back to the same
+          # split by file count, so the shards still partition the suite.
+          - label: tests (1/3)
+            command: bun run test --shard 1/3 --fail-fast --retry-failed --balance
+          - label: tests (2/3)
+            command: bun run test --shard 2/3 --fail-fast --retry-failed --balance
+          - label: tests (3/3)
+            command: bun run test --shard 3/3 --fail-fast --retry-failed --balance
+          - label: i18n
+            command: bun run i18n:validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      # The tests of the corpus schema task run xmllint, as in CI.
+      - name: Install xmllint
+        if: ${{ startsWith(matrix.label, 'tests') }}
+        run: command -v xmllint || (sudo apt-get update && sudo apt-get install -y libxml2-utils)
+      # Required when planned: a shard that lost the file would split differently.
+      - name: Download test durations
+        if: ${{ startsWith(matrix.label, 'tests') && needs.test-plan.outputs.planned == 'true' }}
+        uses: actions/download-artifact@v8
+        with:
+          name: release-test-durations-plan
+          path: node_modules/.cache/xlsx-editor
+      - run: ${{ matrix.command }}
+
+  build:
+    name: Prepublish build
+    needs: mode
+    if: ${{ github.ref == 'refs/heads/main' && needs.mode.outputs.mode == 'publish' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      - name: Build packages (publish reuses this dist)
+        run: bun run build:packages
+      - name: API snapshots
+        run: bun run api:check
+      - name: Generate third-party notices
+        run: bun run notices:generate
+      # Refuses source maps, build metafiles, and any file outside each export map.
+      - name: Check published package artifacts
+        run: bun run check:package-artifacts
+      - name: Check the shipped shaper
+        run: bun run check:shipped-shaper
+      - name: Upload publish artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: publish-dist
+          path: |
+            packages/*/dist
+            packages/*/THIRD_PARTY_NOTICES.md
+          if-no-files-found: error
+          retention-days: 3
+
+  release:
+    name: Release
+    needs: [mode, checks, build]
+    # checks and build are skipped on the PR-update path by design. The publish path needs
+    # both to succeed: a skipped gate on the publish path never publishes.
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && needs.mode.result == 'success' && ((needs.mode.outputs.mode == 'pending' && needs.checks.result == 'skipped' && needs.build.result == 'skipped') || (needs.mode.outputs.mode == 'publish' && needs.checks.result == 'success' && needs.build.result == 'success')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      # Read by notify-failure to tell "the changesets step failed" from "an earlier step
+      # failed", and "already published" from "nothing published".
+      changesets_outcome: ${{ steps.changesets.outcome }}
+      published: ${{ steps.changesets.outputs.published }}
+    permissions:
+      contents: write # push tags, create GitHub Releases
+      pull-requests: write # open or update the release PR
+      id-token: write # OIDC for npm trusted publishing
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      # npm trusted publishing needs npm 11.5.1 or later, which ships with Node 24.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - run: bun install --frozen-lockfile
+      # `bun install` runs `prepare` (husky). The local pre-commit hook must not gate the
+      # bot's "chore: release" commit: the checks above already ran on the publish path.
+      - name: Disable git hooks for automated commits
+        run: git config core.hooksPath /dev/null
+      - name: Download publish artifacts
+        if: ${{ needs.mode.outputs.mode == 'publish' }}
+        uses: actions/download-artifact@v8
+        with:
+          name: publish-dist
+          path: packages
+      - name: Release PR or publish
+        id: changesets
+        uses: changesets/action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          version-script: bun run version-packages
+          publish-script: bunx changeset publish
+          pr-title: 'chore: release'
+          commit-message: 'chore: release'
+        env:
+          NPM_CONFIG_PROVENANCE: ${{ github.event.repository.private && 'false' || 'true' }}
+
+      # changesets/action tags each package (`@xlsx-editor.dev/core@0.1.0`). The fixed group
+      # keeps every package on one version, so add one `vX.Y.Z` tag for the release as a whole.
+      - name: Create umbrella version tag (vX.Y.Z)
+        if: ${{ steps.changesets.outputs.published == 'true' && github.ref == 'refs/heads/main' }}
+        env:
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.published-packages }}
+        run: |
+          version=$(jq -r '.[0].version' <<<"$PUBLISHED_PACKAGES")
+          git tag -a "v$version" -m "Release v$version"
+          git push origin "v$version"
+
+      - name: Notify Slack — release succeeded
+        continue-on-error: true
+        if: ${{ steps.changesets.outputs.published == 'true' && env.SLACK_WEBHOOK_URL != '' }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.published-packages }}
+          ACTOR: ${{ github.actor }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SERVER_URL: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
+        run: |
+          # published-packages is JSON like [{"name":"@xlsx-editor.dev/core","version":"0.1.0"}].
+          version=$(jq -r '.[0].version' <<<"$PUBLISHED_PACKAGES")
+          packages_md=$(jq -r '.[] | "• <https://www.npmjs.com/package/\(.name)/v/\(.version)|\(.name)@\(.version)>"' <<<"$PUBLISHED_PACKAGES")
+          # GitHub Releases exist for the per-package tags, not for the umbrella tag.
+          # URL-encode `@` and `/` so the link resolves.
+          release_tag=$(jq -rn --argjson pkgs "$PUBLISHED_PACKAGES" '$pkgs[0].name + "@" + $pkgs[0].version | @uri')
+          release_url="$SERVER_URL/$REPO/releases/tag/$release_tag"
+          payload=$(jq -n \
+            --arg version "$version" \
+            --arg actor "$ACTOR" \
+            --arg run_n "$RUN_NUMBER" \
+            --arg run_url "$RUN_URL" \
+            --arg release "$release_url" \
+            --arg packages "$packages_md" \
+            '{
+              text: ":large_green_circle: xlsx-editor \($version) released",
+              blocks: [
+                { type: "section", text: { type: "mrkdwn", text: ":large_green_circle: *xlsx-editor \($version) released*" } },
+                { type: "section", fields: [
+                  { type: "mrkdwn", text: "*Version*\n<\($release)|\($version)>" },
+                  { type: "mrkdwn", text: "*Triggered by*\n\($actor)" }
+                ] },
+                { type: "section", text: { type: "mrkdwn", text: "*Packages*\n\($packages)" } },
+                { type: "context", elements: [ { type: "mrkdwn", text: "<\($run_url)|Run #\($run_n)>" } ] }
+              ]
+            }')
+          curl -sSf --connect-timeout 10 --max-time 30 -X POST -H 'Content-Type: application/json' -d "$payload" "$SLACK_WEBHOOK_URL" >/dev/null
+
+  # One Slack notice for any failure, with the most likely cause. A separate job, so a
+  # failed prepublish check still alerts when `release` never starts.
+  notify-failure:
+    name: Notify Slack — workflow failed
+    needs: [mode, checks, build, release]
+    if: ${{ failure() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Notify Slack
+        if: ${{ env.SLACK_WEBHOOK_URL != '' }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          ACTOR: ${{ github.actor }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          MODE_RESULT: ${{ needs.mode.result }}
+          CHECKS_RESULT: ${{ needs.checks.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          MODE: ${{ needs.mode.outputs.mode }}
+          CHANGESETS_OUTCOME: ${{ needs.release.outputs.changesets_outcome }}
+          PUBLISHED: ${{ needs.release.outputs.published }}
+        run: |
+          if [ "$PUBLISHED" = "true" ]; then
+            mode="post-publish"
+            title=":warning: xlsx-editor — release tagging failed after publication"
+            detail="Packages were published, but a later step failed (the version tag or the Slack message). Do not republish. Check the run and create the missing tag by hand."
+          elif [ "$MODE_RESULT" != "success" ]; then
+            mode="release-mode"
+            title=":x: xlsx-editor — release mode detection failed"
+            detail="The Detect release mode job failed, so no release PR was updated and no publish was attempted."
+          elif [ "$CHANGESETS_OUTCOME" != "failure" ]; then
+            mode="pre-release"
+            title=":x: xlsx-editor — pre-release step failed"
+            detail="A prepublish check or build failed (checks: $CHECKS_RESULT; build: $BUILD_RESULT), or release-job setup failed. No release PR was updated and no publish was attempted."
+          elif [ "$MODE" != "publish" ]; then
+            mode="release-pr"
+            title=":warning: xlsx-editor — failed to update release PR"
+            detail="The Release workflow could not assemble the \`chore: release\` PR. No publish was attempted. Likely cause: a malformed changeset file (wrong package name, bad frontmatter)."
+          else
+            mode="publish"
+            title=":x: xlsx-editor — release publish failed"
+            detail="No pending changesets, so the workflow tried to publish to npm and failed. Packages may be partly published; check the run logs."
+          fi
+          payload=$(jq -n \
+            --arg title "$title" \
+            --arg detail "$detail" \
+            --arg mode "$mode" \
+            --arg actor "$ACTOR" \
+            --arg run_n "$RUN_NUMBER" \
+            --arg run_url "$RUN_URL" \
+            '{
+              text: $title,
+              blocks: [
+                { type: "section", text: { type: "mrkdwn", text: "*\($title)*" } },
+                { type: "section", text: { type: "mrkdwn", text: $detail } },
+                { type: "section", fields: [
+                  { type: "mrkdwn", text: "*Mode*\n\($mode)" },
+                  { type: "mrkdwn", text: "*Triggered by*\n\($actor)" },
+                  { type: "mrkdwn", text: "*Run*\n<\($run_url)|#\($run_n)>" }
+                ] }
+              ]
+            }')
+          curl -sSf --connect-timeout 10 --max-time 30 -X POST -H 'Content-Type: application/json' -d "$payload" "$SLACK_WEBHOOK_URL" >/dev/null

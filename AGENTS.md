@@ -168,7 +168,7 @@ Author pages in `docs/site/content/` (MDX). Keep feature status in `docs/site/da
 
 ## Releasing
 
-Until the first package is published, no pull request has a changeset. After that, every code change to a published package gets one: the exact package name, `patch` by default, `minor` for additive public API, `major` for breaks, and a one-sentence summary for consumers. Never push the `chore: release` commit by hand or hand-edit `CHANGELOG.md` or `package.json#version`. Each publishable package ships its generated `THIRD_PARTY_NOTICES.md`.
+Every code change to a published package gets a changeset: the exact package name, `patch` by default, `minor` for additive public API, `major` for breaks, and a one-sentence summary for consumers. The packages are in prerelease mode (`.changeset/pre.json`), so each release is a beta on the `beta` dist-tag; see `CONTRIBUTING.md`, "Releases". Never push the `chore: release` commit by hand or hand-edit `CHANGELOG.md` or `package.json#version`. Each publishable package ships its generated `THIRD_PARTY_NOTICES.md`.
 
 ## Naming
 

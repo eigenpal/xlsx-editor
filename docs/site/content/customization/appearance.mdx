@@ -1,0 +1,250 @@
+---
+title: 'Appearance'
+description: 'Theme the XLSX editor interface with CSS color tokens, dark mode, interface fonts, control states, and a theme scope for your own popups.'
+category: 'Customization'
+---
+
+Theme the editor interface with `--doc-*` CSS properties on the `.xlsx-editor` element. Themes never change the grid or the saved workbook formatting.
+
+## Apply a theme
+
+Map your tokens to both editor palettes. Load this CSS after `@xlsx-editor.dev/react/styles.css` or `@xlsx-editor.dev/vue/styles.css`.
+
+```css
+.xlsx-editor.acme-theme,
+.xlsx-editor.acme-theme.dark {
+  --doc-primary: var(--app-brand);
+  --doc-primary-hover: var(--app-brand-hover);
+  --doc-primary-light: var(--app-brand-surface);
+  --doc-on-primary: var(--app-on-brand);
+  --doc-focus-ring: var(--app-focus-ring);
+}
+```
+
+`--doc-*` properties take CSS colors. XLSX Editor uses the same token names as DOCX Editor and PPTX Editor, so one theme styles all three products.
+
+Put your theme class on the element that carries `.xlsx-editor`: `XlsxEditor.Viewport` appends `className` after its own class. Set `colorMode` on `XlsxEditor.Root` or the packaged `XlsxEditor`.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+<XlsxEditor.Root document={bytes} colorMode="system">
+  <XlsxEditor.Viewport className="acme-theme">
+    {/* Toolbar, Content, StatusMessage */}
+  </XlsxEditor.Viewport>
+</XlsxEditor.Root>
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<template>
+  <XlsxEditorRoot :document="bytes" color-mode="system">
+    <XlsxEditorViewport class-name="acme-theme">
+      <!-- Toolbar, Content, StatusMessage -->
+    </XlsxEditorViewport>
+  </XlsxEditorRoot>
+</template>
+```
+
+</Framework>
+</FrameworkTabs>
+
+`colorMode` takes `'light'` (default), `'dark'`, or `'system'`. `'system'` follows the operating system and updates when it changes. Dark mode adds `.dark` beside `.xlsx-editor` on each scoped element. Only the chrome changes: the grid keeps the colors that the workbook defines.
+
+To match parts that you build, read `useEditorColorMode()`. It returns `colorMode`, which is `light` or `dark`. In Vue, `colorMode` is a computed ref.
+
+## Theme your own popups
+
+A popup that you portal to `document.body` is outside the viewport, so it does not get the tokens. Put the classes from `useScopeClassName()` on its root element, and add your theme class:
+
+- Outside `XlsxEditor.Viewport` and inside `XlsxEditor.Root`, the hook returns `'xlsx-editor '`, or `'xlsx-editor dark '` when `colorMode` resolves to dark. The value changes when `colorMode` changes.
+- Inside `XlsxEditor.Viewport`, the hook returns `''`, because the viewport already gives the scope.
+- Outside `XlsxEditor.Root`, the hook returns `'xlsx-editor '`, the light scope.
+
+The value ends with a space, so you can put your own classes after it. Render the component of the popup inside `XlsxEditor.Root` and outside `XlsxEditor.Viewport`:
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+import { createPortal } from 'react-dom';
+import { XlsxEditor, useScopeClassName } from '@xlsx-editor.dev/react';
+import '@xlsx-editor.dev/react/styles.css';
+
+function AcmeHelpPopup({ open }: { open: boolean }) {
+  const scope = useScopeClassName();
+  if (!open) return null;
+  return createPortal(
+    <div role="dialog" aria-label="Help" className={`${scope}acme-theme acme-popup`}>
+      Press F6 to move between the toolbar and the grid.
+    </div>,
+    document.body
+  );
+}
+
+export function Workspace({ bytes, helpOpen }: { bytes: Uint8Array; helpOpen: boolean }) {
+  return (
+    <XlsxEditor.Root document={bytes} colorMode="system">
+      <XlsxEditor.Viewport className="acme-theme" style={{ height: 600 }}>
+        <XlsxEditor.Toolbar />
+        <XlsxEditor.Content />
+        <XlsxEditor.StatusMessage />
+      </XlsxEditor.Viewport>
+      <AcmeHelpPopup open={helpOpen} />
+    </XlsxEditor.Root>
+  );
+}
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<!-- AcmeHelpPopup.vue -->
+<script setup lang="ts">
+import { useScopeClassName } from '@xlsx-editor.dev/vue';
+
+defineProps<{ open: boolean }>();
+const scope = useScopeClassName();
+</script>
+
+<template>
+  <Teleport to="body">
+    <div v-if="open" role="dialog" aria-label="Help" :class="`${scope}acme-theme acme-popup`">
+      Press F6 to move between the toolbar and the grid.
+    </div>
+  </Teleport>
+</template>
+```
+
+```vue
+<!-- Workspace.vue -->
+<script setup lang="ts">
+import {
+  StatusMessage,
+  XlsxEditorContent,
+  XlsxEditorRoot,
+  XlsxEditorToolbar,
+  XlsxEditorViewport,
+} from '@xlsx-editor.dev/vue';
+import '@xlsx-editor.dev/vue/styles.css';
+import AcmeHelpPopup from './AcmeHelpPopup.vue';
+
+defineProps<{ bytes: Uint8Array; helpOpen: boolean }>();
+</script>
+
+<template>
+  <XlsxEditorRoot :document="bytes" color-mode="system">
+    <XlsxEditorViewport class-name="acme-theme" :style="{ height: '600px' }">
+      <XlsxEditorToolbar />
+      <XlsxEditorContent />
+      <StatusMessage />
+    </XlsxEditorViewport>
+    <AcmeHelpPopup :open="helpOpen" />
+  </XlsxEditorRoot>
+</template>
+```
+
+In Vue, `useScopeClassName()` returns a computed ref. Call it in `setup`.
+
+</Framework>
+</FrameworkTabs>
+
+The scope class sets these styles on the popup element, as on the viewport:
+
+- Layout: `display: flex`, `flex-direction: column`, `min-height: 0`, and `overflow: hidden`.
+- Colors: `color: var(--doc-text)` and `background: var(--doc-bg)`. In dark mode, also `color-scheme: dark`.
+- Text: the `--doc-font-ui` font stack, `font-size: 13px`, `font-style: normal`, `font-weight: 400`, `line-height: normal`, `letter-spacing: normal`, `text-transform: none`, `text-align: start`, `white-space: normal`, `text-indent: 0`, `word-spacing: normal`, `tab-size: 8`, `font-feature-settings: normal`, `font-variation-settings: normal`, and antialiased font smoothing.
+- Descendants: `box-sizing: border-box` on every element inside the popup and on its `::before` and `::after` pseudo-elements. In a forced-colors theme, an element inside the popup that matches `:focus-visible` gets `outline-color: Highlight`. The rule sets no outline style or width.
+
+The scope class sets no size containment, so the popup keeps the width of its content. To change one of these styles, set it in a rule for your own class, after the editor stylesheet. Use the tokens in your popup rules, for example `background: var(--doc-popover-bg)`.
+
+A component inside `XlsxEditor.Viewport` that portals out of it gets `''` from the hook. Add `xlsx-editor` to its portaled element yourself, and add `dark` when `useEditorColorMode()` returns `dark`.
+
+## Choose theme properties
+
+### Interface palette reference
+
+These properties take CSS colors. The table lists only the properties that an XLSX Editor rule reads. Other `--doc-*` tokens are defined for parity with DOCX Editor and PPTX Editor, but do not change this editor.
+
+| Purpose | Properties |
+| --- | --- |
+| Main surfaces | `--doc-surface` (the toolbar, the formula bar, the footer, and dialogs), `--doc-popover-bg` (menus and lists), `--doc-bg` (the editor background and the status strip), `--doc-bg-subtle` (the row and column headings, and the format preview) |
+| Hover, input | `--doc-bg-hover`, `--doc-bg-input` (the name box, the cell content box, and the entry fields of the toolbar) |
+| Primary actions | `--doc-primary`, `--doc-primary-hover`, `--doc-primary-light` (the selected sheet tab, the selected headings, and an active menu row), `--doc-on-primary` |
+| Active toggles | `--doc-toggle-active-bg`, `--doc-toggle-active-fg` |
+| Text and icons | `--doc-text`, `--doc-popover-fg`, `--doc-text-muted`, `--doc-text-subtle` (disabled controls) |
+| Tooltips | `--doc-tooltip-bg`, `--doc-tooltip-text` (the cue that tells how to leave the grid) |
+| Borders | `--doc-border`, `--doc-border-dark`, `--doc-border-input` |
+| Errors | `--doc-error`, `--doc-error-bg` (a refused edit and an invalid entry), `--doc-danger` (an invalid number format code) |
+| Warnings | `--doc-warning-bg`, `--doc-warning-text` (the notices of the status strip) |
+| Focus, selection | `--doc-focus-ring`, `--doc-cell-selection` (the fill of a selected range), `--doc-selection-halo` (the inner line of the active cell) |
+| Grid frame | `--doc-page-bg` (the grid surface behind the cells) |
+| Format preview | `--doc-canvas-bg`, `--doc-page-text` (the cell preview of the number format dialog) |
+| Shadow and overlay colors | `--doc-shadow`, `--doc-shadow-subtle` (dialogs), `--doc-overlay` (the backdrop of a dialog) |
+| Full `box-shadow` values | `--doc-card-shadow-strong` (menus and lists) |
+| Scrollbars | `--doc-scrollbar-thumb`, `--doc-scrollbar-track` |
+
+### Utility palette reference
+
+Values are HSL components without `hsl()`, such as `222.2 84% 4.9%`. Only two utility properties change this editor, through the `--doc-*` tokens that read them:
+
+| Property | Light mode | Dark mode |
+| --- | --- | --- |
+| `--foreground` | `--doc-toggle-active-bg`, `--doc-tooltip-bg` | `--doc-tooltip-text` |
+| `--muted` | None | `--doc-tooltip-bg` |
+
+The other utility properties, such as `--primary` and `--ring`, are defined for parity with DOCX Editor.
+
+### Size, typography, and layer reference
+
+| Property | Default |
+| --- | --- |
+| `--doc-font-ui` | System font stack. The chrome font. Cells keep the fonts of the workbook. |
+| `--doc-dialog-font-family` | `--doc-font-ui`. |
+| `--doc-dialog-font-size` | `13px`. |
+| `--doc-dialog-radius` | `8px`. |
+| `--doc-dialog-control-radius` | `4px`. |
+| `--doc-dialog-padding` | `24px`. Takes one length. |
+| `--doc-radius-panel` | `12px`. Toolbar lists and menus, the "More" panel, and the sheet tab menu. |
+| `--doc-radius-control` | Each part keeps its own value when unset: `7px` for buttons, color buttons, fields, sheet tabs, and the sheet rename field; `6px` for list options, menu rows, the **More number formats** item, and sheet tab menu rows. |
+| `--doc-radius-pill` | `999px`. The zoom buttons, the add sheet button, and the exit cue. |
+| `--doc-z-overlay` | `50`. Menus and lists. |
+
+The grid uses fixed layers from `1` to `5` for its focus ring, the cell editor, the resize guide, the exit cue, and the sheet tab rename field. Keep `--doc-z-overlay` above `5`.
+
+## Style control states
+
+Add your own class through a part's `className` prop. `XlsxEditor`, `XlsxEditor.Viewport`, `XlsxEditor.Content`, `XlsxEditor.Toolbar`, and `XlsxEditor.Toolbar.Group` take it.
+
+```css
+.xlsx-editor.acme-theme .acme-toolbar [data-active] {
+  background: var(--doc-toggle-active-bg);
+}
+.xlsx-editor.acme-theme .acme-toolbar [data-disabled] {
+  opacity: 0.5;
+}
+```
+
+Toolbar buttons and menu rows expose `data-active` and `data-disabled` presence attributes. A disabled control also carries `aria-disabled="true"`, not the native `disabled` attribute. It stays focusable and gives its reason to assistive technology, so do not hide it with `pointer-events: none` or `display: none`.
+
+## Limits
+
+- Give the editor a width and a height. In a host that sizes its content, such as an inline block, a centered flex column, or an absolute box with no width, the editor is 0 pixels wide: its width never follows its content.
+- Put the theme class on each element that carries `.xlsx-editor`: the viewport, and each popup that you scope with `useScopeClassName()`.
+- Keep `StatusMessage` inside the viewport. The notices of the status strip take their own rows in an editor narrower than 600 pixels. That rule reads the width of the viewport, so it does not apply to a status strip outside it.
+- Menus and lists render inside the control that opens them, so keep the toolbar and the sheet tabs inside the viewport.
+- The number format dialog carries its own `.xlsx-editor` scope only when it is outside a `.xlsx-editor` element.
+- Write dark overrides as `.xlsx-editor.<your-class>.dark`, after the editor stylesheet.
+- Dark mode changes on-screen colors only. It never changes the grid, and it never writes a color into the `.xlsx` file.
+- Keep the layer order. An ancestor stacking context can still clip an overlay.
+- With a forced-colors theme, the browser replaces the chrome colors. [High contrast themes](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#high-contrast-themes) lists how the stylesheet draws each state.
+
+## See also
+
+- [Color mode](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#color-mode)
+- [`--doc-*` token definitions](https://github.com/eigenpal/xlsx-editor/blob/main/packages/core/src/styles/editor.css)
+- [Language](/docs/customization/language)

@@ -66,7 +66,7 @@ import {
   xlsxTranslationKey,
   type LayoutParts,
 } from './context.ts';
-import { provideChromeDark, useChromeDark } from './color-mode.ts';
+import { provideChromeDark, provideScopedByAncestor, useChromeDark } from './color-mode.ts';
 import { isDevelopment } from './is-development.ts';
 
 /** The faces that measure and paint text: bytes, or a function that loads them once. @public */
@@ -282,7 +282,10 @@ export const XlsxEditorRoot = defineComponent({
 });
 
 const xlsxEditorViewportProps = {
-  /** Appended after the `xlsx-editor` class. A host `class` also works. */
+  /**
+   * Appended after the `xlsx-editor` and `xlsx-editor-viewport` classes. A host `class` also
+   * works.
+   */
   className: { type: String, default: undefined },
   /**
    * The name of the editor's landmark region. Default: "Workbook editor". `false` renders no
@@ -298,7 +301,8 @@ export type XlsxEditorViewportProps = ExtractPublicPropTypes<typeof xlsxEditorVi
 
 /**
  * The editor's styling scope and landmark region: carries the `.xlsx-editor` class, and `dark`
- * with it when the root's `colorMode` resolves to dark. F6 and Shift+F6 inside it move the
+ * with it when the root's `colorMode` resolves to dark. It also carries `xlsx-editor-viewport`,
+ * which keeps its width from following its content. F6 and Shift+F6 inside it move the
  * keyboard among the toolbar, the formula bar, the grid, and the footer. @public
  */
 export const XlsxEditorViewport = defineComponent({
@@ -308,11 +312,12 @@ export const XlsxEditorViewport = defineComponent({
     const { t } = useTranslation();
     const editor = useXlsxEditor();
     const dark = useChromeDark();
+    provideScopedByAncestor();
     return () =>
       h(
         'div',
         {
-          class: ['xlsx-editor', dark.value ? 'dark' : '', props.className]
+          class: ['xlsx-editor', dark.value ? 'dark' : '', 'xlsx-editor-viewport', props.className]
             .filter(Boolean)
             .join(' '),
           style: props.style,

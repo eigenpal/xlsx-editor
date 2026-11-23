@@ -3,13 +3,16 @@
 // follows the selection, the zoom control zooms, chrome presses keep the keyboard on the grid,
 // and the props, emits, and template ref act as React's props, callbacks, and ref do.
 //
-// Differences from React: the stylesheet rules of the status strip are core's and are checked
-// once, in the React test. A render count reads Vue's `updated` hook, where React's test reads
-// a `Profiler`.
+// Differences from React: the stylesheet rules of the status strip and of the scope class are
+// core's and are checked once, in the React test. A render count reads Vue's `updated` hook,
+// where React's test reads a `Profiler`.
 
 import { afterEach, describe, expect, test } from 'bun:test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fireEvent, waitFor } from '@testing-library/react';
 import {
+  Teleport,
   defineComponent,
   h,
   nextTick,
@@ -30,6 +33,7 @@ import {
   ZoomControl,
   useEditorColorMode,
   useEditorState,
+  useScopeClassName,
   xlsxEditorKey,
   type EditorSnapshot,
   type FontSource,
@@ -748,6 +752,89 @@ describe('XlsxEditor', () => {
       console.error = error;
       console.warn = warn;
     }
+  });
+
+  test('useScopeClassName follows colorMode, and a teleported host popup resolves the tokens', async () => {
+    // happy-dom computes a custom property that a rule declares on the element itself, so the
+    // test reads `--doc-bg` from the computed style of the popup and of the viewport.
+    const sheet = document.createElement('style');
+    sheet.textContent = readFileSync(
+      join(import.meta.dir, '../../core/src/styles/editor.css'),
+      'utf8'
+    );
+    document.head.append(sheet);
+    try {
+      const inside: string[] = [];
+      const Inside = defineComponent({
+        setup() {
+          // The color mode makes this part render again after a change, so the test reads the
+          // scope of that render.
+          const scope = useScopeClassName();
+          const { colorMode } = useEditorColorMode();
+          return () => {
+            inside.push(`${colorMode.value}:${scope.value}`);
+            return null;
+          };
+        },
+      });
+      const HostPopup = defineComponent({
+        setup() {
+          const scope = useScopeClassName();
+          return () =>
+            h(Teleport, { to: 'body' }, [
+              h('div', { class: `${scope.value}acme-popup`, 'data-popup': '' }),
+            ]);
+        },
+      });
+      const state = reactive<{ colorMode: 'dark' | 'light' }>({ colorMode: 'light' });
+      const view = mount(() =>
+        h(
+          XlsxEditorRoot,
+          { fonts: FONTS, colorMode: state.colorMode },
+          {
+            default: () => [
+              h(XlsxEditorViewport, null, { default: () => h(Inside) }),
+              h(HostPopup),
+            ],
+          }
+        )
+      );
+      const popup = () => document.body.querySelector('[data-popup]') as HTMLElement;
+      const viewport = () => view.container.querySelector('.xlsx-editor') as HTMLElement;
+      const token = (el: HTMLElement) => getComputedStyle(el).getPropertyValue('--doc-bg');
+      expect(inside.at(-1)).toBe('light:');
+      expect(popup().parentElement).toBe(document.body);
+      expect(popup().className).toBe('xlsx-editor acme-popup');
+      expect(viewport().className).toBe('xlsx-editor xlsx-editor-viewport');
+      expect(token(popup())).not.toBe('');
+      expect(token(popup())).toBe(token(viewport()));
+      const lightBg = token(popup());
+
+      state.colorMode = 'dark';
+      await nextTick();
+      expect(inside.at(-1)).toBe('dark:');
+      expect(popup().className).toBe('xlsx-editor dark acme-popup');
+      expect(token(popup())).toBe(token(viewport()));
+      expect(token(popup())).not.toBe(lightBg);
+      expect(getComputedStyle(popup()).getPropertyValue('color-scheme')).toBe('dark');
+    } finally {
+      sheet.remove();
+    }
+  });
+
+  test('outside a root, useScopeClassName is the light scope', () => {
+    const seen: string[] = [];
+    mount(() =>
+      h(
+        defineComponent({
+          setup() {
+            seen.push(useScopeClassName().value);
+            return () => null;
+          },
+        })
+      )
+    );
+    expect(seen).toEqual(['xlsx-editor ']);
   });
 
   test('colorMode puts the dark class on the viewport, and system follows the OS', async () => {

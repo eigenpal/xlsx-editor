@@ -19,7 +19,7 @@ import { XlsxEditorToolbar } from './toolbar/Toolbar.tsx';
 
 /** Props for `XlsxEditor`: the root's props and the viewport's class. @public */
 export interface XlsxEditorProps extends Omit<XlsxEditorRootProps, 'children'> {
-  /** Appended after the `xlsx-editor` class. */
+  /** Appended after the `xlsx-editor` and `xlsx-editor-viewport` classes. */
   readonly className?: string;
   /** Inline style of the viewport, for example its height. */
   readonly style?: CSSProperties;

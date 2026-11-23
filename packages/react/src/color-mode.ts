@@ -4,6 +4,19 @@
 // `XlsxEditor.Viewport` puts `.dark` beside `.xlsx-editor`, so the dark token block of the core
 // stylesheet applies to every part inside it. `useEditorColorMode` tells a part the host builds
 // which theme the editor resolved, as DOCX Editor's hook of that name does.
+//
+// `ScopedByAncestorContext` and `useScopeClassName` are copied from
+// docx-editor/packages/react/src/editor/scope-context.ts at 27720ad52 (EigenPal), with the same
+// name, signature, and return shape. Differences:
+// - The scope class is `xlsx-editor`, this editor's name for `docx-editor`.
+// - Only `XlsxEditor.Viewport` provides `ScopedByAncestorContext`, as
+//   pptx-editor/packages/react/src/color-mode.ts at 9d7d60b7 does. DOCX Editor also sets the
+//   mark in its packaged host and in parts that carry their own scope. Here the viewport carries
+//   `.xlsx-editor` in the packaged `XlsxEditor` and in a composed layout alike. The dialog frame
+//   (`dialog-frame.tsx`) also adds `.xlsx-editor` to itself when it is outside a scope, but it
+//   renders no host content, so it sets no mark.
+// - The hook and the context are in this file, beside the theme they read, because this adapter
+//   has no `editor/` directory. `ChromeDarkContext` is this file's own.
 
 import { createContext, useContext, useSyncExternalStore } from 'react';
 import {
@@ -27,6 +40,9 @@ export function useResolvedDark(mode: ColorMode | undefined): boolean {
   );
   return resolveDarkChrome(mode, systemDark);
 }
+
+/** True inside `XlsxEditor.Viewport`: an ancestor already carries `.xlsx-editor`. Internal. */
+export const ScopedByAncestorContext = createContext(false);
 
 /** Whether the enclosing root resolved a dark chrome. Internal. */
 export const ChromeDarkContext = createContext(false);
@@ -71,4 +87,30 @@ const DARK: UseEditorColorModeReturn = Object.freeze({ colorMode: 'dark' });
  */
 export function useEditorColorMode(): UseEditorColorModeReturn {
   return useContext(ChromeDarkContext) ? DARK : LIGHT;
+}
+
+/**
+ * The scope classes that a part you build yourself adds to its own root element, so the editor's
+ * `--doc-*` tokens and chrome styles apply to it, as DOCX Editor's `useScopeClassName`. Inside
+ * `XlsxEditor.Viewport` it is `''`: the viewport already carries the scope. Outside it, it is
+ * `'xlsx-editor '`, or `'xlsx-editor dark '` when the root's `colorMode` resolved dark, and it
+ * re-renders when that changes. Outside a root, it is `'xlsx-editor '`. A part inside the
+ * viewport that portals out of it (to `document.body`) adds `xlsx-editor` itself, with
+ * `useEditorColorMode` for the theme.
+ *
+ * The value ends with a space, so it concatenates cleanly, and `''` collapses away.
+ *
+ * @example
+ * ```tsx
+ * const scope = useScopeClassName();
+ * <aside className={`${scope}my-panel`} />
+ * ```
+ *
+ * @public
+ */
+export function useScopeClassName(): '' | 'xlsx-editor ' | 'xlsx-editor dark ' {
+  const scoped = useContext(ScopedByAncestorContext);
+  const dark = useContext(ChromeDarkContext);
+  if (scoped) return '';
+  return dark ? 'xlsx-editor dark ' : 'xlsx-editor ';
 }

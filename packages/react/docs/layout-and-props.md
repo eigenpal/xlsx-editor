@@ -9,7 +9,7 @@ This guide describes the parts of a custom layout, the props of `XlsxEditor.Root
 | Prop | Type | What it does |
 | --- | --- | --- |
 | `style` | `CSSProperties` | Inline style of the viewport. Without a height here or in `className`, the grid has a height of 0. |
-| `className` | `string` | Added after the `xlsx-editor` class. |
+| `className` | `string` | Added after the `xlsx-editor` and `xlsx-editor-viewport` classes. |
 | `label` | `string \| false` | The name of the landmark region. The default is "Workbook editor". `false` renders no region. |
 
 ## Status message
@@ -55,7 +55,7 @@ The `currencySymbol` of `numberLocale` is `$` when absent, also with `decimal: '
 
 ### Color mode
 
-`colorMode` sets the color theme of the chrome, as in DOCX Editor. `'system'` follows the OS setting as it changes. `XlsxEditor.Viewport` carries the theme, so a part gets it only inside the viewport. The workbook canvas keeps the workbook's own colors. A change applies without a remount. To match parts that you build, read `useEditorColorMode()`, which returns `{ colorMode: 'light' | 'dark' }`.
+`colorMode` sets the color theme of the chrome, as in DOCX Editor. `'system'` follows the OS setting as it changes. `XlsxEditor.Viewport` carries the theme for the parts inside it. A part outside the viewport, such as a popup in `document.body`, gets the theme from the classes of `useScopeClassName()`: `'xlsx-editor '` or `'xlsx-editor dark '`. Inside the viewport, the hook returns `''`. See [Appearance](https://xlsx-editor.dev/docs/customization/appearance). The workbook canvas keeps the workbook's own colors. A change applies without a remount. To match parts that you build, read `useEditorColorMode()`, which returns `{ colorMode: 'light' | 'dark' }`.
 
 ## High contrast themes
 
@@ -138,4 +138,4 @@ These props differ from the DOCX Editor root. There, `locale` is a BCP-47 tag fo
 
 ## Hooks
 
-Read a slice of the editor state with `useEditorState(selector)`, which re-renders only when the slice changes. Read the whole state with `useEditorSnapshot()`, and the editor with `useXlsxEditor()`. Get the translator of the root's `locale` with `useTranslation()`, which returns `{ t }`. Read whether a change of the `mode` prop waits for a cell edit with `useViewModeWaits()`.
+Read a slice of the editor state with `useEditorState(selector)`, which re-renders only when the slice changes. Read the whole state with `useEditorSnapshot()`, and the editor with `useXlsxEditor()`. Get the translator of the root's `locale` with `useTranslation()`, which returns `{ t }`. Read whether a change of the `mode` prop waits for a cell edit with `useViewModeWaits()`. Get the scope classes for a part outside the viewport with `useScopeClassName()`, as [Color mode](#color-mode) describes.

@@ -47,12 +47,12 @@ The type declarations need TypeScript 5.7 or later, with `moduleResolution` set 
 
 The editor adds no styles of its own, so import the stylesheet once in your app. The stylesheet applies inside an element with the `xlsx-editor` class. Without that class, the editor has no colors, so the selection and the active cell do not show. The grid also has no height, so it does not scroll.
 
-The following element holds the editor. Give it the `xlsx-editor` class and a height:
+The following element holds the editor. Give it the `xlsx-editor` and `xlsx-editor-viewport` classes, a width, and a height. The second class keeps the width of the editor from following its content, so the host must give the width: in a host that sizes its content, such as an inline block or a centered flex column, the editor is 0 pixels wide. A block element in normal flow takes the width of its container:
 
 <!-- sample: core-host -->
 
 ```html
-<div id="grid" class="xlsx-editor" style="height: 600px"></div>
+<div id="grid" class="xlsx-editor xlsx-editor-viewport" style="height: 600px"></div>
 ```
 
 The following example opens a workbook in that element and enters a value:

@@ -52,7 +52,12 @@ import {
   type LayoutParts,
 } from './context.ts';
 import { isDevelopment } from './is-development.ts';
-import { ChromeDarkContext, useChromeDark, useResolvedDark } from './color-mode.ts';
+import {
+  ChromeDarkContext,
+  ScopedByAncestorContext,
+  useChromeDark,
+  useResolvedDark,
+} from './color-mode.ts';
 
 /** The faces that measure and paint text: bytes, or a function that loads them once. @public */
 export type XlsxEditorFonts = readonly FontSource[] | (() => Promise<readonly FontSource[]>);
@@ -334,7 +339,7 @@ function useTranslatorOf(locale: Translations | undefined): TFunction {
 
 /** The props of `XlsxEditor.Viewport`. @public */
 export interface XlsxEditorViewportProps {
-  /** Appended after the `xlsx-editor` class. */
+  /** Appended after the `xlsx-editor` and `xlsx-editor-viewport` classes. */
   readonly className?: string;
   /**
    * The name of the editor's landmark region. Default: "Workbook editor". `false` renders no
@@ -347,7 +352,8 @@ export interface XlsxEditorViewportProps {
 }
 
 /**
- * The editor's styling scope and landmark region: carries the `.xlsx-editor` class. F6 and
+ * The editor's styling scope and landmark region: carries the `.xlsx-editor` class, and
+ * `xlsx-editor-viewport`, which keeps its width from following its content. F6 and
  * Shift+F6 inside it move the keyboard among the toolbar, the formula bar, the grid, and the
  * footer.
  *
@@ -363,14 +369,16 @@ export function XlsxEditorViewport({ className, label, style, children }: XlsxEd
       : { role: 'region' as const, 'aria-label': label ?? t('viewport.ariaLabel') };
   return (
     <div
-      className={['xlsx-editor', dark ? 'dark' : '', className].filter(Boolean).join(' ')}
+      className={['xlsx-editor', dark ? 'dark' : '', 'xlsx-editor-viewport', className]
+        .filter(Boolean)
+        .join(' ')}
       {...(style ? { style } : {})}
       {...region}
       // F6 and Shift+F6 move the keyboard among the toolbar, the formula bar, the grid, and the
       // footer.
       onKeyDown={(e) => void cycleRegion(e, e.currentTarget, editor)}
     >
-      {children}
+      <ScopedByAncestorContext.Provider value>{children}</ScopedByAncestorContext.Provider>
     </div>
   );
 }

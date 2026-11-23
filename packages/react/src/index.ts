@@ -64,6 +64,19 @@ export type {
   XlsxEditorToolbarGroupProps,
   XlsxEditorToolbarSlotProps,
 } from './toolbar/host-parts.tsx';
+export {
+  ToolbarAction,
+  type ToolbarActionProps,
+  ToolbarSeparator,
+  type ToolbarSeparatorProps,
+} from './toolbar/action.tsx';
+export type {
+  ToolbarNamedParts,
+  ToolbarPartComponent,
+  ToolbarPartProps,
+  ToolbarSlotPartComponent,
+  ToolbarSlotPartProps,
+} from './toolbar/named-parts.tsx';
 export { StatusMessage, ZoomControl } from './chrome.tsx';
 export { FormulaBar } from './FormulaBar.tsx';
 export { SheetTabs } from './SheetTabs.tsx';

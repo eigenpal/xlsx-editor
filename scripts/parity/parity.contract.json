@@ -70,7 +70,7 @@
     },
     "XlsxEditorToolbarSlot": {
       "reactProps": "XlsxEditorToolbarSlotProps",
-      "paired": ["hidden", "slotId"],
+      "paired": ["asChild", "className", "hidden", "icon", "overflowContent", "slotId"],
       "deferredInVue": {},
       "reactCallbacksAsVueEmits": {},
       "reactRenderPropsAsVueSlots": {
@@ -81,12 +81,44 @@
     },
     "XlsxEditorToolbarGroup": {
       "reactProps": "XlsxEditorToolbarGroupProps",
-      "paired": ["after", "className", "hidden", "id", "label", "labelKey"],
+      "paired": [
+        "after",
+        "className",
+        "hidden",
+        "id",
+        "label",
+        "labelKey",
+        "overflowContent",
+        "pinned",
+        "priority"
+      ],
       "deferredInVue": {},
       "reactCallbacksAsVueEmits": {},
       "reactRenderPropsAsVueSlots": {
         "children": "default"
       },
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
+    },
+    "ToolbarAction": {
+      "reactProps": "ToolbarActionProps",
+      "paired": ["active", "asChild", "className", "disabled", "disabledReason", "icon", "label"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {
+        "onSelect": "select"
+      },
+      "reactRenderPropsAsVueSlots": {
+        "children": "default"
+      },
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
+    },
+    "ToolbarSeparator": {
+      "reactProps": "ToolbarSeparatorProps",
+      "paired": ["className"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {},
+      "reactRenderPropsAsVueSlots": {},
       "reactClassNameAsVueClass": {},
       "vueExclusive": {}
     }
@@ -161,8 +193,8 @@
       "NumberFormatDialogStart",
       "numberFormatDialogStart",
       "NumberFormatListEntry",
-      "NumberFormatListView",
       "numberFormatListView",
+      "NumberFormatListView",
       "NumberFormatPreview",
       "numberFormatValue",
       "NumberLocale",
@@ -181,8 +213,17 @@
       "SheetProtection",
       "SheetTabs",
       "StatusMessage",
+      "ToolbarAction",
+      "ToolbarActionProps",
       "ToolbarCommandState",
       "ToolbarHintKey",
+      "ToolbarNamedParts",
+      "ToolbarPartComponent",
+      "ToolbarPartProps",
+      "ToolbarSeparator",
+      "ToolbarSeparatorProps",
+      "ToolbarSlotPartComponent",
+      "ToolbarSlotPartProps",
       "Translations",
       "translatorFor",
       "trapTabWithin",

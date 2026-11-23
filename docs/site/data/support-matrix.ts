@@ -29,6 +29,7 @@ import { STRUCTURE_FEATURES } from './support-matrix-structure.ts';
 import { MERGE_FEATURES } from './support-matrix-merge.ts';
 import { FORMULA_SAVE_FEATURES } from './support-matrix-formula-save.ts';
 import { LIMIT_FEATURES } from './support-matrix-limits.ts';
+import { TOOLBAR_FEATURES } from './support-matrix-toolbar.ts';
 import { REFUSAL_FEATURES } from './support-matrix-refusals.ts';
 import { CUSTOMIZATION_FEATURES } from './support-matrix-customization.ts';
 
@@ -613,6 +614,7 @@ export const supportFeatures: readonly SupportFeature[] = [
     status: 'supported',
     notes:
       'Each slot runs an editor command. A disabled slot stays focusable and gives its reason. The hidden prop leaves out slots, and a group with every slot hidden disappears. Groups that do not fit move to an overflow panel. Slot parts replace or hide a slot where it stands, and host groups are measured and move to the panel with the built-in groups. With preset off, the toolbar renders only its children. With an `onSave` handler, Control or Command and S in the editor runs the save, also when the save control is hidden. Without one, the browser keeps the shortcut.',
+    docsLink: '/docs/customization/toolbar',
     evidence: {
       tests: [
         `${CORE}/editor/__tests__/toolbar-commands.test.ts`,
@@ -623,6 +625,7 @@ export const supportFeatures: readonly SupportFeature[] = [
       ],
     },
   },
+  ...TOOLBAR_FEATURES,
   {
     id: 'viewer.view-mode',
     name: 'View mode',

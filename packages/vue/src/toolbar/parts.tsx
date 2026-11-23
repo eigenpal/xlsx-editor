@@ -13,11 +13,14 @@
 import {
   computed,
   defineComponent,
+  inject,
   shallowRef,
   useId,
   watch,
+  type InjectionKey,
   type PropType,
   type Ref,
+  type VNode,
   type VNodeChild,
 } from 'vue';
 import {
@@ -43,11 +46,50 @@ import { ChromeIcon, translateKey, useToolbarSlot, type ToolbarSlot } from './sl
 import { useDropdownClose } from './useDropdownClose.ts';
 import { useNumberFormatDialogOpener } from './NumberFormatDialog.tsx';
 import { ICON_CHECK, ICON_FIELD_CARET, ICON_MENU_CARET } from './icons.ts';
+import { renderAsChild } from './as-child.tsx';
 
 /** How a part renders: in the bar, or as a full-width row of the overflow panel. */
 export type PartLayout = 'bar' | 'row';
 
 const layoutProp = { type: String as PropType<PartLayout>, default: 'bar' } as const;
+
+/**
+ * The changes that a `Toolbar.Slot` or a named part makes to the built-in control of its slot,
+ * the twin of React's `SlotOverride`: an icon in place of the registry icon and the host element
+ * that renders the control (button slots only), and a class name for the control or the
+ * trigger of a value control.
+ */
+export interface SlotOverride {
+  readonly slot: string;
+  readonly icon?: VNodeChild;
+  readonly className?: string;
+  readonly asChild?: VNode | null;
+}
+
+/**
+ * The override of the control that renders inside it, as a getter, so a control reads the
+ * override of the latest render.
+ */
+export const slotOverrideKey: InjectionKey<() => SlotOverride | null> = Symbol(
+  'xlsx-toolbar-slot-override'
+);
+
+/**
+ * The override of `slot` at the call, or null: an override of another slot never reaches this
+ * control. Call it in `setup`, and the getter in the render.
+ */
+function useSlotOverride(slot: () => string): () => SlotOverride | null {
+  const read = inject(slotOverrideKey, () => null);
+  return () => {
+    const override = read();
+    return override?.slot === slot() ? override : null;
+  };
+}
+
+/** A base class with the override's class name after it. */
+function withClass(base: string, override: SlotOverride | null): string {
+  return override?.className ? `${base} ${override.className}` : base;
+}
 
 /**
  * The attributes that every slot control carries. A disabled control stays focusable
@@ -87,27 +129,41 @@ export const ToolbarButton = defineComponent({
   setup(props) {
     const s = useToolbarSlot(props.slot);
     const reasonId = useId();
+    const overrideOf = useSlotOverride(() => props.slot);
     return () => {
       const words = s.words.value;
+      const override = overrideOf();
+      const shared = {
+        class: withClass(
+          props.layout === 'row' ? 'xlsx-toolbar-row' : 'xlsx-toolbar-button',
+          override
+        ),
+        'aria-label': words.label,
+        ...(s.control.toggle ? { 'aria-pressed': s.isActive.value } : {}),
+        ...slotAttributes(s, reasonId),
+        // A held Enter repeats the click of a button; a command such as a decimal step would
+        // run on each repeat, so only the first press runs it, as in React.
+        onKeydown: (e: KeyboardEvent) => {
+          if (e.key === 'Enter' && e.repeat) e.preventDefault();
+        },
+        // A disabled control also stops the default of its element, so an `asChild` link does
+        // not navigate.
+        onClick: (e: MouseEvent) => {
+          if (s.isEnabled.value) s.execute();
+          else e.preventDefault();
+        },
+      };
+      const reason = reasonText(reasonId, words.description);
+      // `asChild`: the host element renders the control, with its state and press merged in.
+      if (override?.asChild) return [renderAsChild(override.asChild, shared), reason];
+      const icon = override?.icon ?? <ChromeIcon paths={s.control.paths} />;
+      // A slot with no icon (a menu item of the registry) shows its label in the bar too.
+      const text = props.layout === 'row' || (override?.icon == null && !s.control.paths);
       return (
-        <button
-          type="button"
-          class={props.layout === 'row' ? 'xlsx-toolbar-row' : 'xlsx-toolbar-button'}
-          aria-label={words.label}
-          {...(s.control.toggle ? { 'aria-pressed': s.isActive.value } : {})}
-          {...slotAttributes(s, reasonId)}
-          // A held Enter repeats the click of a button; a command such as a decimal step would
-          // run on each repeat, so only the first press runs it, as in React.
-          onKeydown={(e: KeyboardEvent) => {
-            if (e.key === 'Enter' && e.repeat) e.preventDefault();
-          }}
-          onClick={() => {
-            if (s.isEnabled.value) s.execute();
-          }}
-        >
-          <ChromeIcon paths={s.control.paths} />
-          {props.layout === 'row' ? <span>{words.label}</span> : null}
-          {reasonText(reasonId, words.description)}
+        <button type="button" {...shared}>
+          {icon}
+          {text ? <span>{words.label}</span> : null}
+          {reason}
         </button>
       );
     };
@@ -223,10 +279,13 @@ function trigger(
      * colons, as in "Number format: General: <reason>".
      */
     readonly label?: string;
+    /** The changes of the slot's part, for the class name of the trigger. */
+    readonly override?: SlotOverride | null;
   },
   children: VNodeChild
 ) {
-  const { s, popup, kind, className, caret, name, reasonId, label } = options;
+  const { s, popup, kind, caret, name, reasonId, label } = options;
+  const className = withClass(options.className, options.override ?? null);
   const attributes = slotAttributes(s, reasonId);
   const after = s.words.value.description;
   const title =
@@ -308,6 +367,7 @@ const ToolbarList = defineComponent({
     });
     const invalid = shallowRef(false);
     const reasonId = useId();
+    const overrideOf = useSlotOverride(() => props.slot);
     const pick = (value: string): void => {
       popup.setOpen(false);
       s.execute(value);
@@ -329,6 +389,7 @@ const ToolbarList = defineComponent({
               popup,
               kind: 'listbox',
               className: `xlsx-toolbar-select xlsx-toolbar-select-${props.width}`,
+              override: overrideOf(),
               caret: 'field',
               name: `${label}: ${name ?? text}`,
               reasonId,
@@ -554,13 +615,17 @@ export const NumberFormatDialogButton = defineComponent({
     const s = useToolbarSlot('number.custom');
     const dialog = useNumberFormatDialogOpener();
     const reasonId = useId();
+    const overrideOf = useSlotOverride(() => 'number.custom');
     return () => {
       if (!dialog) return null;
       const words = s.words.value;
       return (
         <button
           type="button"
-          class={props.layout === 'row' ? 'xlsx-toolbar-row' : 'xlsx-toolbar-button'}
+          class={withClass(
+            props.layout === 'row' ? 'xlsx-toolbar-row' : 'xlsx-toolbar-button',
+            overrideOf()
+          )}
           aria-label={words.label}
           aria-haspopup="dialog"
           {...slotAttributes(s, reasonId)}
@@ -598,6 +663,7 @@ export const ColorPalette = defineComponent({
       closed: () => !s.isEnabled.value,
     });
     const reasonId = useId();
+    const overrideOf = useSlotOverride(() => props.slot);
     const pick = (value: string): void => {
       popup.setOpen(false);
       s.execute(value);
@@ -626,6 +692,7 @@ export const ColorPalette = defineComponent({
               popup,
               kind: 'listbox',
               className: 'xlsx-toolbar-color',
+              override: overrideOf(),
               caret: 'menu',
               name: label,
               reasonId,

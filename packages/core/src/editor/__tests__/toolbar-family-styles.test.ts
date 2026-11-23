@@ -51,6 +51,22 @@ describe('the toolbar family styles', () => {
     );
   });
 
+  test('a host separator draws the same line, across a row of the More panel', () => {
+    const line = rule('.xlsx-toolbar-separator');
+    for (const d of [
+      'width: 1px',
+      'height: 18px',
+      'margin: 0 5px',
+      'background: var(--doc-border)',
+    ])
+      expect(line).toContain(d);
+    const across = rule(".xlsx-toolbar-separator[aria-orientation='horizontal']");
+    for (const d of ['width: auto', 'height: 1px']) expect(across).toContain(d);
+    expect(flat).toMatch(
+      /@media \(forced-colors: active\) \{[^@]*\.xlsx-toolbar-separator \{ background: CanvasText; \}/
+    );
+  });
+
   test('the block of loose host children has its line whether or not the More button is shown', () => {
     // The bar measures that block, so a width that changes with the More button makes the two
     // layouts flip without end.

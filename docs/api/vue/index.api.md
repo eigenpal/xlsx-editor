@@ -21,6 +21,7 @@ import { contentFieldText } from '@xlsx-editor.dev/core/editor';
 import { CopyResult } from '@xlsx-editor.dev/core/editor';
 import { CUSTOM_NUMBER_FORMAT_PREFIX } from '@xlsx-editor.dev/core/editor';
 import { DecimalSteps } from '@xlsx-editor.dev/core/editor';
+import { DefineComponent } from 'vue';
 import { DocumentChange } from '@xlsx-editor.dev/core/editor';
 import { EditMove } from '@xlsx-editor.dev/core/editor';
 import { editMoveOf } from '@xlsx-editor.dev/core/editor';
@@ -93,6 +94,7 @@ import { ToolbarHintKey } from '@xlsx-editor.dev/core/editor';
 import { Translations } from '@xlsx-editor.dev/i18n';
 import { trapTabWithin } from '@xlsx-editor.dev/core/editor';
 import { VNode } from 'vue';
+import { VNodeChild } from 'vue';
 import * as vue from 'vue';
 import * as vue_jsx_runtime from 'vue/jsx-runtime';
 import { WorkbookKind } from '@xlsx-editor.dev/core/editor';
@@ -260,9 +262,170 @@ export const SheetTabs: vue.DefineComponent<{}, () => vue_jsx_runtime.JSX.Elemen
 // @public
 export const StatusMessage: vue.DefineComponent<{}, () => vue_jsx_runtime.JSX.Element, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<{}> & Readonly<{}>, {}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
 
+// @public
+export const ToolbarAction: vue.DefineComponent<vue.ExtractPropTypes<{
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly required: true;
+    };
+    readonly icon: {
+        readonly type: PropType<VNodeChild>;
+        readonly default: undefined;
+    };
+    readonly active: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly disabled: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly disabledReason: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly asChild: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>, () => (vue_jsx_runtime.JSX.Element | null)[] | vue_jsx_runtime.JSX.Element, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {
+    select: () => true;
+}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly required: true;
+    };
+    readonly icon: {
+        readonly type: PropType<VNodeChild>;
+        readonly default: undefined;
+    };
+    readonly active: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly disabled: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly disabledReason: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly asChild: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>> & Readonly<{
+    onSelect?: (() => any) | undefined;
+}>, {
+    readonly icon: VNodeChild;
+    readonly active: boolean;
+    readonly disabled: boolean;
+    readonly disabledReason: string;
+    readonly asChild: boolean;
+    readonly className: string;
+}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+
+// @public
+export interface ToolbarActionProps {
+    readonly active?: boolean;
+    readonly asChild?: boolean;
+    readonly className?: string;
+    readonly disabled?: boolean;
+    readonly disabledReason?: string;
+    readonly icon?: VNodeChild;
+    readonly label: string;
+    readonly onSelect?: () => void;
+}
+
 export { ToolbarCommandState }
 
 export { ToolbarHintKey }
+
+// @public
+export interface ToolbarNamedParts {
+    readonly AlignBottom: ToolbarPartComponent;
+    readonly AlignCenter: ToolbarPartComponent;
+    readonly AlignLeft: ToolbarPartComponent;
+    readonly AlignMiddle: ToolbarPartComponent;
+    readonly AlignRight: ToolbarPartComponent;
+    readonly AlignTop: ToolbarPartComponent;
+    readonly AllBorders: ToolbarPartComponent;
+    readonly Bold: ToolbarPartComponent;
+    readonly ClearAll: ToolbarPartComponent;
+    readonly ClearContents: ToolbarPartComponent;
+    readonly ClearFormatting: ToolbarPartComponent;
+    readonly DecreaseDecimals: ToolbarPartComponent;
+    readonly DeleteColumns: ToolbarPartComponent;
+    readonly DeleteRows: ToolbarPartComponent;
+    readonly FillColor: ToolbarSlotPartComponent;
+    readonly FontColor: ToolbarSlotPartComponent;
+    readonly FontFamily: ToolbarSlotPartComponent;
+    readonly FontSize: ToolbarSlotPartComponent;
+    readonly IncreaseDecimals: ToolbarPartComponent;
+    readonly InsertColumns: ToolbarPartComponent;
+    readonly InsertRows: ToolbarPartComponent;
+    readonly Italic: ToolbarPartComponent;
+    readonly MoreNumberFormats: ToolbarSlotPartComponent;
+    readonly NoBorder: ToolbarPartComponent;
+    readonly NumberFormat: ToolbarSlotPartComponent;
+    readonly OutsideBorders: ToolbarPartComponent;
+    readonly Redo: ToolbarPartComponent;
+    readonly Save: ToolbarPartComponent;
+    readonly Underline: ToolbarPartComponent;
+    readonly Undo: ToolbarPartComponent;
+    readonly WrapText: ToolbarPartComponent;
+}
+
+// @public
+export type ToolbarPartComponent = DefineComponent<ToolbarPartProps>;
+
+// @public
+export interface ToolbarPartProps {
+    readonly asChild?: boolean;
+    readonly className?: string;
+    readonly hidden?: boolean;
+    readonly icon?: VNodeChild;
+    readonly overflowContent?: () => VNodeChild;
+}
+
+// @public
+export const ToolbarSeparator: vue.DefineComponent<vue.ExtractPropTypes<{
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>, () => vue_jsx_runtime.JSX.Element, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>> & Readonly<{}>, {
+    readonly className: string;
+}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+
+// @public
+export interface ToolbarSeparatorProps {
+    readonly className?: string;
+}
+
+// @public
+export type ToolbarSlotPartComponent = DefineComponent<ToolbarSlotPartProps>;
+
+// @public
+export interface ToolbarSlotPartProps {
+    readonly className?: string;
+    readonly hidden?: boolean;
+    readonly overflowContent?: () => VNodeChild;
+}
 
 export { Translations }
 
@@ -643,8 +806,20 @@ export const XlsxEditorToolbarGroup: vue.DefineComponent<vue.ExtractPropTypes<{
         readonly type: PropType<ChromeGroupId | (string & {})>;
         readonly default: undefined;
     };
+    readonly priority: {
+        readonly type: NumberConstructor;
+        readonly default: undefined;
+    };
+    readonly pinned: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
     readonly hidden: {
         readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly overflowContent: {
+        readonly type: PropType<() => VNodeChild>;
         readonly default: undefined;
     };
     readonly className: {
@@ -668,8 +843,20 @@ export const XlsxEditorToolbarGroup: vue.DefineComponent<vue.ExtractPropTypes<{
         readonly type: PropType<ChromeGroupId | (string & {})>;
         readonly default: undefined;
     };
+    readonly priority: {
+        readonly type: NumberConstructor;
+        readonly default: undefined;
+    };
+    readonly pinned: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
     readonly hidden: {
         readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly overflowContent: {
+        readonly type: PropType<() => VNodeChild>;
         readonly default: undefined;
     };
     readonly className: {
@@ -680,7 +867,10 @@ export const XlsxEditorToolbarGroup: vue.DefineComponent<vue.ExtractPropTypes<{
     readonly label: string;
     readonly labelKey: string;
     readonly after: "alignment" | "borders" | "cells" | "clear" | "file" | "fill" | "font" | "history" | "number" | (string & {});
+    readonly priority: number;
+    readonly pinned: boolean;
     readonly hidden: boolean;
+    readonly overflowContent: () => VNodeChild;
     readonly className: string;
 }, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
 
@@ -705,8 +895,20 @@ const xlsxEditorToolbarGroupProps: {
         readonly type: PropType<ChromeGroupId | (string & {})>;
         readonly default: undefined;
     };
+    readonly priority: {
+        readonly type: NumberConstructor;
+        readonly default: undefined;
+    };
+    readonly pinned: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
     readonly hidden: {
         readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly overflowContent: {
+        readonly type: PropType<() => VNodeChild>;
         readonly default: undefined;
     };
     readonly className: {
@@ -716,9 +918,11 @@ const xlsxEditorToolbarGroupProps: {
 };
 
 // @public
-export interface XlsxEditorToolbarNamespace {
+export interface XlsxEditorToolbarNamespace extends ToolbarNamedParts {
     (props: XlsxEditorToolbarProps & AllowedComponentProps): VNode;
+    readonly Action: typeof ToolbarAction;
     readonly Group: typeof XlsxEditorToolbarGroup;
+    readonly Separator: typeof ToolbarSeparator;
     readonly Slot: typeof XlsxEditorToolbarSlot;
 }
 
@@ -767,6 +971,22 @@ export const XlsxEditorToolbarSlot: vue.DefineComponent<vue.ExtractPropTypes<{
         readonly type: BooleanConstructor;
         readonly default: undefined;
     };
+    readonly icon: {
+        readonly type: PropType<VNodeChild>;
+        readonly default: undefined;
+    };
+    readonly asChild: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly overflowContent: {
+        readonly type: PropType<() => VNodeChild>;
+        readonly default: undefined;
+    };
 }>, () => VNode<vue.RendererNode, vue.RendererElement, {
     [key: string]: any;
 }>[] | vue_jsx_runtime.JSX.Element | null, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
@@ -778,8 +998,28 @@ export const XlsxEditorToolbarSlot: vue.DefineComponent<vue.ExtractPropTypes<{
         readonly type: BooleanConstructor;
         readonly default: undefined;
     };
+    readonly icon: {
+        readonly type: PropType<VNodeChild>;
+        readonly default: undefined;
+    };
+    readonly asChild: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly overflowContent: {
+        readonly type: PropType<() => VNodeChild>;
+        readonly default: undefined;
+    };
 }>> & Readonly<{}>, {
     readonly hidden: boolean;
+    readonly icon: VNodeChild;
+    readonly asChild: boolean;
+    readonly className: string;
+    readonly overflowContent: () => VNodeChild;
 }, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
 
 // @public
@@ -793,6 +1033,22 @@ const xlsxEditorToolbarSlotProps: {
     };
     readonly hidden: {
         readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly icon: {
+        readonly type: PropType<VNodeChild>;
+        readonly default: undefined;
+    };
+    readonly asChild: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly overflowContent: {
+        readonly type: PropType<() => VNodeChild>;
         readonly default: undefined;
     };
 };

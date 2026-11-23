@@ -1087,6 +1087,23 @@
   margin: 0 5px;
   background: var(--doc-border);
 }
+/* A rule of the host between two controls (`Toolbar.Separator`): the line between two groups,
+ * as an element. In a row of the "More" panel, where the controls stand in a column, it runs
+ * across the row (`aria-orientation`). */
+.xlsx-toolbar-separator {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 1px;
+  height: 18px;
+  margin: 0 5px;
+  background: var(--doc-border);
+}
+.xlsx-toolbar-separator[aria-orientation='horizontal'] {
+  align-self: stretch;
+  width: auto;
+  height: 1px;
+  margin: 4px 8px;
+}
 .xlsx-toolbar-button,
 .xlsx-toolbar-select,
 .xlsx-toolbar-color {
@@ -1745,6 +1762,9 @@
       .xlsx-toolbar-group + .xlsx-toolbar-group:not([data-toolbar-fixed]),
       .xlsx-toolbar > [data-toolbar-fixed]:not(:first-child)
     )::before {
+    background: CanvasText;
+  }
+  .xlsx-toolbar-separator {
     background: CanvasText;
   }
   .xlsx-cell-content-box:has(.xlsx-cell-content:focus-visible) {

@@ -1,0 +1,310 @@
+---
+title: 'Toolbar'
+description: 'Customize the XLSX editor toolbar with named controls, slots, application actions, groups, and overflow.'
+category: 'Customization'
+---
+
+Customize the toolbar through named parts, slots, and groups. Each control keeps its command, enabled state, and refusal reason. Pass the parts as children of `XlsxEditor.Toolbar` in your own layout. `XlsxEditor` renders its own toolbar and takes no parts. To build the layout, see [Layout](/docs/customization/layout).
+
+## Customize a toolbar control
+
+Pass `className`, `icon`, `hidden`, or `asChild` to a named part. Each slot of the toolbar has one named part, such as `Toolbar.Bold` for the slot `font.bold`.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+<XlsxEditor.Toolbar>
+  <XlsxEditor.Toolbar.Bold icon={<BoldIcon />} className="ledger-button" />
+  <XlsxEditor.Toolbar.Italic hidden />
+</XlsxEditor.Toolbar>
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<script setup lang="ts">
+import { h } from 'vue';
+import { XlsxEditorToolbar } from '@xlsx-editor.dev/vue';
+import BoldIcon from './BoldIcon.vue';
+
+const boldIcon = h(BoldIcon);
+</script>
+
+<template>
+  <XlsxEditorToolbar>
+    <XlsxEditorToolbar.Bold :icon="boldIcon" class-name="ledger-button" />
+    <XlsxEditorToolbar.Italic hidden />
+  </XlsxEditorToolbar>
+</template>
+```
+
+</Framework>
+</FrameworkTabs>
+
+`hidden` on a named part equals `<Toolbar.Slot slotId="font.italic" hidden />`. The children of a button part are its icon. They do not replace the control.
+
+With `asChild`, your single child element renders the control. It receives the class, the accessible name, the state attributes, and the press of the control. The classes and styles join, and the handlers of the child run first. For every other prop, the child's own value wins, as in DOCX Editor. So a `title` or an `aria-describedby` on the child hides the disabled reason of the control: leave them off. An element that is not a `<button>` also gets the button role, a Tab stop, and Enter and Space as a press. A press on a disabled control or action stops the default action of the element, so a link does not navigate.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+<XlsxEditor.Toolbar>
+  <XlsxEditor.Toolbar.Undo asChild>
+    <button type="button" className="ledger-undo">
+      Back
+    </button>
+  </XlsxEditor.Toolbar.Undo>
+</XlsxEditor.Toolbar>
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<XlsxEditorToolbar>
+  <XlsxEditorToolbar.Undo as-child>
+    <button type="button" class="ledger-undo">Back</button>
+  </XlsxEditorToolbar.Undo>
+</XlsxEditorToolbar>
+```
+
+</Framework>
+</FrameworkTabs>
+
+| Named part | Slots |
+| --- | --- |
+| `Undo`, `Redo` | `history.undo`, `history.redo` |
+| `FontFamily`, `FontSize`, `Bold`, `Italic`, `Underline`, `FontColor` | The slots of the `font` group |
+| `FillColor` | `fill.color` |
+| `OutsideBorders`, `AllBorders`, `NoBorder` | `borders.outline`, `borders.all`, `borders.none` |
+| `AlignLeft`, `AlignCenter`, `AlignRight`, `AlignTop`, `AlignMiddle`, `AlignBottom`, `WrapText` | The slots of the `alignment` group |
+| `NumberFormat`, `MoreNumberFormats`, `IncreaseDecimals`, `DecreaseDecimals` | The slots of the `number` group |
+| `InsertRows`, `InsertColumns`, `DeleteRows`, `DeleteColumns` | The slots of the `cells` group |
+| `ClearContents`, `ClearFormatting`, `ClearAll` | `clear.contents`, `clear.formats`, `clear.all` |
+| `Save` | `file.save` |
+
+`FontFamily`, `FontSize`, `FontColor`, `FillColor`, `NumberFormat`, and `MoreNumberFormats` are value controls: a list, a palette, or a dialog opener. They take `hidden`, `className`, and `overflowContent` only.
+
+## Choose the toolbar arrangement
+
+Replace one built-in control with `Toolbar.Slot`. Your content keeps the control's place and collapses with its group.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+<XlsxEditor.Toolbar>
+  <XlsxEditor.Toolbar.Slot slotId="file.save">
+    <SaveToDriveButton />
+  </XlsxEditor.Toolbar.Slot>
+</XlsxEditor.Toolbar>
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<XlsxEditorToolbar>
+  <XlsxEditorToolbar.Slot slot-id="file.save">
+    <SaveToDriveButton />
+  </XlsxEditorToolbar.Slot>
+</XlsxEditorToolbar>
+```
+
+</Framework>
+</FrameworkTabs>
+
+| Configuration | Use |
+| --- | --- |
+| A named part, or `Toolbar.Slot` with `slotId` | Replaces, changes, or hides one registered control. |
+| `Toolbar.Group` with a built-in `id` | Adds children to that group. `hidden` removes it. |
+| `hidden` on `Toolbar` | Removes slots by id, such as `['file.save']`. |
+| `preset={false}` on `Toolbar` | You compose every visible control. |
+| `onSave` on `Toolbar` | Decides where saved bytes go. |
+| `overflow={false}` on `Toolbar` | Wraps controls instead of moving them to **More**. |
+
+`Toolbar.Slot` takes `icon`, `asChild`, and `className` too, with the same effect as on a named part. In a group that shows as one menu, such as `cells` or `clear`, a replaced or changed slot shows after the menu button, and the menu keeps the other slots.
+
+With `preset={false}`, the toolbar renders only its children, in your order. Named parts, slots, groups, actions, and separators can stand in any order. A named part or a `Toolbar.Slot` with no children renders the built-in control of its slot.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+<XlsxEditor.Toolbar preset={false}>
+  <XlsxEditor.Toolbar.Undo />
+  <XlsxEditor.Toolbar.Redo />
+  <XlsxEditor.Toolbar.Separator />
+  <XlsxEditor.Toolbar.Group id="text" label="Text">
+    <XlsxEditor.Toolbar.Bold />
+    <XlsxEditor.Toolbar.Italic />
+  </XlsxEditor.Toolbar.Group>
+  <XlsxEditor.Toolbar.Action label="Publish" onSelect={publish} />
+</XlsxEditor.Toolbar>
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<XlsxEditorToolbar :preset="false">
+  <XlsxEditorToolbar.Undo />
+  <XlsxEditorToolbar.Redo />
+  <XlsxEditorToolbar.Separator />
+  <XlsxEditorToolbar.Group id="text" label="Text">
+    <XlsxEditorToolbar.Bold />
+    <XlsxEditorToolbar.Italic />
+  </XlsxEditorToolbar.Group>
+  <XlsxEditorToolbar.Action label="Publish" @select="publish" />
+</XlsxEditorToolbar>
+```
+
+</Framework>
+</FrameworkTabs>
+
+For every group and slot identifier, read `CHROME_GROUPS` from `@xlsx-editor.dev/core/editor`. A slot id is `${groupId}.${controlId}`, such as `font.bold`.
+
+## Add application actions
+
+Put a `Toolbar.Action` inside your own `Toolbar.Group`. The action keeps the cell selection: its mousedown does not move the keyboard from the grid.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+<XlsxEditor.Toolbar>
+  <XlsxEditor.Toolbar.Group id="ledger" label="Ledger" priority={85}>
+    <XlsxEditor.Toolbar.Action label="Post entries" icon={<PostIcon />} onSelect={post} />
+    <XlsxEditor.Toolbar.Separator />
+    <XlsxEditor.Toolbar.Action
+      label="Close period"
+      disabled={!canClose}
+      disabledReason="Post every entry first."
+      onSelect={closePeriod}
+    />
+  </XlsxEditor.Toolbar.Group>
+</XlsxEditor.Toolbar>
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<XlsxEditorToolbar>
+  <XlsxEditorToolbar.Group id="ledger" label="Ledger" :priority="85">
+    <XlsxEditorToolbar.Action label="Post entries" :icon="postIcon" @select="post" />
+    <XlsxEditorToolbar.Separator />
+    <XlsxEditorToolbar.Action
+      label="Close period"
+      :disabled="!canClose"
+      disabled-reason="Post every entry first."
+      @select="closePeriod"
+    />
+  </XlsxEditorToolbar.Group>
+</XlsxEditorToolbar>
+```
+
+</Framework>
+</FrameworkTabs>
+
+| `Toolbar.Action` prop | Use |
+| --- | --- |
+| `label` | Required accessible name and tooltip. |
+| `icon`, `children` | Visible content. Without either, the label shows as text. |
+| `onSelect` (Vue: `@select`) | Runs your action. |
+| `active` | Sets `aria-pressed` and the active state. |
+| `disabled`, `disabledReason` | Disables the action and explains why. The action stays focusable, and the reason is its tooltip and accessible description. |
+| `asChild`, `className` | Custom element and styling. |
+
+`Toolbar.Separator` draws a rule between two controls. It takes `className`. In a section of the **More** panel, it runs across the section.
+
+For an editor command, use `useEditorCommand(slotId)`. It returns `execute`, `isActive`, `isEnabled`, and `disabledReason`. Show `disabledReason` on refusal.
+
+## Configure overflow
+
+When width runs out, the bar moves whole groups into **More**, in collapse order. The built-in groups leave from the end of the bar: `file` has the priority 10, and `history` has 90. An application group without a `priority` leaves before every built-in group. In the **More** panel, each group is a section with its heading, and an action is a row with its icon and label.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+<XlsxEditor.Toolbar>
+  <XlsxEditor.Toolbar.Group
+    id="share"
+    label="Share"
+    priority={95}
+    overflowContent={() => <ShareMenu />}
+  >
+    <ShareButton />
+  </XlsxEditor.Toolbar.Group>
+  <XlsxEditor.Toolbar.Save overflowContent={() => <SaveRow />} />
+</XlsxEditor.Toolbar>
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<script setup lang="ts">
+import { h } from 'vue';
+import ShareMenu from './ShareMenu.vue';
+import SaveRow from './SaveRow.vue';
+
+const shareRows = () => h(ShareMenu);
+const saveRow = () => h(SaveRow);
+</script>
+
+<template>
+  <XlsxEditorToolbar>
+    <XlsxEditorToolbar.Group id="share" label="Share" :priority="95" :overflow-content="shareRows">
+      <ShareButton />
+    </XlsxEditorToolbar.Group>
+    <XlsxEditorToolbar.Save :overflow-content="saveRow" />
+  </XlsxEditorToolbar>
+</template>
+```
+
+</Framework>
+</FrameworkTabs>
+
+| `Toolbar.Group` prop | Use |
+| --- | --- |
+| `id` | A built-in id (typed as `ChromeGroupId`) or your own id. |
+| `label` | Accessible name and overflow heading. Overrides `labelKey`. |
+| `labelKey` | Catalog key for the label. |
+| `after` | Places an application group after another group. |
+| `priority` | Lower numbers move to overflow first. A built-in id takes a new priority. |
+| `pinned` | Keeps the group visible at every width. |
+| `hidden` | Removes the group and its separator. |
+| `overflowContent` | Content shown inside the overflow menu: after the controls of a built-in group, or in place of the children of an application group. |
+| `className` | Styles the group wrapper. |
+
+`overflowContent` on a named part or a `Toolbar.Slot` replaces the slot's row in the **More** panel.
+
+## Limits
+
+- Hiding a control does not disable its command elsewhere. Use `mode="view"` or sheet protection for permissions.
+- Custom buttons must call `preventDefault()` on mouse down to keep the cell selection. Skip inputs, selects, and text areas so they take focus normally. `Toolbar.Action` does this for you.
+- Loose children outside a group never move into overflow.
+- Application groups without a `priority` move to overflow before built-in groups.
+- The toolbar reads a part only as its direct child or in a Fragment, not in a component of your own.
+- Fonts, sizes, colors, and number formats need value controls. An ordinary command button cannot replace them, so `icon` and `asChild` have no effect on them.
+- The toolbar has no `t` prop. The labels follow the `locale` of the root. See [Language](/docs/customization/language).
+- In a development build, the toolbar prints a warning for each part that cannot do what it says, such as an `asChild` part without one element child.
+
+## Differences from DOCX Editor
+
+- The bar collapses whole groups, one at a time. DOCX Editor collapses one control at a time.
+- No built-in group is pinned. No workbook control is the only way to open a pane.
+- A disabled control or action stays focusable with `aria-disabled`, so the keyboard reaches its reason.
+- A press on an action row in the **More** panel keeps the panel open, as the built-in rows do.
+- The labels come from the root's `locale` catalog, which fills in values in the messages. DOCX Editor's `t` prop takes a key and returns a fixed string.
+
+## See also
+
+- [Layout](/docs/customization/layout)
+- [Language](/docs/customization/language)
+- [Accessibility](/docs/accessibility)

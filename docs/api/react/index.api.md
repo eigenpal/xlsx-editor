@@ -264,9 +264,91 @@ export function SheetTabs(): react.JSX.Element | null;
 // @public
 export function StatusMessage(): react.JSX.Element;
 
+// @public
+export function ToolbarAction(props: ToolbarActionProps): react.JSX.Element;
+
+// @public
+export interface ToolbarActionProps {
+    readonly active?: boolean;
+    readonly asChild?: boolean;
+    readonly children?: ReactNode;
+    readonly className?: string;
+    readonly disabled?: boolean;
+    readonly disabledReason?: string;
+    readonly icon?: ReactNode;
+    readonly label: string;
+    readonly onSelect?: () => void;
+}
+
 export { ToolbarCommandState }
 
 export { ToolbarHintKey }
+
+// @public
+export interface ToolbarNamedParts {
+    readonly AlignBottom: ToolbarPartComponent;
+    readonly AlignCenter: ToolbarPartComponent;
+    readonly AlignLeft: ToolbarPartComponent;
+    readonly AlignMiddle: ToolbarPartComponent;
+    readonly AlignRight: ToolbarPartComponent;
+    readonly AlignTop: ToolbarPartComponent;
+    readonly AllBorders: ToolbarPartComponent;
+    readonly Bold: ToolbarPartComponent;
+    readonly ClearAll: ToolbarPartComponent;
+    readonly ClearContents: ToolbarPartComponent;
+    readonly ClearFormatting: ToolbarPartComponent;
+    readonly DecreaseDecimals: ToolbarPartComponent;
+    readonly DeleteColumns: ToolbarPartComponent;
+    readonly DeleteRows: ToolbarPartComponent;
+    readonly FillColor: ToolbarSlotPartComponent;
+    readonly FontColor: ToolbarSlotPartComponent;
+    readonly FontFamily: ToolbarSlotPartComponent;
+    readonly FontSize: ToolbarSlotPartComponent;
+    readonly IncreaseDecimals: ToolbarPartComponent;
+    readonly InsertColumns: ToolbarPartComponent;
+    readonly InsertRows: ToolbarPartComponent;
+    readonly Italic: ToolbarPartComponent;
+    readonly MoreNumberFormats: ToolbarSlotPartComponent;
+    readonly NoBorder: ToolbarPartComponent;
+    readonly NumberFormat: ToolbarSlotPartComponent;
+    readonly OutsideBorders: ToolbarPartComponent;
+    readonly Redo: ToolbarPartComponent;
+    readonly Save: ToolbarPartComponent;
+    readonly Underline: ToolbarPartComponent;
+    readonly Undo: ToolbarPartComponent;
+    readonly WrapText: ToolbarPartComponent;
+}
+
+// @public
+export type ToolbarPartComponent = (props: ToolbarPartProps) => ReactElement;
+
+// @public
+export interface ToolbarPartProps {
+    readonly asChild?: boolean;
+    readonly children?: ReactNode;
+    readonly className?: string;
+    readonly hidden?: boolean;
+    readonly icon?: ReactNode;
+    readonly overflowContent?: () => ReactNode;
+}
+
+// @public
+export function ToolbarSeparator(input: ToolbarSeparatorProps): react.JSX.Element;
+
+// @public
+export interface ToolbarSeparatorProps {
+    readonly className?: string;
+}
+
+// @public
+export type ToolbarSlotPartComponent = (props: ToolbarSlotPartProps) => ReactElement;
+
+// @public
+export interface ToolbarSlotPartProps {
+    readonly className?: string;
+    readonly hidden?: boolean;
+    readonly overflowContent?: () => ReactNode;
+}
 
 // @public
 export const TranslationContext: react.Context<TFunction>;
@@ -409,12 +491,17 @@ export interface XlsxEditorToolbarGroupProps {
     readonly id: ChromeGroupId | (string & {});
     readonly label?: string;
     readonly labelKey?: string;
+    readonly overflowContent?: () => ReactNode;
+    readonly pinned?: boolean;
+    readonly priority?: number;
 }
 
 // @public
-export interface XlsxEditorToolbarNamespace {
+export interface XlsxEditorToolbarNamespace extends ToolbarNamedParts {
     (props: XlsxEditorToolbarProps): ReactElement;
+    readonly Action: typeof ToolbarAction;
     readonly Group: typeof XlsxEditorToolbarGroup;
+    readonly Separator: typeof ToolbarSeparator;
     readonly Slot: typeof XlsxEditorToolbarSlot;
 }
 
@@ -431,12 +518,16 @@ export interface XlsxEditorToolbarProps {
 }
 
 // @public
-export function XlsxEditorToolbarSlot(input: XlsxEditorToolbarSlotProps): react.JSX.Element | null;
+export function XlsxEditorToolbarSlot(props: XlsxEditorToolbarSlotProps): react.JSX.Element | null;
 
 // @public
 export interface XlsxEditorToolbarSlotProps {
+    readonly asChild?: boolean;
     readonly children?: ReactNode;
+    readonly className?: string;
     readonly hidden?: boolean;
+    readonly icon?: ReactNode;
+    readonly overflowContent?: () => ReactNode;
     readonly slotId: ChromeSlotId;
 }
 

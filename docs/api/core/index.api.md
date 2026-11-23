@@ -33,6 +33,8 @@ export interface ArrangedToolbarGroup {
     readonly id: string;
     readonly label?: string | undefined;
     readonly labelKey?: string | undefined;
+    readonly pinned: boolean;
+    readonly priority?: number | undefined;
 }
 
 // @internal
@@ -428,6 +430,9 @@ export interface ClipboardContent {
     readonly text: string;
     readonly token: string;
 }
+
+// @internal
+export function collapseOrder(groups: readonly string[], order?: readonly string[], priorities?: ReadonlyMap<string, number>): readonly string[];
 
 // @public
 export const COLOR_CHOICES: readonly [{
@@ -927,6 +932,9 @@ export const isHexColor: (value: string | null | undefined) => value is string;
 export function isHTMLElementNode(value: unknown): value is HTMLElement;
 
 // @internal
+export function isToolbarButtonSlot(slot: string): boolean;
+
+// @internal
 export function keepGridFocus(e: Pick<ChromePress, 'target' | 'preventDefault'>): void;
 
 // @internal
@@ -983,9 +991,7 @@ export const MAX_ROWS = 1048576;
 export const MAX_ZOOM = 4;
 
 // @internal
-export function measureToolbar(el: HTMLElement, groups: readonly {
-    readonly id: string;
-}[], widths: Map<string, number>): number;
+export function measureToolbar(el: HTMLElement, groups: readonly ToolbarFitGroup[], widths: Map<string, number>): readonly string[];
 
 // @public
 export type MergeCommand = 'merge' | 'mergeCenter' | 'unmerge';
@@ -1401,11 +1407,6 @@ export function sheetRenameBox(parts: SheetBarParts, sheets: readonly EditorShee
 // @internal
 export function showCaretLine(el: HTMLTextAreaElement | null, reveal?: boolean): void;
 
-// @internal
-export function shownGroupCount(groups: readonly {
-    readonly id: string;
-}[], widths: ReadonlyMap<string, number>, width: number, gap?: number): number;
-
 // @public
 export type SlotOf<G> = G extends {
     readonly id: infer GroupId extends string;
@@ -1525,19 +1526,70 @@ export const tabsSlice: (s: EditorSnapshot) => {
 };
 
 // @internal
+export const TOOLBAR_COLLAPSE_ORDER: readonly string[];
+
+// @internal
 export const TOOLBAR_FIXED_ATTRIBUTE = "data-toolbar-fixed";
 
 // @public
 export const TOOLBAR_HINT_KEYS: readonly ['hint.conditionalFormat', 'hint.decimalsLargeSelection'];
 
 // @internal
+export const TOOLBAR_NAMED_PARTS: {
+    readonly Undo: 'history.undo';
+    readonly Redo: 'history.redo';
+    readonly FontFamily: 'font.family';
+    readonly FontSize: 'font.size';
+    readonly Bold: 'font.bold';
+    readonly Italic: 'font.italic';
+    readonly Underline: 'font.underline';
+    readonly FontColor: 'font.color';
+    readonly FillColor: 'fill.color';
+    readonly OutsideBorders: 'borders.outline';
+    readonly AllBorders: 'borders.all';
+    readonly NoBorder: 'borders.none';
+    readonly AlignLeft: 'alignment.left';
+    readonly AlignCenter: 'alignment.center';
+    readonly AlignRight: 'alignment.right';
+    readonly AlignTop: 'alignment.top';
+    readonly AlignMiddle: 'alignment.middle';
+    readonly AlignBottom: 'alignment.bottom';
+    readonly WrapText: 'alignment.wrap';
+    readonly NumberFormat: 'number.format';
+    readonly MoreNumberFormats: 'number.custom';
+    readonly IncreaseDecimals: 'number.increaseDecimals';
+    readonly DecreaseDecimals: 'number.decreaseDecimals';
+    readonly InsertRows: 'cells.insertRows';
+    readonly InsertColumns: 'cells.insertColumns';
+    readonly DeleteRows: 'cells.deleteRows';
+    readonly DeleteColumns: 'cells.deleteColumns';
+    readonly ClearContents: 'clear.contents';
+    readonly ClearFormatting: 'clear.formats';
+    readonly ClearAll: 'clear.all';
+    readonly Save: 'file.save';
+};
+
+// @internal
+export const TOOLBAR_PANEL_ITEMS = "button, input, select, textarea, a[href], [tabindex]:not([tabindex=\"-1\"]), [role=\"button\"]";
+
+// @internal
+export const TOOLBAR_PINNED_GROUPS: ReadonlySet<string>;
+
+// @internal
 export interface ToolbarArrangement {
+    readonly customized: ReadonlySet<ChromeSlotId>;
     readonly groups: readonly ArrangedToolbarGroup[];
     readonly key: string;
     readonly outside: readonly string[];
     readonly problems: readonly string[];
     readonly replaced: ReadonlySet<ChromeSlotId>;
 }
+
+// @internal
+export function toolbarAsChildProblem(part: string, name: string): string;
+
+// @internal
+export function toolbarCollapse(groups: readonly ToolbarFitGroup[], widths: ReadonlyMap<string, number>, width: number, gap?: number): readonly string[];
 
 // @public
 export interface ToolbarCommandState {
@@ -1558,7 +1610,18 @@ export function toolbarCommandState(snapshot: EditorSnapshot, id: ChromeSlotId, 
 export function toolbarCommandStates(snapshot: EditorSnapshot, ids: readonly ChromeSlotId[], host?: ToolbarHost): readonly ToolbarCommandState[];
 
 // @internal
+export interface ToolbarFitGroup {
+    // (undocumented)
+    readonly id: string;
+    readonly pinned?: boolean | undefined;
+    readonly priority?: number | undefined;
+}
+
+// @internal
 export function toolbarGroupHeading(group: Pick<ArrangedToolbarGroup, 'id' | 'label' | 'labelKey'>, translate: (key: string) => string): string;
+
+// @internal
+export function toolbarGroupPriority(id: string, order?: readonly string[]): number | undefined;
 
 // @internal
 export interface ToolbarGroupRequest {
@@ -1573,6 +1636,9 @@ export interface ToolbarGroupRequest {
     readonly label?: string | undefined;
     // (undocumented)
     readonly labelKey?: string | undefined;
+    readonly overflowContent?: boolean | undefined;
+    readonly pinned?: boolean | undefined;
+    readonly priority?: number | undefined;
 }
 
 // @internal
@@ -1596,6 +1662,9 @@ export interface ToolbarHostGroupPlacement {
 }
 
 // @internal
+export type ToolbarPartName = keyof typeof TOOLBAR_NAMED_PARTS;
+
+// @internal
 export interface ToolbarPartNames {
     // (undocumented)
     readonly group: string;
@@ -1605,8 +1674,13 @@ export interface ToolbarPartNames {
 
 // @internal
 export interface ToolbarSlotRequest {
+    readonly asChild?: boolean | undefined;
+    readonly asChildElement?: boolean | undefined;
+    readonly className?: boolean | undefined;
     readonly content: boolean;
     readonly hidden: boolean;
+    readonly icon?: boolean | undefined;
+    readonly overflowContent?: boolean | undefined;
     readonly slotId: string;
 }
 

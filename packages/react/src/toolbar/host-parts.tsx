@@ -6,15 +6,23 @@
 // (`arrangeToolbar` in core). The toolbar matches a part by a static marker, never by its display
 // name, which minifies away.
 //
-// Differences from DOCX Editor: this toolbar has no named parts (`Toolbar.Bold`), so
-// `Toolbar.Slot` is the part that replaces or hides a slot; a `Toolbar.Slot` with no children
-// renders the built-in control of its slot, as `ToolbarSlot` of
-// pptx-editor/packages/react/src/Toolbar.tsx at 929ca860 (EigenPal) does, so a host can place a
-// built-in control under `preset={false}` or in a host group; a group has no `priority`,
-// `pinned`, or `overflowContent`, and a slot has no `overflowContent` (`toolbar-arrange.ts` names
-// why); a Fragment of any number of parts is read as its parts, as the Vue adapter reads one
-// (DOCX Editor's `unwrapFragment` reads a Fragment of one part only); and the problems come from
-// core as sentences, which `warnToolbarProblems` prints once each in development, with the
+// The named parts (`XlsxEditor.Toolbar.Bold`, ...) are `Toolbar.Slot` with the slot pinned, as
+// DOCX Editor's `definePart` (parts.tsx at ad686574): each carries its slot as a static
+// (`xlsxSlot`), and the children of a button part are icon content (`icon`, else children,
+// else the registry icon), not a replacement. `icon`, `asChild`, `className`, and
+// `overflowContent` of a slot, and `priority`, `pinned`, and `overflowContent` of a group, are
+// DOCX Editor's (ToolbarGroup.tsx at ad686574).
+//
+// Differences from DOCX Editor: a `Toolbar.Slot` with no children renders the built-in control
+// of its slot, as `ToolbarSlot` of pptx-editor/packages/react/src/Toolbar.tsx at 929ca860
+// (EigenPal) does, so a host can place a built-in control under `preset={false}` or in a host
+// group; `icon`, `asChild`, and `className` also apply on `Toolbar.Slot`, as in PPTX Editor's
+// `SlotControl` (toolbar-parts.tsx at 70052cf1), and `asChild` with children that are not one
+// element falls back to the built-in button with a warning; a value control (a list, a
+// palette, the dialog opener) takes no `icon` or `asChild`, with a warning; a Fragment of any
+// number of parts is read as its parts, as the Vue adapter reads one (DOCX Editor's
+// `unwrapFragment` reads a Fragment of one part only); and the problems come from core as
+// sentences, which `warnToolbarProblems` prints once each in development, with the
 // `[xlsx-editor]` prefix. The markers are set with `markPart`, so they are no public member of
 // the exported parts.
 
@@ -32,6 +40,8 @@ import {
 import {
   CHROME_GROUPS,
   chromeSlotId,
+  isToolbarButtonSlot,
+  toolbarAsChildProblem,
   toolbarGroupHeading,
   type ChromeControl,
   type ChromeGroup,
@@ -49,9 +59,12 @@ import {
   FontSizeList,
   NumberFormatDialogButton,
   NumberFormatList,
+  SlotOverrideContext,
   ToolbarButton,
   type PartLayout,
+  type SlotOverride,
 } from './parts.tsx';
+import { asChildElement } from './as-child.tsx';
 
 /**
  * Mark a part for the toolbar, which finds a part by this static, never by its display name,
@@ -59,6 +72,12 @@ import {
  */
 function markPart(part: object, marker: 'xlsxToolbarSlot' | 'xlsxToolbarGroup'): void {
   (part as Record<string, unknown>)[marker] = true;
+}
+
+/** Mark a named part with the slot it stands for. */
+export function markNamedPart(part: object, slot: ChromeSlotId): void {
+  markPart(part, 'xlsxToolbarSlot');
+  (part as Record<string, unknown>).xlsxSlot = slot;
 }
 
 /** Props for `XlsxEditor.Toolbar.Slot`. @public */
@@ -71,8 +90,29 @@ export interface XlsxEditorToolbarSlotProps {
    */
   readonly hidden?: boolean;
   /**
+   * An icon in place of the registry icon, about 18 pixels, as the packaged icons. Button slots
+   * only: a list, a palette, or the dialog opener ignores it, with a development warning.
+   */
+  readonly icon?: ReactNode;
+  /**
+   * Render the built-in control as the single child element: the child receives the control's
+   * class name, label, state attributes, and press. The child's own value wins for each other
+   * prop, so its own `title` or `aria-describedby` hides the disabled reason. An element that is
+   * not a `<button>` also takes the button role, a Tab stop, and Enter and Space. Button slots
+   * only.
+   */
+  readonly asChild?: boolean;
+  /** Appended after the class of the control, or of the trigger of a value control. */
+  readonly className?: string;
+  /**
+   * Content for the slot's row in the "More" panel, when its group leaves the bar. Without it,
+   * the row shows the children, or the built-in control as a row.
+   */
+  readonly overflowContent?: () => ReactNode;
+  /**
    * Content that takes the slot's place: in the bar, and in the group's section of the "More"
-   * panel. Without children, the part renders the built-in control of the slot.
+   * panel. Without children, the part renders the built-in control of the slot. With `asChild`,
+   * the one element that renders the control.
    */
   readonly children?: ReactNode;
 }
@@ -97,8 +137,23 @@ export interface XlsxEditorToolbarGroupProps {
    * built-in group, in order of appearance. A built-in group keeps its place.
    */
   readonly after?: ChromeGroupId | (string & {});
+  /**
+   * Collapse priority: a lower number leaves the bar for the "More" panel first. The built-in
+   * groups use 10 (`file`) through 90 (`history`) in steps of 10, from the end of the bar. A
+   * host group without a priority leaves before every built-in group. A built-in id takes a
+   * new priority.
+   */
+  readonly priority?: number;
+  /** `true` keeps the group in the bar at every width. */
+  readonly pinned?: boolean;
   /** Removes the group, built-in or host, from the bar and from the "More" panel. */
   readonly hidden?: boolean;
+  /**
+   * Content for the group's section of the "More" panel: after the controls of a built-in
+   * group, where it shows also when the group has no children, or in place of the children of a
+   * host group. Without it, the panel shows the children as rows.
+   */
+  readonly overflowContent?: () => ReactNode;
   /** Appended after the `xlsx-toolbar-group` class. */
   readonly className?: string;
   /**
@@ -121,11 +176,36 @@ export function Control({
   control,
   layout,
   replaced,
+  override,
 }: {
   readonly group: ChromeGroup;
   readonly control: ChromeControl;
   readonly layout: PartLayout;
   readonly replaced?: ReadonlySet<string>;
+  /** The changes of the slot's part: `icon`, `asChild`, `className`. */
+  readonly override?: SlotOverride | null;
+}) {
+  const own = (
+    <BuiltInControl group={group} control={control} layout={layout} replaced={replaced} />
+  );
+  return override ? (
+    <SlotOverrideContext.Provider value={override}>{own}</SlotOverrideContext.Provider>
+  ) : (
+    own
+  );
+}
+
+/** The built-in control of a slot. */
+function BuiltInControl({
+  group,
+  control,
+  layout,
+  replaced,
+}: {
+  readonly group: ChromeGroup;
+  readonly control: ChromeControl;
+  readonly layout: PartLayout;
+  readonly replaced?: ReadonlySet<string> | undefined;
 }) {
   const slot = chromeSlotId(group, control);
   if (slot === 'font.family') return <FontFamilyList layout={layout} />;
@@ -167,17 +247,43 @@ function groupOfSlot(slot: string): { group: ChromeGroup; control: ChromeControl
  *
  * @public
  */
-export function XlsxEditorToolbarSlot({ slotId, hidden, children }: XlsxEditorToolbarSlotProps) {
+export function XlsxEditorToolbarSlot(props: XlsxEditorToolbarSlotProps) {
+  const { slotId, hidden, children } = props;
   const layout = useContext(PartLayoutContext);
-  const content = hasContent(children);
+  // `asChild` holds the element only on a button slot: elsewhere the children replace the slot.
+  const asChild = !!props.asChild && isToolbarButtonSlot(slotId);
+  const content = !asChild && hasContent(children);
   const found = hidden || content ? null : groupOfSlot(slotId);
   const unknown = !hidden && !content && !found;
+  const override = found ? slotOverrideOf(props) : null;
+  const badChild = asChild && !hidden && !override?.asChild;
   useEffect(() => {
     if (unknown) warnToolbarProblems([unknownSlotProblem(slotId, 'XlsxEditor.Toolbar.Slot')]);
-  }, [unknown, slotId]);
+    else if (badChild)
+      warnToolbarProblems([toolbarAsChildProblem('XlsxEditor.Toolbar.Slot', slotId)]);
+  }, [unknown, badChild, slotId]);
   if (hidden) return null;
   if (content) return <>{children}</>;
-  return found ? <Control group={found.group} control={found.control} layout={layout} /> : null;
+  return found ? (
+    <Control group={found.group} control={found.control} layout={layout} override={override} />
+  ) : null;
+}
+
+/**
+ * The changes of a slot part to its built-in control, or null for none. `icon` and `asChild`
+ * reach a button slot only, as `arrangeToolbar` warns.
+ */
+export function slotOverrideOf(props: XlsxEditorToolbarSlotProps): SlotOverride | null {
+  const button = isToolbarButtonSlot(props.slotId);
+  const asChild = button && props.asChild ? asChildElement(props.children) : null;
+  const icon = button ? props.icon : undefined;
+  if (icon == null && !asChild && !props.className) return null;
+  return {
+    slot: props.slotId,
+    ...(icon != null ? { icon } : {}),
+    ...(props.className ? { className: props.className } : {}),
+    ...(asChild ? { asChild } : {}),
+  };
 }
 
 markPart(XlsxEditorToolbarSlot, 'xlsxToolbarSlot');
@@ -249,6 +355,33 @@ const isPart = (child: ReactNode, marker: 'xlsxToolbarSlot' | 'xlsxToolbarGroup'
   (typeof child.type === 'function' || typeof child.type === 'object') &&
   (child.type as unknown as Record<string, unknown>)[marker] === true;
 
+/**
+ * The slot props of a `Toolbar.Slot` element, or of a named part, which stands for the slot of
+ * its static (`namedPartSlotProps`).
+ */
+function slotPropsOf(part: ReactElement): XlsxEditorToolbarSlotProps {
+  const slot = (part.type as unknown as { xlsxSlot?: ChromeSlotId }).xlsxSlot;
+  const props = part.props as XlsxEditorToolbarSlotProps;
+  return slot ? namedPartSlotProps(slot, props as unknown as Record<string, unknown>) : props;
+}
+
+/**
+ * The slot props that a named part stands for, as PPTX Editor's `namedPartSlotProps`
+ * (toolbar-parts.tsx at 70052cf1): the children of a button part are icon content, as in DOCX
+ * Editor, and the children of a value part are dropped (its props type has none).
+ */
+export function namedPartSlotProps(
+  slot: ChromeSlotId,
+  props: Record<string, unknown>
+): XlsxEditorToolbarSlotProps {
+  const { children, icon, ...rest } = props as { children?: ReactNode; icon?: ReactNode };
+  // A value part keeps its other props as given, so a stray `icon` or `asChild` still warns.
+  if (!isToolbarButtonSlot(slot)) return { ...rest, icon, slotId: slot };
+  if (props.asChild === true) return { ...rest, slotId: slot, icon, children };
+  const glyph = icon ?? (hasContent(children) ? children : undefined);
+  return { ...rest, slotId: slot, ...(glyph !== undefined ? { icon: glyph } : {}) };
+}
+
 /** A child as a part, or null for any other child. */
 function partOf(child: ReactNode): ReactElement | null {
   return isPart(child, 'xlsxToolbarSlot') || isPart(child, 'xlsxToolbarGroup')
@@ -292,16 +425,28 @@ export function readToolbarChildren(children: ReactNode): ToolbarChildren {
         hidden: props.hidden === true,
         label: props.label,
         labelKey: props.labelKey,
+        priority: typeof props.priority === 'number' ? props.priority : undefined,
+        pinned: props.pinned === true,
         content: hasContent(props.children),
+        overflowContent: typeof props.overflowContent === 'function',
       });
     } else if (part) {
-      const props = part.props as XlsxEditorToolbarSlotProps;
+      const props = slotPropsOf(part);
       const slotId = String(props.slotId);
       slots.set(slotId, props);
+      const asChild = props.asChild === true;
+      // `asChild` holds the element only on a button slot: elsewhere the children replace it.
+      const element =
+        asChild && isToolbarButtonSlot(slotId) ? asChildElement(props.children) : null;
       slotRequests.push({
         slotId,
         hidden: props.hidden === true,
-        content: hasContent(props.children),
+        content: !(asChild && isToolbarButtonSlot(slotId)) && hasContent(props.children),
+        icon: props.icon != null,
+        asChild,
+        asChildElement: element !== null,
+        className: !!props.className,
+        overflowContent: typeof props.overflowContent === 'function',
       });
     } else appended.push(child);
   }

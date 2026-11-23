@@ -113,7 +113,7 @@ defineProps<{ bytes?: Uint8Array }>();
 
 Keep `StatusMessage` in your layout. It is the only part that shows the text of the editor state, such as the reason for a refused edit. Composables run only in a descendant of `XlsxEditorRoot`.
 
-`XlsxEditorToolbar` takes the parts `XlsxEditorToolbar.Slot` and `XlsxEditorToolbar.Group` in its default slot, as React's toolbar takes them as children. The following sample replaces the save control, removes the underline control, and adds a host group after the history group. Use the component of the sample in place of `<XlsxEditorToolbar />` in your layout, inside `XlsxEditorViewport`. `:preset="false"` renders only the default slot. The [Toolbar and keyboard](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md#toolbar-parts) guide describes the rules:
+`XlsxEditorToolbar` takes the named parts (`XlsxEditorToolbar.Bold`, ...), `XlsxEditorToolbar.Slot`, `XlsxEditorToolbar.Group`, `XlsxEditorToolbar.Action`, and `XlsxEditorToolbar.Separator` in its default slot, as React's toolbar takes them as children. The following sample replaces the save control, removes the underline control, and adds a host group after the history group. Use the component of the sample in place of `<XlsxEditorToolbar />` in your layout, inside `XlsxEditorViewport`. `:preset="false"` renders only the default slot. The [Toolbar and keyboard](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md#toolbar-parts) guide describes the rules:
 
 ```vue
 <script setup lang="ts">

@@ -4,10 +4,10 @@
 // docx-editor/packages/react/src/editor/toolbar/DocxEditorToolbar.tsx at a0825f1f (EigenPal);
 // the header there explains the rules and the differences from DOCX Editor. The default
 // arrangement is derived from `CHROME_GROUPS` (`toolbarGroups`), the bar measures itself and
-// moves the groups that do not fit, from the end, into a "More" panel (`measureToolbar`,
+// moves the groups that do not fit, in collapse order, into a "More" panel (`measureToolbar`,
 // `observeToolbar`), the arrow keys move between its controls (`moveBarFocus`), Control or
 // Command and S runs the save (`listenSaveKey`), and the parts in its default slot change the
-// bar (`host-parts.tsx`, and `arrangeToolbar` in core).
+// bar (`host-parts.tsx`, `named-parts.tsx`, `action.tsx`, and `arrangeToolbar` in core).
 //
 // Differences from React: the toolbar host is a computed ref that the slots inject
 // (`toolbarHostKey`), so a change of `onSave` changes each slot's state at once; the bar takes
@@ -32,6 +32,7 @@ import {
 } from 'vue';
 import {
   TOOLBAR_FIXED_ATTRIBUTE,
+  TOOLBAR_PANEL_ITEMS,
   arrangeToolbar,
   chromeSlotId,
   guardToolbarMousedown,
@@ -48,6 +49,8 @@ import {
   type ToolbarArrangement,
   type ToolbarHost,
 } from '@xlsx-editor.dev/core/editor';
+import { ToolbarAction, ToolbarSeparator } from './action.tsx';
+import { TOOLBAR_PARTS, type ToolbarNamedParts } from './named-parts.tsx';
 import type { TFunction } from '@xlsx-editor.dev/i18n';
 import { useEditorState, useTranslation, useTranslator, useXlsxEditor } from '../context.ts';
 import { ChromeIcon, toolbarHostKey, translateKey } from './slot.tsx';
@@ -135,35 +138,61 @@ function groupHeading(t: TFunction, group: ArrangedToolbarGroup): string {
   return group.chrome ? translate(group.chrome.labelKey) : toolbarGroupHeading(group, translate);
 }
 
+/** The slots that a part replaces, and those whose built-in control a part changes. */
+interface SlotSets {
+  readonly replaced: ReadonlySet<string>;
+  readonly customized: ReadonlySet<string>;
+}
+
 /**
- * The controls of a group in `layout`: each built-in control, or the content of the
- * `Toolbar.Slot` that replaces it, then the content of the group's `Toolbar.Group`. A menu group
- * in the bar keeps its menu of the other controls, and the replacing content follows it.
+ * The controls of a group in `layout`: each built-in control, changed by its part, or the
+ * content of the `Toolbar.Slot` that replaces it, then the content of the group's
+ * `Toolbar.Group`. A menu group in the bar keeps its menu of the other controls, and the
+ * replacing content and the changed controls follow it. In a row of the "More" panel, the
+ * `overflowContent` of a slot takes the place of its control, and the `overflowContent` of a
+ * group takes the place of its default slot.
  */
 function groupContent(
   group: ArrangedToolbarGroup,
   parts: ToolbarChildren,
-  replaced: ReadonlySet<string>,
+  sets: SlotSets,
   layout: PartLayout
 ): (VNode | null)[] {
+  const { replaced, customized } = sets;
   const chrome = group.chrome;
+  const row = layout === 'row';
   const controls = chrome?.controls ?? [];
   const own = !!chrome?.menu && layout === 'bar';
-  const menu = chrome && own ? controls.filter((c) => !replaced.has(chromeSlotId(chrome, c))) : [];
+  const menu =
+    chrome && own
+      ? controls.filter((c) => {
+          const slot = chromeSlotId(chrome, c);
+          return !replaced.has(slot) && !customized.has(slot);
+        })
+      : [];
   // Each item is a Fragment in its own place and with its own key, as in React: so the content
   // of one slot never takes the element of another, as when two slots change at once.
-  const keyed = (key: string, nodes: VNode | readonly VNode[] | null | undefined) =>
-    nodes ? h(Fragment, { key }, Array.isArray(nodes) ? [...nodes] : [nodes]) : null;
+  const keyed = (key: string, nodes: unknown) =>
+    nodes == null || nodes === false
+      ? null
+      : h(Fragment, { key }, (Array.isArray(nodes) ? [...nodes] : [nodes]) as VNode[]);
+  const groupPart = parts.groups.get(group.id);
   return [
     chrome && menu.length > 0 ? (
       <GroupMenu key="menu" group={{ ...chrome, controls: menu }} />
     ) : null,
     ...controls.map((c) => {
       const slot = chromeSlotId(chrome!, c);
-      if (replaced.has(slot)) return keyed(`slot:${c.id}`, parts.slots.get(slot));
-      return own ? null : keyed(`control:${c.id}`, control(chrome!, c, layout, replaced));
+      const part = parts.slots.get(slot);
+      if (row && part?.overflowContent) return keyed(`row:${c.id}`, part.overflowContent());
+      if (replaced.has(slot)) return keyed(`slot:${c.id}`, part?.content);
+      if (own && !customized.has(slot)) return null;
+      const override = customized.has(slot) ? (part?.override ?? null) : null;
+      return keyed(`control:${c.id}`, control(chrome!, c, layout, replaced, override));
     }),
-    keyed('content', parts.groups.get(group.id)?.content),
+    row && groupPart?.overflowContent
+      ? keyed('overflow', groupPart.overflowContent())
+      : keyed('content', groupPart?.content),
   ];
 }
 
@@ -172,7 +201,7 @@ function barGroup(
   t: TFunction,
   group: ArrangedToolbarGroup,
   parts: ToolbarChildren,
-  replaced: ReadonlySet<string>
+  sets: SlotSets
 ) {
   return (
     <div
@@ -182,7 +211,7 @@ function barGroup(
       aria-label={groupHeading(t, group)}
       data-group={group.id}
     >
-      {groupContent(group, parts, replaced, 'bar')}
+      {groupContent(group, parts, sets, 'bar')}
     </div>
   );
 }
@@ -195,13 +224,13 @@ const MorePanel = defineComponent({
   props: {
     groups: { type: Array as PropType<readonly ArrangedToolbarGroup[]>, required: true },
     parts: { type: Object as PropType<ToolbarChildren>, required: true },
-    replaced: { type: Object as PropType<ReadonlySet<string>>, required: true },
+    sets: { type: Object as PropType<SlotSets>, required: true },
   },
   setup(props) {
     const { t } = useTranslation();
     // The rows of the panel: a part in a section renders as a row.
     provide(partLayoutKey, 'row');
-    const popup = usePopup('button, input', { nested: true });
+    const popup = usePopup(TOOLBAR_PANEL_ITEMS, { nested: true });
     // An open of another workbook closes the panel: its rows showed the old workbook's state.
     const loading = useEditorState(isLoading);
     watch(loading, (now) => {
@@ -244,7 +273,7 @@ const MorePanel = defineComponent({
                   <span class="xlsx-toolbar-heading" aria-hidden="true">
                     {groupHeading(t, g)}
                   </span>
-                  {groupContent(g, props.parts, props.replaced, 'row')}
+                  {groupContent(g, props.parts, props.sets, 'row')}
                 </div>
               ))}
             </div>
@@ -308,21 +337,24 @@ const XlsxEditorToolbarRoot = defineComponent({
       { immediate: true, flush: 'post' }
     );
     const widths = new Map<string, number>();
-    const shown = shallowRef(groups.value.length);
+    // The ids of the groups in the "More" panel, in bar order (`toolbarCollapse`).
+    const collapsed = shallowRef<readonly string[]>([]);
     // A new locale or a new set of groups changes the widths: measure every group again.
     let measuredFor: { t: TFunction; groups: readonly ArrangedToolbarGroup[] } | null = null;
     watch(
-      [() => props.overflow && props.preset, groups, shown, translator, bar, hasFixed],
+      [() => props.overflow && props.preset, groups, collapsed, translator, bar, hasFixed],
       ([measuring, all, , tr, el], _old, onCleanup) => {
         if (measuredFor?.t !== tr || measuredFor.groups !== all) widths.clear();
         measuredFor = { t: tr, groups: all };
         if (!el || !measuring) {
-          shown.value = all.length;
+          if (collapsed.value.length > 0) collapsed.value = [];
           return;
         }
         const measure = (): void => {
           const next = measureToolbar(el, all, widths);
-          if (shown.value !== next) shown.value = next;
+          const now = collapsed.value;
+          if (now.length !== next.length || now.some((id, i) => id !== next[i]))
+            collapsed.value = next;
         };
         measure();
         // The bar and each shown group: a group grows when its fonts load or its value changes.
@@ -347,13 +379,14 @@ const XlsxEditorToolbarRoot = defineComponent({
         warnToolbarProblems(next.problems);
         if (next.key !== arranged.value.key) arranged.value = next;
         const all = next.groups;
-        const replaced = next.replaced;
-        const rest = all.slice(shown.value);
+        const sets: SlotSets = { replaced: next.replaced, customized: next.customized };
+        const out = new Set(collapsed.value);
+        const rest = all.filter((g) => out.has(g.id));
         const items: unknown[] = all
-          .slice(0, shown.value)
-          .map((g) => barGroup(t, g, parts, replaced));
+          .filter((g) => !out.has(g.id))
+          .map((g) => barGroup(t, g, parts, sets));
         if (rest.length > 0)
-          items.push(<MorePanel key="more" groups={rest} parts={parts} replaced={replaced} />);
+          items.push(<MorePanel key="more" groups={rest} parts={parts} sets={sets} />);
         // Loose children, and the content of a `Toolbar.Slot` that names no slot, never
         // collapse: they have no group, and so no heading in the panel. The bar charges them as
         // fixed width. The content of each such slot is keyed by its slot, as in React, so its
@@ -361,7 +394,7 @@ const XlsxEditorToolbarRoot = defineComponent({
         const fixed = [
           ...parts.appended,
           ...next.outside.map((slot) =>
-            h(Fragment, { key: `slot:${slot}` }, [...(parts.slots.get(slot) ?? [])])
+            h(Fragment, { key: `slot:${slot}` }, [...(parts.slots.get(slot)?.content ?? [])])
           ),
         ];
         hasFixed.value = fixed.length > 0;
@@ -402,19 +435,24 @@ const XlsxEditorToolbarRoot = defineComponent({
  * The toolbar and its parts, the twin of React's `XlsxEditorToolbarNamespace`, as DOCX Editor's
  * Vue adapter declares `DocxEditorToolbarNamespace`. @public
  */
-export interface XlsxEditorToolbarNamespace {
+export interface XlsxEditorToolbarNamespace extends ToolbarNamedParts {
   /** The toolbar. A host `class` and `style` land on the bar, as on a component. */
   (props: XlsxEditorToolbarProps & AllowedComponentProps): VNode;
-  /** Replaces or hides one slot where it stands, or renders its built-in control. */
+  /** Replaces, changes, or hides one slot where it stands, or renders its built-in control. */
   readonly Slot: typeof XlsxEditorToolbarSlot;
   /** A host group that the bar measures and collapses, or a change of a built-in group. */
   readonly Group: typeof XlsxEditorToolbarGroup;
+  /** A host-owned action, styled and behaved like the packaged controls. */
+  readonly Action: typeof ToolbarAction;
+  /** A rule between controls. */
+  readonly Separator: typeof ToolbarSeparator;
 }
 
 /**
  * The editing toolbar: every group of the chrome registry in bar order. Place it inside
  * `XlsxEditorViewport`, which carries the styling scope. Its parts change the bar, in its
- * default slot: `XlsxEditorToolbar.Slot` and `XlsxEditorToolbar.Group`.
+ * default slot: the named parts (`XlsxEditorToolbar.Bold`, ...), `XlsxEditorToolbar.Slot`,
+ * `XlsxEditorToolbar.Group`, `XlsxEditorToolbar.Action`, and `XlsxEditorToolbar.Separator`.
  *
  * @example
  * ```ts
@@ -428,7 +466,9 @@ export interface XlsxEditorToolbarNamespace {
  *
  * @public
  */
-export const XlsxEditorToolbar = Object.assign(XlsxEditorToolbarRoot, {
+export const XlsxEditorToolbar = Object.assign(XlsxEditorToolbarRoot, TOOLBAR_PARTS, {
   Slot: XlsxEditorToolbarSlot,
   Group: XlsxEditorToolbarGroup,
+  Action: ToolbarAction,
+  Separator: ToolbarSeparator,
 }) as unknown as XlsxEditorToolbarNamespace;

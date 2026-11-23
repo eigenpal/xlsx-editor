@@ -262,16 +262,20 @@ If a cell edit holds changed text, undo is available and cancels the edit, as `u
 
 ### Toolbar parts
 
-If you build your own layout with `XlsxEditor.Toolbar`, the toolbar takes two kinds of part as its children. `XlsxEditor` renders its own toolbar and does not take parts.
+If you build your own layout with `XlsxEditor.Toolbar`, the toolbar takes parts as its children. `XlsxEditor` renders its own toolbar and does not take parts. The [Toolbar](https://github.com/eigenpal/xlsx-editor/blob/main/docs/site/content/customization/toolbar.mdx) page of the docs site shows each part with React and Vue code.
 
-- `XlsxEditor.Toolbar.Slot` with a `slotId` replaces that slot with its children, where the slot stands. With `hidden`, it removes the slot and its children, as the `hidden` list does.
+- A named part, such as `XlsxEditor.Toolbar.Bold`, stands for one slot. `<XlsxEditor.Toolbar.Bold hidden />` is `<XlsxEditor.Toolbar.Slot slotId="font.bold" hidden />`. A named part changes the built-in control with `icon`, `asChild`, and `className`. The children of a button part are its icon.
+- `XlsxEditor.Toolbar.Slot` with a `slotId` replaces that slot with its children, where the slot stands. With `hidden`, it removes the slot and its children, as the `hidden` list does. With `icon`, `asChild`, or `className` and no other children, it changes the built-in control.
 - `XlsxEditor.Toolbar.Group` with a new `id` adds a host group. The bar measures it with its own groups, and moves it into the **More** panel when it does not fit. In the panel, the group shows as a section with its heading: `label`, else the translated `labelKey`, else the `id`. A host group follows every built-in group, or the group that `after` names. A group with a built-in `id`, such as `file`, shows its children after its own controls. With `hidden`, it removes the group and its children.
 
 Pass the parts as direct children of the toolbar or of a Fragment. The toolbar does not read a part that a component of your own renders. In the preset bar, such a part shows in the block of other children, so a `Toolbar.Group` there never moves into the **More** panel.
 
 The last part for a slot or a group wins. If a slot is in the `hidden` list, the list wins over a `Toolbar.Slot` with children. In a menu group, such as Clear, the replaced slot's content shows after the menu, and the menu keeps the other slots.
 
-The bar moves groups into the **More** panel from the end of the bar. A host group with no `after` follows every built-in group, so it moves first. In the panel, the content of a `Toolbar.Slot` and of a `Toolbar.Group` shows in the section of its group.
+The bar moves whole groups into the **More** panel in collapse order. The built-in groups leave from the end of the bar: `file` has the priority 10, and `history` 90. A host group with no `priority` leaves before every built-in group. A lower `priority` leaves first, and a `pinned` group stays at every width. In the panel, the content of a `Toolbar.Slot` and of a `Toolbar.Group` shows in the section of its group, or their `overflowContent` when they have it.
+
+- `XlsxEditor.Toolbar.Action` is a button for an action of your own, with `label`, `icon`, `onSelect`, `active`, `disabled`, and `disabledReason`. A disabled action stays focusable and gives its reason. In a group in the **More** panel, it is a row with its icon and label.
+- `XlsxEditor.Toolbar.Separator` draws a rule between two controls.
 
 Other children, such as a status text, show in one block after the groups and the **More** button. The block always stays in the bar, and the bar measures the groups in the room that is left.
 
@@ -281,12 +285,19 @@ The parts take these props:
 | --- | --- | --- | --- |
 | `Toolbar.Slot` | `slotId` | `ChromeSlotId` | The slot that the part names. Required. |
 | `Toolbar.Slot` | `hidden` | `boolean` | Removes the slot where it stands. |
+| `Toolbar.Slot` | `icon` | `ReactNode` | An icon in place of the registry icon. Button slots only. |
+| `Toolbar.Slot` | `asChild` | `boolean` | Renders the built-in control as the one element in the children. Button slots only. |
+| `Toolbar.Slot` | `className` | `string` | A class after the class of the control, or of the trigger of a list or a palette. |
+| `Toolbar.Slot` | `overflowContent` | `() => ReactNode` | Content for the slot's row in the **More** panel. |
 | `Toolbar.Slot` | `children` | `ReactNode` | Content that takes the place of the slot. Without children, the part renders the built-in control of the slot. |
 | `Toolbar.Group` | `id` | `string` | A built-in group id, such as `file`, or a new id for a host group. Required. |
 | `Toolbar.Group` | `label` | `string` | The heading of a host group in the **More** panel, and its accessible name. |
 | `Toolbar.Group` | `labelKey` | `string` | A catalog key for the heading, translated with the toolbar's locale. `label` wins over it. |
 | `Toolbar.Group` | `after` | `string` | The id of the group that a host group follows. |
+| `Toolbar.Group` | `priority` | `number` | The collapse priority. A lower number leaves the bar first. |
+| `Toolbar.Group` | `pinned` | `boolean` | Keeps the group in the bar at every width. |
 | `Toolbar.Group` | `hidden` | `boolean` | Removes the group from the bar and from the **More** panel. |
+| `Toolbar.Group` | `overflowContent` | `() => ReactNode` | Content for the group's section of the **More** panel. |
 | `Toolbar.Group` | `className` | `string` | A class after `xlsx-toolbar-group`. The group draws its separator line as `::before`, so the `gap`, `padding`, `border`, and `background` of the class also apply around the line. The built-in line rule has the weight of one class. A `::before` rule of your class overrides the line when it comes after the editor stylesheet. To remove the line, set `content: none`. |
 | `Toolbar.Group` | `children` | `ReactNode` | The controls of the group. A host group with no children is left out. |
 
@@ -330,6 +341,9 @@ In a development build, the toolbar prints a warning once for each part that can
 - A `Toolbar.Slot` with children whose slot the `hidden` list names.
 - A `Toolbar.Slot` with children whose group is hidden.
 - A `label`, `labelKey`, or `after` on a built-in group.
+- An `icon` or `asChild` on a list, a palette, or the dialog opener.
+- An `asChild` part whose children are not one element.
+- An `icon` or `className` on a `Toolbar.Slot` with content.
 - An `after` that names no group, that names its own group, or that leads into a cycle of anchors.
 - An `after` that names a group that stands last because its own anchors name no group.
 

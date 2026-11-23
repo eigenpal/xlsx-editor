@@ -1,19 +1,26 @@
 // The arrangement of the preset toolbar with the parts that a host passes as its children:
-// `Toolbar.Slot`, which replaces or hides one slot where it stands, and `Toolbar.Group`, which
-// adds a host group or changes a built-in group. Both adapters read their children into the
-// requests of this file and render the result, so the React and Vue toolbars arrange the same
-// way. Adapter support, not a stable API.
+// `Toolbar.Slot` and the named parts (`Toolbar.Bold`), which replace, change, or hide one slot
+// where it stands, and `Toolbar.Group`, which adds a host group or changes a built-in group.
+// Both adapters read their children into the requests of this file and render the result, so
+// the React and Vue toolbars arrange the same way. Adapter support, not a stable API.
 //
 // `arrangeToolbarGroups` is a copy of docx-editor/packages/core/src/editor/toolbar-fit.ts at
-// 10eeaf67 (EigenPal), with no difference. `arrangeToolbar` is after `arrangeGroups` of
+// 10eeaf67 (EigenPal), with no difference. `TOOLBAR_COLLAPSE_ORDER`, `TOOLBAR_PINNED_GROUPS`,
+// `toolbarGroupPriority`, and `collapseOrder` are copies of the same file at ad686574, with the
+// differences below. `arrangeToolbar` is after `arrangeGroups` of
 // docx-editor/packages/react/src/editor/toolbar/DocxEditorToolbar.tsx, and its problems after
-// docx-editor/packages/react/src/editor/toolbar/toolbar-warnings.ts, at the same commit.
+// docx-editor/packages/react/src/editor/toolbar/toolbar-warnings.ts, at 10eeaf67.
 // Differences from DOCX Editor:
-// - The bar collapses its groups from the end, not in a declared priority order, so a group
-//   has no `priority` and no `pinned`. A host group with no `after` stands after every
-//   built-in group, so it collapses first, as a DOCX Editor host group with no priority does.
-// - A group and a slot have no `overflowContent`: in the "More" panel, a group shows its own
-//   content, and a slot shows the content of its `Toolbar.Slot`.
+// - The collapse order is the reverse bar order of the workbook groups: the save control leaves
+//   first and the history group last, as the bar collapsed from its end before groups had a
+//   priority. No built-in group is pinned: the workbook toolbar has no control that is the only
+//   way to reach a pane, as DOCX Editor's comments toggle is.
+// - The bar collapses whole groups, not one control at a time
+//   (docx-editor/packages/core/src/editor/toolbar-item-fit.ts): a "More" panel section shows
+//   one whole group, with its heading.
+// - A slot with `icon`, `asChild`, or `className` on a group that renders as one menu
+//   (`ChromeGroup.menu`) leaves the menu and shows as its own control after the menu button, as
+//   the content of a `Toolbar.Slot` does (`customized`).
 // - The slots of the `hidden` list are hidden as a `Toolbar.Slot` with `hidden` hides them.
 //   The list wins over a `Toolbar.Slot` with content for the same slot.
 // - The problems are returned as sentences that name the parts as the adapter names them
@@ -27,6 +34,76 @@ import {
   type ChromeGroup,
   type ChromeSlotId,
 } from './chrome-controls.ts';
+import { isToolbarButtonSlot } from './toolbar-named-parts.ts';
+
+/**
+ * Collapse order: the first id here is the first group to leave the bar. The reverse of the bar
+ * order, so the bar keeps its reading order: the save control leaves first, and the history
+ * and font groups stay longest. A group that this list does not name, such as a host group,
+ * collapses before all of these, in reverse bar order.
+ *
+ * @internal
+ */
+export const TOOLBAR_COLLAPSE_ORDER: readonly string[] = [
+  'file',
+  'clear',
+  'cells',
+  'number',
+  'alignment',
+  'borders',
+  'fill',
+  'font',
+  'history',
+];
+
+/**
+ * Groups that never move into the "More" panel. None of the workbook groups: each control is
+ * also in a menu, a key, or the panel. A host group joins with `pinned`.
+ *
+ * @internal
+ */
+export const TOOLBAR_PINNED_GROUPS: ReadonlySet<string> = new Set<string>();
+
+/**
+ * The priority of a declared group: its place in {@link TOOLBAR_COLLAPSE_ORDER}, in steps of
+ * 10, so `file` is 10 and `history` is 90. A host group with a `priority` sorts among these,
+ * and a LOWER number leaves the bar first. The steps leave room between two built-in groups.
+ *
+ * @internal
+ */
+export function toolbarGroupPriority(
+  id: string,
+  order: readonly string[] = TOOLBAR_COLLAPSE_ORDER
+): number | undefined {
+  const index = order.indexOf(id);
+  return index === -1 ? undefined : (index + 1) * 10;
+}
+
+/**
+ * The collapse order actually used: the declared one, with undeclared groups first.
+ *
+ * `priorities` gives a group an explicit place among the declared ones (see
+ * {@link toolbarGroupPriority}), and overrides a declared group's own priority. Groups with
+ * neither collapse first, in reverse bar order. Two groups with the same priority collapse
+ * in reverse bar order too: the one further along the bar leaves first.
+ *
+ * @internal
+ */
+export function collapseOrder(
+  groups: readonly string[],
+  order: readonly string[] = TOOLBAR_COLLAPSE_ORDER,
+  priorities?: ReadonlyMap<string, number>
+): readonly string[] {
+  const ranked: { id: string; priority: number; position: number }[] = [];
+  const undeclared: string[] = [];
+  groups.forEach((id, position) => {
+    const priority = priorities?.get(id) ?? toolbarGroupPriority(id, order);
+    if (priority === undefined || Number.isNaN(priority)) undeclared.push(id);
+    else ranked.push({ id, priority, position });
+  });
+  ranked.sort((a, b) => a.priority - b.priority || b.position - a.position);
+  return [...undeclared.reverse(), ...ranked.map((entry) => entry.id)];
+}
 
 /** One host group's placement request. @internal */
 export interface ToolbarHostGroupPlacement {
@@ -88,6 +165,19 @@ export interface ToolbarSlotRequest {
   readonly hidden: boolean;
   /** The part has content of its own, which takes the slot's place. */
   readonly content: boolean;
+  /** The part gives an icon in place of the registry icon. Button slots only. */
+  readonly icon?: boolean | undefined;
+  /** The part renders the control as its single child element. Button slots only. */
+  readonly asChild?: boolean | undefined;
+  /**
+   * With `asChild`: the children are one element. Else the control renders its own button, and
+   * the arrangement names the problem.
+   */
+  readonly asChildElement?: boolean | undefined;
+  /** The part adds a class name to the control. */
+  readonly className?: boolean | undefined;
+  /** The part gives content for the slot's row of the "More" panel. */
+  readonly overflowContent?: boolean | undefined;
 }
 
 /** A `Toolbar.Group` child of the preset toolbar, as the arrangement reads it. @internal */
@@ -97,8 +187,20 @@ export interface ToolbarGroupRequest {
   readonly hidden?: boolean | undefined;
   readonly label?: string | undefined;
   readonly labelKey?: string | undefined;
+  /**
+   * Collapse priority: a lower number leaves the bar first (`collapseOrder`). It also sets the
+   * place of a built-in group. NaN counts as unset.
+   */
+  readonly priority?: number | undefined;
+  /** The group stays in the bar at every width. */
+  readonly pinned?: boolean | undefined;
   /** The part has content of its own: the controls of a host group, or extra controls. */
   readonly content: boolean;
+  /**
+   * The part gives content for the group's section of the "More" panel. It shows a built-in
+   * group even with no control left, as the content of the part does.
+   */
+  readonly overflowContent?: boolean | undefined;
 }
 
 /** A group of the arranged bar. @internal */
@@ -113,6 +215,10 @@ export interface ArrangedToolbarGroup {
   readonly label?: string | undefined;
   /** The catalog key of a host group's heading. */
   readonly labelKey?: string | undefined;
+  /** The collapse priority that the host set, or undefined for the default place. */
+  readonly priority?: number | undefined;
+  /** The group stays in the bar at every width. */
+  readonly pinned: boolean;
 }
 
 /** The names of the two parts in one adapter, for the problems. @internal */
@@ -185,11 +291,19 @@ export interface ToolbarArrangement {
   readonly groups: readonly ArrangedToolbarGroup[];
   /** The slots whose `Toolbar.Slot` content takes the place of the built-in control. */
   readonly replaced: ReadonlySet<ChromeSlotId>;
+  /**
+   * The shown slots whose part changes the built-in control (`icon`, `asChild`, `className`).
+   * In a group that renders as one menu, such a slot shows as its own control after the menu.
+   */
+  readonly customized: ReadonlySet<ChromeSlotId>;
   /** The `Toolbar.Slot` ids that the registry does not hold. Their content is appended. */
   readonly outside: readonly string[];
   /** Development warnings: compositions that cannot do what they say. */
   readonly problems: readonly string[];
-  /** Equal for two arrangements with the same groups, controls, and replaced slots. */
+  /**
+   * Equal for two arrangements with the same groups, controls, replaced and customized slots,
+   * priorities, and pinned groups.
+   */
   readonly key: string;
 }
 
@@ -207,6 +321,12 @@ export function toolbarGroupHeading(
   return group.labelKey !== undefined ? translate(group.labelKey) : group.id;
 }
 
+/** A request's priority, with NaN as unset, as `collapseOrder` reads it. */
+function priorityOf(request: ToolbarGroupRequest | undefined): number | undefined {
+  const priority = request?.priority;
+  return priority === undefined || Number.isNaN(priority) ? undefined : priority;
+}
+
 const BUILT_IN_IDS: readonly string[] = (CHROME_GROUPS as readonly ChromeGroup[]).map((g) => g.id);
 const SLOT_IDS: ReadonlySet<string> = new Set(CHROME_SLOT_IDS);
 
@@ -215,8 +335,8 @@ const SLOT_IDS: ReadonlySet<string> = new Set(CHROME_SLOT_IDS);
  * `hidden` and of a hidden `Toolbar.Slot` left out, and the `Toolbar.Group` requests applied.
  * The last request for a slot or a group wins; a group keeps the place of its last request. A
  * built-in group with `hidden` is left out with its separator, and so is a built-in group with
- * no control left and no content. A host group with `hidden` or no content is left out, but it
- * still anchors the groups that name it in `after`. @internal
+ * no control left, no content, and no overflow content. A host group with `hidden` or no content
+ * is left out, but it still anchors the groups that name it in `after`. @internal
  */
 export function arrangeToolbar(input: {
   readonly hidden?: readonly ChromeSlotId[];
@@ -230,6 +350,7 @@ export function arrangeToolbar(input: {
   const listed = new Set<string>(input.hidden ?? []);
   const leave = new Set<string>(listed);
   const replaced = new Set<ChromeSlotId>();
+  const customized = new Set<ChromeSlotId>();
   const outside: string[] = [];
   const slots = new Map<string, ToolbarSlotRequest>();
   for (const slot of input.slots ?? []) slots.set(slot.slotId, slot);
@@ -254,7 +375,38 @@ export function arrangeToolbar(input: {
           `the slot, so the slot is left out. Remove it from the hidden list to show the ` +
           `content.`
       );
-    else if (slot.content) replaced.add(slot.slotId as ChromeSlotId);
+    else if (slot.content) {
+      replaced.add(slot.slotId as ChromeSlotId);
+      // On a value slot, `asChild` holds no element: the children replace the control.
+      if (slot.asChild && !isToolbarButtonSlot(slot.slotId))
+        problems.push(
+          `${names.slot} "${slot.slotId}" has asChild, but the slot is not a button (it is a ` +
+            `list, a palette, or a dialog opener), so its children replace the control. Remove ` +
+            `asChild to replace the control, or name a button slot.`
+        );
+      // The content takes the control's place, so a setting of the control does nothing.
+      for (const setting of ['icon', 'className'] as const)
+        if (slot[setting])
+          problems.push(
+            `${names.slot} "${slot.slotId}" has content, which takes the place of the ` +
+              `control, so its ${setting} is ignored. Put the ${setting} on your content, or ` +
+              `remove the content to change the built-in control.`
+          );
+    } else if (!listed.has(slot.slotId)) {
+      const button = isToolbarButtonSlot(slot.slotId);
+      if (slot.asChild && button && slot.asChildElement === false)
+        problems.push(toolbarAsChildProblem(names.slot, slot.slotId));
+      for (const setting of ['icon', 'asChild'] as const)
+        if (slot[setting] && !button)
+          problems.push(
+            `${names.slot} "${slot.slotId}" has ${setting}, but the slot is not a button ` +
+              `(it is a list, a palette, or a dialog opener), so the ${setting} is ignored. ` +
+              `Give the slot content to replace the control.`
+          );
+      const element = slot.asChild && slot.asChildElement !== false;
+      if ((slot.icon && button) || (element && button) || slot.className)
+        customized.add(slot.slotId as ChromeSlotId);
+    }
   }
   // Re-inserted so the LAST request's position is its order of appearance.
   const requests = new Map<string, ToolbarGroupRequest>();
@@ -285,16 +437,31 @@ export function arrangeToolbar(input: {
       continue;
     }
     const controls = g.controls.filter((c) => !leave.has(chromeSlotId(g, c)));
-    if (controls.length === 0 && !request?.content) continue;
+    if (controls.length === 0 && !request?.content && !request?.overflowContent) continue;
     byId.set(g.id, {
       id: g.id,
       chrome: controls.length === g.controls.length ? g : { ...g, controls },
+      priority: priorityOf(request),
+      pinned: request?.pinned ?? TOOLBAR_PINNED_GROUPS.has(g.id),
     });
   }
   const hosts = [...requests.values()].filter((r) => !BUILT_IN_IDS.includes(r.id));
   for (const host of hosts) {
+    if (!host.hidden && !host.content && host.overflowContent)
+      problems.push(
+        `${names.group} "${host.id}" has overflowContent but no children, so the group is ` +
+          `left out: a host group shows in the "More" panel only when its controls leave the ` +
+          `bar. Give the group children.`
+      );
     if (host.hidden || !host.content) continue;
-    byId.set(host.id, { id: host.id, chrome: null, label: host.label, labelKey: host.labelKey });
+    byId.set(host.id, {
+      id: host.id,
+      chrome: null,
+      label: host.label,
+      labelKey: host.labelKey,
+      priority: priorityOf(host),
+      pinned: host.pinned === true,
+    });
   }
   const known = [...BUILT_IN_IDS, ...hosts.map((host) => host.id)];
   for (const host of hosts)
@@ -334,8 +501,26 @@ export function arrangeToolbar(input: {
   });
   // JSON keeps the ids apart, also an id with a space or a comma.
   const key = JSON.stringify([
-    groups.map((g) => (g.chrome ? [g.id, g.chrome.controls.map((c) => c.id)] : g.id)),
+    groups.map((g) => [
+      g.id,
+      g.chrome ? g.chrome.controls.map((c) => c.id) : null,
+      g.priority ?? null,
+      g.pinned,
+    ]),
     [...replaced].sort(),
+    [...customized].sort(),
   ]);
-  return { groups, replaced, outside, problems, key };
+  return { groups, replaced, customized, outside, problems, key };
+}
+
+/**
+ * The problem of a part with `asChild` whose children are not one element: `part` names the part
+ * as the adapter names it, and `name` its slot id or its label. The part renders its own button.
+ * @internal
+ */
+export function toolbarAsChildProblem(part: string, name: string): string {
+  return (
+    `${part} "${name}" has asChild, but its children are not one element, so it renders its ` +
+    `own button. Pass exactly one element, such as a <button>.`
+  );
 }

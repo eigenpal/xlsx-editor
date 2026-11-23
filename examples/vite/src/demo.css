@@ -471,8 +471,8 @@ body,
     0 12px 32px -20px #1b1a194d;
 }
 
-/* The status strip over the grid keeps its room while it is empty (packages/core/src/styles/
-   editor.css); in the card it takes the card's quiet surface, not the page color. */
+/* The status strip over the grid takes no room while it is empty (packages/core/src/styles/
+   editor.css); in the card a shown message takes the card's quiet surface, not the page color. */
 .demo-root .xlsx-status-strip {
   background: var(--demo-surface-2);
 }

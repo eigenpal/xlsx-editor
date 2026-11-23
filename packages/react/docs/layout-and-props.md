@@ -16,7 +16,7 @@ This guide describes the parts of a custom layout, the props of `XlsxEditor.Root
 
 Keep `XlsxEditor.StatusMessage` in your layout. It is the only part that shows the text of the editor state: the empty and loading messages, the reason a workbook did not open, the reason an edit was refused, the notice that formula results can be out of date, and the notice for conditional formatting that the grid can leave out.
 
-While a workbook is open, it is a strip above the grid. The strip is one line high when it is empty. A refusal shows in full on its own row, and the strip grows while the refusal shows. A notice that shows alone wraps when the strip is too narrow for it. The `xlsx-footer` class marks the footer region that F6 visits.
+While a workbook is open, it is a strip above the grid. The strip takes no room when it is empty, so the grid starts under the formula bar. A message pushes the grid down by its height and covers no cell. A refusal shows in full on its own row. A notice that shows alone wraps when the strip is too narrow for it. The `xlsx-footer` class marks the footer region that F6 visits.
 
 In development, `XlsxEditor.Root` logs one warning when the layout has `XlsxEditor.Content` and no `XlsxEditor.StatusMessage`.
 

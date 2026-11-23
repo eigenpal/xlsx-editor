@@ -122,14 +122,14 @@ export const StatusMessage = defineComponent({
     const snap = useEditorState(statusSlice, sameSlice);
     const modeWaits = useViewModeWaits();
     useLayoutPart('statusMessages');
-    // The status strip is present while a workbook is ready, one line high and empty when there
-    // is no message, so nothing covers the grid. A refusal shows in full on its own row, and the
-    // strip grows while it shows. When more than one message shows, a notice shows its short
-    // text and keeps its full text in `title`. The short text is visual only (`Notice`), so a
-    // notice's live text never changes while its state stays the same, and a screen reader
-    // announces it once. The stale notice, the protection of the shown sheet, the conditional
-    // formatting that the grid can leave out, the parts past a limit of the read, and a wait of
-    // the `mode` prop stay mounted while the workbook is open (`statusView`).
+    // The status strip is present while a workbook is ready. With no message it takes no room (its
+    // CSS in core), and the notices stay mounted as live nodes. A message pushes the grid down and
+    // covers no cell. A refusal shows in full on its own row. When more than one message shows, a
+    // notice shows its short text and keeps its full text in `title`. The short text is visual only
+    // (`Notice`), so a notice's live text never changes while its state stays the same, and a
+    // screen reader announces it once. The stale notice, the protection of the shown sheet, the
+    // conditional formatting that the grid can leave out, the parts past a limit of the read, and a
+    // wait of the `mode` prop stay mounted while the workbook is open (`statusView`).
     return () => {
       const view = statusView(snap.value, modeWaits.value, t);
       if (view.kind === 'strip')

@@ -245,6 +245,7 @@ Your own content inside the editor, such as a layout around its parts in `XlsxEd
 | `useTranslation()` | `UseTranslationReturn`: `t`, in the locale of `XlsxEditorRoot` |
 | `useViewModeWaits()` | `UseViewModeWaitsReturn`: `true` while a change of `mode` to view mode waits for the open cell edit |
 | `useEditorColorMode()` | `UseEditorColorModeReturn`: the resolved color mode of the chrome |
+| `useScopeClassName()` | `UseScopeClassNameReturn`: a computed ref to the scope classes that a part outside `XlsxEditorViewport` adds, such as a popup in `document.body`: `'xlsx-editor '` or `'xlsx-editor dark '`, and `''` inside the viewport. See [Appearance](https://xlsx-editor.dev/docs/customization/appearance) |
 
 To build your own control, bind it to a chrome slot with `useEditorCommand`. Put the control inside `XlsxEditorRoot`. Prevent the default action of `mousedown`, so the control does not take the focus from the grid:
 

@@ -41,7 +41,7 @@ describe('extractSample', () => {
 describe('the README samples that check:consumer-install builds', () => {
   test('the core README marks the host element and the opening script', () => {
     const core = readme('core');
-    expect(extractSample(core, 'core-host')).toContain('class="xlsx-editor"');
+    expect(extractSample(core, 'core-host')).toContain('class="xlsx-editor xlsx-editor-viewport"');
     expect(extractSample(core, 'core-open')).toContain('createXlsxEditor');
   });
 

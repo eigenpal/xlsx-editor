@@ -43,6 +43,9 @@
 //   moves, scales, or clips the editor, the toolbar shows the groups of its layout width, a
 //   toolbar list opens under its trigger inside the visible box, a press selects the cell under
 //   the pointer, and the sheet tab menu opens at the pointer (`verify-demo-embedding.ts`).
+// - On a page of its own, in hosts that size the editor by its content, the editor width stays
+//   within the window, and the status strip keeps its width and its text in a host flex row
+//   (`verify-demo-content-sized.ts`).
 // - On a new page with no file save picker, the header's Save downloads one file whose bytes
 //   hold the edit and every sheet. A phone-wide bar shows Save and names each control, the page
 //   does not scroll sideways, and the text of a notice and of an error starts at the padding of
@@ -94,6 +97,7 @@ import { SAMPLE_BOLD_EDIT } from './sample-workbook/edits.ts';
 import { SHEET_GUIDE } from './sample-workbook/showcase-sheets.ts';
 import { checkPaint, verifyClipboard, verifyFocusCopy } from './verify-demo-engine.ts';
 import { verifyClipboardMark } from './verify-demo-clipboard-mark.ts';
+import { verifyContentSizedHosts } from './verify-demo-content-sized.ts';
 import { verifyEmbedding } from './verify-demo-embedding.ts';
 import { verifyEditableHost } from './verify-demo-host.ts';
 import {
@@ -349,6 +353,9 @@ async function runEngine(engine: Engine, url: string): Promise<EngineResult> {
       await step('copy after the focus', () => verifyFocusCopy(page));
       await step('editable host content', () => verifyEditableHost(page));
       await step('embedding', () => verifyEmbedding(browser, url, watch, adopt, SAMPLE_SHEET));
+      await step('content-sized host', () =>
+        verifyContentSizedHosts(browser, url, watch, adopt, SAMPLE_SHEET)
+      );
       await step('save with no picker', () =>
         verifyDownloadSave(browser, url, watch, adopt, {
           sheet: SAMPLE_BOLD_EDIT.sheet,

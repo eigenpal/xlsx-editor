@@ -351,7 +351,14 @@
   font-feature-settings: normal;
   font-variation-settings: normal;
   -webkit-font-smoothing: antialiased;
-  /* The status strip reads the editor's width, not the window's (a narrow host on a wide page). */
+}
+/* The editor's own box, which `XlsxEditor.Viewport` marks with `xlsx-editor-viewport`. Its width
+   never follows its content, so a host that sizes the editor by content (an inline block, a
+   centered flex column, an absolute box with no width) cannot feed the grid's width back into
+   the editor and grow it without limit. The status strip reads this width, not the window's (a
+   narrow host on a wide page). The containment is on this class, not on `.xlsx-editor`, so a
+   host popup that carries the scope class (`useScopeClassName`) keeps its content width. */
+.xlsx-editor-viewport {
   container: xlsx-editor / inline-size;
 }
 .xlsx-editor *,

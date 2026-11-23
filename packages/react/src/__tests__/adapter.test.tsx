@@ -8,12 +8,14 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { Profiler, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { buildXlsx, c, row } from '../../../../scripts/fixtures/builder.ts';
 import {
   XlsxEditor,
   XlsxEditorContext,
   useEditorColorMode,
   useEditorState,
+  useScopeClassName,
   type EditorSnapshot,
   type FontSource,
   type XlsxEditorInstance,
@@ -203,7 +205,7 @@ describe('XlsxEditor', () => {
     // In a narrow editor each notice under a refusal takes its own row.
     const narrow = /@container xlsx-editor \(max-width: \d+px\) \{([\s\S]*?)\n\}/.exec(css)![1]!;
     expect(narrow).toMatch(/\.xlsx-refusal ~ \.xlsx-notice:not\(:empty\) \{[^}]*flex: 1 1 100%;/);
-    expect(css).toMatch(/\.xlsx-editor \{[^}]*container: xlsx-editor \/ inline-size;/);
+    expect(css).toMatch(/\.xlsx-editor-viewport \{[^}]*container: xlsx-editor \/ inline-size;/);
   });
 
   test('F6 and Shift+F6 move the keyboard among the toolbar, the formula bar, the grid, and the footer', async () => {
@@ -738,6 +740,94 @@ describe('XlsxEditor', () => {
     } finally {
       window.matchMedia = original;
     }
+  });
+
+  test('useScopeClassName follows colorMode, and a portaled host popup resolves the tokens', () => {
+    // happy-dom computes a custom property that a rule declares on the element itself, so the
+    // test reads `--doc-bg` from the computed style of the popup and of the viewport.
+    const sheet = document.createElement('style');
+    sheet.textContent = readFileSync(
+      join(import.meta.dir, '../../../core/src/styles/editor.css'),
+      'utf8'
+    );
+    document.head.append(sheet);
+    try {
+      const inside: string[] = [];
+      function Inside() {
+        inside.push(useScopeClassName());
+        return null;
+      }
+      function HostPopup() {
+        const scope = useScopeClassName();
+        return createPortal(<div className={`${scope}acme-popup`} data-popup="" />, document.body);
+      }
+      const tree = (colorMode: 'light' | 'dark') => (
+        <XlsxEditor.Root fonts={FONTS} colorMode={colorMode}>
+          <XlsxEditor.Viewport>
+            <Inside />
+          </XlsxEditor.Viewport>
+          <HostPopup />
+        </XlsxEditor.Root>
+      );
+      const view = render(tree('light'));
+      const popup = () => document.body.querySelector('[data-popup]') as HTMLElement;
+      const viewport = () => view.container.querySelector('.xlsx-editor') as HTMLElement;
+      const token = (el: HTMLElement) => getComputedStyle(el).getPropertyValue('--doc-bg');
+      expect(inside.at(-1)).toBe('');
+      expect(popup().parentElement).toBe(document.body);
+      expect(popup().className).toBe('xlsx-editor acme-popup');
+      expect(token(popup())).not.toBe('');
+      expect(token(popup())).toBe(token(viewport()));
+      const lightBg = token(popup());
+
+      view.rerender(tree('dark'));
+      expect(inside.at(-1)).toBe('');
+      expect(popup().className).toBe('xlsx-editor dark acme-popup');
+      expect(token(popup())).toBe(token(viewport()));
+      expect(token(popup())).not.toBe(lightBg);
+      expect(getComputedStyle(popup()).getPropertyValue('color-scheme')).toBe('dark');
+    } finally {
+      sheet.remove();
+    }
+  });
+
+  test('the inline-size container is on the viewport class, not on the scope class', () => {
+    // The viewport keeps its width from following its content, so a content-sized host cannot
+    // grow it without limit. A host popup with the scope class keeps its content width.
+    // happy-dom does not compute `container-type`, so the test reads the stylesheet.
+    const css = readFileSync(
+      join(import.meta.dir, '../../../core/src/styles/editor.css'),
+      'utf8'
+    ).replace(/\/\*[\s\S]*?\*\//g, '');
+    const rules = (end: RegExp) =>
+      [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(([, selector]) =>
+        selector!.split(',').some((part) => end.test(part.trim()))
+      );
+    const scopeRules = rules(/\.xlsx-editor(\.dark)?$/);
+    expect(scopeRules.length).toBeGreaterThan(0);
+    for (const [, , body] of scopeRules) expect(body).not.toMatch(/(^|[;\s])container(-type)?\s*:/);
+    const viewportRules = rules(/^\.xlsx-editor-viewport$/);
+    expect(viewportRules.map(([, , body]) => body!.trim())).toEqual([
+      'container: xlsx-editor / inline-size;',
+    ]);
+    const view = render(
+      <XlsxEditor.Root fonts={FONTS}>
+        <XlsxEditor.Viewport className="host" />
+      </XlsxEditor.Root>
+    );
+    expect(view.container.querySelector('.xlsx-editor')!.className).toBe(
+      'xlsx-editor xlsx-editor-viewport host'
+    );
+  });
+
+  test('outside a root, useScopeClassName is the light scope', () => {
+    const seen: string[] = [];
+    function Probe() {
+      seen.push(useScopeClassName());
+      return null;
+    }
+    render(<Probe />);
+    expect(seen).toEqual(['xlsx-editor ']);
   });
 
   test('a viewport with label false renders no region; a label names it', () => {

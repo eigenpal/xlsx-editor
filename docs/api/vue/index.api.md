@@ -299,6 +299,12 @@ export function useEditorState<T>(selector: (snapshot: EditorSnapshot) => T, isE
 export type UseEditorStateReturn<T> = Readonly<ShallowRef<T>>;
 
 // @public
+export function useScopeClassName(): UseScopeClassNameReturn;
+
+// @public
+export type UseScopeClassNameReturn = ComputedRef<'' | 'xlsx-editor ' | 'xlsx-editor dark '>;
+
+// @public
 export function useTranslation(): UseTranslationReturn;
 
 // @public

@@ -189,6 +189,7 @@
       "useEditorCommand",
       "useEditorSnapshot",
       "useEditorState",
+      "useScopeClassName",
       "useTranslation",
       "useViewModeWaits",
       "useXlsxEditor",
@@ -226,6 +227,7 @@
     "vueExclusive": {
       "UseEditorSnapshotReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
       "UseEditorStateReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
+      "UseScopeClassNameReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
       "UseTranslationReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
       "UseViewModeWaitsReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
       "UseXlsxEditorReturn": "Vue composables declare named return types (AGENTS.md, Public API)."

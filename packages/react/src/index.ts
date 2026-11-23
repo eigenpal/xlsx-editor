@@ -50,7 +50,11 @@ export const XlsxEditor: XlsxEditorNamespace = Object.assign(XlsxEditorDefault, 
 });
 
 export type { XlsxEditorProps } from './XlsxEditor.tsx';
-export { useEditorColorMode, type UseEditorColorModeReturn } from './color-mode.ts';
+export {
+  useEditorColorMode,
+  type UseEditorColorModeReturn,
+  useScopeClassName,
+} from './color-mode.ts';
 export type { ColorMode, ResolvedColorMode } from '@xlsx-editor.dev/core/editor';
 export type { SheetProtection, WorkbookProtection } from '@xlsx-editor.dev/core/editor';
 export { XlsxEditorContent, XlsxEditorRoot, XlsxEditorViewport } from './XlsxEditorRoot.tsx';

@@ -290,6 +290,9 @@ export function useEditorSnapshot(): EditorSnapshot;
 export function useEditorState<T>(selector: (snapshot: EditorSnapshot) => T, isEqual?: (a: T, b: T) => boolean): T;
 
 // @public
+export function useScopeClassName(): '' | 'xlsx-editor ' | 'xlsx-editor dark ';
+
+// @public
 export function useTranslation(): {
     readonly t: TFunction;
 };

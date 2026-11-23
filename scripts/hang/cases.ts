@@ -1,15 +1,18 @@
-// The hostile workbooks of the browser hang test (`bun run test:hang:browser`). Each case builds
-// its workbook at test time, so the repository holds no large binary. Every value here is one
-// that the file's sender controls: AGENTS.md, "Security", names most of them.
+// The hostile workbooks of the hang tests. Each case builds its workbook at test time, so the
+// repository holds no large binary. Every value here is one that the file's sender controls:
+// AGENTS.md, "Security", names most of them. The engine run of `bun run test` (`engine-run.ts`)
+// opens, lays out, edits, saves, and reopens each file case with no network fault and no race,
+// with no browser. The browser run (`bun run test:hang:browser`) keeps the cases that need a real
+// browser (`BROWSER_CASES` of `browser-cases.ts`).
 //
 // To add a case, add one entry to `FILE_CASES` with a unique `id`, the input that it `covers`, and
 // the outcome that it must `expect`. Name the first sheet `HOSTILE_SHEET`: the `sheet` and `book`
-// helpers do this. Set `firstCell` when the workbook could open and lose its data. Run it with
-// `HANG_ONLY=<id> bun run test:hang:browser`.
+// helpers do this. Set `firstCell` when the workbook could open and lose its data. The engine run
+// takes it as is. Add it to `BROWSER_RUN` too when its check needs the page (`browser-cases.ts`).
 //
 // To add a network fault, add one entry to `NETWORK_CASES`, and apply a new `HangNetwork` value in
 // `applyNetwork` of `run.ts`. To add a race, add one entry to `FILE_CASES` with a `race`, and run
-// a new `HangRace` value in `runCase` of `run.ts`.
+// a new `HangRace` value in `runCase` of `run.ts`. Both run in the browser only.
 //
 // Same role as pptx-editor/scripts/stress/hang-decks.ts at e22f3f3b (EigenPal), for workbooks.
 

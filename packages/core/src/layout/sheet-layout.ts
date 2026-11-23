@@ -223,7 +223,9 @@ function sortedKeys(sheet: SheetIndex): Float64Array {
 function lowerBound(keys: Float64Array, key: number): number {
   let lo = 0;
   let hi = keys.length;
+  work.searches += 1;
   while (lo < hi) {
+    work.searchSteps += 1;
     const mid = (lo + hi) >> 1;
     if (keys[mid]! < key) lo = mid + 1;
     else hi = mid;
@@ -321,6 +323,7 @@ function conditionalWithin(
   value: CellValue,
   format: ResolvedCellFormat
 ): ResolvedCellFormat {
+  work.ruleChecks += 1;
   const before = ctx.checks.left;
   const shown = conditionalFormat(
     ctx.pkg,
@@ -338,15 +341,51 @@ function conditionalWithin(
 
 /** {@link rowHasShownRules} under the budget of the layout. */
 function rowHasShownRulesWithin(ctx: SheetContext, row: number): boolean {
+  work.ruleChecks += 1;
   const before = ctx.checks.left;
   const meets = rowHasShownRules(ctx.sheet.root, row, ctx.checks);
   if (before > 0 && ctx.checks.left <= 0) record(ctx, { code: 'conditional-budget' });
   return meets;
 }
 
+// Work counters for tests, as `rowHeightTestRecorder` (`row-height.ts`): a count is exact on
+// every machine, a wall-clock limit is not. Each one counts work that a window does, so a count
+// that grows with the rows of the sheet shows a scan that does not depend on the window.
+const work = {
+  /** The cell positions that the layout looks up (`resolveCell`). */
+  looked: 0,
+  /** The looked-up positions that hold a cell. */
+  resolved: 0,
+  /** The binary searches of the sorted cell keys, and their steps. */
+  searches: 0,
+  searchSteps: 0,
+  /** The sorted cell keys that the row loops read: in the window and on each side of it. */
+  keySteps: 0,
+  /** The merged ranges that the merge search reads for each pane (`mergesIn`). */
+  mergesRead: 0,
+  /** The rows and cells that the layout checks against conditional formatting rules. */
+  ruleChecks: 0,
+  /** The drawings that the layout tests against each pane. */
+  drawingsRead: 0,
+};
+
+/** @internal The work counters of the layout of a window. Not on the `layout` entry. */
+export function layoutWorkTestRecorder(): Readonly<typeof work> & { reset(): void } {
+  const recorder = {
+    reset() {
+      for (const k of Object.keys(work) as (keyof typeof work)[]) work[k] = 0;
+    },
+  };
+  for (const k of Object.keys(work) as (keyof typeof work)[])
+    Object.defineProperty(recorder, k, { get: () => work[k], enumerable: true });
+  return recorder as Readonly<typeof work> & { reset(): void };
+}
+
 function resolveCell(ctx: SheetContext, row: number, col: number): Resolved | undefined {
+  work.looked += 1;
   const entry = ctx.sheet.cells.get(cellKey(row, col));
   if (!entry) return undefined;
+  work.resolved += 1;
   const value = cellValue(ctx.pkg, ctx.index, entry.el, ctx.stale);
   const format = cellFormat(ctx.pkg, ctx.index, attr(entry.el, 's'));
   if (value.problem) record(ctx, { ...value.problem, row, col });
@@ -529,7 +568,7 @@ function layoutPane(
     firstCol: Math.max(0, span.firstCol - OVERFLOW_REACH),
     lastCol: Math.min(g.columns.count - 1, lastCol + OVERFLOW_REACH),
   };
-  const inBand = mergesIn(merges, band);
+  const inBand = mergesIn(merges, band, work);
   const inPane = inBand.filter((m) => m.firstCol <= lastCol && m.lastCol >= span.firstCol);
   // Rows go in ascending order, so one coverage sweep serves the pane.
   const isCovered = mergeCoverage(inBand);
@@ -680,6 +719,7 @@ function layoutPane(
     const begin = lowerBound(keys, cellKey(r, span.firstCol));
     const end = lowerBound(keys, cellKey(r, lastCol + 1));
     for (let i = begin - 1; i >= 0; i -= 1) {
+      work.keySteps += 1;
       const c = keys[i]! - cellKey(r, 0);
       if (c < band.firstCol) break;
       const covered = isCovered(r, c);
@@ -717,6 +757,7 @@ function layoutPane(
       });
     }
     for (let i = begin; i < end; i += 1) {
+      work.keySteps += 1;
       const c = keys[i]! - cellKey(r, 0);
       if (g.columns.sizeOf(c) === 0 || isCovered(r, c)) continue;
       const cell = resolveCell(ctx, r, c);
@@ -733,6 +774,7 @@ function layoutPane(
       addText(r, c, cell, rect, true);
     }
     for (let i = end; i < keys.length; i += 1) {
+      work.keySteps += 1;
       const c = keys[i]! - cellKey(r, 0);
       if (c > band.lastCol) break;
       const covered = isCovered(r, c);
@@ -747,6 +789,7 @@ function layoutPane(
   // Closed intervals: a straight connector has no height or width, and still shows.
   const visibleDrawings = drawings
     .filter((d) => {
+      work.drawingsRead += 1;
       const b = drawingBounds(d);
       return (
         b.x <= sheetClip.x + sheetClip.width &&

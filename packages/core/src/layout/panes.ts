@@ -167,10 +167,18 @@ function startingBy(index: MergeIndex, row: number): number {
   return lo;
 }
 
-/** The merged ranges that meet `area`, sorted by first row. */
-export function mergesIn(index: MergeIndex, area: CellRange): CellRange[] {
+/**
+ * The merged ranges that meet `area`, sorted by first row. `work`, for tests, counts the ranges
+ * that the search reads.
+ */
+export function mergesIn(
+  index: MergeIndex,
+  area: CellRange,
+  work?: { mergesRead: number }
+): CellRange[] {
   const out: CellRange[] = [];
   const end = startingBy(index, area.lastRow);
+  if (work) work.mergesRead += end;
   for (let i = 0; i < end; i += 1) {
     const m = index.ranges[i]!;
     if (m.lastRow >= area.firstRow && m.firstCol <= area.lastCol && m.lastCol >= area.firstCol)

@@ -68,3 +68,26 @@ export const SAVE_KEEPS_CONTENT: ReadonlySet<string> = new Set([
   'merge-small-many',
   'sheets-many',
 ]);
+
+/**
+ * The cases whose edit of cell A1 the store must refuse, with the refusal code and why. Any other
+ * refusal, or a refusal with another code, fails.
+ */
+export const EDIT_REFUSED: ReadonlyMap<string, { readonly code: string; readonly why: string }> =
+  new Map([
+    [
+      'xml-entity-expansion',
+      {
+        code: 'unsupported-package',
+        why: 'the shared string table declares a DTD, so it stays as bytes',
+      },
+    ],
+    [
+      'row-number-hostile',
+      { code: 'invalid-sheet', why: 'the sheet has a row number outside the grid' },
+    ],
+    [
+      'cell-reference-hostile',
+      { code: 'invalid-sheet', why: 'the sheet has a cell reference outside the grid' },
+    ],
+  ]);

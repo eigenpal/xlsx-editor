@@ -368,9 +368,9 @@ const FILE_CASES: readonly HangCase[] = [
   },
   {
     id: 'zip-leading-slash',
-    // The reader keeps this entry as a part inside the package. The reader does not refuse it.
+    // A ZIP item name has no leading slash (ECMA-376 Part 2, 7.3.4), so the reader refuses it.
     covers: 'a zip entry name starts with a slash',
-    expect: 'open',
+    expect: 'refuse',
     bytes: () => {
       const read = readZip(book(sheet(plainRows)));
       if (!read.ok) throw new Error(read.reason);

@@ -2,6 +2,8 @@
 // Copied from docx-editor/packages/core/src/store/package/zip.ts at 7cd3776a (EigenPal).
 // It also holds fixes that DOCX Editor does not have yet: S1, S6, K1, P6, W1.
 // Keep it equal to that file plus those fixes.
+// Intended difference from both sources: `readZip` refuses a zip entry name that starts with a
+// slash. The sources strip the slash and keep the entry as a part.
 // Bounded ZIP read/write over fflate (document-engine task 2.3 / design D14).
 // Reading enforces entry-count, total-decompressed-size and archive-ratio ceilings
 // (zip-bomb guard) and normalizes every entry name through the OPC profile
@@ -229,6 +231,14 @@ export function readZip(bytes: Uint8Array, limits: ZipLimits = DEFAULT_ZIP_LIMIT
         if (file.name.endsWith('/')) return false; // directory entry — never inflated
         entryCount += 1;
         if (entryCount > caps.maxEntries) throw new ZipViolation('too-many-entries');
+        // A ZIP item name has no leading slash: the writer removes it from the part name, and
+        // the reader adds it back (ECMA-376 Part 2, 7.3.4 and 7.3.5). `normalizePartName` also
+        // accepts canonical part names, so it would strip the slash; refuse the entry here.
+        // A backslash, a drive letter, and `//` are refused by `normalizePartName`.
+        if (file.name.startsWith('/')) {
+          badDetail = `${file.name}: leading-slash`;
+          throw new ZipViolation('bad-name');
+        }
         const norm = normalizePartName(file.name);
         if (!norm.ok) {
           badDetail = `${file.name}: ${norm.reason}`;

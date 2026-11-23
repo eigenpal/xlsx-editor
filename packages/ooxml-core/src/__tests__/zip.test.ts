@@ -176,6 +176,23 @@ describe('entry names follow the OPC path rules', () => {
     expect(readZip(named(name))).toMatchObject({ ok: false, reason: 'bad-name' });
   });
 
+  test('a zip entry name that starts with a slash is refused, never normalized', () => {
+    expect(readZip(zipSync({ '/a.xml': strToU8('<a/>') }))).toMatchObject({
+      ok: false,
+      reason: 'bad-name',
+      detail: '/a.xml: leading-slash',
+    });
+  });
+
+  test('one entry name that starts with a slash refuses the whole archive', () => {
+    const zip = zipSync({ 'a.xml': strToU8('<a/>'), '/b.xml': strToU8('<b/>') });
+    expect(readZip(zip)).toMatchObject({
+      ok: false,
+      reason: 'bad-name',
+      detail: '/b.xml: leading-slash',
+    });
+  });
+
   test('a directory entry is skipped, never inflated', () => {
     const r = readZip(zipSync({ 'dir/': new Uint8Array(0), 'dir/a.xml': strToU8('<a/>') }));
     expect(r.ok && [...r.entries.keys()]).toEqual(['/dir/a.xml']);
@@ -186,7 +203,6 @@ describe('OPC-equivalent duplicates are refused', () => {
   test.each([
     ['ppt/slides/slide1.xml', 'PPT/Slides/Slide1.XML'],
     ['ppt/slides/slide1.xml', 'ppt/slides/%73lide1.xml'],
-    ['a.xml', '/a.xml'],
   ])('%s and %s', (first, second) => {
     const zip = zipSync({ [first]: strToU8('<a/>'), [second]: strToU8('<b/>') });
     expect(readZip(zip)).toMatchObject({ ok: false, reason: 'bad-name' });

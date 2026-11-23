@@ -3,7 +3,6 @@
 
 /** The cases whose cell A1 holds the text `first`, which a lost sheet would not show. */
 const FIRST_IN_A1 = new Set([
-  'zip-leading-slash',
   'relationship-target-traversal',
   'names-object-keys',
   'defined-names-many',

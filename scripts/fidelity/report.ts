@@ -40,7 +40,13 @@ export interface ReportContext {
   readonly problems: readonly GateProblem[];
 }
 
-const cell = (s: string): string => s.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+// Escape the backslash before the pipe, so a backslash in the text cannot cancel the escape of
+// the pipe after it and end the table cell.
+const cell = (s: string): string =>
+  s
+    .replace(/\\/g, '\\\\')
+    .replace(/\|/g, '\\|')
+    .replace(/\r?\n|\r/g, ' ');
 
 /**
  * The verdict of a fixture in the report, after the gate: a fixture with a `fix` problem fails

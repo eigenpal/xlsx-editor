@@ -7,13 +7,11 @@
 
 import { afterEach, describe, expect, test } from 'bun:test';
 import { act, cleanup, waitFor } from '@testing-library/react';
-import { flagsOf, microtasks, mountDemo, settle, sheetsOf, WAIT_MS } from './demo-harness.tsx';
+import { flagsOf, mountDemo, settle, sheetsOf, WAIT_MS } from './demo-harness.tsx';
 import {
   EDIT,
-  FIXTURE,
   holdsText,
   largeWorkbook,
-  NEWER_FIXTURE,
   openFile,
   pressHeadings,
   savesEnd,
@@ -36,36 +34,43 @@ describe('an open during a load', () => {
     try {
       pressHeadings(demo);
       await demo.loadStarts();
-      demo.selectWorkbook(FIXTURE);
-      stillLoading(demo, 'the second workbook was picked');
+      demo.pickFile('second.xlsx', smallWorkbook('Second'));
       await demo.statusSays('Your edits are kept');
     } finally {
       demo.dialogs.accept = true;
     }
     expect(demo.dialogs.seen.length).toBe(asked + 1);
+    // The picked file asked after its checks, while the reload still ran: else the test proves
+    // nothing.
+    expect(demo.dialogs.whileLoading.at(-1)).toBe(true);
     expect(demo.shownSheet()).toBe('Reload');
     expect(demo.leaveAsks()).toBe(true);
     expect(holdsText(await demo.save(), EDIT)).toBe(true);
   });
 
-  test('a fixture fetch that fails during a load leaves the name and the flags of the loaded workbook', async () => {
+  test('a picked file that does not open during a load leaves the name and the flags of the loaded workbook', async () => {
     const demo = await mountDemo();
     await demo.headingsTo(true);
     await openFile(demo, 'Before', smallWorkbook('Before'));
     const large = largeWorkbook('Loaded', { headings: false });
-    const restore = demo.services.fail(FIXTURE);
-    try {
-      demo.pickFile('loaded.xlsx', large);
-      await demo.loadStarts();
-      demo.selectWorkbook(FIXTURE);
-      await microtasks();
-      demo.alertNow('did not download');
-      stillLoading(demo, 'the fetch failed');
-    } finally {
-      restore();
-    }
+    demo.pickFile('loaded.xlsx', large);
+    await demo.loadStarts();
+    demo.pickFile('broken.xlsx', 'not a workbook');
+    // Whether the load still ran when the refusal first showed.
+    let loadingAtRefusal: boolean | undefined;
+    await waitFor(
+      () => {
+        demo.alertNow('Could not open broken.xlsx');
+        loadingAtRefusal ??= demo.loading();
+      },
+      { timeout: WAIT_MS, interval: 1 }
+    );
+    if (!loadingAtRefusal)
+      throw new Error(
+        'the load ended before the picked file was refused, so the test proves nothing'
+      );
     await demo.showsSheet('Loaded');
-    expect(demo.listed()).toBe('loaded.xlsx');
+    expect(demo.workbookName()).toBe('loaded.xlsx');
     const saved = await demo.save();
     expect(demo.services.suggested.at(-1)).toBe('loaded-edited.xlsx');
     expect(flagsOf(saved)).toBe(flagsOf(large));
@@ -140,22 +145,11 @@ describe('an open during a load', () => {
       demo.alertNow('The key did nothing');
       stillLoading(demo, 'the keys were pressed');
       await demo.showsSheet('KeysLarge');
-      // The download of a fixture is part of its open too.
-      const release = demo.services.hold(FIXTURE);
-      try {
-        demo.selectWorkbook(FIXTURE);
-        blur();
-        demo.saveKey(document.body);
-        await demo.alertSays('a workbook is opening');
-      } finally {
-        release();
-      }
-      await demo.showsSheet('Values');
     } finally {
       window.removeEventListener('keydown', onKey, true);
     }
     for (const [key, count] of [
-      ['s', 2],
+      ['s', 1],
       ['x', 1],
     ] as const) {
       const presses = keys.filter((k) => k.key === key);
@@ -165,34 +159,35 @@ describe('an open during a load', () => {
     await demo.save();
   });
 
-  test('a no to a newer file or list pick also stops the earlier accepted fixture', async () => {
+  test('a no to a newer file also stops the earlier accepted file before its load', async () => {
     const demo = await mountDemo();
-    await demo.headingsTo(false);
+    // With the option on, the accepted file is rewritten in steps before its load starts.
+    await demo.headingsTo(true);
     await openFile(demo, 'Kept', smallWorkbook('Kept'));
     demo.typeInGrid(EDIT);
-    const noToNewer = async (pickNewer: () => void) => {
-      const asked = demo.dialogs.seen.length;
-      const release = demo.services.hold(FIXTURE);
-      try {
-        demo.selectWorkbook(FIXTURE);
-        expect(demo.dialogs.seen.length).toBe(asked + 1);
-        demo.dialogs.accept = false;
-        pickNewer();
-        await waitFor(() => expect(demo.dialogs.seen.length).toBe(asked + 2), {
-          timeout: WAIT_MS,
-        });
-        release();
-        // The fetch ends here. A pick that still counts would replace the sheet.
-        await settle(500);
-      } finally {
-        release();
-        demo.dialogs.accept = true;
-      }
-    };
-    await noToNewer(() => demo.pickFile('newer.xlsx', smallWorkbook('Newer')));
-    await noToNewer(() => demo.selectWorkbook(NEWER_FIXTURE));
+    const asked = demo.dialogs.seen.length;
+    try {
+      demo.pickFile('earlier.xlsx', largeWorkbook('Earlier'));
+      await waitFor(() => expect(demo.dialogs.seen.length).toBe(asked + 1), {
+        timeout: WAIT_MS,
+        interval: 1,
+      });
+      demo.dialogs.accept = false;
+      // The newer file asks only while the earlier file has not loaded: a load that ran would
+      // have dropped the edit, and a load that runs answers for it.
+      demo.pickFile('newer.xlsx', smallWorkbook('Newer'));
+      await waitFor(() => expect(demo.dialogs.seen.length).toBe(asked + 2), {
+        timeout: WAIT_MS,
+        interval: 1,
+      });
+    } finally {
+      demo.dialogs.accept = true;
+    }
+    // The earlier file ends its steps here. An open that still counts would replace the sheet.
+    await settle(500);
+    await waitFor(() => expect(demo.busy()).toBe(''), { timeout: WAIT_MS });
     expect(demo.shownSheet()).toBe('Kept');
-    expect(demo.listed()).toBe('kept.xlsx');
+    expect(demo.workbookName()).toBe('kept.xlsx');
     expect(demo.leaveAsks()).toBe(true);
     expect(holdsText(await demo.save(), EDIT)).toBe(true);
   });

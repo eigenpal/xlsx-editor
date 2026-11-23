@@ -6,15 +6,16 @@
 // download, and the layout of the page.
 //
 // The harness stands in for the browser services that the demo uses:
-// - `fetch` serves the packaged substitute faces, the sample workbook, and the fixtures from the
-//   repository. A test can hold or fail the fetch of one workbook.
+// - `fetch` serves the packaged substitute faces and the sample workbook from the repository. A
+//   test can hold or fail the fetch of the sample, from before the demo mounts.
 // - The file save picker keeps each written copy, as the stand-in picker of the browser check
 //   does. A test can cancel the next pick or replace the picker.
-// - `window.confirm` records each question and answers it with `dialogs.accept`.
+// - `window.confirm` records each question, and whether a load ran when it asked, and answers it
+//   with `dialogs.accept`.
 // - `navigator.userActivation` says that a click is recent, as after a real press.
 //
-// The workbook list of the demo comes from `import.meta.glob` (`workbooks.ts`), which only the
-// dev server has, so the harness gives the module its own list: the sample and every fixture.
+// The URL of the sample comes from `import.meta.env.BASE_URL` (`workbooks.ts`), which only Vite
+// sets, so the harness gives the module its own URL. A test opens a fixture as a picked file.
 
 import { mock, setDefaultTimeout } from 'bun:test';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -35,7 +36,6 @@ import {
 } from '../../../../packages/core/src/store/index.ts';
 import { readZip, writeZip } from '../../../../packages/ooxml-core/src/zip.ts';
 import { HEADINGS_FROM_FILE, HEADINGS_SHOWN, headingFlags } from '../headings.ts';
-import { SAMPLE } from '../sample.ts';
 
 const ROOT = join(import.meta.dir, '../../../..');
 export const FIXTURES_DIR = join(ROOT, 'fixtures');
@@ -48,11 +48,7 @@ export const fixtureNames = (): string[] =>
     .map((f) => f.replace(/\.xlsx$/, ''))
     .sort();
 
-const FIXTURE_URLS = new Map(fixtureNames().map((f) => [f, `/fixtures/${f}.xlsx`] as const));
-mock.module('../workbooks.ts', () => ({
-  FIXTURES: FIXTURE_URLS,
-  WORKBOOKS: new Map([[SAMPLE, '/sample.xlsx'], ...FIXTURE_URLS]),
-}));
+mock.module('../workbooks.ts', () => ({ SAMPLE_URL: '/sample.xlsx' }));
 
 /** How long a test waits for the demo, in milliseconds. */
 export const WAIT_MS = 20_000;
@@ -118,7 +114,7 @@ interface Held {
 /** The browser services of one mounted demo, and the controls of a test over them. */
 class Services {
   readonly saved: Uint8Array[] = [];
-  readonly dialogs = { seen: [] as string[], accept: true };
+  readonly dialogs = { seen: [] as string[], whileLoading: [] as boolean[], accept: true };
   readonly fetched: string[] = [];
   readonly suggested: string[] = [];
   cancelNext = false;
@@ -151,8 +147,6 @@ class Services {
     for (const h of [...this.held]) if (url.includes(h.match)) await h.done;
     for (const m of this.failing) if (url.includes(m)) throw new TypeError('the network failed');
     if (url.endsWith('/sample.xlsx')) return new Response(sampleBytes());
-    const fixture = /\/fixtures\/([\w-]+)\.xlsx$/.exec(url);
-    if (fixture && FIXTURE_URLS.has(fixture[1]!)) return new Response(fixtureBytes(fixture[1]!));
     return new Response(null, { status: 404 });
   };
 
@@ -216,19 +210,21 @@ function sizeTheGrid(): void {
   }
 }
 
-/**
- * Lets the pending promise callbacks of the demo run, and no timer or task: a load that yields to
- * the page between its steps does not go on.
- */
-export const microtasks = () =>
-  act(async () => {
-    for (let i = 0; i < 50; i += 1) await Promise.resolve();
-  });
+/** The options of {@link mountDemo}. */
+interface MountOptions {
+  /** False takes the file save picker away, so a save downloads. */
+  readonly picker?: boolean;
+  /** Runs before the demo mounts, so a test can hold or fail the download of the sample. */
+  readonly beforeStart?: (services: Services) => void;
+  /** False returns at once, with no wait for the sample. */
+  readonly waitForSample?: boolean;
+}
 
 /** Mounts the demo with its stand-in browser services, and waits for the sample. */
-export async function mountDemo(options: { readonly picker?: boolean } = {}) {
+export async function mountDemo(options: MountOptions = {}) {
   sizeTheGrid();
   const services = new Services();
+  options.beforeStart?.(services);
   const w = window as unknown as Record<string, unknown>;
   globalThis.fetch = services.fetch as typeof fetch;
   w.fetch = services.fetch;
@@ -236,6 +232,7 @@ export async function mountDemo(options: { readonly picker?: boolean } = {}) {
   else w.showSaveFilePicker = services.keepingPicker;
   w.confirm = (text: string) => {
     services.dialogs.seen.push(text);
+    services.dialogs.whileLoading.push(document.querySelector('.xlsx-canvas-idle') !== null);
     return services.dialogs.accept;
   };
   Object.defineProperty(navigator, 'userActivation', {
@@ -245,7 +242,7 @@ export async function mountDemo(options: { readonly picker?: boolean } = {}) {
   const { App } = await import('../App.tsx');
   const view: RenderResult = render(<App />);
   const demo = new Demo(view, services);
-  await demo.showsSheet('Welcome');
+  if (options.waitForSample !== false) await demo.showsSheet('Welcome');
   return demo;
 }
 
@@ -277,8 +274,9 @@ export class Demo {
     return this.view.getByLabelText('Cell content') as HTMLTextAreaElement;
   }
 
-  get workbookList(): HTMLSelectElement {
-    return this.view.getByRole('combobox', { name: 'Workbook' }) as HTMLSelectElement;
+  /** The file input of Open a file in the top bar: the top bar's stop in the F6 cycle. */
+  get openInput(): HTMLInputElement {
+    return one<HTMLInputElement>(document, '.demo-topbar input[type=file]');
   }
 
   get headingsBox(): HTMLInputElement {
@@ -447,22 +445,26 @@ export class Demo {
     return this.toolbarButton('Bold').getAttribute('aria-pressed') === 'true';
   }
 
-  /** Picks the workbook `name` in the workbook list. */
-  selectWorkbook(name: string): void {
-    act(() => void fireEvent.change(this.workbookList, { target: { value: name } }));
-  }
-
-  /** The text of the open entry of the workbook list. */
-  listed(): string {
-    const list = this.workbookList;
-    return list.selectedOptions[0]?.textContent ?? '';
+  /** The name of the open workbook in the top bar, with its extension. */
+  workbookName(): string {
+    const name = document.querySelector('.demo-topbar .demo-file__name')?.textContent ?? '';
+    return name + (document.querySelector('.demo-topbar .demo-file__ext')?.textContent ?? '');
   }
 
   /** Picks a file with the file input of the top bar. */
   pickFile(name: string, bytes: Uint8Array | string): void {
-    const input = one<HTMLInputElement>(document, '.demo-topbar input[type=file]');
     const file = new File([typeof bytes === 'string' ? bytes : new Uint8Array(bytes)], name);
-    act(() => void fireEvent.change(input, { target: { files: [file] } }));
+    act(() => void fireEvent.change(this.openInput, { target: { files: [file] } }));
+  }
+
+  /** Picks the committed fixture `name` as a file, as a user opens a workbook. */
+  pickFixture(name: string): void {
+    this.pickFile(`${name}.xlsx`, fixtureBytes(name));
+  }
+
+  /** Picks the committed sample workbook as a file. */
+  pickSample(): void {
+    this.pickFile('sample.xlsx', sampleBytes());
   }
 
   /** Switches the headings option and waits for the demo to reopen the workbook. */

@@ -1,6 +1,6 @@
 /** @jsxImportSource react */
-// Each committed fixture in the demo, in happy-dom (`demo-harness.tsx`): it opens from the
-// workbook list with no question, and each of its visible worksheets shows. A value typed into an
+// Each committed fixture in the demo, in happy-dom (`demo-harness.tsx`): it opens from a picked
+// file with no question, and each of its visible worksheets shows. A value typed into an
 // empty cell of its opening sheet saves, the saved copy keeps the value and every sheet, and the
 // copy opens again from a picked file with the value. This was the fixture step of the browser
 // check (`scripts/verify-demo.ts`). The paint of each fixture is measured by `bun run fidelity`.
@@ -20,7 +20,6 @@ import {
   type XlsxPackage,
 } from '../../../../packages/core/src/store/index.ts';
 import { SHEET_GUIDE } from '../../../../scripts/sample-workbook/showcase-sheets.ts';
-import { SAMPLE } from '../sample.ts';
 import { fixtureBytes, fixtureNames, mountDemo, readSaved, type Demo } from './demo-harness.tsx';
 
 /**
@@ -52,7 +51,7 @@ afterEach(cleanup);
  * the sample opens before it: the grid then shows that sheet only after the copy loads.
  */
 async function openSample(demo: Demo): Promise<void> {
-  demo.selectWorkbook(SAMPLE);
+  demo.pickSample();
   await demo.showsSheet(SAMPLE_SHEET);
 }
 
@@ -71,7 +70,7 @@ describe('each committed fixture in the demo', () => {
       expect(textAt(read.pkg, first.name, FIXTURE_EDIT_REF)).toBeUndefined();
       const demo = await mountDemo();
       const asked = demo.dialogs.seen.length;
-      demo.selectWorkbook(fixture);
+      demo.pickFixture(fixture);
       await demo.showsSheet(first.name);
       for (const { name } of sheets.filter((s) => s.visible && s.worksheet)) await demo.tab(name);
       await demo.tab(first.name);

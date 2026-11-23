@@ -1,13 +1,13 @@
 /** @jsxImportSource react */
-// The demo opens the sample workbook at start, as the PPTX Editor demo opens its sample deck.
-// The user can then open a committed fixture or a file that they pick, and edit it with the
-// toolbar. Save writes the edited workbook to a file that the user picks, with the extension of
-// the package kind (`.xlsx` or `.xltx`), or downloads it where the browser has no file save
-// picker. The headings option, on by default, is a view option of the demo: Save writes the
-// heading flags of the opened file, not the option. A pill switches the editor to view mode.
-// The page shell, its top bar, and its light and dark theme follow the PPTX Editor and DOCX
-// Editor demos (`demo.css`). The demo's own text is English and stays out of `packages/i18n`
-// (AGENTS.md, "i18n").
+// The demo opens the sample workbook at start, as the PPTX Editor demo opens its sample deck. The
+// user can then open a file that they pick, and edit it with the toolbar. Save writes the edited
+// workbook to a file that the user picks, with the extension of the package kind (`.xlsx` or
+// `.xltx`), or downloads it where the browser has no file save picker. The headings option, on by
+// default, is a view option of the demo: Save writes the heading flags of the opened file, not the
+// option. A pill switches the editor to view mode. The page shell, its top bar, and its light and
+// dark theme follow the PPTX Editor and DOCX Editor demos (`demo.css`): the brand lockup, the React
+// | Vue switcher, the name of the open workbook with its muted extension, then the actions. The
+// demo's own text is English and stays out of `packages/i18n` (AGENTS.md, "i18n").
 //
 // The demo reads each file before the editor gets it, so a file that does not read leaves the
 // open workbook, its name, and its flags as they were. It opens a file with
@@ -18,7 +18,7 @@
 // (`unsaved-edits.ts`). Save writes through the browser's file save picker, or a download
 // (`save.ts`).
 
-import { useCallback, useEffect, useReducer, useRef, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import {
   XlsxEditor,
   useEditorState,
@@ -28,6 +28,7 @@ import {
   type XlsxEditorRef,
 } from '@xlsx-editor.dev/react';
 import type { readXlsx } from '@xlsx-editor.dev/core/store';
+import { AdapterSwitcher, SHOW_ADAPTER_SWITCHER } from './AdapterSwitcher.tsx';
 import { BrandLogo } from './BrandLogo.tsx';
 import { useBusyStatus } from './busy-status.ts';
 import { FONTS_FAILED, FONTS_NEXT_STEP, fontsMissingNotice } from './font-messages.ts';
@@ -36,8 +37,8 @@ import { initialTheme, rememberTheme, ThemeToggle, type Theme } from './ThemeTog
 import { readForOpen, whyNotOpen } from './open-check.ts';
 import { runInTasks } from './steps-in-tasks.ts';
 import { SAMPLE } from './sample.ts';
-import { FIXTURES, WORKBOOKS } from './workbooks.ts';
-import { listedName, titleOf } from './workbook-names.ts';
+import { SAMPLE_URL } from './workbooks.ts';
+import { shownName, titleOf } from './workbook-names.ts';
 import {
   keptSaveHolds,
   saveFile,
@@ -64,6 +65,9 @@ import {
 const MAX_FILE_BYTES = 64 * 1024 * 1024;
 
 const NO_WORKBOOK = 'Could not save: no workbook is open.';
+
+/** What to do when the sample does not download. */
+const OPEN_A_FILE = 'Open a file to go on.';
 
 /** The error of a press of Save while a workbook opens. The open does no save work for it. */
 const SAVE_OPENING = 'Could not save: a workbook is opening. Try again when it shows.';
@@ -136,7 +140,9 @@ async function download(url: string): Promise<Uint8Array> {
 }
 
 export function App() {
-  const [name, setName] = useState(SAMPLE);
+  // The workbook that the top bar names: none until a workbook is ready, so a sample that does
+  // not download is not named.
+  const [name, setName] = useState<string | null>(null);
   // One message at a time: a new message of either kind replaces the one before it.
   const [message, setMessage] = useState<{ text: string; kind: 'notice' | 'error' } | null>(null);
   // Show the row and column headings of every sheet, also in a file that hides them, so whole
@@ -151,13 +157,12 @@ export function App() {
     setThemeState(next);
     rememberTheme(next);
   };
-  // A render with no state change, so the workbook list shows the open workbook again after a no.
-  const [, rerender] = useReducer((n: number) => n + 1, 0);
   // The option as the newest switch set it. A load that ends later reads it here, not from the
   // render that started the load.
   const headingsNow = useRef(true);
   // The name and heading flags of the workbook that the editor shows.
-  const nameNow = useRef(SAMPLE);
+  // None until a workbook is ready.
+  const nameNow = useRef<string | null>(null);
   const flags = useRef<HeadingFlags>(new Map());
   // The opens from the end of their download or file read to the end of their load, and the
   // headings switches during their save and rewrite.
@@ -183,10 +188,6 @@ export function App() {
   const loaded = useRef(0);
   // The newest workbook that the user asked for. An older fetch or file read stops at its end.
   const picks = useRef(0);
-  // The request of a fixture whose download failed: it opened nothing.
-  const failedRequest = useRef(0);
-  // The fixture that the list shows while it opens.
-  const [opensAs, setOpensAs] = useState<string | null>(null);
   // The revision at which the current message was shown. The next edit clears it.
   const shownAt = useRef<number | null>(null);
   // The message on screen. The same message again renders nothing, so repeated presses during a
@@ -299,7 +300,6 @@ export function App() {
       // A no also stops an earlier open that has not started its load.
       const keepEdits = () => {
         picks.current += 1;
-        setOpensAs(null);
         return false;
       };
       if (instance?.snapshot().editing) {
@@ -312,7 +312,7 @@ export function App() {
       return (
         !hasUnsavedEdits() ||
         window.confirm(
-          `Open ${titleOf(label)}? The edits to ${titleOf(nameNow.current)} are lost unless you saved them to a file.`
+          `Open ${titleOf(label)}? The edits to ${titleOf(nameNow.current ?? SAMPLE)} are lost unless you saved them to a file.`
         ) ||
         keepEdits()
       );
@@ -320,11 +320,14 @@ export function App() {
     [hasUnsavedEdits, say]
   );
 
-  /** The end of a message about a file that did not open, when the open workbook stays. */
-  const staysOpen = useCallback(
-    () => (replacing.current > 0 ? '' : ' The workbook before it stays open.'),
-    []
-  );
+  /**
+   * The end of a message about a file that did not open: the open workbook stays, or with no
+   * workbook ready, what to do.
+   */
+  const staysOpen = useCallback(() => {
+    if (replacing.current > 0) return '';
+    return nameNow.current === null ? ` ${OPEN_A_FILE}` : ' The workbook before it stays open.';
+  }, []);
 
   /**
    * Opens `data` as the workbook `label`, with headings if the option is on. `pick` is the
@@ -371,10 +374,7 @@ export function App() {
         // The grid stays editable during the steps above, and the answer covers no later edit.
         const now = editor.current?.snapshot();
         const touched = revision() !== asked || (now?.editing && now.editChanged);
-        if (touched && !mayReplace(label)) {
-          rerender();
-          return;
-        }
+        if (touched && !mayReplace(label)) return;
         zooms.forget();
         const loading = loadInEditor(shown);
         at = loaded.current;
@@ -421,7 +421,6 @@ export function App() {
       markClean,
       zooms,
       revision,
-      rerender,
       loadInEditor,
       staysOpen,
       showOpening,
@@ -435,55 +434,44 @@ export function App() {
     [busy, openNow]
   );
 
-  const openWorkbook = useCallback(
-    async (workbook: string) => {
-      const url = WORKBOOKS.get(workbook);
-      if (!url) return;
-      if (!mayReplace(workbook)) {
-        rerender();
+  /** Downloads the sample workbook and opens it: the open at start. */
+  const openSample = useCallback(async () => {
+    if (!mayReplace(SAMPLE)) return;
+    const asked = revision();
+    // A file that the user picks during the download is newer, and this open gives way to it.
+    const pick = ++picks.current;
+    // This number drops a fetch that a newer open replaced. `open` takes its own number for the
+    // load.
+    const id = ++request.current;
+    const fetchAndOpen = async () => {
+      let data: Uint8Array;
+      try {
+        data = await download(SAMPLE_URL);
+      } catch {
+        if (id === request.current && pick === picks.current)
+          say(
+            `Could not open ${titleOf(SAMPLE)}: the file did not download. ${OPEN_A_FILE}`,
+            'error'
+          );
         return;
       }
-      const asked = revision();
-      // A file that is still in its read gives way to this newer pick.
-      const pick = ++picks.current;
-      // This number drops a fetch that a newer open replaced. `open` takes its own number for
-      // the load.
-      const id = ++request.current;
-      setOpensAs(workbook);
-      const fetchAndOpen = async () => {
-        let data: Uint8Array;
-        try {
-          data = await download(url);
-        } catch {
-          if (id === request.current) failedRequest.current = id;
-          if (id === request.current && pick === picks.current)
-            say(
-              `Could not open ${titleOf(workbook)}: the file did not download.${staysOpen()}`,
-              'error'
-            );
-          return;
-        }
-        try {
-          if (id === request.current && pick === picks.current)
-            await open(data, workbook, pick, asked);
-        } catch (cause) {
-          if (id === request.current && pick === picks.current)
-            say(`Could not open ${titleOf(workbook)}: ${String(cause)}`, 'error');
-        }
-      };
-      // One status text covers the download and the open.
-      openRuns.current += 1;
-      showOpening();
       try {
-        await busy.during('Opening the workbook.', fetchAndOpen());
-      } finally {
-        openRuns.current -= 1;
-        showOpening();
-        if (pick === picks.current) setOpensAs(null);
+        if (id === request.current && pick === picks.current) await open(data, SAMPLE, pick, asked);
+      } catch (cause) {
+        if (id === request.current && pick === picks.current)
+          say(`Could not open ${titleOf(SAMPLE)}: ${String(cause)}`, 'error');
       }
-    },
-    [open, mayReplace, say, rerender, revision, busy, staysOpen, showOpening]
-  );
+    };
+    // One status text covers the download and the open.
+    openRuns.current += 1;
+    showOpening();
+    try {
+      await busy.during('Opening the workbook.', fetchAndOpen());
+    } finally {
+      openRuns.current -= 1;
+      showOpening();
+    }
+  }, [open, mayReplace, say, revision, busy, showOpening]);
 
   // Open the sample once, at start, also when the effect runs twice in development.
   const started = useRef(false);
@@ -491,8 +479,8 @@ export function App() {
     if (started.current) return;
     started.current = true;
     // The grid gets the focus, so a visitor can type at once.
-    void openWorkbook(SAMPLE).then(() => editor.current?.focus());
-  }, [openWorkbook]);
+    void openSample().then(() => editor.current?.focus());
+  }, [openSample]);
 
   /** Switches the headings option and reopens the edited workbook on the same sheet and cells. */
   const switchHeadings = async (show: boolean) => {
@@ -523,9 +511,7 @@ export function App() {
       showOpening();
     }
     if (loadAt !== request.current) {
-      // A fixture that did not download opened nothing, and its own message stays.
-      if (request.current !== failedRequest.current)
-        say('Could not switch the headings: another workbook opened.', 'error');
+      say('Could not switch the headings: another workbook opened.', 'error');
       return;
     }
     // The reopen shows the saved bytes, so an edit made during the save must not be lost. That
@@ -579,7 +565,7 @@ export function App() {
     if (saving.current || toolbarSaves.current > 0)
       return 'a save is running. Try again when it ends';
     if (switching.current) return 'a switch is running. Try again when it ends';
-    // A switch takes a new request, so a fixture that is still in its download would not open.
+    // A switch takes a new request, so the sample that is still in its download would not open.
     if (opening.current > 0 || openRuns.current > 0)
       return 'a workbook is opening. Try again when it shows';
     if (editor.current?.snapshot().status !== 'ready') return 'no workbook is open';
@@ -611,9 +597,8 @@ export function App() {
       say(`Could not open ${titleOf(file.name)}: the file is larger than 64 MiB.`, 'error');
       return;
     }
-    // This pick is newer than a fixture that is still in its fetch.
+    // This pick is newer than the sample that is still in its download.
     const pick = ++picks.current;
-    setOpensAs(null);
     openRuns.current += 1;
     showOpening();
     try {
@@ -692,7 +677,8 @@ export function App() {
     // again, so the clean mark applies only to the same load. An edit made while the save ran
     // has a later revision, so it stays unsaved.
     const loadAt = loaded.current;
-    const label = nameNow.current;
+    // The editor is ready, so a workbook opened and has a name.
+    const label = nameNow.current ?? SAMPLE;
     // The file keeps its own heading flags: the headings option changes only the view.
     const restored = headingsNow.current
       ? await runInTasks(withHeadingsSteps(edited, false, flags.current))
@@ -781,9 +767,9 @@ export function App() {
       else if (editor.current?.snapshot().status !== 'ready') say(NO_WORKBOOK, 'error');
     });
   };
-  const workbookList = useRef<HTMLSelectElement>(null);
+  const openInput = useRef<HTMLInputElement>(null);
   usePageKeys({
-    workbookList,
+    topBarStop: openInput,
     messageOpen: message !== null,
     editing: () => editor.current?.snapshot().editing ?? false,
     closeMessage,
@@ -808,27 +794,9 @@ export function App() {
       <XlsxEditor.Viewport className="demo-root" label={false}>
         <header className="demo-topbar">
           <BrandLogo />
+          {SHOW_ADAPTER_SWITCHER ? <AdapterSwitcher current="react" theme={theme} /> : null}
           <span className="demo-topbar__divider" />
-          <div className="demo-file">
-            <select
-              ref={workbookList}
-              className="demo-file__name"
-              aria-label="Workbook"
-              aria-keyshortcuts="F6"
-              value={opensAs ?? (WORKBOOKS.has(name) ? name : '')}
-              onChange={(e) => void openWorkbook(e.target.value)}
-            >
-              {WORKBOOKS.has(name) ? null : <option value="">{listedName(name)}</option>}
-              <option value={SAMPLE}>Sample workbook</option>
-              <optgroup label="Fixtures">
-                {[...FIXTURES.keys()].map((f) => (
-                  <option key={f} value={f}>
-                    {f}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
-          </div>
+          <WorkbookName label={name} />
           <div className="demo-topbar__actions">
             <span className="demo-busy" role="status">
               {busyText}
@@ -863,9 +831,11 @@ export function App() {
               <Icon name="folder_open" />
               <span className="demo-btn__label">Open a file</span>
               <input
+                ref={openInput}
                 className="demo-sr-only"
                 type="file"
                 aria-label="Open a file"
+                aria-keyshortcuts="F6"
                 accept=".xlsx,.xltx"
                 onChange={(e) => void onFile(e)}
               />
@@ -937,6 +907,23 @@ export function App() {
 }
 
 const statusOf = (snapshot: EditorSnapshot) => snapshot.status;
+
+/**
+ * The name of the open workbook, with its extension muted, as the family demos show a file. With
+ * no workbook ready, the place stays empty.
+ */
+function WorkbookName({ label }: { label: string | null }) {
+  if (label === null) return <div className="demo-file" />;
+  const shown = shownName(label);
+  return (
+    <div className="demo-file">
+      <span className="demo-file__name" title={shown.name + shown.ext}>
+        {shown.name}
+      </span>
+      {shown.ext ? <span className="demo-file__ext">{shown.ext}</span> : null}
+    </div>
+  );
+}
 
 /** The formula bar, the grid, and the footer with the sheet tabs and the zoom, in one card. */
 function Workbench() {

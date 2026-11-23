@@ -118,7 +118,7 @@ bun run dev:vue      # Vue demo: localhost:5181
 bun run test
 ```
 
-The demo opens a sample workbook. You can also open the committed fixtures or a file of your own, edit it, and save it. The [repository map](docs/repo-map.md) lists the packages and what to read for each task.
+The demo opens a sample workbook. You can also open a file of your own, edit it, and save it. A switcher in its top bar moves between the React demo and the Vue demo. In development, its links go to the other dev server, so run both `bun run demo` and `bun run dev:vue`. The [repository map](docs/repo-map.md) lists the packages and what to read for each task.
 
 Examples: [Vite](examples/vite) | [Vue](examples/vue)
 

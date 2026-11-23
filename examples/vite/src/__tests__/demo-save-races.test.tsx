@@ -1,9 +1,10 @@
 /** @jsxImportSource react */
 // What the demo keeps when a save overlaps other work, in happy-dom (`demo-harness.tsx`): a later
-// edit keeps the message of a failed or cancelled save; during the download of a fixture and
-// during a headings switch, each Save says why it waits and no save starts; and after a save that
-// the browser refused for a late dialog, the next press writes the kept bytes. These were steps
-// of the browser check (`scripts/verify-demo.ts`).
+// edit keeps the message of a failed or cancelled save; during the download of the sample at start
+// and during a headings switch, each Save says why it waits and no save starts; while a workbook
+// is open and a picked file runs its steps before its load, the toolbar Save says that a workbook
+// is loading; and after a save that the browser refused for a late dialog, the next press writes
+// the kept bytes. These were steps of the browser check (`scripts/verify-demo.ts`).
 
 import { afterEach, describe, expect, test } from 'bun:test';
 import { act, cleanup, waitFor } from '@testing-library/react';
@@ -13,7 +14,6 @@ import {
   closeAlert,
   countingPicker,
   EDIT,
-  FIXTURE,
   largeWorkbook,
   openFile,
   pressHeadings,
@@ -71,18 +71,30 @@ describe('a save that overlaps other work', () => {
     }
   });
 
-  test('during the download of a fixture, the headings switch and each Save say why they wait, and no save starts', async () => {
-    const demo = await mountDemo();
-    await demo.headingsTo(false);
-    await openFile(demo, 'Download', largeWorkbook('Download'));
-    const release = demo.services.hold(FIXTURE);
+  test('during the download of the sample, the headings switch and each Save say why they wait, and no save starts', async () => {
+    let release = () => {};
+    const demo = await mountDemo({
+      beforeStart: (services) => (release = services.hold('sample.xlsx')),
+      waitForSample: false,
+    });
     const counts = countingPicker(false);
     const savingSeen = watchSaving(demo);
     try {
-      demo.selectWorkbook(FIXTURE);
       pressHeadings(demo);
       await demo.alertSays('Could not switch the headings: a workbook is opening');
-      expect(demo.headingsBox.checked).toBe(false);
+      expect(demo.headingsBox.checked).toBe(true);
+      closeAlert(demo);
+      // The download is part of the open: a save key on the body stays in the page and says why.
+      act(() => (document.activeElement as HTMLElement | null)?.blur());
+      const onBody = new KeyboardEvent('keydown', {
+        key: 's',
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      });
+      act(() => void document.body.dispatchEvent(onBody));
+      expect(onBody.defaultPrevented).toBe(true);
+      await demo.alertSays('Could not save: a workbook is opening');
       closeAlert(demo);
       act(() => demo.grid.focus());
       demo.saveKey();
@@ -90,7 +102,8 @@ describe('a save that overlaps other work', () => {
       await waitFor(() => expect(demo.toolbarSave.getAttribute('aria-disabled')).toBe('true'), {
         timeout: WAIT_MS,
       });
-      expect(demo.toolbarSave.getAttribute('title')).toContain('A workbook is loading');
+      // No workbook is open yet, so the toolbar gives that reason, not the text of `opening`.
+      expect(demo.toolbarSave.getAttribute('title')).toContain('The editor is not ready');
       closeAlert(demo);
       // The page takes a press of the disabled toolbar Save, and says why it waits.
       pressToolbarSave(demo);
@@ -101,10 +114,38 @@ describe('a save that overlaps other work', () => {
       expect(savingSeen()).toBe(false);
       closeAlert(demo);
       release();
-      await demo.showsSheet('Values');
+      await demo.showsSheet('Welcome');
     } finally {
       release();
       savingSeen();
+      setPicker(demo.services.keepingPicker);
+    }
+  });
+
+  test('while a workbook is open and a picked file runs its steps before its load, the toolbar Save says that a workbook is loading', async () => {
+    const demo = await mountDemo();
+    // The option is on, so the picked file is rewritten in steps before its load starts.
+    await demo.headingsTo(true);
+    const counts = countingPicker(false);
+    try {
+      demo.pickFile('slow.xlsx', largeWorkbook('Slow'));
+      // The title as it first shows, and whether the sample was still on screen then.
+      const seen = { title: null as string | null, sampleShown: false };
+      await waitFor(
+        () => {
+          if (demo.toolbarSave.getAttribute('aria-disabled') !== 'true') throw new Error('enabled');
+          seen.title ??= demo.toolbarSave.getAttribute('title');
+          seen.sampleShown ||= !demo.loading() && demo.shownSheet() === 'Welcome';
+        },
+        { timeout: WAIT_MS, interval: 1 }
+      );
+      expect(seen.sampleShown).toBe(true);
+      expect(seen.title ?? '').toContain('A workbook is loading');
+      pressToolbarSave(demo);
+      await demo.alertSays('Could not save: a workbook is opening');
+      await demo.showsSheet('Slow');
+      expect(counts.calls).toBe(0);
+    } finally {
       setPicker(demo.services.keepingPicker);
     }
   });

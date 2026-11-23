@@ -7,9 +7,6 @@ import { readZip } from '../../../../packages/ooxml-core/src/zip.ts';
 import { buildXlsx, c, row, type FixtureSheet } from '../../../../scripts/fixtures/builder.ts';
 import { WAIT_MS, type Demo } from './demo-harness.tsx';
 
-export const FIXTURE = 'basic-values';
-/** The list pick that comes after {@link FIXTURE}. */
-export const NEWER_FIXTURE = 'structure';
 export const EDIT = 'edit-kept-over-the-reload';
 
 /** The rows of {@link largeWorkbook}, built once. */

@@ -40,6 +40,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@xlsx-editor.dev/core": "workspace:*",
+        "@xlsx-editor.dev/i18n": "workspace:*",
         "@xlsx-editor.dev/react": "workspace:*",
         "react": "^19.3.1",
         "react-dom": "^19.3.1",
@@ -54,6 +55,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@xlsx-editor.dev/core": "workspace:*",
+        "@xlsx-editor.dev/i18n": "workspace:*",
         "@xlsx-editor.dev/vue": "workspace:*",
         "vue": "3.5.45",
       },

@@ -6,7 +6,7 @@
 //   editor's toolbar, grid, and footer. The editor viewport holds the top bar and cycles its own
 //   regions (packages/react/src/landmarks.ts): from the top bar, F6 goes to the toolbar and
 //   Shift+F6 to the footer. The demo adds the top bar to the cycle: F6 from the footer and
-//   Shift+F6 from the toolbar go to the workbook list.
+//   Shift+F6 from the toolbar go to Open a file, the top bar control that every build shows.
 // - A held Control+S or Command+S saves once: a repeat stops before the toolbar, which claims
 //   the key in the viewport from its `onSave`, reads it.
 // - During an open, from the download or the file read to the end of the load, and during a
@@ -21,8 +21,8 @@
 import { useEffect, useRef, type RefObject } from 'react';
 
 export interface PageKeys {
-  /** The workbook list of the top bar: the top bar's stop in the F6 cycle. */
-  readonly workbookList: RefObject<HTMLSelectElement | null>;
+  /** The file input of Open a file in the top bar: the top bar's stop in the F6 cycle. */
+  readonly topBarStop: RefObject<HTMLElement | null>;
   /** Whether a message shows. */
   readonly messageOpen: boolean;
   /** Whether a cell edit is open: Escape then belongs to the cell editor. */
@@ -39,17 +39,17 @@ export interface PageKeys {
   readonly onKeyWhileLoading: () => void;
 }
 
-/** Reads the page keys on the window of the workbook list, while the component is mounted. */
+/** Reads the page keys on the window of the top bar's stop, while the component is mounted. */
 export function usePageKeys(keys: PageKeys): void {
   const now = useRef(keys);
   now.current = keys;
   useEffect(() => {
-    const list = now.current.workbookList.current;
-    const win = list?.ownerDocument.defaultView;
-    if (!list || !win) return undefined;
+    const stop = now.current.topBarStop.current;
+    const win = stop?.ownerDocument.defaultView;
+    if (!stop || !win) return undefined;
     const onKey = (e: KeyboardEvent) => {
       if (e.isComposing) return;
-      const { workbookList, messageOpen, editing, closeMessage } = now.current;
+      const { topBarStop, messageOpen, editing, closeMessage } = now.current;
       const { loading, readyToSave, onSaveKey, onKeyWhileLoading } = now.current;
       if (e.key === 'Escape' && messageOpen) {
         if (!editing()) {
@@ -64,7 +64,7 @@ export function usePageKeys(keys: PageKeys): void {
         if (!out) return;
         e.preventDefault();
         e.stopPropagation();
-        workbookList.current?.focus();
+        topBarStop.current?.focus();
         return;
       }
       const save = e.key.toLowerCase() === 's' && (e.metaKey || e.ctrlKey);
@@ -74,7 +74,7 @@ export function usePageKeys(keys: PageKeys): void {
         if (!e.repeat) onSaveKey();
         return;
       }
-      if (e.target === list.ownerDocument.body && loading()) {
+      if (e.target === stop.ownerDocument.body && loading()) {
         if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
           e.preventDefault();
           onKeyWhileLoading();

@@ -76,7 +76,7 @@
 // mode and no parity screenshot mode.
 
 import type { Browser, Page } from '@playwright/test';
-import { mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { createServer } from 'vite';
 import { cellValue, sheetStale } from '../packages/core/src/cascade/index.ts';
@@ -129,6 +129,8 @@ import { verifyFormulaBarLayout, verifyLineCountPress } from './verify-demo-edit
 
 const ROOT = join(import.meta.dir, '..');
 const DEMO = join(ROOT, 'examples/vite');
+/** The committed sample workbook, which a step opens again as a picked file. */
+const SAMPLE_BYTES = readFileSync(join(DEMO, 'public/sample.xlsx'));
 
 const [SAMPLE_SHEET] = SHEET_GUIDE[0]!;
 /** The sheet that the steps after `sample open` start on: the last sheet that it visits. */
@@ -212,21 +214,23 @@ async function verifyTypeSaveReopen(page: Page): Promise<string> {
   if (textAt(read.pkg, LAST_SHEET, SMOKE_REF) !== text)
     throw new Error(`the saved copy has no "${text}" at ${SMOKE_REF}`);
   await page.getByRole('button', { name: 'Close the message' }).click();
-  // The saved copy holds the edit, so the open asks nothing. The sample opens first, so the grid
-  // shows the last sheet again only after the copy loads.
+  // The saved copy holds the edit, so the open asks nothing. The sample opens first, from a
+  // picked file, so the grid shows the last sheet again only after the copy loads.
   const asked = dialogs.seen.length;
-  await page.getByRole('combobox', { name: 'Workbook' }).selectOption('sample');
+  const fileInput = page.locator('.demo-topbar input[type=file]');
+  const mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  await fileInput.setInputFiles({ name: 'sample.xlsx', mimeType, buffer: SAMPLE_BYTES });
   if (!(await showsSheet(page, SAMPLE_SHEET))) throw new Error('the sample did not open again');
-  await page.locator('.demo-topbar input[type=file]').setInputFiles({
+  await fileInput.setInputFiles({
     name: 'sample-edited.xlsx',
-    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    mimeType,
     buffer: Buffer.from(bytes),
   });
-  // The workbook list names the file once the editor shows it.
+  // The top bar names the file, with its extension apart, once the editor shows it.
   await page.waitForFunction(
     () =>
-      document.querySelector<HTMLSelectElement>('.demo-file__name')?.selectedOptions[0]
-        ?.textContent === 'sample-edited.xlsx',
+      document.querySelector('.demo-topbar .demo-file__name')?.textContent === 'sample-edited' &&
+      document.querySelector('.demo-topbar .demo-file__ext')?.textContent === '.xlsx',
     null,
     { timeout: WAIT_MS }
   );

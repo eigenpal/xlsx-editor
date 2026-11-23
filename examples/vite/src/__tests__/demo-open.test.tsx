@@ -1,17 +1,15 @@
 /** @jsxImportSource react */
 // The opens of the demo over the open workbook, in happy-dom (`demo-harness.tsx`): a file that
 // does not open changes nothing; opening another workbook over unsaved edits asks first, from
-// the list, from a picked file, over a headings switch, for a value typed with no Enter, and
-// after a cancelled save; and the newest pick is the workbook that opens. These were steps of
-// the browser check (`scripts/verify-demo.ts`).
+// a picked file, over a headings switch, for a value typed with no Enter, and after a cancelled
+// save; the newest pick is the workbook that opens; and a sample that does not download says
+// what to do. These were steps of the browser check (`scripts/verify-demo.ts`).
 
 import { afterEach, describe, expect, test } from 'bun:test';
 import { act, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import { buildXlsx } from '../../../../scripts/fixtures/builder.ts';
 import { SAMPLE_BOLD_EDIT } from '../../../../scripts/sample-workbook/edits.ts';
-import { SAMPLE } from '../sample.ts';
 import {
-  fixtureBytes,
   flagsOf,
   formatAt,
   mountDemo,
@@ -94,25 +92,12 @@ describe('a file that does not open', () => {
       const after = await demo.save();
       expect(boldIn(after)).toBe(true);
       expect(flagsOf(after)).toBe(flags);
-      expect(demo.workbookList.value).toBe(SAMPLE);
+      expect(demo.workbookName()).toBe('Sample workbook.xlsx');
     }
   });
 });
 
 describe('the question before unsaved edits are lost', () => {
-  test('from the list: a no keeps the workbook and fetches nothing', async () => {
-    const demo = await onEditSheet();
-    demo.bold();
-    const fetched = demo.services.fetched.length;
-    expect(await demo.askedOnOpen(() => demo.selectWorkbook('basic-values'))).toBe(1);
-    expect(demo.dialogs.seen.at(-1)).toContain('saved them to a file');
-    expect(demo.services.fetched.slice(fetched).some((u) => u.includes('basic-values'))).toBe(
-      false
-    );
-    expect(demo.shownSheet()).toBe(sheet);
-    expect(demo.workbookList.value).toBe(SAMPLE);
-  });
-
   test('from a file: only after the file passes the checks, and a no keeps the edit and the flags', async () => {
     const demo = await onEditSheet();
     demo.bold();
@@ -123,10 +108,10 @@ describe('the question before unsaved edits are lost', () => {
     });
     expect(broken).toBe(0);
     const wasBold = demo.boldShown();
-    expect(
-      await demo.askedOnOpen(() => demo.pickFile('basic-values.xlsx', fixtureBytes('basic-values')))
-    ).toBe(1);
+    expect(await demo.askedOnOpen(() => demo.pickFixture('basic-values'))).toBe(1);
+    expect(demo.dialogs.seen.at(-1)).toContain('saved them to a file');
     expect(demo.shownSheet()).toBe(sheet);
+    expect(demo.workbookName()).toBe('Sample workbook.xlsx');
     const saved = await demo.save();
     expect(boldIn(saved)).toBe(wasBold);
     expect(flagsOf(saved)).toBe(flagsOf(sampleBytes()));
@@ -134,57 +119,45 @@ describe('the question before unsaved edits are lost', () => {
 
   test('over a headings switch: an edit, a typed value, and an edit after a save each ask', async () => {
     const demo = await onEditSheet();
-    const toList = () => demo.selectWorkbook('basic-values');
+    const toFile = () => demo.pickFixture('basic-values');
     demo.bold();
     await demo.setHeadings(true);
-    expect(await demo.askedOnOpen(toList)).toBe(1);
+    expect(await demo.askedOnOpen(toFile)).toBe(1);
     await demo.save();
     typeWithNoEnter(demo);
     await demo.setHeadings(false);
-    expect(await demo.askedOnOpen(toList)).toBe(1);
+    expect(await demo.askedOnOpen(toFile)).toBe(1);
     await demo.save();
     demo.bold();
     await demo.save();
     await demo.setHeadings(true);
     demo.bold();
-    expect(await demo.askedOnOpen(toList)).toBe(1);
+    expect(await demo.askedOnOpen(toFile)).toBe(1);
   });
 
   test('a typed value asks, a formula that does not commit stops the open, and an edit after a cancelled save asks', async () => {
     const demo = await onEditSheet();
-    const opens = [
-      ['the list', () => demo.selectWorkbook('basic-values')],
-      ['a file', () => demo.pickFile('basic-values.xlsx', fixtureBytes('basic-values'))],
-    ] as const;
-    for (const [from, open] of opens) {
-      await demo.save();
-      typeWithNoEnter(demo);
-      expect([from, await demo.askedOnOpen(open)]).toEqual([from, 1]);
-    }
-    for (const [from, open] of opens) {
-      await demo.save();
-      typeWithNoEnter(demo, '=SUM(');
-      const fetched = demo.services.fetched.length;
-      const asked = await demo.askedOnOpen(async () => {
-        open();
-        await demo.alertSays('finish or cancel the cell edit');
-      });
-      expect([from, asked]).toEqual([from, 0]);
-      if (from === 'the list')
-        expect(demo.services.fetched.slice(fetched).some((u) => u.includes('basic-values'))).toBe(
-          false
-        );
-      expect(demo.shownSheet()).toBe(sheet);
-      // The cell editor keeps the formula.
-      expect(document.querySelector<HTMLTextAreaElement>('.xlsx-cell-editor')?.value).toBe('=SUM(');
-      demo.key('Escape');
-    }
+    const open = () => demo.pickFixture('basic-values');
+    await demo.save();
+    typeWithNoEnter(demo);
+    expect(await demo.askedOnOpen(open)).toBe(1);
+    await demo.save();
+    typeWithNoEnter(demo, '=SUM(');
+    const asked = await demo.askedOnOpen(async () => {
+      open();
+      await demo.alertSays('finish or cancel the cell edit');
+    });
+    expect(asked).toBe(0);
+    expect(demo.shownSheet()).toBe(sheet);
+    // The cell editor keeps the formula.
+    expect(document.querySelector<HTMLTextAreaElement>('.xlsx-cell-editor')?.value).toBe('=SUM(');
+    demo.key('Escape');
     await demo.save();
     demo.bold();
     demo.services.cancelNext = true;
     act(() => void fireEvent.click(demo.headerSave));
     await waitFor(() => expect(demo.services.cancelNext).toBe(false), { timeout: WAIT_MS });
-    expect(await demo.askedOnOpen(() => demo.selectWorkbook('basic-values'))).toBe(1);
+    expect(await demo.askedOnOpen(open)).toBe(1);
   });
 });
 
@@ -230,17 +203,50 @@ describe('the Escape that closes a message', () => {
   });
 });
 
-describe('the newest pick', () => {
-  test('a file picked during the slow fetch of a fixture stays open when the fetch ends', async () => {
-    const demo = await mountDemo();
-    const release = demo.services.hold('basic-values');
-    demo.selectWorkbook('basic-values');
-    demo.pickFile('picked.xlsx', buildXlsx({ sheets: [{ name: 'Picked', rows: '' }] }));
-    await demo.showsSheet('Picked');
-    release();
-    // The fetch ends here. An older fetch that still counts would replace the sheet.
+describe('the download of the sample at start', () => {
+  test('a file picked during the slow download of the sample stays open when the download ends', async () => {
+    let release = () => {};
+    const demo = await mountDemo({
+      beforeStart: (services) => (release = services.hold('sample.xlsx')),
+      waitForSample: false,
+    });
+    try {
+      demo.pickFile('picked.xlsx', buildXlsx({ sheets: [{ name: 'Picked', rows: '' }] }));
+      await demo.showsSheet('Picked');
+    } finally {
+      release();
+    }
+    // The download ends here. An older download that still counts would replace the sheet.
     await settle(500);
     expect(demo.shownSheet()).toBe('Picked');
     expect(demo.view.getByRole('tab', { name: 'Picked' })).toBeTruthy();
+    expect(demo.workbookName()).toBe('picked.xlsx');
+  });
+
+  test('a sample that does not download says what to do, and a picked file then opens', async () => {
+    let restore = () => {};
+    const demo = await mountDemo({
+      beforeStart: (services) => (restore = services.fail('sample.xlsx')),
+      waitForSample: false,
+    });
+    try {
+      await demo.alertSays(
+        'Could not open the sample workbook: the file did not download. Open a file to go on.'
+      );
+    } finally {
+      restore();
+    }
+    // No workbook is ready, so the top bar names none.
+    expect(demo.workbookName()).toBe('');
+    demo.closeMessage();
+    // A file that does not open says what to do, not that a workbook stays open.
+    demo.pickFile('broken.xlsx', 'not a workbook');
+    await demo.alertSays('Could not open broken.xlsx');
+    expect(demo.alerts().join(' ')).toContain('Open a file to go on.');
+    expect(demo.alerts().join(' ')).not.toContain('stays open');
+    demo.closeMessage();
+    demo.pickFixture('basic-values');
+    await demo.showsSheet('Values');
+    expect(demo.workbookName()).toBe('basic-values.xlsx');
   });
 });

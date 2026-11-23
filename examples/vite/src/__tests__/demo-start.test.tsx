@@ -1,8 +1,9 @@
 /** @jsxImportSource react */
 // The demo at start, in happy-dom (`demo-harness.tsx`): the sample opens with the headings option
-// on and every sheet shows; F6 and Shift+F6 move among the regions of the page; view only refuses
-// edits; the theme toggle switches and keeps its pick; and the headings option goes off. These
-// were steps of the browser check (`scripts/verify-demo.ts`), which keeps the paint of each sheet.
+// on, the top bar names it, and every sheet shows; F6 and Shift+F6 move among the regions of the
+// page; view only refuses edits; the theme toggle switches and keeps its pick; and the headings
+// option goes off. These were steps of the browser check (`scripts/verify-demo.ts`), which keeps
+// the paint of each sheet.
 
 import { afterEach, describe, expect, test } from 'bun:test';
 import { act, cleanup, fireEvent } from '@testing-library/react';
@@ -17,8 +18,9 @@ afterEach(() => {
 const [SAMPLE_SHEET] = SHEET_GUIDE[0]!;
 
 describe('the demo at start', () => {
-  test('the sample opens with the headings option on, and every sheet shows', async () => {
+  test('the sample opens with the headings option on, the top bar names it, and every sheet shows', async () => {
     const demo = await mountDemo();
+    expect(demo.workbookName()).toBe('Sample workbook.xlsx');
     expect(demo.headingsBox.checked).toBe(true);
     // The first sheet hides its headings in the file, and the option shows them.
     expect(demo.headingsShown()).toBe(true);
@@ -35,13 +37,13 @@ describe('the demo at start', () => {
       return !!at?.closest('.xlsx-editor') && !at.closest('[role="toolbar"], .xlsx-footer');
     };
     const focusIn = (selector: string) => () => !!document.activeElement?.closest(selector);
-    const inList = () => document.activeElement === demo.workbookList;
+    const inOpen = () => document.activeElement === demo.openInput;
     act(() => demo.grid.focus());
     for (const [shift, where, check] of [
       [false, 'the footer', focusIn('.xlsx-footer')],
-      [false, 'the workbook list', inList],
+      [false, 'Open a file', inOpen],
       [false, 'the toolbar', focusIn('[role="toolbar"]')],
-      [true, 'the workbook list', inList],
+      [true, 'Open a file', inOpen],
       [true, 'the footer', focusIn('.xlsx-footer')],
       [true, 'the grid', inGrid],
     ] as const) {

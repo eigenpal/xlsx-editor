@@ -9,9 +9,12 @@
  *
  * A browser maps the `dir` attribute to `direction` through its own style sheet. A DOM without
  * that style sheet, such as a test DOM, reports `ltr` for an element with `dir="rtl"`, or no
- * direction at all. Then the nearest `dir` attribute decides, unless an inline `direction`
- * between it and `el` sets another. The chrome CSS selects mirrored icons with `:dir(rtl)`,
- * which follows the `dir` attribute alone. @internal
+ * direction at all. So the computed value decides only when `el` has no `dir="rtl"` ancestor,
+ * or when that ancestor itself computes `rtl`. In every other case, the first inline
+ * `direction` from `el` up to that ancestor, not counting the ancestor, decides, and without
+ * one the attribute decides. A class rule that sets `direction: ltr` on the `dir="rtl"`
+ * element itself is not detected: that element then counts as right to left. The chrome CSS
+ * selects mirrored icons with `:dir(rtl)`, which follows the `dir` attribute alone. @internal
  */
 export function isRightToLeft(el: Element): boolean {
   const view = el.ownerDocument.defaultView;

@@ -111,6 +111,11 @@ function scopeOf(
  */
 const warnedParts = new Set<string>();
 
+/** Forget which parts warned, so a test that expects a warning does not depend on order. Internal. */
+export function resetPartTranslateWarnings(): void {
+  warnedParts.clear();
+}
+
 /** Props for `LocaleProvider`. @public */
 export interface LocaleProviderProps {
   /**

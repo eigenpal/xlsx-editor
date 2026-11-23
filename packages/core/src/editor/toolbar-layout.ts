@@ -284,8 +284,11 @@ export function moveBarFocus(e: FocusMoveKey): void {
   // Along the reading direction: in a right-to-left bar, ArrowLeft moves to the next control.
   const step = inlineStep(e.key, bar);
   // A field keeps an arrow until its caret is at that end of its text. The end follows the
-  // field's own direction, not the bar's: in a right-to-left field, ArrowLeft moves toward the
-  // end of the text.
+  // field's own direction, not the bar's, and not the direction of its text: at the end of its
+  // value, a right-to-left field moves its caret no further on ArrowLeft, also for a value of
+  // digits or of letters of a left-to-right script, and a left-to-right field on ArrowRight.
+  // A browser text field moves its caret so, as measured in the browser engine of `test:e2e`.
+  // A field with `dir="auto"` takes its computed direction from its text.
   const towardEnd = e.key === (isRightToLeft(target) ? 'ArrowLeft' : 'ArrowRight');
   if (fieldOwnsKey(target, e.key, towardEnd)) return;
   const items = barItems(bar);

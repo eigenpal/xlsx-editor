@@ -3,7 +3,7 @@
 // part, `LocaleProvider` in a region and around the root, a runtime change of the strings, and
 // the direction of a right-to-left catalog. The Vue twin is `chrome-translate.test.ts`.
 
-import { afterEach, describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
@@ -21,6 +21,7 @@ import {
   type XlsxEditorInstance,
 } from '../index.ts';
 import { isRightToLeft } from '../../../core/src/editor/chrome-direction.ts';
+import { resetPartTranslateWarnings } from '../locale.tsx';
 
 const fontsDir = join(
   dirname(
@@ -332,6 +333,8 @@ describe('useTranslation', () => {
 });
 
 describe('a t that throws', () => {
+  beforeEach(resetPartTranslateWarnings);
+
   test('keeps the editor mounted, shows the catalog text, and warns once in development', async () => {
     const warnings: string[] = [];
     const warn = console.warn;
@@ -610,7 +613,6 @@ describe('the in-cell editor and the reading direction', () => {
     const kept = document.createElement('span');
     wrapper.append(kept);
     page.append(mirrored, wrapper);
-    ('<span class="mirrored"></span><div style="direction: ltr"><span class="kept"></span></div>');
     document.body.append(page);
     try {
       expect(isRightToLeft(mirrored)).toBe(true);
@@ -637,5 +639,58 @@ describe('the in-cell editor and the reading direction', () => {
       wrapper.remove();
       loose.remove();
     }
+  });
+});
+
+describe('a field in a right-to-left toolbar', () => {
+  /** A bar of Bold, the field, and Italic, in a right-to-left catalog. */
+  function fieldBar(field: ReactNode) {
+    const view = render(
+      <XlsxEditor.Root locale={{ _lang: 'ar' }}>
+        <XlsxEditor.Viewport>
+          <XlsxEditor.Toolbar preset={false}>
+            <XlsxEditor.Toolbar.Bold />
+            {field}
+            <XlsxEditor.Toolbar.Italic />
+          </XlsxEditor.Toolbar>
+        </XlsxEditor.Viewport>
+      </XlsxEditor.Root>
+    );
+    const input = view.getByRole('textbox', { name: 'Field' }) as HTMLInputElement;
+    const press = (key: string) => {
+      act(() => input.focus());
+      input.setSelectionRange(input.value.length, input.value.length);
+      fireEvent.keyDown(input, { key });
+      return document.activeElement;
+    };
+    const slot = (id: string) => view.container.querySelector(`[data-slot="${id}"]`);
+    return { input, press, slot };
+  }
+
+  test('a left-to-right field gives ArrowRight to the bar at its end, and keeps ArrowLeft', () => {
+    const { input, press, slot } = fieldBar(
+      <input aria-label="Field" style={{ direction: 'ltr' }} defaultValue="abc" />
+    );
+    // In a right-to-left bar, ArrowRight moves to the previous control.
+    expect(press('ArrowRight')).toBe(slot('font.bold'));
+    expect(press('ArrowLeft')).toBe(input);
+  });
+
+  test('a right-to-left field gives ArrowLeft to the bar at its end, and keeps ArrowRight', () => {
+    const { input, press, slot } = fieldBar(
+      <input aria-label="Field" dir="rtl" defaultValue="שלום" />
+    );
+    expect(press('ArrowLeft')).toBe(slot('font.italic'));
+    expect(press('ArrowRight')).toBe(input);
+  });
+
+  test('a right-to-left field of digits follows the field, as a browser caret does', () => {
+    // At the end of "11" in a right-to-left field, a browser caret does not move on ArrowLeft
+    // and moves back on ArrowRight: the field's direction decides, not the digits.
+    const { input, press, slot } = fieldBar(
+      <input aria-label="Field" dir="rtl" defaultValue="11" />
+    );
+    expect(press('ArrowLeft')).toBe(slot('font.italic'));
+    expect(press('ArrowRight')).toBe(input);
   });
 });

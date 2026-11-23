@@ -3,7 +3,7 @@
 // region and around the root, a runtime change of the strings, and the direction of a
 // right-to-left catalog. Vue renders in the next microtask, so a step waits for `nextTick`.
 
-import { afterEach, describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { fireEvent } from '@testing-library/react';
 import { defineComponent, h, nextTick, shallowRef, type VNodeChild } from 'vue';
 import { buildXlsx, c, row } from '../../../scripts/fixtures/builder.ts';
@@ -26,6 +26,7 @@ import {
   type XlsxEditorInstance,
 } from '../src/index.ts';
 import { FONTS, mount, tabsShow, unmountAll, type Mounted } from './mount.ts';
+import { resetPartTranslateWarnings } from '../src/locale.ts';
 
 afterEach(unmountAll);
 
@@ -318,6 +319,8 @@ describe('useTranslation', () => {
 });
 
 describe('a t that throws', () => {
+  beforeEach(resetPartTranslateWarnings);
+
   test('keeps the editor mounted, shows the catalog text, and warns once in development', async () => {
     const warnings: string[] = [];
     const warn = console.warn;
@@ -567,5 +570,52 @@ describe('the in-cell editor', () => {
     const input = view.container.querySelector('textarea.xlsx-cell-editor')!;
     expect(input.getAttribute('dir')).toBe('auto');
     expect(input.closest('.xlsx-surface')?.closest('[dir]')).toBeNull();
+  });
+});
+
+describe('a field in a right-to-left toolbar', () => {
+  /** A bar of Bold, the field, and Italic, in a right-to-left catalog. */
+  function fieldBar(attrs: Record<string, unknown>) {
+    const view = mount(() =>
+      h(XlsxEditorRoot, { locale: { _lang: 'ar' } }, () => [
+        h(XlsxEditorViewport, null, () => [
+          h(XlsxEditorToolbar, { preset: false }, () => [
+            h(XlsxEditorToolbar.Bold),
+            h('input', { 'aria-label': 'Field', ...attrs }),
+            h(XlsxEditorToolbar.Italic),
+          ]),
+        ]),
+      ])
+    );
+    const input = view.getByRole('textbox', { name: 'Field' }) as HTMLInputElement;
+    const press = (key: string) => {
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+      fireEvent.keyDown(input, { key });
+      return document.activeElement;
+    };
+    const slot = (id: string) => view.container.querySelector(`[data-slot="${id}"]`);
+    return { input, press, slot };
+  }
+
+  test('a left-to-right field gives ArrowRight to the bar at its end, and keeps ArrowLeft', () => {
+    const { input, press, slot } = fieldBar({ style: { direction: 'ltr' }, value: 'abc' });
+    // In a right-to-left bar, ArrowRight moves to the previous control.
+    expect(press('ArrowRight')).toBe(slot('font.bold'));
+    expect(press('ArrowLeft')).toBe(input);
+  });
+
+  test('a right-to-left field gives ArrowLeft to the bar at its end, and keeps ArrowRight', () => {
+    const { input, press, slot } = fieldBar({ dir: 'rtl', value: 'שלום' });
+    expect(press('ArrowLeft')).toBe(slot('font.italic'));
+    expect(press('ArrowRight')).toBe(input);
+  });
+
+  test('a right-to-left field of digits follows the field, as a browser caret does', () => {
+    // At the end of "11" in a right-to-left field, a browser caret does not move on ArrowLeft
+    // and moves back on ArrowRight: the field's direction decides, not the digits.
+    const { input, press, slot } = fieldBar({ dir: 'rtl', value: '11' });
+    expect(press('ArrowLeft')).toBe(slot('font.italic'));
+    expect(press('ArrowRight')).toBe(input);
   });
 });

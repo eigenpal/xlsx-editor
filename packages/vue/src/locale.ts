@@ -101,6 +101,11 @@ export function provideCatalogScope(
  */
 const warnedParts = new Set<string>();
 
+/** Forget which parts warned, so a test that expects a warning does not depend on order. Internal. */
+export function resetPartTranslateWarnings(): void {
+  warnedParts.clear();
+}
+
 const localeProviderProps = {
   /**
    * A partial catalog over the catalog above: the root's `locale`, an outer provider, or

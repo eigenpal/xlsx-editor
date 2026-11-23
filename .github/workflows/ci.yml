@@ -3,9 +3,10 @@ name: CI
 # Source checks and unit tests run concurrently. Same shape as
 # docx-editor/.github/workflows/ci.yml, sized for the packages this repository has: each source
 # check is its own job, and the unit tests run in shards that recorded durations balance
-# (pptx-editor/.github/workflows/ci.yml). The `build`
-# and `changeset` checks and the `package-size` job follow pptx-editor/.github/workflows/ci.yml
-# at e22f3f3b.
+# (pptx-editor/.github/workflows/ci.yml). The `build`, `fidelity`, `e2e`, and `changeset`
+# checks, the Playwright browser cache, and the `package-size` job follow
+# pptx-editor/.github/workflows/ci.yml at 194c9fea. The engine tests of the hostile workbooks
+# run in the unit shards; the browser hang test keeps only the cases that need a browser.
 
 on:
   push:
@@ -23,14 +24,17 @@ concurrency:
 jobs:
   checks:
     strategy:
-      fail-fast: true
+      # A failed check does not cancel the others: `build` saves the caches and the size report,
+      # and each browser check reports its own result.
+      fail-fast: false
       matrix:
         # One job for each kind of check, so they run side by side. `lint` is oxlint and the
         # format; `typecheck` is `bun check` for each package and the lane boundaries; `policy`
         # is the repository rules; `xsd` is the schema validation of saved parts. `build` also
-        # installs the packed packages into a fresh app, so the packages build once. `changeset`
-        # needs the base branch.
-        check: [lint, typecheck, policy, xsd, build, changeset]
+        # installs the packed packages into a fresh app, so the packages build once. `fidelity`
+        # is the fidelity harness and `e2e` the demo smoke check, both in Chromium. `changeset`
+        # and `fidelity` need the history of the base branch.
+        check: [lint, typecheck, policy, xsd, build, fidelity, e2e, changeset]
     name: ${{ matrix.check }}
     runs-on: blacksmith-2vcpu-ubuntu-2404
     timeout-minutes: 20
@@ -39,7 +43,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           # `0` is falsy in expressions, so `x && 0 || 1` is always 1: test the other case.
-          fetch-depth: ${{ matrix.check != 'changeset' && 1 || 0 }}
+          fetch-depth: ${{ matrix.check != 'changeset' && matrix.check != 'fidelity' && 1 || 0 }}
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
@@ -57,6 +61,15 @@ jobs:
           path: ~/.npm
           key: npm-build-${{ hashFiles('bun.lock') }}
           restore-keys: npm-build-
+      # Playwright's browser download, keyed by the lockfile that pins its version. The system
+      # dependencies still install with `--with-deps`. Saved only by pushes to main.
+      - name: Restore Playwright browsers
+        if: matrix.check == 'build' || matrix.check == 'fidelity' || matrix.check == 'e2e'
+        id: playwright-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('bun.lock') }}
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: Lint
@@ -125,6 +138,70 @@ jobs:
       - name: Consumer install
         if: matrix.check == 'build'
         run: bun run check:consumer-install
+      # The fidelity harness (design D8): paints each fixture with the editor's paint in Chromium,
+      # scores the pixels of a screenshot and the text lines of a printed PDF of the painted
+      # page, and compares both with its reference PDF. It needs a browser and Poppler, so it
+      # runs here and not in the pre-commit hook. CI has no reference fonts: it runs with the
+      # substitutes.
+      - name: Install Chromium and Poppler
+        if: matrix.check == 'fidelity'
+        run: |
+          bunx playwright install --with-deps chromium
+          sudo apt-get install -y poppler-utils
+          # The known gaps are kept for each Poppler version, and CI needs the list of exactly its
+          # tools: log the installed package, so that a runner image update is visible.
+          dpkg-query -W poppler-utils
+      - name: Fidelity against reference PDFs
+        if: matrix.check == 'fidelity'
+        run: bun run fidelity
+      # A new Poppler, pdf.js, or Chromium version has no known-gap list, and the gate fails.
+      # Record the list of this runner's tools, so that a pull request can commit it from the
+      # `fidelity-thresholds` artifact after a review of its diff. `--update-gaps` writes nothing
+      # when a score is worse.
+      - name: Record the known gaps of these tools
+        if: failure() && matrix.check == 'fidelity'
+        run: bun run fidelity --update-gaps
+      - name: Upload the recorded known gaps
+        if: failure() && matrix.check == 'fidelity'
+        uses: actions/upload-artifact@v7
+        with:
+          name: fidelity-thresholds
+          path: scripts/fidelity/thresholds.ts
+      # Thresholds and known gaps only tighten (scripts/fidelity/check-known-gaps.ts). Compare
+      # with the merge base of the pull request head and its base branch, not the base branch tip:
+      # the checkout is the test merge commit, whose merge base with the base branch is its tip.
+      # `fetch-depth: 0` makes both histories available.
+      - name: Known gaps only tighten
+        if: matrix.check == 'fidelity' && github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bun run fidelity:check-gaps --base "$(git merge-base "$HEAD_SHA" "origin/$BASE_REF")"
+      - name: Upload fidelity report
+        if: always() && matrix.check == 'fidelity'
+        uses: actions/upload-artifact@v7
+        with:
+          name: fidelity-report
+          path: fidelity-report/
+      # The demo smoke check (scripts/verify-demo.ts) in Chromium: the sample opens and paints, a
+      # typed value saves and opens again, and the steps that need a browser engine (the system
+      # clipboard, layout, computed styles, focus that the engine moves, and a real download).
+      # The flows of the demo run as happy-dom tests in the unit shards. It is a check of its
+      # own, as in PPTX Editor, and the matrix does not fail fast, so a fidelity failure does not
+      # cancel it. Firefox and WebKit stay available locally with `--browser`, outside this gate.
+      - name: Install the browser
+        if: matrix.check == 'e2e'
+        run: bunx playwright install --with-deps chromium
+      - name: Demo smoke check
+        if: matrix.check == 'e2e'
+        run: bun run test:e2e
+      - name: Upload demo screenshots
+        if: failure() && matrix.check == 'e2e'
+        uses: actions/upload-artifact@v7
+        with:
+          name: demo-screenshots
+          path: screenshots/
+          if-no-files-found: ignore
       # A public API change must carry a changeset (docx-editor's api-changeset lane).
       - name: API change has a changeset
         if: matrix.check == 'changeset' && github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/')
@@ -137,6 +214,12 @@ jobs:
         with:
           path: ~/.npm
           key: npm-build-${{ hashFiles('bun.lock') }}
+      - name: Save Playwright browsers
+        if: github.event_name == 'push' && matrix.check == 'build' && steps.playwright-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('bun.lock') }}
 
   # The lowest versions that the package READMEs state (scripts/lib/consumer-floors.mjs).
   # DOCX Editor and PPTX Editor have no such job: it runs because these READMEs state floors.
@@ -358,7 +441,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           # Keep the newest entry for each prefix; delete the rest.
-          for prefix in test-durations- npm-build-; do
+          for prefix in test-durations- npm-build- playwright-; do
             gh cache list --ref refs/heads/main --key "$prefix" --sort created_at \
               --order desc --limit 100 --json id --jq '.[1:][].id' |
               while read -r id; do
@@ -366,108 +449,14 @@ jobs:
               done
           done
 
-  # The fidelity harness (design D8): paints each fixture with the editor's paint in Chromium,
-  # scores the pixels of a screenshot and the text lines of a printed PDF of the painted page,
-  # and compares both with its reference PDF. It needs a browser and Poppler, so it runs here
-  # and not in the pre-commit hook. CI has no reference fonts: it runs with the substitutes.
-  fidelity:
-    name: fidelity
-    runs-on: blacksmith-2vcpu-ubuntu-2404
-    timeout-minutes: 20
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: '24'
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Install Chromium and Poppler
-        run: |
-          bunx playwright install --with-deps chromium
-          sudo apt-get install -y poppler-utils
-          # The known gaps are kept for each Poppler version, and CI needs the list of exactly its
-          # tools: log the installed package, so that a runner image update is visible.
-          dpkg-query -W poppler-utils
-      - name: Fidelity against reference PDFs
-        run: bun run fidelity
-      # A new Poppler, pdf.js, or Chromium version has no known-gap list, and the gate fails.
-      # Record the list of this runner's tools, so that a pull request can commit it from the
-      # `fidelity-thresholds` artifact after a review of its diff. `--update-gaps` writes nothing
-      # when a score is worse.
-      - name: Record the known gaps of these tools
-        if: failure()
-        run: bun run fidelity --update-gaps
-      - name: Upload the recorded known gaps
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: fidelity-thresholds
-          path: scripts/fidelity/thresholds.ts
-      # Thresholds and known gaps only tighten (scripts/fidelity/check-known-gaps.ts). Compare
-      # with the merge base of the pull request head and its base branch, not the base branch tip:
-      # the checkout is the test merge commit, whose merge base with the base branch is its tip.
-      # `fetch-depth: 0` makes both histories available.
-      - name: Known gaps only tighten
-        if: github.event_name == 'pull_request'
-        env:
-          BASE_REF: ${{ github.base_ref }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: bun run fidelity:check-gaps --base "$(git merge-base "$HEAD_SHA" "origin/$BASE_REF")"
-      - name: Upload fidelity report
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: fidelity-report
-          path: fidelity-report/
-
-  # The demo smoke check (scripts/verify-demo.ts) in Chromium: the sample opens and paints, a
-  # typed value saves and opens again, and the steps that need a browser engine (the system
-  # clipboard, layout, computed styles, focus that the engine moves, and a real download). The
-  # flows of the demo run as happy-dom tests in the test job. Its own job, as in PPTX Editor, so a
-  # fidelity failure does not hide its result. Firefox and WebKit stay available locally with
-  # `--browser`, outside this gate.
-  demo:
-    name: demo
-    runs-on: blacksmith-2vcpu-ubuntu-2404
-    timeout-minutes: 30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: '24'
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Install the browser
-        run: bunx playwright install --with-deps chromium
-      - name: Demo smoke check
-        run: bun run test:e2e
-      - name: Upload demo screenshots
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: demo-screenshots
-          path: screenshots/
-          if-no-files-found: ignore
-
-  # No hostile or large workbook hangs the page (scripts/hang/run.ts). Each case runs in its own
-  # browser under a memory and time watchdog. It is the longest job, and a change rarely breaks
-  # it, so pull requests skip it and each push to main runs it. PPTX Editor and DOCX Editor run
-  # their hang checks outside pull request CI too. Run `bun run test:hang:browser` on a change to
-  # the open, the parse limits, or the save.
+  # No hostile or large workbook hangs the page (scripts/hang/run.ts). It runs only the cases of
+  # scripts/hang/browser-cases.ts that need a real browser: network faults, font loading, races
+  # in the demo, and the large workbooks whose browser memory and main-thread blocks it measures.
+  # The unit shards run every other hostile workbook through the engine (scripts/hang/
+  # engine-run.ts). Each case runs in its own browser under a memory and time watchdog. It is
+  # still the longest job, so pull requests skip it and each push to main runs it. PPTX Editor
+  # and DOCX Editor run their hang checks outside pull request CI too. Run
+  # `bun run test:hang:browser` on a change to the open, the parse limits, or the save.
   hang:
     if: github.event_name == 'push'
     name: hang
@@ -484,6 +473,12 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version-file: .bun-version
+      # The browser download that the `build` check saves on each push to main.
+      - name: Restore Playwright browsers
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('bun.lock') }}
       - name: Install dependencies
         run: bun install --frozen-lockfile
       - name: Install Chromium

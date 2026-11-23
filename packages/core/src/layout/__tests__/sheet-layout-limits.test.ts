@@ -1,5 +1,5 @@
-// Cache keys, indent in number fitting, merged ranges that overlap, and the cost of a window
-// with large merged ranges.
+// Cache keys, indent in number fitting, merged ranges that overlap, the cost of a window with
+// large merged ranges, and the work of a window over a small and a large sheet.
 
 import { beforeAll, describe, expect, test } from 'bun:test';
 import {
@@ -9,7 +9,7 @@ import {
   type FixtureWorkbook,
 } from '../../../../../scripts/fixtures/builder.ts';
 import { readXlsx, type XlsxPackage } from '../../store/package/package.ts';
-import { layoutSheet, type SheetLayout } from '../sheet-layout.ts';
+import { layoutSheet, layoutWorkTestRecorder, type SheetLayout } from '../sheet-layout.ts';
 import { PRINT_PROFILE } from '../metrics.ts';
 import { mergeCoverage, mergedRanges } from '../panes.ts';
 import type { TextMeasurer } from '../text/measurer.ts';
@@ -154,5 +154,63 @@ describe('the cost of large merged ranges', () => {
     const l = layout(pkg, HUGE);
     expect(performance.now() - start).toBeLessThan(1000);
     expect(l.problems).toContainEqual({ code: 'merges-overlapping', detail: '4999' });
+  });
+});
+
+describe('the work of a window', () => {
+  const DRAWING =
+    '<xdr:oneCellAnchor><xdr:from><xdr:col>2</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>2</xdr:row>' +
+    '<xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="952500" cy="952500"/><xdr:sp><xdr:nvSpPr>' +
+    '<xdr:cNvPr id="2" name="S"/><xdr:cNvSpPr/></xdr:nvSpPr><xdr:spPr><a:prstGeom prst="rect">' +
+    '<a:avLst/></a:prstGeom></xdr:spPr></xdr:sp><xdr:clientData/></xdr:oneCellAnchor>';
+  /** `rows` rows of 20 numbers, a rule over them, one drawing, and with `merged` a merge per row. */
+  const dense = (rows: number, merged: boolean) =>
+    open({
+      styles: { dxfs: ['<dxf><font><b/></font></dxf>'] },
+      sheets: [
+        {
+          name: 'S',
+          rows: Array.from({ length: rows }, (_, r) =>
+            row(
+              r + 1,
+              Array.from({ length: 20 }, (_, k) => c(`${String.fromCharCode(65 + k)}${r + 1}`, r))
+            )
+          ).join(''),
+          merges: merged ? Array.from({ length: rows }, (_, r) => `V${r + 1}:W${r + 1}`) : [],
+          afterMerges:
+            `<conditionalFormatting sqref="A1:T${rows}"><cfRule type="cellIs" dxfId="0" ` +
+            'priority="1" operator="greaterThan"><formula>5</formula></cfRule></conditionalFormatting>',
+          drawing: { anchors: DRAWING },
+        },
+      ],
+    });
+  const work = layoutWorkTestRecorder();
+  /** The work of a second layout of `viewport`, whose geometry is cached. */
+  const workOf = (pkg: XlsxPackage, viewport = VIEW) => {
+    layout(pkg, viewport);
+    work.reset();
+    layout(pkg, viewport);
+    const { searchSteps, reset: _reset, ...counts } = { ...work };
+    // A binary search over n keys takes at most ceil(log2(n + 1)) steps.
+    const keys = 20 * layout(pkg, viewport).geometry.rows.count;
+    expect(searchSteps).toBeLessThanOrEqual(counts.searches * Math.ceil(Math.log2(keys + 1)));
+    return counts;
+  };
+
+  test('is the same over a sheet of 100 rows and one of 20000 rows, for each counter', () => {
+    const small = workOf(dense(100, true));
+    for (const [name, count] of Object.entries(small))
+      expect(`${name}: ${count > 0}`).toBe(`${name}: true`);
+    expect(workOf(dense(20_000, true))).toEqual(small);
+  });
+
+  test('near the last row is the same as near the top, with no merged ranges', () => {
+    const large = dense(20_000, false);
+    // Rows 1000 and 19000, each with stored rows above and below the window. A merge per row is
+    // left out: the merge search reads each range that starts above the window (a known cost).
+    const rows = layout(large).geometry.rows;
+    const near = workOf(large, { ...VIEW, scrollY: rows.offsetOf(1000) });
+    expect(near.mergesRead).toBe(0);
+    expect(workOf(large, { ...VIEW, scrollY: rows.offsetOf(19_000) })).toEqual(near);
   });
 });

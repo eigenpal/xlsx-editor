@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
 import { readZip } from '../../packages/ooxml-core/src/zip.ts';
-import { readXlsx } from '../../packages/core/src/store/index.ts';
 import {
   externalReferences,
   HANG_CASES,
@@ -93,30 +92,6 @@ describe('the hostile workbooks of the hang test', () => {
     expect(seeded(1)()).toBe(seeded(1)());
     expect(randomSharedStrings(2000)).toEqual(randomSharedStrings(2000));
   });
-
-  test('parse each modeled part and name the hostile sheet first in a workbook that opens', () => {
-    // These parts stay as bytes on purpose: one passes the depth limit, and one declares a DTD.
-    const staysBinary = new Set(['style-xml-deep', 'xml-entity-expansion']);
-    const modeled = /\/(sharedStrings|styles|workbook|sheet\d+|theme\d*|drawing\d+)\.xml$/i;
-    for (const c of HANG_CASES) {
-      // A race case opens the workbook of `sheet-dense` again. Each workbook is released here.
-      if (!c.bytes || c.expect !== 'open' || c.race) continue;
-      const bytes = c.bytes();
-      const zip = readZip(bytes);
-      if (!zip.ok) throw new Error(`${c.id}: ${zip.reason}`);
-      const workbook = dec.decode(zip.entries.get('/xl/workbook.xml'));
-      expect(`${c.id}: ${/<sheet [^>]*name="([^"]*)"/.exec(workbook)?.[1]}`).toBe(
-        `${c.id}: ${HOSTILE_SHEET}`
-      );
-      if (staysBinary.has(c.id)) continue;
-      const read = readXlsx(bytes);
-      if (!read.ok) throw new Error(`${c.id}: ${read.error.reason}`);
-      const unread = [...read.pkg.parts.values()]
-        .filter((p) => p.kind === 'binary' && modeled.test(p.partName))
-        .map((p) => p.partName);
-      expect(`${c.id}: ${unread.join()}`).toBe(`${c.id}: `);
-    }
-  }, 120_000);
 
   test('build a style chain that never ends and that a cell enters', () => {
     const chain = styleChain(100).map((xf) => Number(/xfId="(\d+)"/.exec(xf)![1]));

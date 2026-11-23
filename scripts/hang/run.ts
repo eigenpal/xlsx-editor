@@ -2,11 +2,20 @@
 //
 //   bun run test:hang:browser
 //   HANG_ONLY=sst-50mb,fonts-stalled bun run test:hang:browser
+//   HANG_ALL=1 bun run test:hang:browser
 //   HANG_HEADED=1 HANG_ONLY=sst-50mb bun run test:hang:browser
 //
-// Each case of `cases.ts` runs in its own browser, one browser at a time. The test opens the
-// workbook in the demo through its file input, with the demo's default options, unless the case
-// sets `headingsOff`. It then moves in the grid, scrolls, saves, types in a cell, and opens a small
+// It runs the cases of `cases.ts` that need a real browser (`BROWSER_CASES` of
+// `browser-cases.ts`): the network faults, the font loading, the races in the demo, the cases
+// whose checks need the page (requests to other origins, the paint, and the chrome), and the
+// large workbooks whose memory on the browser process tree and whose main-thread blocks it
+// measures (`BROWSER_RUN`). The engine run of `bun run test` (`engine-run.ts`) covers each file
+// case with no network fault and no race, with no browser. `HANG_ONLY` can name any case of
+// `cases.ts`, and `HANG_ALL=1` runs them all.
+//
+// Each case runs in its own browser, one browser at a time. The test opens the workbook in the
+// demo through its file input, with the demo's default options, unless the case sets
+// `headingsOff`. It then moves in the grid, scrolls, saves, types in a cell, and opens a small
 // workbook with the network fault lifted. The page must answer after each step. A watchdog outside
 // the page (`watchdog.ts`) stops the browser when it passes the memory cap or the time of the case.
 // A read of the watchdog that comes more than 5 s late (a sleeping machine or a stalled test
@@ -46,6 +55,8 @@
 //   is a CI gate, so it keeps SLOW out of the exit code, as hang.stress.ts does.
 // - Its limits are constants and not environment variables, so a run cannot loosen them.
 // - Its files are in `scripts/`, with the other browser checks of this repository.
+// - A hostile file that needs no browser runs in the engine run of `bun run test`, with work
+//   counters in place of a wall clock, so this run keeps only the cases that need a browser.
 // - It has no case for a font body that stops or trickles. The unit tests of `stallLimitedFetch`
 //   cover these faults with exact timing.
 
@@ -60,6 +71,7 @@ import { appendFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'n
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { createServer } from 'vite';
+import { BROWSER_CASES } from './browser-cases.ts';
 import {
   HANG_CASES,
   HOSTILE_SHEET,
@@ -738,10 +750,13 @@ async function inOwnBrowser(testCase: HangCase, dir: string, base: string): Prom
   return row;
 }
 
-/** The cases that `HANG_ONLY` selects. It stops the run with the valid ids for a wrong value. */
+/**
+ * The cases that `HANG_ONLY` selects, every case with `HANG_ALL=1`, or else `BROWSER_CASES`. It
+ * stops the run with the valid ids for a wrong value.
+ */
 function selectedCases(): readonly HangCase[] {
   const raw = process.env.HANG_ONLY;
-  if (raw === undefined) return HANG_CASES;
+  if (raw === undefined) return process.env.HANG_ALL === '1' ? HANG_CASES : BROWSER_CASES;
   const only = raw
     .split(',')
     .map((id) => id.trim())

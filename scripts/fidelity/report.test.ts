@@ -64,6 +64,12 @@ function report(result: Partial<FixtureResult>, problems: readonly GateProblem[]
 }
 
 describe('the fidelity report', () => {
+  // A backslash before a pipe must not cancel the escape of the pipe and end the table cell.
+  test('an error in a table cell escapes the backslash before the pipe', () => {
+    const text = report({ status: 'error', error: 'a\\|b\r\nc' });
+    expect(text).toContain('| preserved-parts | error: a\\\\\\|b c |');
+  });
+
   test('a fixture with clipped lines names them', () => {
     expect(report({ clippedLines: ['Kept content'] })).toContain(
       '- Matched lines that a cell clip shortens on both pages: `Kept content`.'

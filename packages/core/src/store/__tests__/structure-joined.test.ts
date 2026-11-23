@@ -75,7 +75,7 @@ describe('a move past the length of a formula', () => {
     expect(text.length).toBeLessThanOrEqual(MAX_FORMULA_LENGTH);
     const store = storeOf({
       sheets: [{ name: 'S', rows: row(1, [c('A1', 1)]) }],
-      definedNames: `<definedName name="Big">${text.replace('&', '&amp;')}</definedName>`,
+      definedNames: `<definedName name="Big">${text.replaceAll('&', '&amp;')}</definedName>`,
     });
     const r = store.transact([op('deleteRows', 'S', 2)]);
     expect(r.ok ? 'ok' : r.rejection.code).toBe('structure-blocked');

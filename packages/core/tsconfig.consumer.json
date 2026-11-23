@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "paths": {
+      "@xlsx-editor.dev/core": ["./src/index.ts"],
+      "@xlsx-editor.dev/core/*": ["./src/*/index.ts"],
+      "@xlsx-editor.dev/react": ["../react/src/index.ts"],
+      "@xlsx-editor.dev/vue": ["../vue/src/index.ts"],
+      "@xlsx-editor.dev/i18n": ["../i18n/src/index.ts"],
+      "@xlsx-editor.dev/i18n/*": ["../i18n/src/*.ts"],
+      "@eigenpal/ooxml-core": ["../ooxml-core/src/index.ts"]
+    }
+  },
+  "files": ["src/__tests__/consumer.test-d.ts"]
+}

@@ -1,0 +1,98 @@
+---
+title: 'Introduction'
+description: 'Browser-based WYSIWYG XLSX editor for React and Vue 3, built on the ECMA-376 standard.'
+category: 'Getting started'
+seoTitle: 'Documentation and API reference'
+---
+
+XLSX Editor is a WYSIWYG editor for `.xlsx` workbooks in React and Vue 3. It reads the package in the browser and lays out the grid by the rules of ECMA-376. It paints the grid on a canvas, and saves the edited workbook as bytes. Editing needs no upload or conversion service.
+
+A cell shows the value that the file stores. The editor does not calculate formulas. After an edit that can change a result in a workbook with formulas, it marks the stored results as possibly out of date. The saved workbook then sets `x:calcPr/@fullCalcOnLoad`, which asks the next consumer to calculate them again. [XLSX fidelity](/docs/xlsx-fidelity#round-trip-contract) names one known exception.
+
+## Install an editor
+
+Install an adapter, the engine, and the framework:
+
+<FrameworkTabs>
+<Framework value="react">
+
+```bash
+npm install @xlsx-editor.dev/react @xlsx-editor.dev/core react react-dom
+```
+
+</Framework>
+<Framework value="vue">
+
+```bash
+npm install @xlsx-editor.dev/vue @xlsx-editor.dev/core vue
+```
+
+</Framework>
+</FrameworkTabs>
+
+Import the stylesheet once, and give the editor a height:
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+import { XlsxEditor } from '@xlsx-editor.dev/react';
+import '@xlsx-editor.dev/react/styles.css';
+
+export function Workbook({ bytes }: { bytes: Uint8Array }) {
+  return <XlsxEditor document={bytes} style={{ height: 600 }} />;
+}
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<script setup lang="ts">
+import { XlsxEditor } from '@xlsx-editor.dev/vue';
+import '@xlsx-editor.dev/vue/styles.css';
+
+defineProps<{ bytes: Uint8Array }>();
+</script>
+
+<template>
+  <XlsxEditor :document="bytes" style="height: 600px" />
+</template>
+```
+
+</Framework>
+</FrameworkTabs>
+
+To open a file and save the edits, continue with the [quickstart](/docs/quickstart).
+
+## Check packages and licenses
+
+| Package | Purpose | License |
+| --- | --- | --- |
+| [`@xlsx-editor.dev/react`](/docs/react) | React adapter: `XlsxEditor`, its parts, and hooks | Apache 2.0 |
+| [`@xlsx-editor.dev/vue`](/docs/vue) | Vue 3 adapter: `XlsxEditor`, its parts, and composables | Apache 2.0 |
+| `@xlsx-editor.dev/core` | Framework-independent engine: open, cell formats, layout, paint, edit, and save | Apache 2.0 |
+| [`@xlsx-editor.dev/i18n`](/docs/i18n) | Interface strings, with the English catalog | Apache 2.0 |
+| `@docx-editor.dev/fonts` | Substitute font faces that the engine measures and paints text with. `@xlsx-editor.dev/core` installs it. | Apache-2.0 AND OFL-1.1 AND LicenseRef-GUST-Font-License |
+
+Install all `@xlsx-editor.dev` packages at the same minor version.
+
+## Find a task guide
+
+| Task | Guide |
+| --- | --- |
+| Check requirements and set up your bundler | [Installation](/docs/installation) |
+| Open, edit, and save a workbook | [Quickstart](/docs/quickstart) |
+| Change the toolbar, the layout, the colors, and the fonts | [Customization](/docs/customization) |
+| Translate the interface | [Language](/docs/customization/language) |
+| Check feature support, round-trip behavior, and data flow | [XLSX fidelity](/docs/xlsx-fidelity) |
+| Make the host page accessible | [Accessibility](/docs/accessibility) |
+| Use the React adapter | [@xlsx-editor.dev/react](/docs/react) |
+| Use the Vue adapter | [@xlsx-editor.dev/vue](/docs/vue) |
+| Check the size limits of a workbook | [Workbook limits](/docs/workbook-limits) |
+| Read a workbook or measure its grid on a server | [Use on a server](https://github.com/eigenpal/xlsx-editor/blob/main/packages/core/README.md#use-on-a-server) |
+
+## Next steps
+
+- [Quickstart](/docs/quickstart): open, edit, and save a `.xlsx` file.
+- [Installation](/docs/installation): check requirements, styles, and bundler setup.

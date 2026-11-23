@@ -1,0 +1,4 @@
+# `bun test <file>` from this directory: the adapter tests need a DOM, as `bun run test:dom`
+# gives them from the repository root (`scripts/test/preload-dom.ts`).
+[test]
+preload = ["../../scripts/test/preload-dom.ts"]

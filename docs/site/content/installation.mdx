@@ -1,0 +1,90 @@
+---
+title: 'Installation'
+description: 'Install the XLSX editor packages, check runtime requirements, add the stylesheet, and set up your bundler.'
+category: 'Getting started'
+---
+
+Install an adapter, add its stylesheet, and set up your bundler. The editor runs in the browser.
+
+## Install packages
+
+Install one adapter, the engine, and the framework. Each adapter declares `@xlsx-editor.dev/core` as a peer dependency, and it installs the interface strings (`@xlsx-editor.dev/i18n`) for you.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```bash
+npm install @xlsx-editor.dev/react @xlsx-editor.dev/core react react-dom
+```
+
+</Framework>
+<Framework value="vue">
+
+```bash
+npm install @xlsx-editor.dev/vue @xlsx-editor.dev/core vue
+```
+
+</Framework>
+</FrameworkTabs>
+
+Install one copy of `@xlsx-editor.dev/core`, at the same minor version as the other `@xlsx-editor.dev` packages. The text shaper and its measurement caches belong to that copy, so two copies in one bundle measure text separately. Each adapter accepts only the minor of `@xlsx-editor.dev/core` that it releases with, for example `~0.1.0`.
+
+## Check runtime requirements
+
+| Requirement | Version |
+| --- | --- |
+| React and React DOM | 18 or 19 |
+| `@types/react`, with React 18 | 18.2.6 or later |
+| Vue | 3.5 or later |
+| TypeScript, for the bundled types | 5.7 or later, with `moduleResolution` set to `bundler` or `node16` |
+| Module format | ECMAScript modules (ESM) only |
+| Node.js, for server use of the engine | 20.16.0 or later in the 20.x release line, or 22.3.0 or later |
+
+The editor runs in the browser. If your app renders on a server, render the editor only in the browser. In Next.js, load it in a Client Component with `dynamic(..., { ssr: false })`, as the [React README](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/README.md#use-with-nextjs) shows. In Nuxt, put it in the `<ClientOnly>` component.
+
+## Add the stylesheet and a height
+
+Import the stylesheet once, after your app's CSS reset. Each adapter exports it as `styles.css`. It holds every chrome style and the `--doc-*` color tokens.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```ts
+import '@xlsx-editor.dev/react/styles.css';
+```
+
+</Framework>
+<Framework value="vue">
+
+```ts
+import '@xlsx-editor.dev/vue/styles.css';
+```
+
+</Framework>
+</FrameworkTabs>
+
+Set the height on the editor itself, with `style` or a class. The grid fills the editor and scrolls inside it. A height on a parent element is not enough: without its own height, the grid has a height of 0. To fill a parent that has a height, set the height to `100%`. In development, the editor logs a warning when the stylesheet is missing. For transformed containers, clipped overflow, and several editors on one page, see Embed in a page in the [React README](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/README.md#embed-in-a-page) or the [Vue README](https://github.com/eigenpal/xlsx-editor/blob/main/packages/vue/README.md#embed-in-a-page).
+
+Every rule in the stylesheet selects an `xlsx-` class first, so it does not style the rest of your page. The grid always shows the colors of the workbook. To show the chrome in the dark theme, see [Color mode](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#color-mode).
+
+## Set up your bundler
+
+The engine measures text with HarfBuzz, and loads `harfbuzz.wasm` with `new URL(..., import.meta.url)`. The default fonts load the same way.
+
+- `vite build` (Vite 7.0.0 or later) and webpack 5.83.0 or later emit the files. They need no setup.
+- The Vite 8 dev server serves the files with no setup.
+- The Vite 7 dev server needs one setting: exclude the engine and the fonts from dependency optimization.
+- If your bundler does not emit `new URL(..., import.meta.url)` assets, serve `harfbuzz.wasm` and the fonts yourself.
+
+For the Vite 7 setting, the address of the shaper, and each font file, see [Serve the text shaper](https://github.com/eigenpal/xlsx-editor/blob/main/packages/core/README.md#serve-the-text-shaper) in the core README.
+
+If the shaper does not load, or no substitute face loads, the workbook does not open, and the editor shows the reason. The failure code is `fonts`. If only some faces load, the workbook opens, and its text uses the faces that loaded.
+
+## Choose fonts
+
+Without a `fonts` prop, the editor fetches the substitute faces of `@docx-editor.dev/fonts` from your app. The [Serve the text shaper](https://github.com/eigenpal/xlsx-editor/blob/main/packages/core/README.md#serve-the-text-shaper) table lists the families that each face stands in for. The editor never fetches anything that a workbook names. To supply your own faces, see [Font changes](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#font-changes).
+
+## Next steps
+
+- [Quickstart](/docs/quickstart): open, edit, and save a workbook.
+- [Customization](/docs/customization): change the toolbar, the layout, the colors, and the fonts.

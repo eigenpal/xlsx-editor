@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["vite/client", "bun"],
+    "paths": {
+      "@xlsx-editor.dev/core": ["../../packages/core/src/index.ts"],
+      "@xlsx-editor.dev/core/*": ["../../packages/core/src/*/index.ts"],
+      "@xlsx-editor.dev/react": ["../../packages/react/src/index.ts"],
+      "@xlsx-editor.dev/i18n": ["../../packages/i18n/src/index.ts"],
+      "@eigenpal/ooxml-core": ["../../packages/ooxml-core/src/index.ts"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}

@@ -1,0 +1,689 @@
+/** @jsxImportSource react */
+// The toolbar parts: an icon button, a dropdown list of values, a color palette, and a group
+// menu. Each part renders one slot of the chrome registry through `useToolbarSlot`, and each
+// popup closes through the one close rule, `useDropdownClose`. Chrome `mousedown` keeps the
+// keyboard on the grid, except in a form field (AGENTS.md "Conventions", focus stealing). A
+// pick returns the keyboard to the grid and leaves the selection where it was.
+//
+// A disabled control keeps its focus and carries `aria-disabled` and its reason as the
+// description. An enabled control with a hint keeps its label as the tooltip, with the hint on a
+// second line, and the hint as the description. DOCX Editor's toolbar buttons use `disabled`
+// with the reason as the tooltip; this toolbar differs because a `disabled` button takes no
+// focus, so the keyboard could not reach the reason, and a control that becomes disabled under
+// focus would drop the focus to the page. Inside the overflow panel, a popup renders in flow
+// (`data-inline`), so the panel's scroll box never clips it.
+
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useMemo,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
+import {
+  COLOR_CHOICES,
+  FONT_FAMILY_CHOICES,
+  FONT_SIZE_CHOICES,
+  NO_FILL,
+  focusPopupItem,
+  guardToolbarMousedown,
+  isHexColor,
+  movePopupFocus,
+  numberFormatListView,
+  parseFontSize,
+  placePopup,
+  popupTriggerAction,
+  type ChromeGroup,
+  type ChromeSlotId,
+  type EditorSnapshot,
+} from '@xlsx-editor.dev/core/editor';
+import { useEditorState, useTranslation } from '../context.ts';
+import { ChromeIcon, translateKey, useToolbarSlot, type ToolbarSlot } from './slot.tsx';
+import { useDropdownClose } from './useDropdownClose.ts';
+import { useNumberFormatDialogOpener } from './NumberFormatDialog.tsx';
+import { ICON_CHECK, ICON_FIELD_CARET, ICON_MENU_CARET } from './icons.ts';
+
+/** How a part renders: in the bar, or as a full-width row of the overflow panel. */
+export type PartLayout = 'bar' | 'row';
+
+/**
+ * The attributes that every slot control carries. A disabled control stays focusable
+ * (`aria-disabled`), so the keyboard reaches it and its reason, and arrow navigation never loses
+ * a control that becomes disabled under focus. Its press does nothing. The reason is the
+ * tooltip and the accessible description (`aria-describedby` on a hidden `ReasonText`).
+ */
+function slotAttributes(s: ToolbarSlot, reasonId: string) {
+  return {
+    'data-slot': s.slot,
+    'aria-disabled': s.isEnabled ? undefined : ('true' as const),
+    ...(s.description ? { 'aria-describedby': reasonId } : {}),
+    title: s.title,
+    onMouseDown: guardToolbarMousedown,
+    ...(s.isActive ? { 'data-active': '' } : {}),
+    ...(s.isEnabled ? {} : { 'data-disabled': '' }),
+  };
+}
+
+/** The disabled reason or the hint of a control, as its hidden accessible description. */
+function ReasonText({ id, reason }: { readonly id: string; readonly reason: string | null }) {
+  return reason ? (
+    <span id={id} hidden>
+      {reason}
+    </span>
+  ) : null;
+}
+
+/** One command slot as a button. In a row, the label shows beside the icon. */
+export function ToolbarButton({
+  slot,
+  layout = 'bar',
+}: {
+  readonly slot: ChromeSlotId;
+  readonly layout?: PartLayout;
+}) {
+  const s = useToolbarSlot(slot);
+  const reasonId = useId();
+  return (
+    <button
+      type="button"
+      className={layout === 'row' ? 'xlsx-toolbar-row' : 'xlsx-toolbar-button'}
+      aria-label={s.label}
+      {...(s.control.toggle ? { 'aria-pressed': s.isActive } : {})}
+      {...slotAttributes(s, reasonId)}
+      // A held Enter repeats the click of a button; a command such as a decimal step would
+      // run on each repeat, so only the first press runs it. The guard applies to every toolbar
+      // button, undo and redo too. Intended difference from
+      // docx-editor/packages/react/src/components/Toolbar.tsx at 2741998e (EigenPal), whose
+      // buttons have no repeat guard.
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && e.repeat) e.preventDefault();
+      }}
+      onClick={() => {
+        if (s.isEnabled) s.execute();
+      }}
+    >
+      <ChromeIcon paths={s.control.paths} />
+      {layout === 'row' ? <span>{s.label}</span> : null}
+      <ReasonText id={reasonId} reason={s.description} />
+    </button>
+  );
+}
+
+/** How a popup behaves. */
+export interface PopupOptions {
+  /** The popup renders in flow, inside the overflow panel: no placement. */
+  readonly inline?: boolean;
+  /** Close the popup: its slot is disabled. */
+  readonly closed?: boolean;
+  /** A popup can open inside this one (the overflow panel). */
+  readonly nested?: boolean;
+}
+
+/**
+ * The state of one popup: open, its root, and how the keyboard moves focus in. `selector`
+ * names the items that take focus: the selected item first, else the current item
+ * (`aria-current`), else the first item.
+ */
+export function usePopup(selector: string, options: PopupOptions = {}) {
+  const { inline = false, closed = false, nested = false } = options;
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const focusOnOpen = useRef(false);
+  const id = useId();
+  useDropdownClose(open, setOpen, root, closed, nested);
+  // Placement: a popup that would run past the editor's right edge opens from its trigger's
+  // end, and is then held inside the editor's left edge. A popup that would run past the
+  // bottom of the window opens above its trigger when there is more room there (`placePopup`).
+  useLayoutEffect(() => {
+    if (open && root.current) placePopup(root.current, inline, selector);
+  }, [open, inline, selector]);
+  /**
+   * Focus the selected item, or else the current item (`aria-current`: an entry that names
+   * the value but is not picked), or the first.
+   */
+  const focusIn = () => focusPopupItem(root.current, selector);
+  useEffect(() => {
+    if (!open || !focusOnOpen.current) return;
+    focusOnOpen.current = false;
+    focusIn();
+  });
+  /** Open from the keyboard: focus the selected item, or the first. */
+  const openWithKeyboard = () => {
+    focusOnOpen.current = true;
+    setOpen(true);
+  };
+  return { open, setOpen, root, id, openWithKeyboard, focusIn };
+}
+
+/** The state of one popup, as `usePopup` returns it. */
+export type Popup = ReturnType<typeof usePopup>;
+
+/**
+ * The keys of a popup trigger. Enter, Space, and Down open the popup with the keyboard in it.
+ * On an open popup, Down moves the keyboard into it, and Enter or Space close it. A disabled
+ * trigger opens nothing.
+ */
+export function popupTriggerKeys(popup: Popup, enabled: boolean) {
+  return {
+    onKeyDown: (e: KeyboardEvent<HTMLElement>) => {
+      const action = popupTriggerAction(e.key, popup.open);
+      if (!action) return;
+      e.preventDefault();
+      if (!enabled) return;
+      if (action === 'open') popup.openWithKeyboard();
+      else if (action === 'focusIn') popup.focusIn();
+      else popup.setOpen(false);
+    },
+    // Space activates a button on key up in some browsers: the key down already acted.
+    onKeyUp: (e: KeyboardEvent<HTMLElement>) => {
+      if (e.key === ' ') e.preventDefault();
+    },
+  };
+}
+
+/** The trigger of a popup: a button that opens it with a press, Enter, Space, or Down. */
+function Trigger({
+  s,
+  popup,
+  kind,
+  className,
+  caret,
+  name,
+  children,
+  label,
+}: {
+  readonly s: ToolbarSlot;
+  readonly popup: Popup;
+  readonly kind: 'listbox' | 'menu' | 'dialog';
+  readonly className: string;
+  /** The caret: a field's (`expand_more`) or a menu button's (`arrow_drop_down`). */
+  readonly caret: 'field' | 'menu';
+  readonly name: string;
+  readonly children: ReactNode;
+  /**
+   * The text of the title in place of the slot label, such as the label and the value of a
+   * list. The disabled reason or the hint follows on its own line, so the title never has two
+   * colons, as in "Number format: General: <reason>".
+   */
+  readonly label?: string;
+}) {
+  const { t } = useTranslation();
+  const reasonId = useId();
+  const attributes = slotAttributes(s, reasonId);
+  const after = s.description;
+  const title =
+    label === undefined
+      ? attributes.title
+      : after
+        ? t('toolbar.hintTitle', { label, hint: after })
+        : label;
+  return (
+    <button
+      type="button"
+      className={className}
+      aria-haspopup={kind}
+      aria-expanded={popup.open}
+      aria-controls={popup.open ? popup.id : undefined}
+      aria-label={name}
+      {...attributes}
+      title={title}
+      onClick={() => {
+        if (s.isEnabled) popup.setOpen(!popup.open);
+      }}
+      {...popupTriggerKeys(popup, s.isEnabled)}
+    >
+      {children}
+      <ChromeIcon
+        paths={caret === 'field' ? ICON_FIELD_CARET : ICON_MENU_CARET}
+        className="xlsx-toolbar-caret"
+      />
+      <ReasonText id={reasonId} reason={s.description} />
+    </button>
+  );
+}
+
+/** The class of a popup, and the attributes that keep one in flow inside the overflow panel. */
+function popupAttributes(layout: PartLayout, className: string) {
+  return {
+    className: `xlsx-toolbar-popup ${className}`,
+    'data-popup': '',
+    ...(layout === 'row' ? { 'data-inline': '' } : {}),
+  };
+}
+
+/** A typed value of a list: a font size from 1 to 409 points. */
+export interface ListEntry {
+  readonly label: string;
+  /** The message that shows under the entry when the text is not a value. */
+  readonly invalid: string;
+  /** The value to apply, or null when the text is not one. */
+  parse(text: string): string | null;
+}
+
+/** A list of values for a value slot: font family, font size, or number format. */
+function ToolbarList({
+  slot,
+  options,
+  text,
+  layout,
+  width,
+  entry,
+  more,
+  name,
+  active,
+}: {
+  readonly slot: ChromeSlotId;
+  readonly options: readonly { readonly value: string; readonly label: string }[];
+  readonly text: string;
+  /** What the trigger's accessible name and title say after the slot label, when not `text`. */
+  readonly name?: string;
+  /** The current entry (`aria-current`), which the keyboard focuses on open when none is picked. */
+  readonly active?: string;
+  readonly layout: PartLayout;
+  readonly width: 'wide' | 'narrow';
+  readonly entry?: ListEntry;
+  /** A last item after the list, such as the number format dialog's opener. */
+  readonly more?: (close: () => void) => ReactNode;
+}) {
+  const s = useToolbarSlot(slot);
+  const items = `${entry ? 'input, ' : ''}[role="option"]${more ? ', [data-list-more]' : ''}`;
+  const popup = usePopup(items, {
+    inline: layout === 'row',
+    closed: !s.isEnabled,
+  });
+  const [invalid, setInvalid] = useState(false);
+  const pick = (value: string) => {
+    popup.setOpen(false);
+    s.execute(value);
+    s.focusGrid();
+  };
+  return (
+    <div
+      ref={popup.root}
+      className={`xlsx-toolbar-dropdown${layout === 'row' ? ' xlsx-toolbar-labelled' : ''}`}
+    >
+      {layout === 'row' ? <span className="xlsx-toolbar-row-label">{s.label}</span> : null}
+      <Trigger
+        s={s}
+        popup={popup}
+        kind="listbox"
+        className={`xlsx-toolbar-select xlsx-toolbar-select-${width}`}
+        caret="field"
+        name={`${s.label}: ${name ?? text}`}
+        {...(name !== undefined ? { label: `${s.label}: ${name}` } : {})}
+      >
+        <span className="xlsx-toolbar-select-text">{text}</span>
+      </Trigger>
+      {popup.open ? (
+        <div
+          {...popupAttributes(layout, 'xlsx-toolbar-list-popup')}
+          onKeyDown={(e) => movePopupFocus(e, items)}
+        >
+          {entry ? (
+            <input
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              className="xlsx-toolbar-entry"
+              aria-label={entry.label}
+              aria-invalid={invalid}
+              {...(invalid ? { 'aria-describedby': `${popup.id}-entry-error` } : {})}
+              placeholder={text}
+              onChange={() => setInvalid(false)}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter') return;
+                e.preventDefault();
+                const value = entry.parse(e.currentTarget.value);
+                if (value === null) setInvalid(true);
+                else pick(value);
+              }}
+            />
+          ) : null}
+          {entry && invalid ? (
+            <div id={`${popup.id}-entry-error`} role="alert" className="xlsx-toolbar-entry-error">
+              {entry.invalid}
+            </div>
+          ) : null}
+          <ul id={popup.id} role="listbox" aria-label={s.label} className="xlsx-toolbar-list">
+            {options.map((o) => (
+              <li
+                key={o.value}
+                role="option"
+                tabIndex={-1}
+                aria-selected={o.value === s.value}
+                {...(o.value === active ? { 'aria-current': 'true' as const } : {})}
+                onMouseDown={guardToolbarMousedown}
+                onClick={() => pick(o.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter' && e.key !== ' ') return;
+                  e.preventDefault();
+                  pick(o.value);
+                }}
+              >
+                {o.label}
+                {o.value === s.value ? (
+                  <ChromeIcon paths={ICON_CHECK} className="xlsx-toolbar-check" />
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          {more?.(() => popup.setOpen(false))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** The font family list: the choices, and the active cell's own family when it is not one. */
+export function FontFamilyList({ layout = 'bar' }: { readonly layout?: PartLayout }) {
+  const s = useToolbarSlot('font.family');
+  const current = s.value ?? '';
+  const names = current && !FONT_FAMILY_CHOICES.includes(current) ? [current] : [];
+  const options = [...names, ...FONT_FAMILY_CHOICES].map((n) => ({ value: n, label: n }));
+  return (
+    <ToolbarList slot="font.family" options={options} text={current} layout={layout} width="wide" />
+  );
+}
+
+/** The font size list, in points, with the active cell's own size when it is not a choice. */
+export function FontSizeList({ layout = 'bar' }: { readonly layout?: PartLayout }) {
+  const { t } = useTranslation();
+  const s = useToolbarSlot('font.size');
+  const current = Number(s.value);
+  const sizes = [...FONT_SIZE_CHOICES];
+  if (Number.isFinite(current) && current > 0 && !sizes.includes(current)) sizes.push(current);
+  sizes.sort((a, b) => a - b);
+  const options = sizes.map((n) => ({ value: String(n), label: String(n) }));
+  return (
+    <ToolbarList
+      slot="font.size"
+      options={options}
+      text={s.value ?? ''}
+      layout={layout}
+      width="narrow"
+      entry={{
+        label: t('fontSize.typeSize'),
+        invalid: t('fontSize.invalid'),
+        parse: parseFontSize,
+      }}
+    />
+  );
+}
+
+const numberLocaleOf = (snapshot: EditorSnapshot) => snapshot.numberLocale;
+
+/**
+ * The number format list: the built-in choices, and the code of any other format. A format
+ * that is no choice has the value `CUSTOM_NUMBER_FORMAT_PREFIX` and its code, so its code never
+ * shows as a choice.
+ */
+export function NumberFormatList({
+  layout = 'bar',
+  more = false,
+}: {
+  readonly layout?: PartLayout;
+  /** Show the number format dialog's opener (`number.custom`) after the list. */
+  readonly more?: boolean;
+}) {
+  const { t } = useTranslation();
+  const s = useToolbarSlot('number.format');
+  const locale = useEditorState(numberLocaleOf);
+  // The engine names the entries and the closed list (`numberFormatListView`). An entry has no
+  // title: as in DOCX Editor's lists
+  // (docx-editor/packages/react/src/components/ui/StylePicker.tsx at 1d092ab8, EigenPal), an
+  // option says only its name, so a screen reader does not read a format code on each arrow key.
+  // The number format dialog shows the codes.
+  const view = useMemo(
+    () =>
+      numberFormatListView(
+        s.value ?? undefined,
+        (key, params) => translateKey(t, key, params),
+        locale
+      ),
+    [s.value, t, locale]
+  );
+  return (
+    <ToolbarList
+      slot="number.format"
+      options={view.entries}
+      text={view.text}
+      {...(view.name ? { name: view.name } : {})}
+      {...(view.current !== undefined ? { active: view.current } : {})}
+      layout={layout}
+      width="wide"
+      {...(more ? { more: (close: () => void) => <MoreFormatsItem close={close} /> } : {})}
+    />
+  );
+}
+
+/**
+ * The last item of the number format list: it opens the number format dialog. Focus goes back
+ * to the list's trigger on a cancel when the keyboard opened the dialog, and else stays where
+ * it was (the grid), as a press of a toolbar control keeps it there.
+ */
+function MoreFormatsItem({ close }: { readonly close: () => void }) {
+  const s = useToolbarSlot('number.custom');
+  const dialog = useNumberFormatDialogOpener();
+  const reasonId = useId();
+  // With no dialog host, the opener renders nothing, after DOCX Editor's dialog hosts.
+  if (!dialog) return null;
+  return (
+    <button
+      type="button"
+      className="xlsx-toolbar-list-more"
+      tabIndex={-1}
+      data-list-more=""
+      aria-haspopup="dialog"
+      {...slotAttributes(s, reasonId)}
+      onClick={(e) => {
+        if (!s.isEnabled) return;
+        const item = e.currentTarget;
+        const root = item.closest('.xlsx-toolbar-dropdown');
+        const fromKeyboard = item.ownerDocument.activeElement === item;
+        const trigger = root?.querySelector<HTMLElement>('[aria-haspopup="listbox"]') ?? null;
+        close();
+        // A refused start opens no dialog, and the list with this item closes: the keyboard goes
+        // to the grid, as a refused choice of a list option does.
+        if (!dialog.open(fromKeyboard ? trigger : null) && fromKeyboard) s.focusGrid();
+      }}
+    >
+      {s.label}
+      <ReasonText id={reasonId} reason={s.description} />
+    </button>
+  );
+}
+
+/**
+ * The `number.custom` slot alone, when the bar has no number format list to hold it: an icon
+ * button that opens the number format dialog.
+ */
+export function NumberFormatDialogButton({ layout = 'bar' }: { readonly layout?: PartLayout }) {
+  const s = useToolbarSlot('number.custom');
+  const dialog = useNumberFormatDialogOpener();
+  const reasonId = useId();
+  if (!dialog) return null;
+  return (
+    <button
+      type="button"
+      className={layout === 'row' ? 'xlsx-toolbar-row' : 'xlsx-toolbar-button'}
+      aria-label={s.label}
+      aria-haspopup="dialog"
+      {...slotAttributes(s, reasonId)}
+      onClick={(e) => {
+        if (!s.isEnabled) return;
+        const self = e.currentTarget;
+        dialog.open(self.ownerDocument.activeElement === self ? self : null);
+      }}
+    >
+      <ChromeIcon paths={s.control.paths} />
+      {layout === 'row' ? <span>{s.label}</span> : null}
+      <ReasonText id={reasonId} reason={s.description} />
+    </button>
+  );
+}
+
+/**
+ * A color palette for `font.color` or `fill.color`. The swatch colors are constants of core
+ * (`COLOR_CHOICES`), and the bar under the icon shows the active cell's color only after a
+ * six-digit hex check, so no inline style carries other text.
+ */
+export function ColorPalette({
+  slot,
+  layout = 'bar',
+}: {
+  readonly slot: 'font.color' | 'fill.color';
+  readonly layout?: PartLayout;
+}) {
+  const { t } = useTranslation();
+  const s = useToolbarSlot(slot);
+  const popup = usePopup('[data-color]', { inline: layout === 'row', closed: !s.isEnabled });
+  const pick = (value: string) => {
+    popup.setOpen(false);
+    s.execute(value);
+    s.focusGrid();
+  };
+  const current = s.value ?? undefined;
+  const colors = [
+    ...(slot === 'fill.color' ? [{ value: NO_FILL, label: t('colorPicker.noFill') }] : []),
+    ...COLOR_CHOICES.map((c) => ({ value: c.value, label: translateKey(t, c.labelKey) })),
+  ];
+  return (
+    <div
+      ref={popup.root}
+      className={`xlsx-toolbar-dropdown${layout === 'row' ? ' xlsx-toolbar-labelled' : ''}`}
+    >
+      {layout === 'row' ? <span className="xlsx-toolbar-row-label">{s.label}</span> : null}
+      <Trigger
+        s={s}
+        popup={popup}
+        kind="listbox"
+        className="xlsx-toolbar-color"
+        caret="menu"
+        name={s.label}
+      >
+        <span className="xlsx-toolbar-color-icon">
+          <ChromeIcon paths={s.control.paths} />
+          <span
+            className="xlsx-toolbar-color-bar"
+            data-none={isHexColor(current) ? undefined : ''}
+            style={isHexColor(current) ? { backgroundColor: `#${current}` } : undefined}
+          />
+        </span>
+      </Trigger>
+      {popup.open ? (
+        <div
+          id={popup.id}
+          role="listbox"
+          aria-label={s.label}
+          aria-orientation="horizontal"
+          {...popupAttributes(layout, 'xlsx-toolbar-palette')}
+          onKeyDown={(e) => movePopupFocus(e, '[data-color]', true)}
+        >
+          {colors.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              role="option"
+              tabIndex={-1}
+              data-color={c.value}
+              aria-label={c.label}
+              title={c.label}
+              aria-selected={c.value === current}
+              className={c.value === NO_FILL ? 'xlsx-toolbar-no-fill' : 'xlsx-toolbar-swatch'}
+              style={c.value === NO_FILL ? undefined : { backgroundColor: `#${c.value}` }}
+              onMouseDown={guardToolbarMousedown}
+              onClick={() => pick(c.value)}
+            >
+              {c.value === NO_FILL ? c.label : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * One slot as a menu item: its label, and its reason as visible text and the tooltip when it
+ * is disabled. Menus hold no format slot, so a menu item has no hint.
+ */
+function MenuItem({ slot, close }: { readonly slot: ChromeSlotId; readonly close: () => void }) {
+  const s = useToolbarSlot(slot);
+  const reasonId = useId();
+  return (
+    // A disabled menu item stays focusable (`aria-disabled`), so the keyboard reaches its reason.
+    <button
+      type="button"
+      role="menuitem"
+      className="xlsx-toolbar-row"
+      tabIndex={-1}
+      data-slot={s.slot}
+      aria-disabled={!s.isEnabled}
+      {...(s.disabledReason ? { 'aria-describedby': reasonId } : {})}
+      title={s.title}
+      onMouseDown={guardToolbarMousedown}
+      onClick={() => {
+        if (!s.isEnabled) return;
+        close();
+        s.execute();
+        s.focusGrid();
+      }}
+    >
+      <ChromeIcon paths={s.control.paths} />
+      <span>{s.label}</span>
+      {s.disabledReason ? (
+        <span id={reasonId} className="xlsx-toolbar-reason">
+          {s.disabledReason}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+/** A group that renders as one menu button (insert and delete, clear). */
+export function GroupMenu({ group }: { readonly group: ChromeGroup }) {
+  const { t } = useTranslation();
+  const popup = usePopup('[role="menuitem"]');
+  const name = translateKey(t, group.labelKey);
+  return (
+    <div ref={popup.root} className="xlsx-toolbar-dropdown">
+      <button
+        type="button"
+        className="xlsx-toolbar-button xlsx-toolbar-menu-button"
+        data-group-menu={group.id}
+        aria-haspopup="menu"
+        aria-expanded={popup.open}
+        aria-controls={popup.open ? popup.id : undefined}
+        aria-label={name}
+        title={name}
+        onMouseDown={guardToolbarMousedown}
+        onClick={() => popup.setOpen(!popup.open)}
+        {...popupTriggerKeys(popup, true)}
+      >
+        <ChromeIcon paths={group.menu?.paths ?? null} />
+        <ChromeIcon paths={ICON_MENU_CARET} className="xlsx-toolbar-caret" />
+      </button>
+      {popup.open ? (
+        <div
+          id={popup.id}
+          role="menu"
+          aria-label={name}
+          className="xlsx-toolbar-popup xlsx-toolbar-menu"
+          data-popup=""
+          onKeyDown={(e) => movePopupFocus(e, '[role="menuitem"]')}
+        >
+          {group.controls.map((c) => (
+            <MenuItem
+              key={c.id}
+              slot={`${group.id}.${c.id}` as ChromeSlotId}
+              close={() => popup.setOpen(false)}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}

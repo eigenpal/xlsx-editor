@@ -1,0 +1,640 @@
+/*
+ * The demo shell: top bar, brand lockup, toolbar dock, workspace, and message bar. A copy of
+ * pptx-editor/examples/shared/shell.css at 5b6ead87 (EigenPal), which adapts the DOCX Editor
+ * demo shell, so the three demos look like one family. `.demo-root` is the editor viewport: it
+ * maps the family `--doc-*` tokens onto the shell palette, and `.demo-root.dark` switches the
+ * palette when the root's `colorMode` resolves to dark. The workbook canvas is never themed.
+ *
+ * Differences, each on purpose:
+ * - Only the rules that this demo uses are here: it has no menu bar, slide rail, notes, side
+ *   panel, Slide Sorter, adapter switcher, file drop, or Export menu, because the editor has no
+ *   such parts yet.
+ * - The workbook list takes the place of the editable deck name (`.demo-file__name`), with the
+ *   same type, hover, and maximum width. The demo opens a workbook from the list, not from a
+ *   File menu. A `select` is not a text field, so: it is centered at the 30 px control height
+ *   (no baseline row, no `4px` top padding), has a pointer cursor, and gives
+ *   its options the raised surface, so they stay readable in the dark theme. On a phone it
+ *   fills the room that the controls leave (`width: 100%`).
+ * - The mode pill and the headings pill are checkboxes in a pill (`.demo-pill`), not a menu
+ *   button with a popover: the editor's React adapter has no `Popover` or `MenuItem` part. So
+ *   the pill holds its visually hidden input (`position: relative`), keeps its label on one
+ *   line, and shows a pressed state while it is checked.
+ * - The editor's toolbar, formula bar, grid, and footer sit in one card (`.demo-canvas`), as the
+ *   slide sits in the PPTX canvas card; the zoom stays in the editor's own footer. The PPTX card
+ *   is clear, and the slide stage in it carries the surface and the page shadow. A grid has no
+ *   stage, so this card carries the surface and the shadow of the PPTX side panel card.
+ * - The toolbar card is the editor's own toolbar (`.xlsx-toolbar`) at the family 44 px height
+ *   (48 px on a touch screen). It is a `min-height`, not a `height`, because the editor's
+ *   toolbar wraps its groups when it measures no overflow. The card drops the toolbar's own
+ *   bottom border and takes the large radius, so it reads as the family card.
+ * - On a phone, the footer drops the editor's zoom control, so the sheet tabs keep the row.
+ * - The workspace is a column (the card, then the message bar), with no slide rail beside it.
+ * - The shell tokens drop `--doc-z-overlay`, `--doc-z-context`, `--doc-z-tooltip`,
+ *   `--doc-slide-padding`, `--demo-page-shadow`, and `--demo-panel-w`: this editor has no menus,
+ *   context menu, tooltips, slide, slide stage, or side panel. `.demo-root.dark` also
+ *   sets `--doc-bg`, which PPTX sets in a `.pptx-editor.dark` rule, because the editor's dark
+ *   rule (`.xlsx-editor.dark`) sets its own workspace color.
+ * - `select` gets the font reset with `button`, for the workbook list.
+ * - One focus ring rule covers every shell control (a pill and Open show it only when their
+ *   input has keyboard focus, `:has(input:focus-visible)`), because the list, the pills, the labels of
+ *   Open, and the theme toggle take the keyboard; PPTX styles only the name field's focus.
+ * - A disabled button is `aria-disabled`, not `disabled` (also in its `:active` and `:hover`
+ *   rules), so it keeps its mousedown and the grid
+ *   keeps the focus (Save with no picker). `padding: 0` on the icon buttons and the toggle
+ *   resets the `button` padding of the browser. The brand link has a radius for its ring.
+ * - The breakpoints are the source's 1536, 1366, 1280, 600, and 360 px, `pointer: coarse`, and
+ *   `max-height: 500px` rules for the parts that this demo has. The source rules for the menu
+ *   bar, the file extension, the adapter switcher, the rail, the notes, the panel, the sorter,
+ *   and the status strip under the slide are not here. The pill labels leave at 940 px, as the
+ *   source's mode pill label does; their narrow padding is `0 8px`, for two pills in the room of
+ *   one.
+ * - On a phone (600 px), as below 1366 px, the lockup keeps its icon and the dividers stay
+ *   hidden, so the workbook list has room; Open stays, because this demo has no File menu to open a file from;
+ *   Save stays, and downloads the copy when the browser has no file save picker, as PPTX keeps
+ *   its Export menu; the bar, the dock, and the workspace get 8 px gutters; the list takes `width: 100%` in place
+ *   of PPTX's `min-width: 48px` on the name field. The `:disabled` states of `.demo-btn` are
+ *   `[aria-disabled='true']` states (see the disabled bullet).
+ * - On a touch screen, the message close button gets the finger size too, and the workbook list
+ *   gets the 40 px `height` (the source's name field takes `min-height`, a text field's rule).
+ * - The workbook list keeps its 280 px cap at every width and shrinks only by flex: the
+ *   source's 140 px (1366 px) and 96 px (1280 px) name widths make room for its menu bar, and
+ *   this demo has no menu bar, so they would cut the name with room to spare.
+ * - The workbook list never hides: the source hides the deck name from 940 to 800 px, where its
+ *   File > Rename opens it over the menu bar. This demo has no menu bar and no Rename, so the list
+ *   keeps its place. The source's tablet rule (240 px name width) is ported.
+ * - `html`, `body`, and `#root` fill the window with no margin: PPTX sets this in `examples/vite/index.html`.
+ * - The editor's status strip keeps its 28 px room over the grid while it is empty, so a
+ *   refusal or a notice never moves the grid (packages/core/src/styles/editor.css); PPTX shows
+ *   its notices over the slide.
+ * - On a phone, the editor's toolbar keeps Undo and Redo and moves the other groups into its
+ *   overflow menu: the overflow and its `more_horiz` icon are the editor's own
+ *   (packages/react/src/toolbar/Toolbar.tsx), where PPTX's toolbar uses `more_vert`.
+ *   The sheet tabs fade at their end, so a tab past the edge shows that the tabs scroll.
+ * - A message bar (`.demo-message`) sits under the card. PPTX Editor shows its notices in the
+ *   editor; this demo's open and save messages are its own.
+ */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+.demo-root {
+  --demo-bg: #f4f3f0;
+  --demo-surface: #fff;
+  --demo-surface-2: #faf9f7;
+  --demo-raised: #fff;
+  --demo-ink: #1b1a19;
+  --demo-ink-2: #44413d;
+  --demo-ink-3: #75716b;
+  --demo-ink-4: #a29e97;
+  --demo-line: #e7e4df;
+  --demo-line-2: #d9d5ce;
+  --demo-hover: #1b1a190d;
+  --demo-press: #1b1a1917;
+  --demo-primary: #1b1a19;
+  --demo-primary-ink: #fff;
+  --demo-focus: #2f5d8a73;
+  --demo-shadow-1: 0 1px 2px #1b1a190d, 0 0 0 1px var(--demo-line);
+  --demo-shadow-2: 0 0 0 1px #1b1a190f, 0 2px 4px #1b1a190a, 0 16px 36px -12px #1b1a1938;
+  --demo-sans: 'Geist Variable', 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --demo-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --demo-r-sm: 6px;
+  --demo-r: 8px;
+  --demo-r-lg: 12px;
+  --doc-surface: var(--demo-surface);
+  --doc-popover-bg: var(--demo-raised);
+  --doc-bg: var(--demo-bg);
+  --doc-bg-subtle: var(--demo-surface-2);
+  --doc-bg-hover: var(--demo-hover);
+  --doc-bg-input: var(--demo-surface);
+  --doc-primary: var(--demo-ink);
+  --doc-primary-hover: #000;
+  --doc-primary-light: var(--demo-hover);
+  --doc-accent: var(--demo-ink);
+  --doc-accent-bg: var(--demo-press);
+  --doc-toggle-active-bg: var(--demo-press);
+  --doc-toggle-active-fg: var(--demo-ink);
+  --doc-text: var(--demo-ink);
+  --doc-text-muted: var(--demo-ink-3);
+  --doc-text-subtle: var(--demo-ink-4);
+  --doc-border: var(--demo-line);
+  --doc-border-light: var(--demo-line);
+  --doc-border-dark: var(--demo-line-2);
+  --doc-focus-ring: var(--demo-focus);
+  --doc-card-shadow: var(--demo-shadow-1);
+  --doc-card-shadow-strong: var(--demo-shadow-2);
+  --doc-shadow-lg: var(--demo-shadow-2);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--demo-bg);
+  color: var(--demo-ink);
+  font: 13.5px/1.5 var(--demo-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.demo-root.dark {
+  --demo-bg: #141413;
+  --demo-surface: #1c1c1b;
+  --demo-surface-2: #222220;
+  --demo-raised: #262624;
+  --demo-ink: #f1efec;
+  --demo-ink-2: #d2cfca;
+  --demo-ink-3: #9c9891;
+  --demo-ink-4: #6d6a64;
+  --demo-line: #2d2c2a;
+  --demo-line-2: #3b3a37;
+  --demo-hover: #ffffff0f;
+  --demo-press: #ffffff1c;
+  --demo-primary: #f1efec;
+  --demo-primary-ink: #141413;
+  --demo-focus: #7fa7cf80;
+  --demo-shadow-1: 0 1px 2px #0000004d, 0 0 0 1px var(--demo-line);
+  --demo-shadow-2: 0 0 0 1px #ffffff0f, 0 2px 4px #0000004d, 0 18px 40px -12px #0009;
+  --doc-primary-hover: #fff;
+  --doc-bg: var(--demo-bg);
+}
+.demo-root *,
+.demo-root ::before,
+.demo-root ::after {
+  box-sizing: border-box;
+}
+:where(.demo-root) :where(button, select) {
+  font: inherit;
+  color: inherit;
+}
+/* One focus ring for every shell control, in the family focus color. */
+.demo-root :is(.demo-btn, .demo-icon-btn, .demo-brand, .demo-file__name):focus-visible,
+.demo-root .demo-pill:has(input:focus-visible),
+.demo-root label.demo-btn:has(input:focus-visible),
+.demo-root .demo-theme-toggle__option:focus-visible {
+  outline: 2px solid var(--demo-focus);
+  outline-offset: 2px;
+}
+
+/* Buttons */
+.demo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--demo-r);
+  background: none;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.16s var(--demo-ease-out);
+}
+.demo-btn svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+}
+.demo-btn:active:not([aria-disabled='true']) {
+  transform: scale(0.97);
+}
+.demo-btn--sm {
+  height: 30px;
+  padding: 0 10px;
+}
+.demo-btn--quiet {
+  color: var(--demo-ink-2);
+}
+.demo-btn--primary {
+  background: var(--demo-primary);
+  color: var(--demo-primary-ink);
+}
+.demo-btn[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+@media (hover: hover) and (pointer: fine) {
+  .demo-btn--quiet:hover:not([aria-disabled='true']) {
+    background: var(--demo-hover);
+    color: var(--demo-ink);
+  }
+  .demo-btn--primary:hover:not([aria-disabled='true']) {
+    opacity: 0.9;
+  }
+  .demo-icon-btn:hover:not([aria-disabled='true']) {
+    background: var(--demo-hover);
+    color: var(--demo-ink);
+  }
+}
+.demo-icon-btn {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--demo-r-sm);
+  background: none;
+  color: var(--demo-ink-3);
+  cursor: pointer;
+}
+.demo-icon-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+/* Top bar */
+.demo-topbar {
+  position: relative;
+  z-index: 40;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  height: 54px;
+  padding: 0 12px 0 16px;
+  background: var(--demo-bg);
+}
+.demo-brand {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 9px;
+  border-radius: var(--demo-r-sm);
+  color: var(--demo-ink);
+  text-decoration: none;
+}
+.demo-brand__name {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.demo-topbar__divider {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 18px;
+  background: var(--demo-line-2);
+}
+.demo-file {
+  display: flex;
+  flex: 0 1000 auto;
+  align-items: center;
+  min-width: 60px;
+}
+/* The workbook list in the place of the deck name, with its type and hover. */
+.demo-file__name {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 280px;
+  height: 30px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: var(--demo-r-sm);
+  background: none;
+  color: var(--demo-ink);
+  font: 550 14px/1.3 var(--demo-sans);
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  field-sizing: content;
+  cursor: pointer;
+}
+.demo-file__name:hover {
+  background: var(--demo-hover);
+}
+.demo-file__name option,
+.demo-file__name optgroup {
+  background: var(--demo-raised);
+  color: var(--demo-ink);
+}
+.demo-topbar__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+}
+.demo-topbar__actions .demo-topbar__divider {
+  margin: 0 4px;
+}
+/* The status of a long open, save, or headings switch. */
+.demo-busy {
+  color: var(--doc-text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+/* Out of the layout while empty, but in the accessibility tree, so its first text is announced. */
+.demo-busy:empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.demo-topbar__actions .demo-btn--primary {
+  margin-inline-start: 4px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.12),
+    inset 0 1px rgba(255, 255, 255, 0.08);
+}
+/* A checkbox in the shape of the family mode pill (`.demo-modebar__pill`). */
+.demo-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid var(--demo-line);
+  border-radius: 999px;
+  background: var(--demo-surface);
+  color: var(--demo-ink-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.demo-pill:hover {
+  border-color: var(--demo-line-2);
+  color: var(--demo-ink);
+}
+.demo-pill:has(input:checked) {
+  border-color: var(--demo-line-2);
+  background: var(--demo-press);
+  color: var(--demo-ink);
+}
+.demo-pill svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+}
+
+/* Workspace: the one main landmark holds the toolbar and the editor. */
+.demo-main {
+  display: flex;
+  flex: 1 1 0%;
+  flex-direction: column;
+  min-height: 0;
+}
+/* Text for assistive technology only, such as the page heading and the pill inputs. */
+.demo-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+.demo-dock {
+  position: relative;
+  z-index: 60;
+  display: flex;
+  flex: 0 0 auto;
+  padding: 2px 12px 10px;
+}
+/* The toolbar spans the window, in a card, as in the family demos, at the family height. */
+.demo-root .xlsx-toolbar {
+  width: 100%;
+  min-height: 44px;
+  border-bottom: 0;
+  border-radius: var(--demo-r-lg);
+  box-shadow:
+    0 0 0 1px var(--demo-line),
+    0 1px 2px #1b1a190a,
+    0 8px 20px -14px #1b1a1947;
+}
+.demo-workspace {
+  position: relative;
+  display: flex;
+  flex: 1 1 0%;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 0 12px 12px;
+}
+/* The formula bar, the grid, and the footer in one card. */
+.demo-canvas {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--demo-surface);
+  box-shadow:
+    0 0 0 1px var(--demo-line),
+    0 1px 2px #1b1a190a,
+    0 12px 32px -20px #1b1a194d;
+}
+
+/* The status strip over the grid keeps its room while it is empty (packages/core/src/styles/
+   editor.css); in the card it takes the card's quiet surface, not the page color. */
+.demo-root .xlsx-status-strip {
+  background: var(--demo-surface-2);
+}
+
+/* The message bar under the card shows one message. An alert has bold text and a thicker
+   edge, so it does not look like a status, also without color. The next edit or the close
+   button clears it. */
+.demo-message {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 4px 6px 4px 14px;
+  border-radius: var(--demo-r);
+  background: var(--demo-surface);
+  box-shadow: var(--demo-shadow-1);
+  color: var(--demo-ink);
+}
+.demo-message--error {
+  box-shadow:
+    inset 3px 0 0 var(--demo-ink),
+    var(--demo-shadow-1);
+  font-weight: 600;
+}
+.demo-message__text {
+  flex: 1;
+  min-width: 0;
+}
+/* The empty status region stays exposed, and it takes no place or gap in the bar. */
+.demo-message__status:empty {
+  position: absolute;
+}
+/* The light/dark toggle (`ThemeToggle.tsx`): a segmented sun/moon control. */
+.demo-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--demo-line);
+  border-radius: 9999px;
+  background: var(--demo-surface-2);
+}
+.demo-theme-toggle__option {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: none;
+  color: var(--demo-ink-3);
+  cursor: pointer;
+  transition:
+    background-color 0.15s var(--demo-ease-out),
+    color 0.15s var(--demo-ease-out);
+}
+.demo-theme-toggle__option[aria-checked='true'] {
+  background: var(--demo-surface);
+  color: var(--demo-ink);
+  box-shadow: var(--demo-shadow-1);
+}
+.demo-theme-toggle__option svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Open keeps its icon only, as in the family top bar, so the workbook name has room. Its name
+   and tooltip stay. */
+@media (max-width: 1536px) {
+  .demo-topbar__actions .demo-btn--quiet .demo-btn__label {
+    display: none;
+  }
+}
+/* The brand name and the dividers leave next. */
+@media (max-width: 1366px) {
+  .demo-brand__name,
+  .demo-topbar__divider {
+    display: none;
+  }
+}
+@media (max-width: 1280px) {
+  .demo-topbar__actions .demo-btn__label {
+    display: none;
+  }
+}
+/* A narrow window: the labels of the pills leave too (their names and tooltips stay), where
+   the source's mode pill label leaves. */
+@media (max-width: 940px) {
+  .demo-pill__label {
+    display: none;
+  }
+  .demo-pill {
+    padding: 0 8px;
+  }
+}
+/* A phone: the bar keeps one row, and the grid gets the width. */
+@media (max-width: 600px) {
+  .demo-topbar {
+    gap: 6px;
+    padding: 0 8px;
+  }
+  .demo-topbar .demo-theme-toggle {
+    display: none;
+  }
+  .demo-file {
+    flex: 1 1 auto;
+    min-width: 48px;
+  }
+  .demo-file__name {
+    max-width: none;
+    width: 100%;
+  }
+  .demo-dock {
+    padding: 0 8px 8px;
+  }
+  .demo-workspace {
+    padding: 0 8px 8px;
+  }
+  .demo-root .xlsx-footer [role='tablist'] {
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  }
+  /* The sheet tabs take the footer: a phone opens workbooks at the phone zoom
+     (`sheet-zooms.ts`), and a pinch zooms the page, so the zoom control leaves. */
+  .demo-root .xlsx-footer .xlsx-zoom {
+    display: none;
+  }
+}
+/* The narrowest phones: the logo leaves, so every control still fits. */
+@media (max-width: 360px) {
+  .demo-topbar .demo-brand {
+    display: none;
+  }
+  .demo-topbar,
+  .demo-topbar__actions {
+    gap: 0;
+  }
+}
+/* A touch screen: the top bar's controls grow to 40px, a size a finger can hit. */
+@media (pointer: coarse) {
+  .demo-topbar .demo-icon-btn,
+  .demo-topbar .demo-btn--sm,
+  .demo-topbar .demo-pill {
+    min-width: 40px;
+    height: 40px;
+  }
+  .demo-topbar .demo-file__name {
+    height: 40px;
+  }
+  .demo-topbar .demo-theme-toggle__option {
+    width: 36px;
+    height: 36px;
+  }
+  .demo-message .demo-icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+@media (pointer: coarse) and (max-width: 600px) {
+  .demo-topbar {
+    gap: 2px;
+    padding-inline: 6px 4px;
+  }
+}
+/* A short window: the top bar and the toolbar dock get shorter, so the grid gets the height. */
+@media (max-height: 500px) {
+  .demo-topbar {
+    height: 46px;
+  }
+  .demo-dock {
+    padding-bottom: 4px;
+  }
+}
+/* A touch screen: the editor's toolbar buttons, fields, and color triggers get a finger size too. */
+@media (pointer: coarse) {
+  .demo-root .xlsx-toolbar {
+    min-height: 48px;
+  }
+  .demo-root .xlsx-toolbar .xlsx-toolbar-button {
+    min-width: 40px;
+    height: 40px;
+  }
+  .demo-root .xlsx-toolbar :is(.xlsx-toolbar-select, .xlsx-toolbar-color) {
+    height: 40px;
+  }
+}
+/* A tablet in portrait or a phone held sideways: the bar has room for more of the name. */
+@media (pointer: coarse) and (min-width: 601px) and (max-width: 900px) {
+  .demo-file__name {
+    max-width: 240px;
+  }
+}

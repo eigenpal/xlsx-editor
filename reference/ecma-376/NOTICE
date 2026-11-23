@@ -1,0 +1,61 @@
+ECMA-376 reference material
+===========================
+
+The files in this directory are copied from, or derived from, ECMA-376
+"Office Open XML File Formats", 5th edition (December 2016), Parts 1 and 4,
+published by Ecma International:
+https://ecma-international.org/publications-and-standards/standards/ecma-376/
+
+So are these tables in the source, which the packages bundle:
+
+- packages/ooxml-core/src/drawingml-preset-geometry.generated.ts, the preset
+  shape geometry, generated from part1/drawingml-geometries.
+- packages/ooxml-core/src/drawingml-preset-colors.ts, the preset color names
+  of ST_PresetColorVal (Part 1, 20.1.10.48).
+- packages/core/src/store/formula/predefined-functions.generated.ts, the
+  predefined function names, generated from part1/predefined-functions.txt.
+  That file lists the names of the predefined functions of Part 1, 18.17.7.1
+  to 18.17.7.356, taken from the table of contents, and no other text of the
+  standard.
+- packages/core/src/store/number-format/builtins.ts, the built-in number
+  format codes of Part 1, 18.8.30.
+- packages/core/src/cascade/color.ts and
+  packages/core/src/store/number-format/parse.ts, the default indexed color
+  palette of Part 1, 18.8.27.
+
+These tables are not EigenPal code, and the Apache License of this repository
+does not apply to them. The rest of each file that holds a table is EigenPal
+code. The tables are used under the Ecma copyright notice below. They are
+permitted derivative works under item (iv): they implement the functionality of
+the standard in a conformant product. The copied files are not modified.
+
+Source of the notice text: Ecma International, "Ecma text copyright policy",
+default copyright notice,
+https://ecma-international.org/policies/by-ipr/ecma-text-copyright-policy/
+(retrieved 29 October 2026).
+
+------------------------------------------------------------------------------
+
+COPYRIGHT NOTICE
+
+© Ecma International
+
+By obtaining and/or copying this work, you (the licensee) agree that you have read, understood, and will comply with the following terms and conditions.
+
+This document may be copied, published and distributed to others, and certain derivative works of it may be prepared, copied, published, and distributed, in whole or in part, provided that the above copyright notice and this Copyright License and Disclaimer are included on all such copies and derivative works. The only derivative works that are permissible under this Copyright License and Disclaimer are:
+
+(i) works which incorporate all or portion of this document for the purpose of providing commentary or explanation (such as an annotated version of the document),
+
+(ii) works which incorporate all or portion of this document for the purpose of incorporating features that provide accessibility,
+
+(iii) translations of this document into languages other than English and into different formats and
+
+(iv) works by making use of this specification in standard conformant products by implementing (e.g. by copy and paste wholly or partly) the functionality therein.
+
+However, the content of this document itself may not be modified in any way, including by removing the copyright notice or references to Ecma International, except as required to translate it into languages other than English or into a different format.
+
+The official version of an Ecma International document is the English language version on the Ecma International website. In the event of discrepancies between a translated version and the official version, the official version shall govern.
+
+The limited permissions granted above are perpetual and will not be revoked by Ecma International or its successors or assigns.
+
+This document and the information contained herein is provided on an "AS IS" basis and ECMA INTERNATIONAL DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF THE INFORMATION HEREIN WILL NOT INFRINGE ANY OWNERSHIP RIGHTS OR ANY IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "$comment": "Allowlisted subset of the Office.js workbook object model that the public XlsxEditor surface of @xlsx-editor.dev/editor-api is measured against for source and shape compatibility. A row id leaves out the workbook namespace of Office.js (Range#values); OfficeExtension rows keep their prefix. This file selects the upstream members used as reference-only conformance input. It is not a dependency declaration; XLSX Editor does not vendor, copy, or generate its declarations from the upstream package. Every selected class leaves out the ClientObject plumbing that each upstream class redeclares (context, isNullObject, load, toJSON, track, untrack); ClientObject itself selects context and isNullObject. See README.md in this directory for the policy.",
+  "symbols": {
+    "run": { "isFunction": true, "members": [] },
+    "RequestContext": { "members": ["workbook"] },
+    "ClientRequestContext": { "namespace": "OfficeExtension", "members": ["load", "sync"] },
+    "ClientObject": { "namespace": "OfficeExtension", "members": ["context", "isNullObject"] },
+    "Workbook": { "members": ["worksheets"] },
+    "WorksheetCollection": {
+      "members": ["items", "getItem", "getItemOrNullObject", "getActiveWorksheet"]
+    },
+    "Worksheet": { "members": ["name", "getRange"] },
+    "Range": { "members": ["address", "values", "numberFormat"] }
+  },
+  "conformanceExceptions": [
+    {
+      "uid": "run",
+      "reason": "The package has no global host to run against, so it exports no top-level run function. XlsxEditorRuntime#run takes the same batch callback."
+    },
+    {
+      "uid": "OfficeExtension.ClientObject#context",
+      "reason": "The package declares context read-only and types it as RequestContext. The runtime sets the context of a proxy, and a write from a consumer would detach the proxy from its batch. The package has one context class, RequestContext; ClientRequestContext is a type alias of it."
+    },
+    {
+      "uid": "OfficeExtension.ClientObject#isNullObject",
+      "reason": "The package declares isNullObject read-only. The runtime sets it after a sync, and a write from a consumer would make a null object look real."
+    },
+    {
+      "uid": "Worksheet#name",
+      "reason": "The package declares name read-only: a worksheet rename is outside the supported subset. A write fails to compile instead of failing at run time."
+    },
+    {
+      "uid": "Range#numberFormat",
+      "reason": "The package declares numberFormat read-only: a number format write is outside the supported subset. A write fails to compile instead of failing at run time."
+    }
+  ]
+}

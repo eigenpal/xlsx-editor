@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@xlsx-editor.dev/core": ["./src/index.ts"],
+      "@xlsx-editor.dev/core/contracts": ["./src/contracts/index.ts"],
+      "@xlsx-editor.dev/core/store": ["./src/store/index.ts"],
+      "@xlsx-editor.dev/core/cascade": ["./src/cascade/index.ts"],
+      "@xlsx-editor.dev/core/layout": ["./src/layout/index.ts"],
+      "@xlsx-editor.dev/core/automation": ["./src/automation/index.ts"],
+      "@xlsx-editor.dev/core/output": ["./src/output/index.ts"],
+      "@xlsx-editor.dev/core/editor": ["./src/editor/index.ts"],
+      "@xlsx-editor.dev/i18n": ["../i18n/src/index.ts"],
+      "@eigenpal/ooxml-core": ["../ooxml-core/src/index.ts"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["src/neutral-globals.d.ts", "src/__tests__/consumer.test-d.ts"]
+}

@@ -1,0 +1,51 @@
+{
+  "name": "@xlsx-editor.dev/i18n",
+  "version": "0.0.0",
+  "description": "Shared user-facing strings for the XLSX Editor chrome. English is the source of truth.",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./en": {
+      "types": "./dist/en.d.ts",
+      "import": "./dist/en.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "!dist/metafile-*.json"
+  ],
+  "scripts": {
+    "build": "node ../../scripts/check-built-siblings.mjs && tsup",
+    "typecheck": "bun check",
+    "api:extract": "node ../../scripts/api-extractor.mjs --package @xlsx-editor.dev/i18n --local",
+    "api:check": "node ../../scripts/api-extractor.mjs --package @xlsx-editor.dev/i18n"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "xlsx",
+    "editor",
+    "i18n",
+    "locales",
+    "translations"
+  ],
+  "homepage": "https://xlsx-editor.dev/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eigenpal/xlsx-editor.git",
+    "directory": "packages/i18n"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "typescript7": "npm:typescript@^7.0.2"
+  }
+}

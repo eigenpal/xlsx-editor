@@ -1,0 +1,12 @@
+[test]
+# Unit tests never read a private workbook corpus.
+root = "."
+# A DOM only for a run that names adapter test files only (`scripts/test/preload-adapter.ts`).
+preload = ["./scripts/test/preload-adapter.ts"]
+# `.cache/docx-module-tests/` holds DOCX Editor tests that `bun run test:docx-shared` mirrors
+# and runs. `bun run test` and `bun run test:serial` never select them.
+
+[install]
+# Supply-chain defense, as in DOCX Editor: install only package versions that are at least
+# 7 days old. Compromised releases are almost always yanked within hours.
+minimumReleaseAge = 604800

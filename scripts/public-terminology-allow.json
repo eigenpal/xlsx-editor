@@ -1,0 +1,25 @@
+{
+  "$comment": "Exact lines that may hold a name the public terminology check refuses, because the file format defines it, because it is an Office.js identifier, or because a third-party license requires it (AGENTS.md, \"Naming\"). Each entry is a file path and the trimmed line. Add an entry only for a format-defined name (a part path, a content type, an element or attribute value) an Office.js identifier, an npm package name, a font family name that a workbook stores, or a copyright line that a third-party license requires word for word, never for prose. The check fails on an entry that matches nothing.",
+  "allowed": [
+    {
+      "file": "packages/core/src/layout/text/face-line-metrics.ts",
+      "line": "['microsoft yahei', { upem: 2048, ascent: 2167, descent: 536 }],"
+    },
+    {
+      "file": "packages/core/src/layout/text/face-line-metrics.ts",
+      "line": "['microsoft jhenghei', { upem: 2048, ascent: 2203, descent: 521 }],"
+    },
+    {
+      "file": "packages/core/src/store/__tests__/structure-links.test.ts",
+      "line": "const CTRL = 'application/vnd.ms-excel.controlproperties+xml';"
+    },
+    {
+      "file": "packages/core/src/store/__tests__/formula-scan.test.ts",
+      "line": "const MACRO_TYPE = 'application/vnd.ms-excel.macrosheet+xml';"
+    },
+    {
+      "file": "packages/core/licenses/HarfBuzz-USE-MIT.txt",
+      "line": "Copyright (c) Microsoft Corporation."
+    }
+  ]
+}

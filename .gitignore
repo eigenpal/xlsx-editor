@@ -1,0 +1,43 @@
+# Private workbook corpus and its reference PDFs. Never commit.
+corpus/
+
+# Dependencies and build output
+node_modules/
+dist/
+*.tsbuildinfo
+.cache/
+
+# Test output
+test-results/
+playwright-report/
+
+# Third-party notices are generated at release time
+packages/*/THIRD_PARTY_NOTICES.md
+
+# Private workspace files: local instructions, working history, review records, and agent state.
+local/
+.claude/settings.local.json
+.claude/worktrees/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# OS / editor
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+# Local screenshots
+screenshots/
+fidelity-report/
+
+# Written by `check:package-size --out` in CI.
+package-sizes.json
+
+# ECMA-376 PDFs, archives, and their text copies; run `bun run reference:fetch` to populate.
+reference/ecma-376/**/*.pdf
+reference/ecma-376/**/*.zip
+reference/ecma-376/*/text/

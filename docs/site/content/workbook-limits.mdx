@@ -1,0 +1,80 @@
+---
+title: 'Workbook limits'
+description: 'The size and depth limits of a workbook read, what the editor does with a part past a limit, and how a refusal names the limit.'
+category: 'Reference'
+---
+
+XLSX Editor bounds the read of a workbook with the limits of the shared OOXML layer, as DOCX Editor and PPTX Editor do.
+
+## Package limits
+
+| Limit                                                       | Value   |
+| ----------------------------------------------------------- | ------- |
+| ZIP entries                                                 | 10,000  |
+| Uncompressed content of all entries                         | 512 MiB |
+| Compression ratio, once the uncompressed total passes 8 MiB | 200     |
+
+`readXlsx` takes other ZIP limits as its second argument, a `ZipLimits` with `maxEntries`, `maxTotalBytes`, and `maxRatio`. No limit can pass the hard caps of 100,000 entries and 2 GiB. The editor load uses the values in the table.
+
+## XML part limits
+
+Each XML part has its own limits:
+
+- 64 MiB of XML.
+- 10,000,000 elements.
+- 256 nested levels.
+
+These parts refuse the file when they pass a limit:
+
+- The content types part, `/[Content_Types].xml`.
+- The workbook part and each worksheet.
+- The relationship part of the package, `/_rels/.rels`.
+- The relationship part of the workbook part and of each worksheet.
+- The shared string table. Without it, each cell that refers to a shared string would show no text. A shared string table that is not valid XML stays in the file as bytes.
+
+These parts stay in the file as bytes when they pass a limit. The editor opens the workbook without them, shows a notice that names the part, and a save keeps their bytes:
+
+- The styles part. Each cell then shows the default format. On a sheet that is not protected, a paste, Clear formats, and Clear all give the default format 0 (`clearFormats`, and `setCellFormatIndex` with index 0). Every other format change (`applyFormat`, and `setCellFormatIndex` with another index) is refused with `unsupported-package`, and the toolbar disables its controls with the reason `stylesUnread`. The protection of each cell is in the styles part. So on a protected sheet, `clearFormats` is refused too. The toolbar then disables Clear formats and Clear all with the reason `stylesUnreadProtected`. A saved cell thus never names a format that the part may not hold.
+- The theme part.
+- Each drawing. The editor cannot move or check its anchors, so a row or column insert, delete, or resize on its sheet is refused. An insert or a delete is refused with `structure-blocked`, and the toolbar disables those controls with the reason. A resize is refused with `resize-anchor`, and its message says that the editor cannot read the drawing.
+- Each other relationship part. When it is the relationship part of a drawing, a row or column insert or delete on the sheet of that drawing is refused with `structure-blocked`.
+
+The editor does not read other parts as XML, so these limits do not apply to them.
+
+These limits do not guarantee enough memory. A workbook inside the limits can still need more memory than the browser tab has.
+
+`snapshot().partsPastLimit` lists each part that stays as bytes past a limit, with its `kind` (`styles`, `theme`, `drawing`, `relationships`, or `other`) and its `limit`. Only the styles part and the theme part that the workbook part links to get the kinds `styles` and `theme`. Another part with the same content type gets the kind `other`, because the workbook does not use it, so it locks no command.
+
+## Refusal
+
+When a file passes a package limit, or a part that refuses the file passes an XML part limit, the load fails. The snapshot of the editor turns `failed` with the code `package`, and `failure.detail` holds the reason of the read. `readXlsx` gives the reason `zip`, or the reason `xml` with the name of the part. For the reason `xml`, `failure.part` names the part, such as `/xl/sharedStrings.xml`, and `failure.detail` also names it, for logs.
+
+`failure.limit` names the limit that the file passed, with the names that DOCX Editor uses:
+
+| `failure.limit`     | Limit                               |
+| ------------------- | ----------------------------------- |
+| `zip.maxEntries`    | ZIP entries                         |
+| `zip.maxTotalBytes` | Uncompressed content of all entries |
+| `zip.maxRatio`      | Compression ratio                   |
+| `xml.maxBytes`      | Size of one XML part                |
+| `xml.maxElements`   | Elements of one XML part            |
+| `xml.maxDepth`      | Nested levels of one XML part       |
+
+A refused file with no `failure.limit` is not a valid package or workbook, for example a part that is not valid XML.
+
+When a refused file names a limit, the editor shows that the file is too large or too complex to open, as DOCX Editor does. The message names the part, when the limit is a limit of one part, and the limit with its value. The part name goes through `displayName`: the message shows it without control characters and bidirectional format controls, cut to 64 characters.
+
+## Saved bytes in memory
+
+After `saveInTasks()`, the editor keeps one copy of the saved bytes for each open workbook, so that another save of the same revision does no work. The copy uses as much memory as the saved file, until the editor opens other bytes.
+
+## Long cell text
+
+A cell can hold more text than the content field of the formula bar shows. If the text of a cell has more than 65,536 UTF-16 code units, the field shows the first 65,536 code units of the text, turns read-only, and shows a note. The cell keeps its complete text. To edit the cell, press F2 in the grid. An edit applies only a text of at most 32,767 UTF-16 code units, the limit of a cell value.
+
+The live region of the grid, which a screen reader reads, has the same limit. If the words for the active cell have more than 65,536 UTF-16 code units, the region holds their first 65,536 code units and says that the text continues.
+
+## See also
+
+- [XLSX fidelity](/docs/xlsx-fidelity): the status of each feature.
+- [Quickstart](/docs/quickstart#handle-a-workbook-that-does-not-open): what your app shows when a workbook does not open.

@@ -1,0 +1,113 @@
+// Copied from pptx-editor/scripts/notices-sources.test.ts at d4502552 (EigenPal). Differences:
+// EigenPal code also includes PPTX Editor (a file never names its own package as an origin, so
+// XLSX Editor is not in the list); the Ecma test reads the two generated tables that core bundles
+// here, the preset geometry of `@eigenpal/ooxml-core` and core's predefined function names, and
+// checks that the notice text holds the Ecma copyright line. The scan reads the `src` of each
+// package in `scripts/lib-packages.mjs`, as in PPTX Editor, so it does not read
+// `packages/ooxml-core/src`: that directory has no third-party source note, and core's entry
+// lists its ECMA-376 tables by hand. The comment below leaves out the PPTX Editor audit task
+// number, which names nothing in this repository.
+//
+// Every source note that names a third-party origin is listed in THIRD_PARTY_NOTICES.md. A
+// source note is a marker in the leading comment of a file in the `src` of a package in
+// `scripts/lib-packages.mjs`; a note about EigenPal code (DOCX Editor, PPTX Editor, the site
+// repository) needs no notice.
+import { expect, test } from 'bun:test';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { PACKAGES } from './lib-packages.mjs';
+import { VENDORED } from './vendored-notices.mjs';
+
+const root = join(import.meta.dir, '..');
+const MARKER =
+  /\b(?:copied|ported|vendored|adapted|taken) from\b|\bpath data\b|\(c\)|\bcopyright\b|\blicensed under\b|\bApache-2\.0\b|\bMIT\b|\bBSD\b/gi;
+const EIGENPAL = /docx-editor|DOCX Editor|pptx-editor|PPTX Editor|EigenPal|docx-editor\.dev/;
+
+function sourceFiles(dir: string): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === '__tests__' || entry.name === 'node_modules') continue;
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...sourceFiles(path));
+    else if (/\.(?:ts|tsx|mts|js|mjs|css)$/.test(entry.name)) out.push(path);
+  }
+  return out;
+}
+
+/** The leading comment block of a file, comment markers removed, joined into one line. */
+function leadingComment(text: string): string {
+  const lines: string[] = [];
+  for (const line of text.split('\n')) {
+    const trimmed = line.trim();
+    if (!/^(?:\/\/|\/\*|\*)/.test(trimmed)) break;
+    lines.push(trimmed.replace(/^(?:\/\/+|\/\*+|\*+\/?)\s?/, '').replace(/\s*\*\/$/, ''));
+  }
+  return lines.join(' ');
+}
+
+/** Third-party source notes in `comment`: each marker whose sentence does not name EigenPal code. */
+function thirdPartyNotes(comment: string): string[] {
+  const notes = new Set<string>();
+  for (const match of comment.matchAll(MARKER)) {
+    const start = Math.max(0, comment.lastIndexOf('. ', match.index) + 1);
+    const end = comment.indexOf('. ', match.index);
+    const sentence = comment.slice(start, end === -1 ? undefined : end).trim();
+    if (!EIGENPAL.test(sentence)) notes.add(sentence);
+  }
+  return [...notes];
+}
+
+test('the source-note scanner tells EigenPal notes from third-party notes', () => {
+  expect(thirdPartyNotes('Copied from docx-editor/packages/core/src/x.ts (EigenPal).')).toEqual([]);
+  expect(thirdPartyNotes('Adapted from libfoo (MIT). Second sentence.')).toHaveLength(1);
+  expect(leadingComment('// a\n/* b\n * c */\nconst x = 1; // copied from y')).toBe('a b c');
+});
+
+// The generated ECMA-376 tables are used under the Ecma notice, which must travel with every
+// copy: in core's notices, and in a legal comment beside the data, which many bundlers keep.
+test('the Ecma notice stays with each generated ECMA-376 table', () => {
+  const notice = readFileSync(join(root, 'reference/ecma-376/NOTICE'), 'utf8');
+  const terms = notice.slice(notice.indexOf('COPYRIGHT NOTICE')).trim();
+  expect(terms).toStartWith('COPYRIGHT NOTICE');
+  expect(terms).toContain('© Ecma International');
+  expect(VENDORED['@xlsx-editor.dev/core']?.join('\n')).toContain(terms);
+  const words = (text: string) =>
+    text
+      .replace(/^\s*\*/gm, ' ')
+      .split(/\s+/)
+      .filter(Boolean);
+  for (const [file, name] of [
+    ['packages/ooxml-core/src/drawingml-preset-geometry.generated.ts', 'PRESET_SHAPES'],
+    ['packages/core/src/store/formula/predefined-functions.generated.ts', 'PREDEFINED_FUNCTIONS'],
+  ]) {
+    const generated = readFileSync(join(root, file), 'utf8');
+    const legal = new RegExp(
+      String.raw`/\*!([^]*?)\*/\s*/\*\*[^]*?\*/\s*export const ${name}`
+    ).exec(generated);
+    expect(legal).not.toBeNull();
+    expect(words(legal![1]).join(' ')).toContain(words(terms).join(' '));
+  }
+});
+
+for (const pkg of PACKAGES) {
+  const listed = VENDORED[pkg.name]?.join('\n') ?? '';
+  test(`${pkg.name}: every third-party source note is in the notices`, () => {
+    const missing: string[] = [];
+    for (const file of sourceFiles(join(root, pkg.root, 'src'))) {
+      const notes = thirdPartyNotes(leadingComment(readFileSync(file, 'utf8')));
+      if (notes.length === 0) continue;
+      const path = relative(join(root, pkg.root), file);
+      const named = path.split('/').some((_, i, parts) => {
+        const prefix = parts.slice(0, i + 1).join('/');
+        return listed.includes(`\`${prefix}\``) || listed.includes(`\`${prefix}/\``);
+      });
+      if (!named) missing.push(`${path}: ${notes[0]}`);
+    }
+    expect(missing).toEqual([]);
+  });
+
+  test(`${pkg.name}: every source path in the notices exists`, () => {
+    for (const [, path] of listed.matchAll(/`(src\/[^`]+)`/g))
+      expect(existsSync(join(root, pkg.root, path))).toBe(true);
+  });
+}

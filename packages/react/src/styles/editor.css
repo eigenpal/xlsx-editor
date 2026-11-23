@@ -1,0 +1,3 @@
+/* The adapter stylesheet only imports the shared core stylesheet: all chrome styling lives in
+   @xlsx-editor.dev/core, as in PPTX Editor. */
+@import '@xlsx-editor.dev/core/styles/editor.css';

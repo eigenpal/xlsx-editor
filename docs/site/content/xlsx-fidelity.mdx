@@ -1,0 +1,114 @@
+---
+title: 'XLSX fidelity'
+description: 'Check which XLSX features the editor shows, edits, and saves, and how each claim is measured.'
+category: 'Getting started'
+seoTitle: 'XLSX feature support and fidelity'
+---
+
+Check which workbook features the editor shows, edits, and keeps on save. The notes of each row name its limits. The [known approximations](/docs/known-approximations) describe the visible differences that you can expect.
+
+## Feature matrix
+
+Each row has one status. The category of the row says what the status claims:
+
+| Category | What a row claims | How the claim is measured |
+| --- | --- | --- |
+| Cell values, cell formats, grid structure, and drawings | The printed grid matches the reference PDF of a fixture. | The fidelity harness compares the print of the editor with the reference PDF. |
+| Viewer | The screen behavior of the editor. A printed reference cannot show it. | Tests |
+| Editing and save | The saved bytes hold the edit, and the saved file opens with no repair prompt. | Tests, and the save check. The save check opens the saved and edited copies of the fixtures that a row cites. A supported row also needs a save check of its own edit. |
+| Refused edits | A refused edit writes nothing, and the editor gives the reason. | Tests |
+| Collaboration | Several people edit one workbook at the same time. | Not measured: the editor has no collaboration. |
+
+| Status      | Meaning                                     |
+| ----------- | ------------------------------------------- |
+| Supported   | Supports the feature.                       |
+| Partial     | Works, with the limits that its notes name. |
+| Unsupported | Is not supported.                           |
+
+The editor keeps the parts and elements that it does not support in the saved file, as inert content. An unsupported row, in any category, means that the editor does not show or edit the feature. It does not mean that a save drops the content.
+
+<FeatureSummary />
+
+### Cell values
+
+<FeatureMatrix category="values" />
+
+### Cell formats
+
+<FeatureMatrix category="formatting" />
+
+### Grid structure
+
+<FeatureMatrix category="grid" />
+
+### Drawings
+
+<FeatureMatrix category="drawings" />
+
+### Viewer
+
+<FeatureMatrix category="viewer" />
+
+### Editing
+
+<FeatureMatrix category="editing" />
+
+### Refused edits
+
+<FeatureMatrix category="refusals" />
+
+### Save
+
+<FeatureMatrix category="save" />
+
+### Collaboration
+
+<FeatureMatrix category="collaboration" />
+
+## How fidelity is measured
+
+Each rendering feature has a synthetic fixture, built by a script, and a reference PDF of it. The fidelity harness prints each fixture with the paint of the editor and compares the result with its reference PDF. It compares the pixels, the line breaks, the baselines, the line positions, and text that the reference does not have. A threshold can only become tighter. A known gap is a check that a fixture does not pass. A row that cites a fixture with a known gap, or a known approximation, is never Supported.
+
+The harness measures the printed page only. The screen profile, the default of the editor, has no fidelity measurement. For each case that no check measures, see [Coverage gaps](/docs/known-approximations#coverage-gaps).
+
+## Round-trip contract
+
+A workbook is a ZIP package of XML parts and binary parts. The editor keeps the structure of the workbook, not its bytes.
+
+| Content | Save behavior |
+| --- | --- |
+| Each XML part that the editor models, such as the workbook (`x:workbook`), the worksheets (`x:worksheet`), the shared string table (`x:sst`), and the styles (`x:styleSheet`) | Writes them again from the model of the editor, in a normalized form. |
+| Parts and elements that the editor does not model | Keeps them in place. An edit that can change a formula drops the calculation chain (`/xl/calcChain.xml`, ECMA-376 Part 1, 18.6), an optional part that consumers build again. Examples are an edit of a cell in a row with a formula, and a row or column insert or delete in a workbook with formulas. |
+| Tables (`x:table`), pivot tables (`x:pivotTableDefinition`), and data validation (`x:dataValidations`) | Keeps them. On a sheet that holds a table or data validation, a row or column insert or delete is refused. Some content anywhere in the workbook refuses each row or column insert or delete, and each sheet rename or delete. This content is a pivot table, a chart, a sheet that is not a worksheet, or a workbook part outside a fixed allowlist. An example of such a part is a data connection. See [Refused edits](#refused-edits). |
+| External links (`x:externalLink`), data connections (`x:connections`), and macros (`vbaProject.bin`) in a workbook that opens | Keeps their parts byte for byte. Their relationship parts save in a normalized form. A macro-enabled workbook package does not open. |
+| Hyperlinks (`x:hyperlink`) | Keeps them. A row or column insert or delete moves each one with its cell, or removes it with the cell. A cut and paste leaves it on the source cell. |
+| Stored formula results (the `x:v` beside an `x:f`) | Keeps them. After an edit that can change a result, the saved workbook sets `x:calcPr/@fullCalcOnLoad`, which asks the next consumer to calculate them again. |
+
+- A rewritten XML part has no byte-identity guarantee.
+- Every edit goes through one document store. If the editor cannot make an edit, it refuses the edit and gives the reason. It never drops an edit without notice. See [Refused edits](#refused-edits).
+- A cell can keep its formula inside `mc:AlternateContent` (Markup Compatibility, ECMA-376 Part 3), in one branch for each kind of consumer. A row or column insert or delete, and a sheet rename, delete, or move, do not rewrite such a formula. When the edit would change it, the editor refuses the edit and names the cell. A row or column edit is also refused when it moves or deletes a cell of a shared formula with such a member, or the range of such an array formula. A shared formula (`x:f/@t="shared"`) with master copies in two cells, or with more than four master texts, refuses the edit too. A data table formula there refuses every row or column edit of its sheet. The same rule applies to a defined name inside `mc:AlternateContent`, and the refusal names it. When such a name list is a child of `x:workbook` and names the edited sheet, the refusal names the wrapper. A sheet add, delete, or move that changes the position of the sheet of its local scope is refused too.
+- The status of each save row is in the [Save](#save) table.
+
+If a save loses or changes content that you did not edit, [report a round-trip issue](https://github.com/eigenpal/xlsx-editor/issues/new/choose) with the workbook.
+
+## Security and data flow
+
+| Concern | Behavior |
+| --- | --- |
+| Uploads | The editor opens and saves the workbook in the browser. It uploads nothing and calls no conversion service. |
+| Formulas | The editor never calculates a formula. A cell shows the result that the file stores, the cached `x:v` of its `x:f`. |
+| Macros, embedded objects, and controls | Macros (`vbaProject.bin`), OLE objects (`x:oleObjects`), and embedded controls (`x:controls`) never run in a workbook that opens, and a save keeps them. |
+| External content | External links (`x:externalLink`), data connections (`x:connections`), and remote images (`TargetMode="External"` relationships) never load on their own. |
+| Hyperlinks | The grid does not open a hyperlink. The editor gives no address to a target outside the URL allowlist: `http`, `https`, `mailto`, `tel`, and `ftp`. The file keeps the target as it is. |
+| Fonts | The editor fetches font faces from your app, never from an address that a workbook names. |
+| Clipboard | A paste reads plain text and the private format of the editor. It never parses HTML. |
+| Size | Size limits protect the open. [Workbook limits](/docs/workbook-limits) lists each limit and what happens to a workbook past it. |
+
+Your app controls any data that it sends to another service.
+
+For how the engine reads a workbook as untrusted input, see [Untrusted input](https://github.com/eigenpal/xlsx-editor/blob/main/packages/core/README.md#untrusted-input) in the core README.
+
+## See also
+
+- [Known approximations](/docs/known-approximations): each place where the render can differ from the reference PDF.
+- [Workbook limits](/docs/workbook-limits): the size limits of a workbook that opens.

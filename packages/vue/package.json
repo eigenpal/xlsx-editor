@@ -1,0 +1,63 @@
+{
+  "name": "@xlsx-editor.dev/vue",
+  "version": "0.0.0",
+  "description": "Vue 3 adapter for XLSX Editor: a provider, composables, and chrome parts over the @xlsx-editor.dev/core workbook editor.",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": {
+      "types": "./src/styles/editor.css.d.ts",
+      "default": "./src/styles/editor.css"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src/styles",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "!dist/metafile-*.json"
+  ],
+  "scripts": {
+    "build": "node ../../scripts/check-built-siblings.mjs && tsup",
+    "typecheck": "bun check",
+    "api:extract": "node ../../scripts/api-extractor.mjs --package @xlsx-editor.dev/vue --local",
+    "api:check": "node ../../scripts/api-extractor.mjs --package @xlsx-editor.dev/vue"
+  },
+  "dependencies": {
+    "@xlsx-editor.dev/i18n": "^0.0.0"
+  },
+  "peerDependencies": {
+    "@xlsx-editor.dev/core": "~0.0.0",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@xlsx-editor.dev/core": "workspace:*",
+    "typescript7": "npm:typescript@^7.0.2",
+    "vue": "3.5.45"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "xlsx",
+    "editor",
+    "spreadsheet",
+    "workbook",
+    "vue"
+  ],
+  "homepage": "https://xlsx-editor.dev/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eigenpal/xlsx-editor.git",
+    "directory": "packages/vue"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

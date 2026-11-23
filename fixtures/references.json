@@ -1,0 +1,465 @@
+{
+  "version": 1,
+  "references": {
+    "basic-values": {
+      "workbook": "6ae7e231d988d9104b4b72ef1453226a7d294db91cee6a2e78501bf12eb2f078",
+      "pdf": "d00dff167e969218da83d3a7ff162900142917454ceb08f1f1075c8966e866be",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "cell-styles": {
+      "workbook": "37a779f9eeb8b6fdadc5d5ab5a6c7bd102dc680082b301480dfaba4bbcae7f2b",
+      "pdf": "34a9361143df7372a4c4adc34a5af23557782dbdc8bbb55ba00dc9e3cbe31938",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "clipboard-edit": {
+      "workbook": "016e0a636676dc16003750a3e9f4ce49e3a869d9fe26d5c10897b537fd991125",
+      "pdf": "518f653001700bb06d70f58a9fadc90dd25c5aedebcda076db57ed4c46fac4b9",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "colors-fonts": {
+      "workbook": "cad0ff704af053d2ba67cc8e7040fb9a742e67e8af0dccf27d6ab7053d51a7a0",
+      "pdf": "0c7562ce4b8d676e59fef1c53d152a88c17f5be32bab5cad287ef8c669471557",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "conditional-rules": {
+      "workbook": "205805933a45215931c6b43f073f7da242c89f9af318c37c0cd858bb0970e2a1",
+      "pdf": "5c6aaec6c3dbffdf2a071462453e7128392929fb7d7b822e061dbc5d535b7545",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "dates-1904": {
+      "workbook": "d9608ac1d316fde6db89618278bae73c7224697da95cde0b9faa53226838a63c",
+      "pdf": "84495ed5a29aaff2fef0e991e51fa1ab43b7b8477ac7da5103d580cae4540a1f",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "fills-patterns": {
+      "workbook": "7fffa138f4c721b8c2a12030a378e16305a65056535d3f53f00fe4a051a8731d",
+      "pdf": "9990293f715bf7ef8386cee0e076129708c9b3556c160ce24ca20e1d011b6945",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "formula-overflow": {
+      "workbook": "745126e996ddc3e7eb9bcb934a3e70172d6f9cc31ccc8b81eb1c98c4dccdb23f",
+      "pdf": "03a2ea60bc27fc931c6ad34a28f719823e616162a4d5a8ea4f78f72689bd915c",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "formulas": {
+      "workbook": "3749d19c3ca1291a7e045926db310cab7b313a64fec97190896956bb6a53afb2",
+      "pdf": "3131cf256b40cdfea4ed69bb280eff47f0ea93730124ae805672bf9304043eba",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "grid-structure": {
+      "workbook": "4381408cdae352333b3ef9f44402d079268993ed0cf06cf2c59cec317f71268f",
+      "pdf": "528350931bc20da23683b3df1bd1836a49af7fa8fc56e643d243bfa472743e57",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "number-formats": {
+      "workbook": "7196e8c37fb5489a20c5d6f6eb6a755e931a14ae0ab67b52a00c8d552123dd18",
+      "pdf": "915e96a32913bf41fe67c694c6fe419df242f91d9a8138f2ed6358ce84bd1a45",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "number-formats-more": {
+      "workbook": "fa6296bf30d193fe7e9f3bcfea273ec162c9f9afea89c1c7d99aafcf30f0a39d",
+      "pdf": "a6dab9e1a1ec6d78fdd84c2a7155baa1aede299999212e4180b8c435f78d2977",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "preserved-parts": {
+      "workbook": "c6f814d1ef7456612d4d93610e249a61457779b14310c88d790ba1891edbef81",
+      "pdf": "3d5f667d288eb2b47717b8fa224aae3755bb9e31827363e925178d7d0cb85195",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "resize-edit": {
+      "workbook": "7e43a174c74e18faa12d2a42c7a934316bcce2a792d37d39bbab02d4730b8846",
+      "pdf": "aa5fdfca68101ae533bb0626df04915a00b53ef6b446372cb6eac9acf0874ea9",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "sheet-add": {
+      "workbook": "02a8b1904b72f6e8c39ca6ac34dc2504cc40aa8f54e0428edbc4f6226a92a626",
+      "pdf": "01f10b6fa68983c0b1fc8a07ffaac56190269e02e2188426b9450a1df7703aef",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "sheet-ops": {
+      "workbook": "2ac53ecbd2591b3994f6509f505946fe27b5f1fe5638aa3a4dab71d8487e1e3a",
+      "pdf": "d3fe4546b5fda5feb903c2b4c1c30ce7dc91663f008d0b130cc3331d967e6269",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "structure": {
+      "workbook": "d4c290d3f4fbb5ab4e930e58b942ded3b766bab0ef01f48a54d673305e53ee1f",
+      "pdf": "0c075b10e9f6e808cb038379ecdab31b2f72df08a41afd5058ffcecc0134a678",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "text-layout": {
+      "workbook": "8576d14a2b6aed326510f897fb59dabc7f53e7682b92e493a3ca07a42f5616b8",
+      "pdf": "60b3b26dc05d6bfc3ad42c358db8fc8c120954abbcda4aa3be1c15d7f0d58da2",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "wrapped-formula": {
+      "workbook": "259908136f005ad4a0801d4f5e5cb27af725c4db5b659e40190436660ce9a4d0",
+      "pdf": "156ca675a50f3123c98dce3d9d3e39ff0ebb5b69e3d88fdba3cdd309a0b02187",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
+    "wrapped-only-formula": {
+      "workbook": "8990c257e52be73a650c30e423bbbfd0a4be14ba51e4b14d7149d943da8571a4",
+      "pdf": "f72b953375021cf4f3d245e723542431a8f28821997bed332a2c62c64b8c7c56",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    }
+  }
+}

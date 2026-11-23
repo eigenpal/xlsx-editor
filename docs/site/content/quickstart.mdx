@@ -1,0 +1,155 @@
+---
+title: 'Quickstart'
+description: 'Open, edit, and save a .xlsx workbook in the browser with React or Vue in one file.'
+category: 'Getting started'
+---
+
+Build a browser page that opens a local `.xlsx` file, shows it in the editor, and downloads the edited workbook.
+
+## Install the editor
+
+Install an adapter with its peers:
+
+<FrameworkTabs>
+<Framework value="react">
+
+```bash
+npm install @xlsx-editor.dev/react @xlsx-editor.dev/core react react-dom
+```
+
+</Framework>
+<Framework value="vue">
+
+```bash
+npm install @xlsx-editor.dev/vue @xlsx-editor.dev/core vue
+```
+
+</Framework>
+</FrameworkTabs>
+
+For the requirements and the bundler setup, see [Installation](/docs/installation).
+
+## Open and save a workbook
+
+The following component reads a file input and shows the workbook in the editor. The user selects **Save** in the toolbar, or presses Control+S (Command+S on macOS). The editor then passes the saved bytes to the save handler, and the handler downloads them. The page has a main landmark, a heading, and a label for the file input, as [Accessibility](/docs/accessibility) describes.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+// App.tsx
+import { useState } from 'react';
+import { XlsxEditor } from '@xlsx-editor.dev/react';
+import '@xlsx-editor.dev/react/styles.css';
+
+const XLSX_TYPE =
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+function download(bytes: Uint8Array<ArrayBuffer>, name: string) {
+  const objectUrl = URL.createObjectURL(new Blob([bytes], { type: XLSX_TYPE }));
+  const link = document.createElement('a');
+  link.setAttribute('href', objectUrl);
+  link.download = name;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
+export function App() {
+  const [file, setFile] = useState<{ name: string; bytes: ArrayBuffer }>();
+
+  return (
+    <main>
+      <h1>Workbook</h1>
+      <label>
+        Open a workbook{' '}
+        <input
+          type="file"
+          accept=".xlsx,.xltx"
+          onChange={async (event) => {
+            const picked = event.target.files?.[0];
+            if (!picked) return;
+            setFile({ name: picked.name, bytes: await picked.arrayBuffer() });
+          }}
+        />
+      </label>
+      <XlsxEditor
+        document={file?.bytes}
+        onSave={(bytes, saved) => {
+          if (saved.stillOpen && file) download(bytes, file.name);
+        }}
+        style={{ height: 600 }}
+      />
+    </main>
+  );
+}
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<!-- App.vue -->
+<script setup lang="ts">
+import { shallowRef } from 'vue';
+import { XlsxEditor, type SavedWorkbook } from '@xlsx-editor.dev/vue';
+import '@xlsx-editor.dev/vue/styles.css';
+
+const XLSX_TYPE =
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+const file = shallowRef<{ name: string; bytes: ArrayBuffer }>();
+
+async function open(event: Event) {
+  const picked = (event.target as HTMLInputElement).files?.[0];
+  if (!picked) return;
+  file.value = { name: picked.name, bytes: await picked.arrayBuffer() };
+}
+
+function save(bytes: Uint8Array<ArrayBuffer>, saved: SavedWorkbook) {
+  if (!saved.stillOpen || !file.value) return;
+  const objectUrl = URL.createObjectURL(new Blob([bytes], { type: XLSX_TYPE }));
+  const link = document.createElement('a');
+  link.setAttribute('href', objectUrl);
+  link.download = file.value.name;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+</script>
+
+<template>
+  <main>
+    <h1>Workbook</h1>
+    <label>
+      Open a workbook
+      <input type="file" accept=".xlsx,.xltx" @change="open" />
+    </label>
+    <XlsxEditor :document="file?.bytes" style="height: 600px" @save="save" />
+  </main>
+</template>
+```
+
+</Framework>
+</FrameworkTabs>
+
+A new `document` value opens that workbook. A pick with no file keeps the open workbook, because `undefined` closes it. A new open drops the unsaved edits, the undo history, and an open cell edit of the previous workbook. To ask before you open other bytes, track unsaved edits as [Unsaved edits](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#unsaved-edits) shows. The **Save** control is enabled only when you pass a save handler.
+
+`saved.stillOpen` is `false` when another open ended the workbook during the save. So the sample does not download those bytes under the name of the new file. The saved bytes keep the kind of the opened package: a template (`.xltx`) saves as a template.
+
+## Edit cells
+
+To edit a cell, select it and type, press F2, or double-click it. Press Enter to commit the edit, or Escape to cancel it. Text that starts with `=` is a formula in A1 notation. The editor stores a formula without a result, and the saved workbook asks the next consumer to calculate it.
+
+If the editor cannot store an edit, it keeps your text and shows the reason in the status message of the editor. For typed values, the formula bar, and the name box, see [Edit cells](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/editing-cells.md). For the toolbar and each key, see [Toolbar and keyboard](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md).
+
+## Handle a workbook that does not open
+
+If a workbook does not open, the editor shows the reason. To read the reason in code, read the snapshot of each change: `onChange` in React, the `change` event in Vue. When the open fails, its `status` is `failed`, and `failure.code` is `package`, `fonts`, or `no-worksheet`. `failure.detail` gives the reason of the engine for your logs. Do not show the detail to users.
+
+The editor opens a workbook (`.xlsx`) or a template (`.xltx`) in the Transitional form of ECMA-376. Another package fails with the code `package`: for example, a macro-enabled workbook, or a workbook in the Strict form.
+
+A workbook past a package limit, or with a part past a limit that refuses the file, does not open. Other parts past a limit stay as bytes, and the workbook opens with a notice. [Workbook limits](/docs/workbook-limits) lists each limit and its value.
+
+## Next steps
+
+- [Customization](/docs/customization): change the toolbar, the layout, the colors, and the fonts.
+- [@xlsx-editor.dev/react](/docs/react) or [@xlsx-editor.dev/vue](/docs/vue): the parts, the props, and the hooks or composables.
+- [XLSX fidelity](/docs/xlsx-fidelity): what the editor shows, edits, and saves.

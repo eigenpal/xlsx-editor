@@ -1,0 +1,114 @@
+---
+title: 'Editing API'
+description: 'Read cell values and number formats of an XLSX workbook on a server, and write plain values, with a subset of the Office.js workbook object model.'
+category: 'Editing API'
+---
+
+Use `@xlsx-editor.dev/editor-api` to read and write a workbook with a typed, batching object model. The package implements a small subset of the Office.js workbook object model. It runs on the XLSX Editor engine on a server and does not need an add-in host.
+
+The package uses the EigenPal Pro License. Evaluation is permitted. Production use requires a commercial agreement.
+
+The package is private: it is not published to npm. Import it from a workspace of the XLSX Editor repository, after you build the packages with `bun run build:packages`.
+
+## Edit and save a workbook
+
+This Node.js example reads `book.xlsx`, writes a header row, and saves the result as `edited.xlsx`:
+
+```ts
+import { readFile, writeFile } from 'node:fs/promises';
+import { XlsxEditor } from '@xlsx-editor.dev/editor-api';
+
+const runtime = await XlsxEditor.createServer(await readFile('book.xlsx'));
+try {
+  await runtime.run(async (context) => {
+    const sheet = context.workbook.worksheets.getItem('Data');
+    sheet.getRange('A1:C1').values = [['Region', 'Units', 'Share']];
+    await context.sync();
+  });
+  await writeFile('edited.xlsx', await runtime.save());
+} finally {
+  runtime.dispose();
+}
+```
+
+Calls queue until `context.sync()`. Load the properties that you read, and read them after the sync. Synchronize pending writes before you return from `run()`. The runtime drops actions that no sync sent, where an Office.js host sends them with a final sync of its own. A development build prints a warning for dropped writes.
+
+## Supported members
+
+| Object                | Members                                                         |
+| --------------------- | --------------------------------------------------------------- |
+| `RequestContext`      | `workbook`, `load`, `sync`                                      |
+| `Workbook`            | `worksheets`                                                    |
+| `WorksheetCollection` | `items`, `getItem`, `getItemOrNullObject`, `getActiveWorksheet` |
+| `Worksheet`           | `name` (read-only), `getRange`, `isNullObject`                  |
+| `Range`               | `address` (read-only), `values`, `numberFormat` (read-only)     |
+
+`getRange` takes one cell (`A1`) or a rectangle (`A1:B2`). `getItem` takes a worksheet name, which matches without letter case. If two worksheet names differ only in case, only the exact name matches. `getActiveWorksheet` gives the worksheet that the workbook opens on.
+
+`load` takes a property name, a comma-separated list, an array of names, or an object with `select`, `top`, and `skip`. A name that is not a property of the object throws `InvalidArgument` at the call, and the error lists the properties. On the worksheet collection, `skip` and `top` load a window of the worksheets, for example `load({ select: 'items/name', skip: 1, top: 2 })`. Each is a whole number of 0 or more. An object that is not a collection refuses `top` and `skip` with `InvalidArgument`. A property tree such as `{ values: true }`, and the `expand` option with a value other than an empty list, throw `NotSupported` with a hint that names the form to use. Each object also has `context`, `load`, and `toJSON`. `load()` with no argument loads every property of the subset, and so does the name `$all`. On the worksheet collection, `load('items/name')` loads the name of each worksheet. Each other member of the Office.js object model is absent from the types.
+
+One sync sends at most 10,000 operations. Each queued call is one operation, such as a `getItem`, a set of `values`, or a `load`. Get a worksheet once, outside a loop. One range reaches at most 100,000 cells. The range reads and writes of one sync reach at most 1,000,000 cells in all, and its value writes reach at most 10,000 cells. A cell that holds more than 1,000 elements in the file refuses its value read and write with `ResourceLimitExceeded`. So does a value write to a worksheet with more than 100,000 merged ranges. Each value write checks each merged range of its worksheet, and the value writes of one sync check at most 50,000,000 merged ranges in all. To write a larger range, split it into parts, and sync after each part.
+
+A sync reads the workbook as it was before the sync. A load of `values` or `numberFormat` that follows a write in the same sync is refused with `NotSupported`. Call `context.sync()` after the writes, then load.
+
+## Values
+
+A read gives the value that the file stores:
+
+- A number, a string, or a boolean.
+- An error as its text, such as `#DIV/0!`.
+- A date as its serial number. Read `numberFormat` to see that a cell shows a date. In a workbook that uses the 1904 date system (`x:workbookPr/@date1904`, ECMA-376 Part 1, 18.17.4.1), the serial counts days from January 1, 1904.
+- An empty string for an empty cell.
+
+A cell that stores its value only in a form that the API cannot read, such as an alternate-content wrapper (`mc:AlternateContent`), refuses the `values` read of its range with `NotSupported`. So does a cell whose inline or shared string holds text in such a wrapper. The read never gives an empty string for such a cell, so a read and a write back cannot remove its value.
+
+The API does not calculate formulas. A formula cell is a cell that holds a formula (`x:f`), or a cell of an array formula or data table range (`x:f/@t` set to `array` or `dataTable`). A `values` read of a range that holds a formula cell is refused with `NotSupported`. A write of a value to a formula cell is refused with `NotSupported`, and `null` leaves the cell as it is. To write around formula cells, give `null` for each of them. A write range that meets an array formula or data table range is refused, even where it gives `null`, so write the cells around such a range in ranges that do not meet it. A `numberFormat` read of a formula cell gives its format. If the worksheet has an array formula or data table range with a reference that the API cannot read, or more than 10,000 such ranges, each `values` read and each write of that worksheet is refused.
+
+A write takes a two-dimensional array with one item for each cell:
+
+| Item            | Result                  |
+| --------------- | ----------------------- |
+| A finite number | The number              |
+| A boolean       | The boolean             |
+| A string        | The text, as written    |
+| `""`            | The cell is emptied     |
+| `null`          | The cell stays as it is |
+
+A string that starts with `=` is a formula, and the API refuses it with `NotSupported`. Text that the XLSX Editor cell entry reads as another value with en-US rules is refused too, also with spaces around it. Examples are `12%`, `12`, `2026-01-31`, `TRUE`, `#N/A`, and text that starts with `+`, `-`, or `'`. The rule applies to every cell, also to a cell with the Text number format (`@`). To store a number or a boolean, write it as a number or a boolean. The cell entry does not read every form that an Office.js host reads: text such as `Jan 1` or `50 %` is stored as text here, where an Office.js host can store a date or a number. A single value for a whole range is refused: give one item for each cell.
+
+A write back of loaded values can be refused. A read gives stored text as a string, and that string can read as another value. Examples are the error value `#DIV/0!`, `-`, `TRUE`, and `00123`. A write of such a string back to the range is refused with `NotSupported` and `write.text-reads-as-value`. In a write back, give `null` for each cell that you do not change.
+
+A write to a cell that the worksheet protection (`x:sheetProtection`, ECMA-376 Part 1, 18.3.1.85) locks is refused with `NotSupported` and `edit.locked`.
+
+A merged range (`x:mergeCell`, ECMA-376 Part 1, 18.3.1.54) shows only its top-left cell. A write of a value to another cell of a merged range is refused with `NotSupported` and `write.merged-cell`, because the merge hides that cell. Write the value to the top-left cell, and give `null` or `""` for the other cells.
+
+A set makes the loaded value of that property out of date. Until the next load and sync, a read of it throws `PropertyNotLoaded`.
+
+A read of `numberFormat` gives the code that the file stores (`x:numFmt/@formatCode`), or the ECMA-376 code of a built-in format (ECMA-376 Part 1, 18.8.30). A built-in format whose code depends on the locale, such as id 31, and a format that the workbook does not define have no such code. A read of a range that holds one is refused with `NotSupported`. The API does not write number formats, so `numberFormat` is read-only: a set fails to compile. In JavaScript strict-mode code, such as an ES module or a class, a set throws a `TypeError`. In non-strict code, a set does nothing.
+
+## Errors
+
+Each refusal is an `XlsxEditorError`. Test for one with `isXlsxEditorError(error)`, then branch on its `code`, never on its message. A refused sync applies nothing of its batch.
+
+Proxies end with their run. Use each proxy only in the run that made it.
+
+| Code | Cause |
+| --- | --- |
+| `PropertyNotLoaded` | A property was read before its load and sync. |
+| `InvalidArgument` | An argument has the wrong type or shape, or the file cannot store the value. |
+| `NotSupported` | The member, mode, or value is outside the subset, or the content of the workbook cannot take the change. |
+| `ItemNotFound` | No worksheet has that name. |
+| `InvalidObjectPath` | The object is a null object, its worksheet is gone, or its run ended. |
+| `ResourceLimitExceeded` | The range or the batch is too large, or the file exceeds a cap of the bounded parse. |
+| `StaleDocument` | The workbook changed after this context read it. Read again, then decide again. |
+| `InvalidRequestContext` | The context was used after its run. |
+| `RuntimeDisposed` | The runtime was disposed. |
+| `GeneralException` | The workbook refused the change for a reason that has no other code. |
+
+For most refusals, `debugInfo.innerError.code` gives a finer diagnostic, such as `write.text-reads-as-value` or `range.formula-cell`. `debugInfo.innerError.message` gives the hint: the cause, then the action. If the refusal is about the content of a cell, such as a formula cell, a value that the API cannot read or write, or a locked cell, the hint ends with the reference of the first such cell, for example `First refused cell: B3.` An error never contains a cell value or a worksheet name, from the workbook or from your call. The `target` can name a property name that you gave to `load`, and a range address that you gave to `getRange`, when it has only letters, digits, `$`, and `:`.
+
+A refused `createServer` gives an open diagnostic, such as `open.zip-corrupt` or `open.xml-depth-limit`. For `ResourceLimitExceeded`, the `limit` property names the reader limit that the file passed, such as `zip.maxEntries`. These limits are fixed.
+
+## Office.js compatibility
+
+The package keeps the shape of the Office.js workbook object model for the members in the table. `packages/editor-api/compat/manifest.json` lists the subset and each declaration difference, and `packages/editor-api/compat/runtime-notes.json` records each behavior difference, such as the ECMA-376 code `mm-dd-yy` for the built-in date format 14. The subset is not full Office.js compatibility.

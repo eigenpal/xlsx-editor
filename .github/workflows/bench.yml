@@ -1,0 +1,171 @@
+name: Speed bench
+
+# Runs the edit bench (scripts/bench/edit-bench.ts) on the pull request and on its base commit,
+# and updates one sticky pull request comment with the change of each step
+# (scripts/bench/edit-bench-comment.ts).
+#
+# The two sides run interleaved: head, base, base, head, two times. A whole round takes the
+# momentary state of the machine, so two rounds one after the other favor one side. That order
+# cancels the drift to first order, and the comment shows a change inside the spread of the
+# rounds as within noise.
+#
+# Times from a shared runner are information only: no time fails this job. The gate is the work
+# counter test (scripts/bench/edit-bench-gates.test.ts) in `bun run test` of ci.yml. A head round
+# fails the job when the bench fails, for example when a step does work in proportion to the
+# sheet. The work counters are exact. A base round that fails is only left out of the comment.
+#
+# Model: DOCX Editor's .github/workflows/bench.yml at 0eb629bcd (EigenPal), with the interleaved
+# rounds of 66819cf1a and the four rounds a side of 2b9941d98. Differences, each for a reason:
+# - The runner, the Bun version file, and the action versions are the ones of ci.yml.
+# - Four rounds of 10 runs on each side give the 40 runs of the edit bench default. DOCX Editor
+#   gives four rounds of 3 runs at 2b9941d98. With two rounds a side, as at 66819cf1a, the spread
+#   of two round medians is often smaller than the noise of a round, so a change that is only
+#   noise shows as slower or faster.
+# - No browser bench: DOCX Editor added its browser rounds in a later
+#   step.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A new push replaces the numbers of the run before it.
+concurrency:
+  group: bench-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  bench:
+    if: github.actor != 'dependabot[bot]'
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 25
+    permissions:
+      contents: read # the checkout and the worktree of the base commit
+      pull-requests: write # the one sticky comment
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # The full history, so the base commit is there for its worktree.
+          fetch-depth: 0
+          # The bench steps run the code of the pull request: keep the token out of .git/config.
+          persist-credentials: false
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Prepare the base commit
+        id: base
+        run: |
+          mkdir -p bench-out
+          # HEAD is the merge ref of the pull request, so this is the tip of main that the merge
+          # ref was built on: the change is what the merge of this pull request changes.
+          BASE=$(git merge-base HEAD "origin/${{ github.base_ref }}")
+          echo "base commit: $BASE"
+          git worktree add "$RUNNER_TEMP/base" "$BASE"
+          # The base runs its own bench, so it measures what main did. A base with no bench gives a
+          # comment of the head only.
+          if [ -f "$RUNNER_TEMP/base/scripts/bench/edit-bench.ts" ]; then
+            cd "$RUNNER_TEMP/base"
+            bun install --frozen-lockfile
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "The base commit has no edit bench; the comment gives the head only."
+          fi
+
+      # The rounds: head, base, base, head, two times. Each round has the same runs, or the medians
+      # do not compare.
+      - name: Round 1, head
+        run: bun scripts/bench/edit-bench.ts --runs 10 --json > bench-out/head-1.json
+      - name: Round 1, base
+        if: steps.base.outputs.ready == 'true'
+        working-directory: ${{ runner.temp }}/base
+        run: |
+          OUT="$GITHUB_WORKSPACE/bench-out/base-1.json"
+          if ! bun scripts/bench/edit-bench.ts --runs 10 --json > "$OUT"; then
+            rm -f "$OUT"
+            echo "Base round 1 failed; the comment leaves it out."
+          fi
+      - name: Round 2, base
+        if: steps.base.outputs.ready == 'true'
+        working-directory: ${{ runner.temp }}/base
+        run: |
+          OUT="$GITHUB_WORKSPACE/bench-out/base-2.json"
+          if ! bun scripts/bench/edit-bench.ts --runs 10 --json > "$OUT"; then
+            rm -f "$OUT"
+            echo "Base round 2 failed; the comment leaves it out."
+          fi
+      - name: Round 2, head
+        run: bun scripts/bench/edit-bench.ts --runs 10 --json > bench-out/head-2.json
+      - name: Round 3, head
+        run: bun scripts/bench/edit-bench.ts --runs 10 --json > bench-out/head-3.json
+      - name: Round 3, base
+        if: steps.base.outputs.ready == 'true'
+        working-directory: ${{ runner.temp }}/base
+        run: |
+          OUT="$GITHUB_WORKSPACE/bench-out/base-3.json"
+          if ! bun scripts/bench/edit-bench.ts --runs 10 --json > "$OUT"; then
+            rm -f "$OUT"
+            echo "Base round 3 failed; the comment leaves it out."
+          fi
+      - name: Round 4, base
+        if: steps.base.outputs.ready == 'true'
+        working-directory: ${{ runner.temp }}/base
+        run: |
+          OUT="$GITHUB_WORKSPACE/bench-out/base-4.json"
+          if ! bun scripts/bench/edit-bench.ts --runs 10 --json > "$OUT"; then
+            rm -f "$OUT"
+            echo "Base round 4 failed; the comment leaves it out."
+          fi
+      - name: Round 4, head
+        run: bun scripts/bench/edit-bench.ts --runs 10 --json > bench-out/head-4.json
+
+      - name: Write the comment
+        run: |
+          ARGS="--out bench-out/comment.md"
+          for n in 1 2 3 4; do
+            ARGS="$ARGS --head bench-out/head-$n.json"
+            if [ -f "bench-out/base-$n.json" ]; then ARGS="$ARGS --base bench-out/base-$n.json"; fi
+          done
+          bun scripts/bench/edit-bench-comment.ts $ARGS
+          cat bench-out/comment.md
+
+      - name: Upload the reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: edit-bench-report
+          path: bench-out/
+          if-no-files-found: ignore
+
+      - name: Update the comment
+        # A pull request from a fork gets a read-only token; its numbers are in the artifact.
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('bench-out/comment.md', 'utf8');
+            // Must equal COMMENT_MARKER in scripts/bench/edit-bench-comment.ts, which writes it on
+            // the first line of each comment. Otherwise each push adds a new comment.
+            const marker = '<!-- edit-bench-report -->';
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find((comment) => comment.body?.includes(marker));
+            if (existing) {
+              const comment_id = existing.id;
+              await github.rest.issues.updateComment({ owner, repo, comment_id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }

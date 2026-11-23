@@ -1,0 +1,58 @@
+{
+  "name": "@xlsx-editor.dev/editor-api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Workbook automation for XLSX: a batching object model in the shape of the Office.js workbook object model, on a server.",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md",
+    "THIRD_PARTY_NOTICES.md",
+    "!dist/metafile-*.json"
+  ],
+  "engines": {
+    "node": "^20.16.0 || >=22.3.0"
+  },
+  "scripts": {
+    "build": "node ../../scripts/check-built-siblings.mjs && tsup",
+    "typecheck": "bun check",
+    "license:check": "license-check-and-add check -f license-check.json",
+    "license:add": "license-check-and-add add -f license-check.json",
+    "api:extract": "node ../../scripts/api-extractor.mjs --package @xlsx-editor.dev/editor-api --local",
+    "api:check": "node ../../scripts/api-extractor.mjs --package @xlsx-editor.dev/editor-api",
+    "compat:generate": "node scripts/generate-conformance.mjs",
+    "compat:fetch-inventory": "node scripts/fetch-signature-inventory.mjs"
+  },
+  "keywords": [
+    "xlsx",
+    "workbook",
+    "spreadsheet",
+    "automation",
+    "headless",
+    "office-js"
+  ],
+  "peerDependencies": {
+    "@xlsx-editor.dev/core": "~0.0.0"
+  },
+  "devDependencies": {
+    "@xlsx-editor.dev/core": "workspace:*",
+    "license-check-and-add": "^4.0.5",
+    "typescript7": "npm:typescript@^7.0.2"
+  },
+  "license": "LicenseRef-EigenPal-Pro-Evaluation-1.0",
+  "homepage": "https://xlsx-editor.dev/docs/editor-api",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eigenpal/xlsx-editor.git",
+    "directory": "packages/editor-api"
+  }
+}

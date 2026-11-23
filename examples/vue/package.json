@@ -1,0 +1,20 @@
+{
+  "name": "@xlsx-editor.dev/example-vue",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@xlsx-editor.dev/core": "workspace:*",
+    "@xlsx-editor.dev/vue": "workspace:*",
+    "vue": "3.5.45"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.6",
+    "vite": "^8.3.8"
+  },
+  "license": "Apache-2.0"
+}

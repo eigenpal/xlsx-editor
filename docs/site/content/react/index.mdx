@@ -1,0 +1,57 @@
+---
+title: '@xlsx-editor.dev/react'
+description: 'Use the React XLSX editor, arrange its parts, or build your own controls with hooks.'
+category: 'React'
+seoTitle: 'XLSX editor for React'
+---
+
+`@xlsx-editor.dev/react` renders the workbook editor of `@xlsx-editor.dev/core` with its chrome: the toolbar, the formula bar, the grid, the sheet tabs, and the zoom control. The adapter holds no workbook state; the engine owns it.
+
+## Install and mount
+
+Install the adapter, its engine peer, and React:
+
+```bash
+npm install @xlsx-editor.dev/react @xlsx-editor.dev/core react react-dom
+```
+
+Import the stylesheet once and give `XlsxEditor` a height:
+
+```tsx
+import { XlsxEditor } from '@xlsx-editor.dev/react';
+import '@xlsx-editor.dev/react/styles.css';
+
+export function Workbook({ bytes }: { bytes: Uint8Array }) {
+  return <XlsxEditor document={bytes} style={{ height: 600 }} />;
+}
+```
+
+For a complete page that opens a file and saves the edits, see the [Quickstart](/docs/quickstart).
+
+## Choose an API
+
+| Task | API | Guide |
+| --- | --- | --- |
+| Configure the packaged editor | `XlsxEditor` props and callbacks | [Layout and props](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md) |
+| Arrange or replace the chrome | `XlsxEditor.Root`, `XlsxEditor.Viewport`, `XlsxEditor.Content`, `XlsxEditor.Toolbar`, and the other parts | [Build your own layout](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/README.md#build-your-own-layout) |
+| Change the toolbar and read each key | `XlsxEditor.Toolbar` props, `XlsxEditor.Toolbar.Slot`, and `XlsxEditor.Toolbar.Group` | [Toolbar and keyboard](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md) |
+| Edit cells from code, and save | `XlsxEditorRef`, `getEditor()`, and `save()` | [Edit cells](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/editing-cells.md) |
+| Format cells, and insert or delete rows and columns | The editor instance and `useEditorCommand` | [Format cells and change the structure](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/formatting-and-structure.md) |
+| Add, rename, and move sheets, copy and paste, and set sizes | The editor instance | [Sheets, clipboard, and sizes](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/sheets-clipboard-and-sizes.md) |
+| Show a workbook that the user cannot change | `mode="view"` | [View mode and protection](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/view-mode-and-protection.md) |
+| Build your own controls | `useXlsxEditor`, `useEditorState`, `useEditorSnapshot`, and `useEditorCommand` | [Hooks](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#hooks) |
+| Translate the interface | `locale` and `useTranslation` | [Language](/docs/customization/language) |
+
+## Limits
+
+- The adapter requires React 18 or 19 and one shared copy of `@xlsx-editor.dev/core`.
+- Hooks read the editor only in a descendant of `XlsxEditor.Root`.
+- Import the stylesheet before you mount an editor, and set the height on the editor itself.
+- The editor runs in the browser. In Next.js, load it with `dynamic()` and `ssr: false`, as [Use with Next.js](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/README.md#use-with-nextjs) shows.
+- `XlsxEditor` renders its own toolbar and takes no toolbar parts. To pass parts, build your own layout with `XlsxEditor.Toolbar`.
+
+## Next steps
+
+- [React README](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/README.md): install, the first sample, and the layout parts.
+- [Customization](/docs/customization): the toolbar, the color mode, and the fonts.
+- [Accessibility](/docs/accessibility): what your page gives, and what the editor gives.

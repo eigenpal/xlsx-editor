@@ -1,0 +1,103 @@
+---
+title: 'Language'
+description: 'Translate the interface of the XLSX editor with a partial catalog, and read the translator in your own controls.'
+category: 'Customization'
+---
+
+The `locale` prop sets the strings of the chrome: the labels, the tooltips, the messages, and the accessible names that a screen reader hears. `@xlsx-editor.dev/i18n` ships only the English catalog. A catalog that you pass can be partial: a missing or `null` entry falls back to English.
+
+`locale` changes only the interface strings. The separators and format codes of the shown values come from `numberLocale`, as [Number locale](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#number-locale) describes. The cells show the text of the workbook.
+
+## Pass a catalog
+
+The following editor shows German labels for two controls, and English for the rest. `_lang` is the BCP 47 tag of the catalog, which the plural rules of the messages use.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+import { XlsxEditor, type Translations } from '@xlsx-editor.dev/react';
+
+const german: Translations = {
+  _lang: 'de',
+  formattingBar: { bold: 'Fett', italic: 'Kursiv' },
+};
+
+export function Workbook({ bytes }: { bytes: Uint8Array }) {
+  return (
+    <XlsxEditor document={bytes} locale={german} style={{ height: 600 }} />
+  );
+}
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<script setup lang="ts">
+import { XlsxEditor, type Translations } from '@xlsx-editor.dev/vue';
+
+defineProps<{ bytes: Uint8Array }>();
+
+const german: Translations = {
+  _lang: 'de',
+  formattingBar: { bold: 'Fett', italic: 'Kursiv' },
+};
+</script>
+
+<template>
+  <XlsxEditor :document="bytes" :locale="german" style="height: 600px" />
+</template>
+```
+
+</Framework>
+</FrameworkTabs>
+
+`Translations` follows the shape of the English catalog, `packages/i18n/en.json`, so TypeScript checks each key.
+
+## Translate your own controls
+
+Inside the root, `useTranslation()` gives `t`, the translator of the root's `locale`. To put a control inside the root, see [Build your own layout](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/README.md#build-your-own-layout). Use it for the labels of controls that you add, so they follow the same catalog. `t` takes a catalog key and the values of its placeholders:
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+import { useTranslation } from '@xlsx-editor.dev/react';
+
+export function SheetLabel({ sheet }: { sheet: string }) {
+  const { t } = useTranslation();
+  return <span>{t('grid.label', { sheet })}</span>;
+}
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<script setup lang="ts">
+import { useTranslation } from '@xlsx-editor.dev/vue';
+
+defineProps<{ sheet: string }>();
+const { t } = useTranslation();
+</script>
+
+<template>
+  <span>{{ t('grid.label', { sheet }) }}</span>
+</template>
+```
+
+</Framework>
+</FrameworkTabs>
+
+## Limits
+
+- Keep the nested key structure and the placeholder names of the English catalog in a partial catalog. Set `_lang` for the plural rules of the language.
+- `t` returns the key itself for a key that the catalog does not hold.
+- A `locale` change relabels the editor and keeps the open workbook.
+- `locale` does not change the number formats or the text of the cells.
+
+## Next steps
+
+- [@xlsx-editor.dev/i18n](/docs/i18n): build a translator outside the editor, and add a locale to the package.
+- [Customization](/docs/customization): the toolbar, the color mode, the fonts, and the number locale.

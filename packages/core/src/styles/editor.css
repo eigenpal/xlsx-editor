@@ -1,0 +1,1926 @@
+/**
+ * XLSX Editor styles: the single source of truth for chrome CSS and tokens.
+ *
+ * The token block (shadcn HSL set and `--doc-*` chrome palette, light and dark) is taken through
+ * pptx-editor/packages/core/src/styles/editor.css at 1943d2c9 (EigenPal), which copies it from
+ * docx-editor/packages/core/src/styles/editor.css with the same NAMES, so one theme override
+ * styles every product. Difference: the slide show, slide edge, smart guide, and format painter
+ * tokens are left out. Component rules below use tokens only, with no raw hex or rgba. The
+ * workbook canvas is never themed: it keeps the workbook's own colors in dark mode too.
+ */
+
+.xlsx-editor {
+  /* ----------------------------------------------------------------------
+    * shadcn tokens (HSL triples), with the same names and values as DOCX
+    * Editor so one theme override styles both products. XLSX Editor has no
+    * Tailwind: the chrome rules below are plain CSS
+    * that read these through `hsl(var(--name))`. Do not change the values.
+    * -------------------------------------------------------------------- */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.5rem;
+
+  /* ======================================================================
+    * Document-editor chrome palette — the single source of truth for UI
+    * colors. Components reference these via var(--doc-*); component styles
+    * carry no raw hex/rgba. Override the whole set under .xlsx-editor.dark to
+    * theme the UI. The workbook canvas is painted from the workbook and is
+    * intentionally NOT themed here: it keeps the workbook's own colors in both
+    * themes. One token is this editor's own, not in the set it shares with the
+    * other editors: --doc-canvas-bg, the canvas color of a cell preview.
+    * ==================================================================== */
+
+  /* Surfaces */
+  --doc-surface: #ffffff; /* panels, menus, dropdowns, cards */
+  --doc-popover-bg: var(--doc-surface); /* floating previews and contextual menus */
+  --doc-card: #f8fbff; /* collapsed comment / suggestion cards (near-white) */
+  --doc-bg: #f8f9fa; /* app background behind the page */
+  --doc-bg-subtle: #f5f5f5; /* subtle section backgrounds */
+  --doc-bg-hover: #f1f3f4; /* hover states */
+  --doc-bg-input: #f8f9fa; /* input backgrounds */
+
+  /* Primary action color (Google blue) */
+  --doc-primary: #1a73e8;
+  --doc-primary-hover: #1557b0;
+  --doc-primary-light: #e8f0fe; /* selected/active backgrounds */
+
+  /* Accent (indigo — agent / assistant UI) */
+  --doc-accent: #6366f1;
+  --doc-accent-bg: #eef2ff;
+
+  /* Foreground for text/icons sitting on a colored fill (primary/accent/
+    * dark buttons, badges, tooltips). Inverts in dark mode so contrast holds. */
+  --doc-on-primary: #ffffff;
+
+  /* Active toolbar toggle (bold, italic, bullets, ...): dark slab in light mode,
+    * accent tint in dark mode (where a dark slab would flip light). */
+  --doc-toggle-active-bg: hsl(var(--foreground));
+  --doc-toggle-active-fg: #ffffff;
+
+  /* Tooltips and the size box error: a dark label in light mode, a muted one in dark mode. */
+  --doc-tooltip-bg: hsl(var(--foreground));
+  --doc-tooltip-text: var(--doc-on-primary);
+
+  /* Review tokens (comment bands, the open review card). Kept with DOCX Editor's names and
+     values so one theme override styles both products; XLSX Editor does not paint review
+     marks yet. */
+  --doc-review-card-active-bg: color-mix(in srgb, #e8f0fe 45%, #fff);
+  --doc-comment-bg: rgba(255, 212, 0, 0.12);
+  --doc-comment-border: rgba(245, 174, 0, 0.45);
+  --doc-comment-active-bg: rgba(255, 212, 0, 0.35);
+  --doc-comment-active-border: rgba(245, 174, 0, 0.9);
+  --doc-comment-resolved-active-bg: rgba(255, 212, 0, 0.18);
+  --doc-comment-resolved-active-border: rgba(245, 174, 0, 0.6);
+
+  /* Text */
+  --doc-text: #202124; /* primary text */
+  --doc-popover-fg: var(--doc-text); /* text inside floating previews and menus */
+  --doc-text-muted: #5f6368; /* secondary text */
+  --doc-text-subtle: #9aa0a6; /* tertiary/disabled text */
+  --doc-text-placeholder: #999; /* placeholder text */
+
+  /* Borders */
+  --doc-border: #e0e0e0; /* standard borders */
+  --doc-border-light: #dadce0; /* lighter borders */
+  --doc-border-dark: #d0d0d0; /* darker borders (tables) */
+  --doc-border-input: #ccc; /* input borders */
+
+  /* Status */
+  --doc-error: #c5221f; /* error states */
+  --doc-error-bg: #fce8e6; /* error backgrounds */
+  --doc-danger: var(--doc-error); /* invalid and refused controls */
+  --doc-destructive: var(--doc-error); /* destructive menu/context rows */
+  --doc-destructive-hover-bg: var(--doc-error-bg);
+  --doc-success: #34a853; /* success states */
+  --doc-success-bg: #e8f5e9; /* success backgrounds */
+  --doc-warning: #f9a825; /* warning states (icon/accent/border) */
+  --doc-warning-bg: #fff8e1; /* warning backgrounds */
+  --doc-warning-text: #856404; /* readable warning text on warning-bg */
+
+  /* Link */
+  --doc-link: #0563c1; /* hyperlinks */
+
+  /* Revision, field, and review-author tokens. Kept with DOCX Editor's names and values for
+     token parity; XLSX Editor does not track changes yet, so nothing here reads them. */
+  --doc-revision-insertion: #2e7d32;
+  --doc-revision-deletion: #c62828;
+  --doc-revision-insertion-decoration-style: solid;
+  --doc-revision-insertion-decoration-thickness: 0.06em;
+  --doc-revision-insertion-underline-offset: 0.15em;
+  --doc-revision-insertion-active-bg: rgba(46, 125, 50, 0.24);
+  --doc-revision-insertion-active-border: var(--doc-revision-insertion);
+  --doc-revision-deletion-active-bg: rgba(198, 40, 40, 0.24);
+  --doc-revision-deletion-active-border: var(--doc-revision-deletion);
+  --doc-revision-other-active-bg: color-mix(
+    in srgb,
+    var(--doc-text-muted, #8a8f98) 14%,
+    transparent
+  );
+  --doc-revision-insertion-wash: rgba(46, 125, 50, 0.05);
+  --doc-revision-deletion-wash: rgba(198, 40, 40, 0.05);
+  --doc-field-shading: rgba(0, 0, 0, 0.09);
+  --doc-revision-format: #6b7f8c;
+  --doc-revision-format-wash: rgba(107, 127, 140, 0.1);
+  --doc-review-author-0: #c0392b;
+  --doc-review-author-1: #1f6fb2;
+  --doc-review-author-2: #7d3c98;
+  --doc-review-author-3: #117a65;
+  --doc-review-author-4: #9a6206;
+  --doc-review-author-5: #c2185b;
+  --doc-review-author-6: #2e4053;
+  --doc-review-author-7: #2e7d32;
+  --doc-review-change-bar: #a4a4a4;
+  --doc-review-change-bar-width: 1px;
+  --doc-review-change-bar-simple: #ea3425;
+  --doc-review-change-bar-simple-width: 2px;
+
+  /* Selected table cells: drawn, because a native selection cannot express a rectangle
+    * of cells. Kept close to the browser's own selection tint. */
+  --doc-cell-selection: rgba(26, 115, 232, 0.22);
+
+  /* Shadows & overlays */
+  --doc-shadow: rgba(0, 0, 0, 0.15);
+  --doc-shadow-strong: rgba(0, 0, 0, 0.3);
+  --doc-shadow-subtle: rgba(0, 0, 0, 0.06);
+  --doc-overlay: rgba(0, 0, 0, 0.5); /* modal backdrops */
+  /* Dimmed furniture opacity. Kept for token parity with DOCX Editor. */
+  --doc-hf-dim-opacity: 0.45;
+
+  /* Card elevation (Google-grey, compound): the rail, the toolbar, the panel, and menus. */
+  --doc-card-shadow: 0 1px 3px rgba(60, 64, 67, 0.2), 0 2px 6px rgba(60, 64, 67, 0.08);
+  --doc-card-shadow-strong: 0 1px 3px rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+  /* A larger popover elevation. Kept with DOCX Editor's value for token parity. */
+  --doc-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+
+  /* Focus ring & text selection (derived from primary) */
+  /* Shared with DOCX Editor. Its contrast against the chrome is below 3:1; a change is a
+     family-wide item for all three editors, so this file keeps the shared value. */
+  --doc-focus-ring: rgba(26, 115, 232, 0.4);
+  --doc-selection: rgba(26, 115, 232, 0.3);
+
+  /* ----------------------------------------------------------------------
+    * Chrome layering.
+    *
+    * Two bands, and the order between them is the whole point: something the
+    * user just OPENED must paint over furniture that was already there. Before
+    * these tokens the popups sat at 30 and the gutter at 40, so the File menu
+    * opened underneath the navigation toggle.
+    *
+    *   --doc-z-chrome    ambient furniture that is always on screen: the
+    *                     navigation gutter, table chrome, the outline toggle.
+    *   --doc-z-overlay   anything transient the user summoned: menus, popovers,
+    *                     color pickers, the toolbar overflow panel.
+    *   --doc-z-context   the context menu, which is raised over a selection
+    *                     that may already have an overlay open, so it outranks
+    *                     every other overlay.
+    *   --doc-z-tooltip   the chrome tooltip, over every other layer, so the
+    *                     reason of a disabled row in an open menu is readable.
+    *
+    * Add a new floating surface by picking the band, never a fresh number.
+    * -------------------------------------------------------------------- */
+  --doc-z-chrome: 40;
+  --doc-z-overlay: 50;
+  --doc-z-context: 55;
+  --doc-z-tooltip: 60;
+  /* Page and caret tokens. Kept with DOCX Editor's names for token parity. The workbook canvas
+     is not themed, so these are literals, and the dark block below changes them only for
+     chrome that reads them. */
+  --doc-page-bg: #ffffff;
+  --doc-page-bg-rendered: #ffffff;
+  --doc-page-text: #000000;
+  /* A cell as the canvas paints it, for chrome that shows a cell's value (the number format
+     preview). The dark block leaves it alone, as the canvas is not themed. DOCX Editor has no
+     such token: its pages use `--doc-page-bg-rendered`, which the dark block changes. */
+  --doc-canvas-bg: #ffffff;
+  --doc-caret: #202124;
+  --doc-caret-contrast: #ffffff;
+  /* Marks drawn over the grid contrast with the grid, not with the chrome. */
+  --doc-selection-halo: #ffffff;
+
+  /* Document scroll container scrollbar */
+  --doc-scrollbar-size: 14px;
+  --doc-scrollbar-thumb: color-mix(in srgb, var(--doc-text-muted) 45%, transparent);
+  --doc-scrollbar-thumb-hover: color-mix(in srgb, var(--doc-text-muted) 65%, transparent);
+  --doc-scrollbar-track: transparent;
+}
+
+.xlsx-editor.dark,
+.xlsx-editor.dark .xlsx-editor {
+  /* Native parts (scrollbars, the cell editor) follow the dark chrome. */
+  color-scheme: dark;
+  /* The dark chrome palette, the same values as DOCX Editor's dark theme. The shadcn
+    * tokens (HSL triples) mirror the --doc-* chrome values below. */
+  --background: 0 0% 12%; /* #1f1f1f ribbon/surface */
+  --foreground: 0 0% 91%; /* #e8e8e8 */
+  --card: 0 0% 18%; /* #2d2d2d */
+  --card-foreground: 0 0% 91%;
+  --popover: 0 0% 18%; /* #2d2d2d */
+  --popover-foreground: 0 0% 91%;
+  --primary: 212 100% 65%; /* #4e9dff accent */
+  --primary-foreground: 0 0% 12%;
+  --secondary: 0 0% 20%; /* #333333 */
+  --secondary-foreground: 0 0% 91%;
+  --muted: 0 0% 20%; /* #333333 */
+  --muted-foreground: 0 0% 63%; /* #a0a0a0 */
+  --accent: 0 0% 23%; /* #3a3a3a */
+  --accent-foreground: 212 100% 65%;
+  --destructive: 0 72% 60%; /* #e05656 */
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 24%; /* #3c3c3c */
+  --input: 0 0% 24%;
+  --ring: 212 100% 60%;
+
+  /* chrome palette (dark) */
+  --doc-surface: #1f1f1f; /* ribbon / toolbar / title bar */
+  --doc-card: #2d2d2d; /* collapsed comment / suggestion cards */
+  --doc-bg: #262626; /* workspace behind the page */
+  --doc-bg-subtle: #2d2d2d; /* dropdowns, dialogs, panels */
+  --doc-bg-hover: #3a3a3a; /* hover states */
+  --doc-bg-input: #333333; /* input fields */
+  --doc-primary: #4e9dff; /* accent blue */
+  --doc-primary-hover: #6cb0ff;
+  --doc-primary-light: rgba(78, 157, 255, 0.18); /* selected/active bg */
+  --doc-accent: #4e9dff;
+  --doc-accent-bg: #1f3047;
+  --doc-on-primary: #1f1f1f; /* text/icon on a filled primary surface */
+  --doc-toggle-active-bg: var(--doc-primary-light);
+  --doc-toggle-active-fg: var(--doc-primary);
+  --doc-tooltip-bg: hsl(var(--muted));
+  --doc-tooltip-text: hsl(var(--foreground));
+  /* Mixed from the OPAQUE accent, not from the translucent `--doc-primary-light` above. */
+  --doc-review-card-active-bg: color-mix(in srgb, #4e9dff 12%, var(--doc-surface, #1b1d22));
+  --doc-comment-bg: rgba(253, 214, 99, 0.16);
+  --doc-comment-border: rgba(253, 214, 99, 0.5);
+  --doc-comment-active-bg: rgba(253, 214, 99, 0.32);
+  --doc-comment-active-border: rgba(253, 214, 99, 0.95);
+  /* Review tokens for dark mode, kept for token parity with DOCX Editor. */
+  --doc-revision-format: #9fb3bf;
+  --doc-review-change-bar: #9e9e9e;
+  --doc-review-change-bar-simple: #f0524a;
+  --doc-text: #e8e8e8; /* primary text */
+  --doc-text-muted: #a0a0a0; /* secondary text */
+  --doc-text-subtle: #6e6e6e; /* tertiary/disabled text */
+  --doc-text-placeholder: #6e6e6e;
+  --doc-border: #3c3c3c; /* standard borders */
+  --doc-border-light: #353535; /* lighter borders */
+  --doc-border-dark: #555555; /* darker borders (tables) */
+  --doc-border-input: #4a4a4a; /* input borders */
+  --doc-error: #f28b82;
+  --doc-error-bg: #3c1f1d;
+  --doc-success: #81c995;
+  --doc-success-bg: #1f2e22;
+  --doc-warning: #fdd663;
+  --doc-warning-bg: #332a1a;
+  --doc-warning-text: #fdd663;
+  --doc-link: #6eb9ff;
+  --doc-shadow: rgba(0, 0, 0, 0.4);
+  --doc-shadow-strong: rgba(0, 0, 0, 0.6);
+  --doc-shadow-subtle: rgba(0, 0, 0, 0.2);
+  --doc-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
+  --doc-card-shadow-strong: 0 1px 3px rgba(0, 0, 0, 0.5), 0 4px 8px 3px rgba(0, 0, 0, 0.3);
+  --doc-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+  --doc-overlay: rgba(0, 0, 0, 0.7);
+  --doc-hf-dim-opacity: 0.4;
+  --doc-focus-ring: rgba(78, 157, 255, 0.45);
+  --doc-selection: rgba(78, 157, 255, 0.32);
+
+  /* Page and caret tokens for dark mode, kept for token parity with DOCX Editor. The
+     workbook canvas itself is not themed: it keeps the workbook's own colors. */
+  --doc-page-bg: #cccccc;
+  --doc-page-bg-rendered: #333333;
+  --doc-caret: #e8e8e8;
+  --doc-caret-contrast: #202124;
+}
+
+/* ============================================================================
+ * EDITOR ROOT
+ * ============================================================================ */
+
+/* Chrome type and shape tokens, after DOCX Editor's `--doc-font-ui` and radius tokens. Each rule
+ * reads `var(--token, <its own value>)`, so a host sets only the tokens it wants. The fallback
+ * values are those of pptx-editor/packages/core/src/styles/editor.css at d4502552 (EigenPal): the
+ * `.pptx-editor` font stack, 7px for a control, 6px for a menu row (`.pptx-menu__item`), 12px
+ * for a panel, and 999px for a pill. */
+.xlsx-editor {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  color: var(--doc-text);
+  background: var(--doc-bg);
+  font-family: var(
+    --doc-font-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif
+  );
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: start;
+  white-space: normal;
+  /* The other inherited text styles, so the host page's do not reach the chrome. After
+     pptx-editor/packages/core/src/styles/editor.css at 3bf89a88 (EigenPal). */
+  text-indent: 0;
+  word-spacing: normal;
+  tab-size: 8;
+  font-feature-settings: normal;
+  font-variation-settings: normal;
+  -webkit-font-smoothing: antialiased;
+  /* The status strip reads the editor's width, not the window's (a narrow host on a wide page). */
+  container: xlsx-editor / inline-size;
+}
+.xlsx-editor *,
+.xlsx-editor ::before,
+.xlsx-editor ::after {
+  box-sizing: border-box;
+}
+/* The browser defaults the chrome relies on, set again inside the editor's own parts, so a host
+   reset (`* { margin: 0 }`, `button { font: inherit }`, `svg { display: block }`) cannot change
+   them. A part is an element with an `xlsx-` class other than the `.xlsx-editor` scope itself,
+   so host content beside the chrome keeps the host's styles. The values are the browser
+   defaults, except that controls take the chrome font. `:where()` keeps each rule at the
+   specificity of one class, so the component rules below win. After
+   pptx-editor/packages/core/src/styles/editor.css at 3bf89a88 (EigenPal). Difference: only the
+   elements that the chrome renders, with the option of a list box added. The paragraphs,
+   headings, and lists of the chrome set their own margins, so they need no defaults. */
+.xlsx-editor
+  :where(
+    :is([class^='xlsx-'], [class*=' xlsx-']):not([class^='xlsx-editor'])
+      :is(svg, canvas):not([hidden])
+  ) {
+  display: inline;
+  vertical-align: baseline;
+}
+.xlsx-editor
+  :where(
+    :is([class^='xlsx-'], [class*=' xlsx-']):not([class^='xlsx-editor'])
+      :is(button, input, select, textarea)
+  ) {
+  font: inherit;
+}
+.xlsx-editor :where(:is([class^='xlsx-'], [class*=' xlsx-']):not([class^='xlsx-editor']) button) {
+  padding-block: 1px;
+  padding-inline: 6px;
+  color: ButtonText;
+}
+.xlsx-editor
+  :where(
+    :is([class^='xlsx-'], [class*=' xlsx-']):not([class^='xlsx-editor'])
+      :is(input, select, textarea)
+  ) {
+  color: FieldText;
+}
+.xlsx-editor :where(:is([class^='xlsx-'], [class*=' xlsx-']):not([class^='xlsx-editor']) option) {
+  padding-block: 0 1px;
+  padding-inline: 2px;
+}
+
+/* ============================================================================
+ * GRID SURFACE (core `editor/grid-surface.ts`)
+ * The painted window is not themed: `.xlsx-grid` keeps the workbook's colors.
+ * ============================================================================ */
+.xlsx-canvas {
+  display: flex;
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+}
+.xlsx-surface {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  background: var(--doc-page-bg);
+}
+.xlsx-scroller {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  outline: none;
+  scrollbar-color: var(--doc-scrollbar-thumb) var(--doc-scrollbar-track);
+}
+/* The grid's focus ring: an overlay above the opaque sticky stage and the cell editor, so it
+   shows wherever the stage paints. It shows while the grid or its cell editor has the focus. */
+.xlsx-surface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.xlsx-surface:focus-within::after {
+  box-shadow: inset 0 0 0 2px var(--doc-focus-ring);
+}
+/* Without the focus, the active cell keeps a muted border, so the focused grid stands out. */
+.xlsx-surface:not(:focus-within) .xlsx-active-cell {
+  border-color: var(--doc-text-muted);
+}
+.xlsx-extent {
+  position: relative;
+}
+.xlsx-stage {
+  position: sticky;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  /* A touch pans the sheet; a tap selects on release (`grid-pointer.ts`). A two-finger pinch
+     does not zoom the grid: the zoom control does (`wheel-zoom.ts`). */
+  touch-action: pan-x pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.xlsx-grid {
+  position: absolute;
+  overflow: hidden;
+}
+.xlsx-grid > canvas {
+  display: block;
+}
+.xlsx-a11y-rows {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.xlsx-overlay {
+  position: absolute;
+  pointer-events: none;
+  overflow: hidden;
+}
+.xlsx-selection-range {
+  position: absolute;
+  background: var(--doc-cell-selection);
+  outline: 1px solid var(--doc-primary);
+  outline-offset: -1px;
+}
+.xlsx-active-cell {
+  position: absolute;
+  border: 2px solid var(--doc-primary);
+  box-shadow: inset 0 0 0 1px var(--doc-selection-halo);
+}
+/* The source range of a pending copy or cut: a static dashed line over a solid strip, so it
+   shows on any cell fill, and its meaning needs no color and no motion. */
+.xlsx-pending-edge {
+  position: absolute;
+  box-sizing: border-box;
+  background: var(--doc-surface);
+  border: 0 dashed var(--doc-text);
+}
+.xlsx-pending-edge:where([data-side='top'], [data-side='bottom']) {
+  border-top-width: 2px;
+}
+.xlsx-pending-edge:where([data-side='left'], [data-side='right']) {
+  border-left-width: 2px;
+}
+@media (forced-colors: active) {
+  .xlsx-pending-edge {
+    forced-color-adjust: none;
+    background: Canvas;
+    border-color: CanvasText;
+  }
+}
+@media print {
+  .xlsx-pending-edge {
+    display: none;
+  }
+}
+/* The cell editor: a text input over the active cell, above the selection outline. */
+.xlsx-cell-editor {
+  position: absolute;
+  z-index: 3;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 1px 3px;
+  border: 2px solid var(--doc-primary);
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  field-sizing: content;
+  max-width: 100%;
+  background: var(--doc-surface);
+  color: var(--doc-text);
+  font-family: inherit;
+  line-height: 1.2;
+  white-space: pre;
+}
+.xlsx-cell-editor[hidden] {
+  display: none;
+}
+/* The edited cell is out of the window: the editor keeps the focus and the text, unseen. */
+.xlsx-cell-editor[data-offscreen] {
+  opacity: 0;
+  pointer-events: none;
+}
+.xlsx-heads,
+.xlsx-corner {
+  position: absolute;
+  overflow: hidden;
+  background: var(--doc-bg-subtle);
+  color: var(--doc-text-muted);
+}
+.xlsx-corner {
+  border-right: 1px solid var(--doc-border-dark);
+  border-bottom: 1px solid var(--doc-border-dark);
+}
+.xlsx-head {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--doc-border);
+  border-bottom: 1px solid var(--doc-border);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.xlsx-head-selected {
+  background: var(--doc-primary-light);
+  color: var(--doc-primary);
+  font-weight: 600;
+}
+/* A heading edge under the pointer, and the guide line of a resize drag (grid-resize.ts). */
+.xlsx-stage[data-resize='columns'] {
+  cursor: col-resize;
+}
+.xlsx-stage[data-resize='rows'] {
+  cursor: row-resize;
+}
+.xlsx-resize-guide {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  background: var(--doc-primary);
+}
+.xlsx-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* The cue of the armed exit from the grid (`grid-exit.ts`): a pill over the foot of the grid,
+   after DOCX Editor's header and footer edit hint. It never takes the pointer. It takes the
+   tooltip colors, which stay opaque in both themes, because the workbook under it is not
+   themed. */
+.xlsx-exit-cue {
+  position: absolute;
+  z-index: 5;
+  bottom: 24px;
+  inset-inline: 0;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  margin-inline: auto;
+  padding: 2px 10px;
+  border-radius: var(--doc-radius-pill, 999px);
+  background: var(--doc-tooltip-bg);
+  color: var(--doc-tooltip-text);
+  font-family: var(
+    --doc-font-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif
+  );
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.1s ease,
+    visibility 0.1s;
+}
+.xlsx-exit-cue[data-shown] {
+  opacity: 1;
+  visibility: visible;
+}
+@media (prefers-reduced-motion: reduce) {
+  .xlsx-exit-cue {
+    transition: none;
+  }
+}
+
+/* ============================================================================
+ * VIEWER CHROME (adapters: formula bar, sheet tabs, zoom, status)
+ * ============================================================================ */
+.xlsx-formula-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: var(--doc-surface);
+  border-bottom: 1px solid var(--doc-border);
+}
+.xlsx-name-box,
+.xlsx-cell-content-box {
+  box-sizing: border-box;
+  height: 26px;
+  border: 1px solid var(--doc-border-input);
+  border-radius: var(--doc-radius-control, 7px);
+  background: var(--doc-bg-input);
+  color: var(--doc-text);
+}
+.xlsx-name-box,
+.xlsx-cell-content {
+  margin: 0;
+  padding: 0 8px;
+  font: inherit;
+  /* One line fills the box, so a scrolled field never shows a part of another line. */
+  line-height: 24px;
+}
+.xlsx-name-box {
+  flex: 0 0 auto;
+  width: 104px;
+  font-variant-numeric: tabular-nums;
+}
+/* The box draws the border of the content field, so the line count sits beside the text
+ * area and never over its text. A press anywhere in the box puts the caret in the field, so
+ * the box shows the text cursor. */
+.xlsx-cell-content-box {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  cursor: text;
+}
+/* A one-row text area: it keeps the line breaks of a cell's text, and shows one row of it. */
+.xlsx-cell-content {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  white-space: pre;
+}
+.xlsx-name-box:focus-visible,
+.xlsx-cell-content-box:has(.xlsx-cell-content:focus-visible) {
+  outline: 2px solid var(--doc-focus-ring);
+  outline-offset: -1px;
+  border-color: var(--doc-primary);
+}
+.xlsx-name-box[aria-invalid='true'],
+.xlsx-cell-content-box:has(.xlsx-cell-content[aria-invalid='true']) {
+  border-color: var(--doc-error);
+  outline-color: var(--doc-error);
+}
+.xlsx-cell-content-box:has(.xlsx-cell-content[readonly]) {
+  background: var(--doc-bg-subtle);
+  color: var(--doc-text-muted);
+  cursor: default;
+}
+.xlsx-cell-content[readonly] {
+  cursor: default;
+}
+/* The line count of a text with more than one line: the field shows one line at a time. */
+.xlsx-cell-content-lines {
+  flex: 0 0 auto;
+  padding: 0 8px 0 4px;
+  color: var(--doc-text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+/* The note of a shortened text gives way in a narrow bar: it ends in an ellipsis, its title
+   holds the complete note, and the field keeps room for a few characters. */
+.xlsx-cell-content-note {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.xlsx-cell-content-box:has(.xlsx-cell-content-note) .xlsx-cell-content {
+  min-width: 64px;
+}
+.xlsx-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 8px;
+  background: var(--doc-surface);
+  border-top: 1px solid var(--doc-border);
+}
+.xlsx-sheet-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 2px;
+}
+.xlsx-sheet-tabs {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.xlsx-sheet-tab {
+  flex: 0 0 auto;
+  max-width: 200px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: var(--doc-radius-control, 7px);
+  background: transparent;
+  color: var(--doc-text-muted);
+  font: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.xlsx-sheet-tab:hover {
+  background: var(--doc-bg-hover);
+  color: var(--doc-text);
+}
+.xlsx-sheet-tab[aria-selected='true'] {
+  background: var(--doc-primary-light);
+  color: var(--doc-primary);
+  font-weight: 600;
+}
+.xlsx-sheet-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--doc-radius-pill, 999px);
+  background: transparent;
+  color: var(--doc-text-muted);
+  cursor: pointer;
+}
+.xlsx-sheet-add:hover {
+  background: var(--doc-bg-hover);
+  color: var(--doc-text);
+}
+.xlsx-sheet-add svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+.xlsx-sheet-tab-renaming {
+  visibility: hidden;
+}
+.xlsx-sheet-rename {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  box-sizing: border-box;
+  transform: translateY(-50%);
+  padding: 5px 11px;
+  border: 1px solid var(--doc-primary);
+  border-radius: var(--doc-radius-control, 7px);
+  background: var(--doc-surface);
+  color: var(--doc-text);
+  font: inherit;
+}
+.xlsx-sheet-menu {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  z-index: var(--doc-z-overlay);
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  padding: 4px;
+  background: var(--doc-popover-bg);
+  color: var(--doc-popover-fg);
+  border: 1px solid var(--doc-border);
+  border-radius: var(--doc-radius-panel, 12px);
+  box-shadow: var(--doc-card-shadow-strong);
+}
+.xlsx-sheet-menu-item {
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--doc-radius-control, 6px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.xlsx-sheet-menu-item:hover:not([aria-disabled]),
+.xlsx-sheet-menu-item:focus-visible {
+  background: var(--doc-bg-hover);
+}
+.xlsx-sheet-menu-item[aria-disabled] {
+  color: var(--doc-text-subtle);
+  cursor: default;
+}
+.xlsx-sheet-rename:focus-visible,
+.xlsx-sheet-add:focus-visible,
+.xlsx-sheet-menu-item:focus-visible,
+.xlsx-sheet-tab:focus-visible,
+.xlsx-zoom button:focus-visible {
+  outline: 2px solid var(--doc-focus-ring);
+  outline-offset: 1px;
+}
+.xlsx-zoom {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+.xlsx-zoom button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--doc-radius-pill, 999px);
+  background: transparent;
+  color: var(--doc-text-muted);
+  cursor: pointer;
+}
+.xlsx-zoom button:hover:not([aria-disabled='true']) {
+  background: var(--doc-bg-hover);
+  color: var(--doc-text);
+}
+.xlsx-zoom button[aria-disabled='true'] {
+  color: var(--doc-text-subtle);
+  cursor: default;
+}
+.xlsx-zoom svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+.xlsx-zoom-level {
+  min-width: 48px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--doc-text);
+}
+/* The status strip: one line above the grid, present while a workbook is ready and empty when
+   there is no message, so nothing covers the grid. A refusal shows in full on its own row, in
+   every layout, and the strip grows while it shows; the catalog keeps each refusal text short,
+   and a name in it is cut to 64 characters. The notices go on the next row. */
+.xlsx-status-strip {
+  display: flex;
+  flex-wrap: wrap;
+  flex: none;
+  min-height: 28px;
+  overflow: hidden;
+  background: var(--doc-bg);
+  border-bottom: 1px solid var(--doc-border);
+  box-sizing: border-box;
+}
+.xlsx-refusal,
+.xlsx-notice {
+  position: relative;
+  min-width: 0;
+  padding: 0 12px;
+  line-height: 27px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.xlsx-refusal {
+  flex: 1 1 100%;
+  padding: 5px 12px;
+  line-height: 18px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  background: var(--doc-error-bg);
+  color: var(--doc-error);
+}
+.xlsx-notice {
+  flex: 1 1 auto;
+  background: var(--doc-warning-bg);
+  color: var(--doc-warning-text);
+}
+/* A notice that shows alone shows its full text, and wraps when the strip is too narrow for it,
+   as at phone width. A notice beside another message shows its short text on one line. */
+.xlsx-notice:not([data-short]) {
+  padding: 5px 12px;
+  line-height: 18px;
+  white-space: normal;
+}
+.xlsx-refusal ~ .xlsx-notice:not(:empty) {
+  border-top: 1px solid var(--doc-border);
+}
+/* A notice shows its full text, or, with `data-short`, its brief text. The full text stays in
+   the live node, visually hidden inside the notice, so the announced text does not change. */
+.xlsx-notice-brief {
+  display: none;
+}
+.xlsx-notice[data-short] .xlsx-notice-brief {
+  display: inline;
+}
+.xlsx-notice[data-short] .xlsx-notice-full {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* Each shown notice after another shown notice, also with an empty notice between them. */
+.xlsx-notice:not(:empty) ~ .xlsx-notice:not(:empty) {
+  flex: 0 0 auto;
+  border-left: 1px solid var(--doc-border);
+}
+/* The stale notice is a status node that stays mounted; empty, it takes no room. */
+.xlsx-notice:empty {
+  flex: 0 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+/* In a narrow editor, such as at phone width, each notice under a refusal takes its own row. */
+@container xlsx-editor (max-width: 599px) {
+  .xlsx-refusal ~ .xlsx-notice:not(:empty) {
+    flex: 1 1 100%;
+    border-left: 0;
+  }
+  /* A later notice, also with no refusal: its own row, with a line above it. */
+  .xlsx-notice:not(:empty) ~ .xlsx-notice:not(:empty) {
+    flex: 1 1 100%;
+    border-left: 0;
+    border-top: 1px solid var(--doc-border);
+  }
+}
+.xlsx-message {
+  margin: auto;
+  padding: 24px;
+  max-width: 480px;
+  text-align: center;
+  color: var(--doc-text-muted);
+}
+.xlsx-message [role='alert'],
+.xlsx-message-refusal {
+  color: var(--doc-error);
+}
+.xlsx-message-refusal {
+  margin-top: 8px;
+}
+.xlsx-canvas-idle {
+  display: none;
+}
+
+/* ============================================================================
+ * TOOLBAR (adapters: the chrome registry of core `editor/chrome-controls.ts`)
+ * One row that measures itself; the groups that do not fit move into the
+ * "More" panel as full-width rows. Swatch colors come from core constants or
+ * a checked six-digit hex as inline style; every other color is a token.
+ * The separators, the control states, the picker fields, the caret, and the list rows take the
+ * values of pptx-editor/packages/core/src/styles/editor.css at d4502552 (EigenPal): the
+ * `.pptx-toolbar__sep`, `.pptx-toolbar__button`, `.pptx-toolbar__field`,
+ * `.pptx-toolbar__caret`, `.pptx-menu__item`, and toolbar menu `.pptx-menu__check` rules.
+ * Differences:
+ * - The group draws the separator (`::before`), so the markup has no separator element.
+ * - A button and a color trigger are at least 30px wide with 4px of side padding (PPTX Editor:
+ *   30px and no padding), so a control with a caret grows, as `.pptx-toolbar__button--wide`.
+ * - A disabled field fades as a button does (0.35, not 0.45).
+ * - A host's own button in the bar keeps its own look when it is disabled: the rules name the
+ *   toolbar's own controls, as PPTX Editor's do. Forced colors give it `GrayText`.
+ * - A selected list option has a check mark and no fill, so the fill marks only the hovered or
+ *   focused option. Forced colors keep the `Highlight` fill on it.
+ * - The press scale is on buttons and color triggers only, as in PPTX Editor, and it stops under
+ *   reduced motion, as PPTX Editor's other buttons (`.pptx-button`) do.
+ * - The font family and number format fields are 152px wide (PPTX Editor: 140px), so their
+ *   text keeps the 116px of room that it had before the 8px padding and the 14px caret. The
+ *   fields and the list rows set 13px text, as `.pptx-toolbar__field` and `.pptx-menu__item`
+ *   do (`font: inherit; font-size: 13px;`), so a host font size does not change them, and a
+ *   name such as Times New Roman (about 112px at 13px in the family font stack) fits.
+ * - The font size field is a 72px list, not a stepper, so a size of 5 characters, such as
+ *   10.25, fits beside its caret, as before. A longer size ends in an ellipsis.
+ * - The list is at most 360px tall, so the 11 number formats show with no scroll.
+ * - The controls of a group keep a 2px gap (PPTX Editor: 1px).
+ * - List rows have a 20px line, so the 11 number formats fit in the list height with any UI
+ *   font.
+ * - The "More" button comes before the block of a host's loose children, not after it, and no
+ *   line comes before the button. The bar charges the button a fixed 40px, which leaves no room
+ *   for a line.
+ * The rows of a group menu and of the "More" panel (`.xlsx-toolbar-row`) take the 6px row
+ * radius and keep their own padding (`4px 8px`, PPTX Editor: `6px 10px`) and gap (8px, PPTX
+ * Editor: 10px). The 8px side padding lines the rows up with the panel headings and the
+ * labelled field rows, and the reason line under a disabled row's label starts 26px in, the
+ * 18px icon column and the 8px gap.
+ * ============================================================================ */
+.xlsx-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  min-height: 40px;
+  padding: 4px 8px;
+  background: var(--doc-surface);
+  border-bottom: 1px solid var(--doc-border);
+}
+.xlsx-toolbar[data-overflow] {
+  flex-wrap: nowrap;
+}
+.xlsx-toolbar-group {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+}
+/* A short line between two groups, centered on the controls. The block of a host's loose
+ * children (`data-toolbar-fixed`) takes its line whenever it is not first, also after the
+ * "More" button: the bar measures that block, so its width must not change with the button.
+ * `:where` keeps the weight of the rule at one class, so a `::before` rule of a host group class
+ * that comes after this stylesheet replaces the line. */
+.xlsx-toolbar-group:where(
+    .xlsx-toolbar-group + .xlsx-toolbar-group:not([data-toolbar-fixed]),
+    .xlsx-toolbar > [data-toolbar-fixed]:not(:first-child)
+  )::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 1px;
+  height: 18px;
+  margin: 0 5px;
+  background: var(--doc-border);
+}
+.xlsx-toolbar-button,
+.xlsx-toolbar-select,
+.xlsx-toolbar-color {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: var(--doc-radius-control, 7px);
+  background: transparent;
+  color: var(--doc-text-muted);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.16s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.xlsx-toolbar svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: currentColor;
+}
+.xlsx-toolbar button:hover:not(:disabled):not([aria-disabled='true']) {
+  background: var(--doc-bg-hover);
+}
+/* A bar control's glyph is muted at rest and takes the text color on hover. A panel row keeps
+ * its own color, so the active row stays marked. `:where` keeps this rule below a pressed
+ * toggle's hover rule. */
+.xlsx-toolbar
+  :where(.xlsx-toolbar-button, .xlsx-toolbar-select, .xlsx-toolbar-color):hover:not(:disabled):not(
+    [aria-disabled='true']
+  ) {
+  color: var(--doc-text);
+}
+.xlsx-toolbar
+  :is(.xlsx-toolbar-button, .xlsx-toolbar-color):active:not(:disabled):not([aria-disabled='true']) {
+  transform: scale(0.94);
+}
+@media (prefers-reduced-motion: reduce) {
+  .xlsx-toolbar :is(.xlsx-toolbar-button, .xlsx-toolbar-select, .xlsx-toolbar-color) {
+    transition: none;
+  }
+  .xlsx-toolbar
+    :is(.xlsx-toolbar-button, .xlsx-toolbar-color):active:not(:disabled):not(
+      [aria-disabled='true']
+    ) {
+    transform: none;
+  }
+}
+.xlsx-toolbar button:focus-visible,
+.xlsx-toolbar [role='option']:focus-visible {
+  outline: 2px solid var(--doc-focus-ring);
+  outline-offset: 1px;
+}
+.xlsx-toolbar button:disabled,
+.xlsx-toolbar button[aria-disabled='true'] {
+  cursor: default;
+}
+/* Disabled controls, after the `.pptx-toolbar__button:disabled` and `.pptx-toolbar__field:disabled`
+ * rules of pptx-editor/packages/core/src/styles/editor.css at d4502552 (EigenPal): one flat
+ * selector for each control, which the forced-colors block repeats with the same weight. A
+ * disabled button, field, or color trigger, in the bar or in a panel row, fades as a whole, with
+ * its field border, and keeps its own text color under the fade. A menu row takes the subtle text
+ * color and no fade (below), so the reason under its label stays readable. */
+.xlsx-toolbar-button:is(:disabled, [aria-disabled='true']),
+.xlsx-toolbar-select:is(:disabled, [aria-disabled='true']),
+.xlsx-toolbar-color:is(:disabled, [aria-disabled='true']) {
+  opacity: 0.35;
+}
+/* A disabled control stays focusable. The fade must not fade its focus ring, after
+ * `.pptx-editor [aria-disabled='true']:focus-visible` at the same commit. */
+.xlsx-toolbar [aria-disabled='true']:focus-visible {
+  opacity: 1;
+  color: var(--doc-text-subtle);
+}
+.xlsx-toolbar-button[data-active],
+.xlsx-toolbar
+  button.xlsx-toolbar-button[data-active]:hover:not(:disabled):not([aria-disabled='true']) {
+  background: var(--doc-toggle-active-bg);
+  color: var(--doc-toggle-active-fg);
+}
+.xlsx-toolbar-select {
+  justify-content: space-between;
+  gap: 4px;
+  padding: 0 8px;
+  border: 1px solid var(--doc-border);
+  background: var(--doc-surface);
+  color: var(--doc-text);
+  /* 13px whatever the host font size, as `.pptx-toolbar__field` in PPTX Editor. */
+  font-size: 13px;
+}
+.xlsx-toolbar-select[aria-expanded='true'] {
+  background: var(--doc-bg-hover);
+}
+.xlsx-toolbar-select-wide {
+  width: 152px;
+}
+.xlsx-toolbar-select-narrow {
+  width: 72px;
+}
+.xlsx-toolbar-select-text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* The caret of a field or a menu button: a 14px icon at 60% of the text color. */
+.xlsx-toolbar svg.xlsx-toolbar-caret {
+  width: 14px;
+  height: 14px;
+  opacity: 0.6;
+}
+.xlsx-toolbar-dropdown,
+.xlsx-toolbar-more {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.xlsx-toolbar-color-icon {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+.xlsx-toolbar-color-bar {
+  width: 16px;
+  height: 3px;
+  margin-top: -2px;
+  border: 1px solid var(--doc-border-dark);
+}
+.xlsx-toolbar-color-bar[data-none] {
+  background: transparent;
+}
+.xlsx-toolbar-popup,
+.xlsx-toolbar-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: var(--doc-z-overlay);
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--doc-popover-bg);
+  color: var(--doc-popover-fg);
+  border: 1px solid var(--doc-border);
+  border-radius: var(--doc-radius-panel, 12px);
+  box-shadow: var(--doc-card-shadow-strong);
+}
+.xlsx-toolbar-list-popup {
+  min-width: 100%;
+}
+.xlsx-toolbar-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  /* Room for the 11 number formats at 32px a row, with no scroll. */
+  max-height: 360px;
+  overflow-y: auto;
+}
+.xlsx-toolbar-entry {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 64px;
+  height: 28px;
+  margin-bottom: 4px;
+  padding: 0 8px;
+  border: 1px solid var(--doc-border-input);
+  border-radius: var(--doc-radius-control, 7px);
+  background: var(--doc-bg-input);
+  color: var(--doc-text);
+  font: inherit;
+}
+.xlsx-toolbar-entry:focus-visible {
+  outline: 2px solid var(--doc-focus-ring);
+  outline-offset: 1px;
+}
+.xlsx-toolbar-entry[aria-invalid='true'] {
+  border-color: var(--doc-error);
+}
+.xlsx-toolbar-entry-error {
+  max-width: 160px;
+  margin-bottom: 4px;
+  color: var(--doc-error);
+  font-size: 12px;
+  line-height: 16px;
+}
+.xlsx-toolbar-list [role='option'] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  /* 13px whatever the host font size, as `.pptx-menu__item` in PPTX Editor. */
+  font-size: 13px;
+  /* A fixed line, so the 11 number formats fit in the list height with any UI font. */
+  line-height: 20px;
+  border-radius: var(--doc-radius-control, 6px);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.xlsx-toolbar-list [role='option']:hover,
+.xlsx-toolbar-list [role='option']:focus {
+  background: var(--doc-bg-hover);
+  outline: none;
+}
+/* The selected option: a check mark at the end of the row, so it differs from the hovered or
+ * focused option, which the fill marks. */
+.xlsx-toolbar svg.xlsx-toolbar-check {
+  flex: none;
+  margin-inline-start: auto;
+  color: var(--doc-text-muted);
+}
+/* The current family of a stepped code: a mark at the start, not the check mark. */
+.xlsx-toolbar-list [role='option'][aria-current='true'] {
+  box-shadow: inset 3px 0 0 var(--doc-primary);
+  color: var(--doc-primary);
+}
+/* Each swatch is a 24px target (WCAG 2.5.8), after PPTX Editor's color menus. */
+.xlsx-toolbar-palette {
+  display: grid;
+  grid-template-columns: repeat(7, 24px);
+  gap: 4px;
+}
+.xlsx-toolbar-swatch {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--doc-border-dark);
+  /* A fixed corner, as on `.pptx-swatch`: a host control radius would round a small swatch. */
+  border-radius: 4px;
+  cursor: pointer;
+}
+.xlsx-toolbar-swatch[aria-selected='true'],
+.xlsx-toolbar-no-fill[aria-selected='true'] {
+  outline: 2px solid var(--doc-primary);
+  outline-offset: 1px;
+}
+.xlsx-toolbar-no-fill {
+  grid-column: 1 / -1;
+  height: 26px;
+  border: 1px solid var(--doc-border-input);
+  border-radius: var(--doc-radius-control, 7px);
+  background: transparent;
+  color: var(--doc-text);
+  font: inherit;
+  cursor: pointer;
+}
+.xlsx-toolbar-menu {
+  min-width: 220px;
+}
+.xlsx-toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--doc-radius-control, 6px);
+  background: transparent;
+  color: var(--doc-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.xlsx-toolbar-row:not(:has(svg))::before {
+  content: '';
+  width: 18px;
+}
+.xlsx-toolbar-row[data-active] {
+  background: var(--doc-primary-light);
+  color: var(--doc-primary);
+}
+/* A disabled row of a group menu or of the "More" panel, after the refused toolbar menu row
+ * (`.pptx-menu__item[aria-disabled='true']`) at d4502552: the subtle text color and no fade.
+ * It comes after the active row, so a disabled row never shows as active. */
+.xlsx-toolbar-row:is(:disabled, [aria-disabled='true']) {
+  color: var(--doc-text-subtle);
+}
+.xlsx-toolbar-reason {
+  flex: 1 0 100%;
+  padding-left: 26px;
+  color: var(--doc-text-muted);
+  font-size: 12px;
+}
+.xlsx-toolbar-more {
+  margin-left: auto;
+}
+.xlsx-toolbar-panel {
+  left: auto;
+  right: 0;
+  width: 280px;
+  max-width: calc(100vw - 16px);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.xlsx-toolbar-section + .xlsx-toolbar-section {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--doc-border);
+}
+.xlsx-toolbar-heading {
+  display: block;
+  padding: 4px 8px;
+  color: var(--doc-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.xlsx-toolbar-labelled {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 2px 8px;
+}
+.xlsx-toolbar-row-label {
+  color: var(--doc-text);
+}
+.xlsx-toolbar-popup[data-align='end'] {
+  left: auto;
+  right: 0;
+}
+.xlsx-toolbar-popup[data-side='top'] {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+/* A popup inside the overflow panel renders in flow, so the panel's scroll box never clips
+ * it: it takes a row of its own under its trigger. */
+.xlsx-toolbar-labelled {
+  flex-wrap: wrap;
+}
+/* In a panel row, a wide field takes the room beside its label, up to its own width, so the
+ * row does not wrap. Its text ends in an ellipsis when the room is short. */
+.xlsx-toolbar-labelled > .xlsx-toolbar-select-wide {
+  flex: 1 1 0;
+  min-width: 30px;
+  max-width: 152px;
+}
+.xlsx-toolbar-popup[data-inline] {
+  position: static;
+  flex: 1 0 100%;
+  box-shadow: none;
+}
+/* A popup in the overflow panel, or a popup capped to its room, scrolls inside itself. */
+.xlsx-toolbar-popup[data-inline],
+.xlsx-toolbar-popup[data-capped] {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* A capped popup is the one scroller: the list inside it does not scroll again. */
+.xlsx-toolbar-popup[data-capped] .xlsx-toolbar-list {
+  max-height: none;
+  overflow-y: visible;
+}
+
+/* The last item of the number format list: it opens the number format dialog. */
+.xlsx-toolbar-list-more {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 32px;
+  margin-top: 4px;
+  padding: 6px 10px;
+  border: 0;
+  border-top: 1px solid var(--doc-border);
+  border-radius: 0 0 var(--doc-radius-control, 6px) var(--doc-radius-control, 6px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  text-align: start;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.xlsx-toolbar-list-more:hover,
+.xlsx-toolbar-list-more:focus {
+  background: var(--doc-bg-hover);
+  outline: none;
+}
+.xlsx-toolbar-list-more[aria-disabled='true'] {
+  color: var(--doc-text-subtle);
+  cursor: default;
+}
+
+/* Editor dialogs, after docx-editor/packages/core/src/styles/editor.css at 03735f11 (the
+   `.docx-dialog` rules): a native modal `dialog` panel with bordered inputs, a filled primary
+   button, and an outlined secondary one. Every rule is anchored to `.xlsx-editor` with exactly
+   two-class specificity, and state pseudo-classes sit inside `:where()`, so a host reset (one
+   that sets `border-width: 0` on `*`) does not strip the controls, and a host override with
+   two classes loaded after this sheet wins. Differences: the class prefix is `xlsx-dialog`;
+   only the parts of the number format dialog are here; the panel is at most 440px wide, not
+   480px, for its one code field; `height: fit-content` keeps a host's `dialog` height reset
+   from stretching it; and a closed panel (`:not([open])`) is hidden, for a frame that a test
+   environment opens with the `open` attribute. */
+.xlsx-editor .xlsx-dialog,
+.xlsx-editor.xlsx-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  box-sizing: border-box;
+  width: calc(100vw - 40px);
+  max-width: 440px;
+  height: fit-content;
+  max-height: 90dvh;
+  padding: 0;
+  overflow: hidden;
+  color: var(--doc-text);
+  background: var(--doc-surface);
+  border: 1px solid var(--doc-border);
+  border-radius: var(--doc-dialog-radius, 8px);
+  box-shadow:
+    0 12px 32px var(--doc-shadow),
+    0 2px 6px var(--doc-shadow-subtle);
+  font: var(--doc-dialog-font-size, 13px) / 1.5
+    var(--doc-dialog-font-family, var(--doc-font-ui, system-ui, sans-serif));
+}
+.xlsx-editor .xlsx-dialog:where(:not([open])),
+.xlsx-editor.xlsx-dialog:where(:not([open])) {
+  display: none;
+}
+.xlsx-editor .xlsx-dialog[open],
+.xlsx-editor.xlsx-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.xlsx-editor .xlsx-dialog::backdrop,
+.xlsx-editor.xlsx-dialog::backdrop {
+  background: var(--doc-overlay);
+}
+.xlsx-editor .xlsx-dialog__header {
+  flex-shrink: 0;
+  padding-block: 20px 4px;
+  padding-inline: var(--doc-dialog-padding, 24px);
+}
+.xlsx-editor .xlsx-dialog__title {
+  margin: 0;
+  font-size: 1.385em;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--doc-text);
+}
+.xlsx-editor .xlsx-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  padding-block: 12px 8px;
+  padding-inline: var(--doc-dialog-padding, 24px);
+  overflow-y: auto;
+}
+/* On a short viewport the body scrolls; its parts keep their size. */
+.xlsx-editor .xlsx-dialog__body > * {
+  flex-shrink: 0;
+}
+.xlsx-editor .xlsx-dialog__label {
+  margin-top: 6px;
+  font-weight: 500;
+  color: var(--doc-text);
+}
+.xlsx-editor .xlsx-dialog__hint {
+  margin: 0;
+  font-size: 0.92em;
+  line-height: 1.4;
+  color: var(--doc-text-muted);
+}
+.xlsx-editor .xlsx-dialog__input,
+.xlsx-editor .xlsx-dialog__list {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  font: inherit;
+  font-family: ui-monospace, monospace;
+  color: var(--doc-text);
+  background: var(--doc-surface);
+  border: 1px solid var(--doc-border-input);
+  border-radius: var(--doc-dialog-control-radius, 4px);
+  outline: none;
+}
+.xlsx-editor .xlsx-dialog__input {
+  height: 32px;
+  padding: 0 8px;
+  line-height: 30px;
+}
+.xlsx-editor .xlsx-dialog__list {
+  padding: 2px;
+}
+.xlsx-editor .xlsx-dialog__input:where(:hover),
+.xlsx-editor .xlsx-dialog__list:where(:hover) {
+  border-color: var(--doc-border-dark);
+}
+.xlsx-editor .xlsx-dialog__input:where(:focus, :focus-visible),
+.xlsx-editor .xlsx-dialog__list:where(:focus, :focus-visible) {
+  border-color: var(--doc-primary);
+  box-shadow: 0 0 0 1px var(--doc-primary);
+  /* Forced-colors mode drops the box shadow and draws this outline in its focus color. */
+  outline: 2px solid transparent;
+}
+.xlsx-editor .xlsx-dialog__input:where([aria-invalid='true']) {
+  border-color: var(--doc-danger);
+}
+.xlsx-editor .xlsx-dialog__input:where([aria-invalid='true']:focus) {
+  box-shadow: 0 0 0 1px var(--doc-danger);
+}
+@media (forced-colors: active) {
+  /* The state does not depend on color: an invalid field has a thicker border. */
+  .xlsx-editor .xlsx-dialog__input:where([aria-invalid='true']) {
+    border-width: 2px;
+  }
+}
+.xlsx-editor .xlsx-dialog__preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  margin-top: 6px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  background: var(--doc-bg-subtle);
+  border-radius: var(--doc-dialog-control-radius, 4px);
+}
+.xlsx-editor .xlsx-dialog__preview:where([hidden]) {
+  display: none;
+}
+.xlsx-editor .xlsx-dialog__preview-label {
+  flex: 0 1 auto;
+  color: var(--doc-text-muted);
+}
+/* The value as the canvas paints the cell: its own colors, which the theme does not change. */
+.xlsx-editor .xlsx-dialog__preview-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
+  /* One line also when the code shows no text, so the box looks like an empty cell. */
+  min-height: calc(1lh + 6px);
+  box-sizing: border-box;
+  color: var(--doc-page-text);
+  background: var(--doc-canvas-bg);
+  border: 1px solid var(--doc-border);
+}
+.xlsx-editor .xlsx-dialog__preview-value:where([data-problem]) {
+  white-space: normal;
+  color: var(--doc-danger);
+  background: transparent;
+  /* No border, not a transparent one: forced colors would draw it as a value box. The padding
+     grows by the border width, so the size stays. */
+  border-style: none;
+  padding: 3px 7px;
+}
+.xlsx-editor .xlsx-dialog__footer {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-block: 12px 20px;
+  padding-inline: var(--doc-dialog-padding, 24px);
+}
+.xlsx-editor .xlsx-dialog__error {
+  margin: 0;
+  font-size: 0.92em;
+  line-height: 1.4;
+  color: var(--doc-danger);
+}
+.xlsx-editor .xlsx-dialog__error:where(:empty) {
+  display: none;
+}
+.xlsx-editor .xlsx-dialog__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 32px;
+  min-width: 72px;
+  margin: 0;
+  padding: 0 16px;
+  font: inherit;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--doc-text);
+  background: var(--doc-surface);
+  border: 1px solid var(--doc-border-input);
+  border-radius: var(--doc-dialog-control-radius, 4px);
+  cursor: pointer;
+  appearance: none;
+}
+.xlsx-editor .xlsx-dialog__button:where(:hover) {
+  background: var(--doc-bg-hover);
+  border-color: var(--doc-border-dark);
+}
+.xlsx-editor .xlsx-dialog__button:where(:focus-visible) {
+  /* The primary color, not the translucent focus ring: 3:1 on the dialog surface. */
+  outline: 2px solid var(--doc-primary);
+  outline-offset: 1px;
+}
+.xlsx-editor .xlsx-dialog__button--primary {
+  color: var(--doc-on-primary);
+  background: var(--doc-primary);
+  border-color: var(--doc-primary);
+}
+.xlsx-editor .xlsx-dialog__button--primary:where(:hover) {
+  background: var(--doc-primary-hover);
+  border-color: var(--doc-primary-hover);
+}
+@media (forced-colors: active) {
+  /* After the button rules, so it wins: the default action keeps a thicker border. */
+  .xlsx-editor .xlsx-dialog__button--primary {
+    border-width: 2px;
+  }
+  /* The error text does not depend on color: it is bold. */
+  .xlsx-editor .xlsx-dialog__error {
+    font-weight: 600;
+  }
+}
+
+/* ============================================================================
+ * FORCED COLORS (high contrast themes), after
+ * pptx-editor/packages/core/src/styles/editor.css at d4502552 (EigenPal).
+ * The browser replaces the chrome colors with the user's system colors and removes box
+ * shadows. These rules draw each state with system colors: pressed, selected, and highlighted
+ * controls in `Highlight`, focus rings in `Highlight`, disabled controls in `GrayText`, and the
+ * grid's focus ring and selection, which a shadow or a tint drew, as outlines. A disabled
+ * button, field, or color trigger keeps its 0.35 fade over `GrayText`, as in PPTX Editor; a
+ * focused one does not fade. Color swatches
+ * keep their colors. The workbook canvas is not chrome: it keeps the colors of the file, so the
+ * marks over it are two-tone, as the pending copy edge is.
+ * Differences from PPTX Editor: a focused list option or swatch gets a `CanvasText` ring, so it
+ * differs from the selected one, which `Highlight` marks; a focused menu row gets a ring inside
+ * its fill, so it differs from a hovered row; the selected swatch also gets a mark inside its
+ * edge; the grid marks are two-tone; a disabled toggle has no pressed edge, because the
+ * engine never reports a disabled toggle as pressed; the line between two toolbar groups
+ * takes `CanvasText`, because forced colors draw a background in `Canvas`; and the focused
+ * disabled rule covers the toolbar only (PPTX Editor: the whole editor), because the sheet tabs
+ * and the sheet menu do not fade a disabled control.
+ * ============================================================================ */
+
+@media (forced-colors: active) {
+  .xlsx-editor :focus-visible,
+  .xlsx-toolbar button:focus-visible,
+  .xlsx-toolbar [role='option']:focus-visible {
+    outline-color: Highlight;
+  }
+  /* Forced colors draw a background in `Canvas`, so the group separator takes the text color. */
+  .xlsx-toolbar-group:where(
+      .xlsx-toolbar-group + .xlsx-toolbar-group:not([data-toolbar-fixed]),
+      .xlsx-toolbar > [data-toolbar-fixed]:not(:first-child)
+    )::before {
+    background: CanvasText;
+  }
+  .xlsx-cell-content-box:has(.xlsx-cell-content:focus-visible) {
+    outline-color: Highlight;
+  }
+
+  /* The grid: a focus ring in place of the inset shadow. The selection and the active cell draw
+   * a system-colored line with a `Canvas` line inside it, so they show on any cell fill: the
+   * canvas paints the file's colors, also white cells in a dark theme. */
+  .xlsx-surface:focus-within::after {
+    box-shadow: none;
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+  .xlsx-selection-range,
+  .xlsx-active-cell {
+    forced-color-adjust: none;
+  }
+  .xlsx-selection-range {
+    outline: 2px solid Highlight;
+    outline-offset: -1px;
+    box-shadow: inset 0 0 0 2px Canvas;
+  }
+  .xlsx-active-cell {
+    border-color: Highlight;
+    box-shadow: inset 0 0 0 1px Canvas;
+  }
+  .xlsx-surface:not(:focus-within) .xlsx-active-cell {
+    border-color: CanvasText;
+  }
+  .xlsx-cell-editor {
+    border-color: Highlight;
+  }
+
+  /* Pressed toggles, the selected sheet tab, the selected list option, and the hovered or
+   * focused menu row. The browser draws no text backplate here (`forced-color-adjust: none`),
+   * so the text and icons take `HighlightText` on `Highlight`, and every part inside takes the
+   * same text color. A disabled control never takes `Highlight`: `GrayText` on `Highlight` can
+   * be unreadable. */
+  .xlsx-toolbar-button:is([aria-pressed='true'], [data-active]):not([aria-disabled='true']),
+  .xlsx-toolbar-row:is([aria-pressed='true'], [data-active]):not([aria-disabled='true']),
+  .xlsx-sheet-tab[aria-selected='true'],
+  .xlsx-toolbar-list [role='option'][aria-selected='true'],
+  .xlsx-toolbar .xlsx-toolbar-no-fill[aria-selected='true'],
+  .xlsx-toolbar-row[role='menuitem']:is(:hover, :focus-visible):not([aria-disabled='true']),
+  .xlsx-sheet-menu-item:is(:hover, :focus-visible):not([aria-disabled]) {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+  }
+  /* The hover rules of the toolbar buttons outrank the state rules, so a hovered control in a
+   * highlighted state repeats the state color here, with a higher specificity. */
+  .xlsx-toolbar
+    button:is(:hover, :focus-visible):not(:disabled):not([aria-disabled='true']):is(
+      .xlsx-toolbar-row[role='menuitem'],
+      .xlsx-toolbar-no-fill[aria-selected='true'],
+      .xlsx-toolbar-button[aria-pressed='true'],
+      .xlsx-toolbar-button[data-active],
+      .xlsx-toolbar-row[aria-pressed='true'],
+      .xlsx-toolbar-row[data-active]
+    ) {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+  }
+  .xlsx-toolbar-button:is([aria-pressed='true'], [data-active]):not([aria-disabled='true']) *,
+  .xlsx-toolbar-row:is([aria-pressed='true'], [data-active]):not([aria-disabled='true']) *,
+  .xlsx-sheet-tab[aria-selected='true'] *,
+  .xlsx-toolbar-list [role='option'][aria-selected='true'] *,
+  .xlsx-toolbar-row[role='menuitem']:is(:hover, :focus-visible):not([aria-disabled='true']) * {
+    color: inherit;
+    fill: currentColor;
+  }
+  /* A focused menu row: a ring inside its fill, so it differs from a hovered row. */
+  .xlsx-toolbar-row[role='menuitem']:focus-visible:not([aria-disabled='true']),
+  .xlsx-sheet-menu-item:focus-visible:not([aria-disabled]) {
+    outline: 2px solid HighlightText;
+    outline-offset: -4px;
+  }
+  /* The hovered or focused list option, and the list-more item under it: a ring inside it, so
+   * it differs from the selected option, which the fill marks. */
+  .xlsx-toolbar-list [role='option']:is(:hover, :focus),
+  .xlsx-toolbar-list-more:is(:hover, :focus):not([aria-disabled='true']) {
+    outline: 2px solid CanvasText;
+    outline-offset: -2px;
+  }
+  .xlsx-toolbar-list [role='option'][aria-selected='true']:is(:hover, :focus) {
+    outline-color: HighlightText;
+  }
+  /* The current family of a stepped code: an edge at the start, in place of the shadow. The
+   * padding gives up the width of the edge, so the text does not move. */
+  .xlsx-toolbar-list [role='option'][aria-current='true'] {
+    border-inline-start: 3px solid Highlight;
+    padding-inline-start: 7px;
+  }
+  /* The focus ring covers 2px of the edge, so the edge grows by 2px under it. */
+  .xlsx-toolbar-list [role='option'][aria-current='true']:is(:hover, :focus) {
+    border-inline-start-width: 5px;
+    padding-inline-start: 5px;
+  }
+  .xlsx-toolbar [aria-expanded='true'] {
+    outline: 1px solid Highlight;
+  }
+  /* The tab strip scrolls, so it clips a ring outside a tab: the ring of a tab with its menu
+   * open and the focus ring go inside, and on the selected tab they take the text color of its
+   * fill. */
+  .xlsx-sheet-tab[aria-expanded='true'] {
+    outline: 1px solid Highlight;
+    outline-offset: -2px;
+  }
+  .xlsx-sheet-tab[aria-selected='true'][aria-expanded='true'] {
+    outline-color: HighlightText;
+  }
+  .xlsx-sheet-tab:focus-visible {
+    outline-offset: -4px;
+  }
+  .xlsx-sheet-tab[aria-selected='true']:focus-visible {
+    outline-color: HighlightText;
+  }
+
+  /* Disabled controls: the system's disabled text color, including focused controls. Each
+   * selector repeats a disabled rule of the normal styles with the same weight, so this later
+   * rule wins. A faded control keeps its fade (0.35), as in PPTX Editor. */
+  .xlsx-toolbar [aria-disabled='true']:focus-visible,
+  .xlsx-toolbar button:is(:disabled, [aria-disabled='true']),
+  .xlsx-toolbar-button:is(:disabled, [aria-disabled='true']),
+  .xlsx-toolbar-select:is(:disabled, [aria-disabled='true']),
+  .xlsx-toolbar-color:is(:disabled, [aria-disabled='true']),
+  .xlsx-toolbar-row:is(:disabled, [aria-disabled='true']),
+  .xlsx-toolbar-list-more[aria-disabled='true'],
+  .xlsx-sheet-menu-item[aria-disabled],
+  .xlsx-sheet-tab[aria-disabled='true'],
+  .xlsx-sheet-add[aria-disabled='true'],
+  .xlsx-zoom button[aria-disabled='true'] {
+    color: GrayText;
+  }
+  .xlsx-toolbar-list-more[aria-disabled='true']:focus {
+    outline: 2px solid GrayText;
+    outline-offset: -2px;
+  }
+
+  /* The exit cue: an edge, where its fill outlined it. */
+  .xlsx-exit-cue {
+    border: 1px solid CanvasText;
+  }
+
+  /* Color swatches show the color they stand for, inside a system-colored edge. The selected
+   * swatch gets a `Highlight` outline and a `Highlight` line inside its edge, with a `Canvas`
+   * line between them and the color; the selected No fill gets the fill of a selected option.
+   * Focus is a `CanvasText` ring in place of the outline, so it differs from the selected mark,
+   * and the line inside keeps the selected mark while the swatch has focus. */
+  .xlsx-toolbar-swatch,
+  .xlsx-toolbar-color-bar {
+    forced-color-adjust: none;
+    border-color: CanvasText;
+  }
+  .xlsx-toolbar .xlsx-toolbar-swatch[aria-selected='true'] {
+    outline: 3px solid Highlight;
+    box-shadow:
+      inset 0 0 0 2px Canvas,
+      inset 0 0 0 4px Highlight;
+  }
+  .xlsx-toolbar .xlsx-toolbar-no-fill {
+    border-color: CanvasText;
+  }
+  .xlsx-toolbar .xlsx-toolbar-no-fill[aria-selected='true'] {
+    outline: none;
+    border-color: CanvasText;
+  }
+  .xlsx-toolbar :is(.xlsx-toolbar-swatch, .xlsx-toolbar-no-fill):focus-visible {
+    outline: 2px solid CanvasText;
+    outline-offset: 1px;
+  }
+
+  /* The selected row and column headings, and the guide line of a resize drag. */
+  .xlsx-head-selected {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+    border-color: CanvasText;
+  }
+  .xlsx-resize-guide {
+    forced-color-adjust: none;
+    background: Highlight;
+  }
+}

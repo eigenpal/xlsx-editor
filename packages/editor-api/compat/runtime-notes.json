@@ -1,0 +1,42 @@
+{
+  "Range#values": {
+    "status": "partial",
+    "notes": "A read gives the value that the file stores: an error as its text, a date as its serial number (in a workbook of the 1904 date system, a serial from January 1, 1904), and an empty cell as an empty string. A values read of a range that holds a formula cell, or a cell of an array formula or data table range, refuses with NotSupported, because the package does not calculate. A write of a value to such a cell refuses with NotSupported, and null leaves it. Each value read and write of a worksheet refuses when an array formula or data table range of it has a reference that the package cannot read, or when it has more than 10,000 such ranges. A write takes a finite number, a boolean, text, an empty string to empty the cell, or null to leave it, in a range that holds no formula cell. A formula (text that starts with =) and text that the engine's cell entry with en-US rules reads as another value, also with spaces around it (such as 12%, TRUE, #N/A, or text that starts with +, -, or '), refuse with NotSupported, whatever the number format of the cell, also the Text format (@). The cell entry reads fewer forms than an Office.js host: text such as Jan 1 or 50 % is stored as text, where an Office.js host can store a date or a number. A set makes the loaded values out of date: a read then throws PropertyNotLoaded until the next load and sync. A loaded string that reads as another value, such as #DIV/0!, -, TRUE, or 00123, refuses with NotSupported when it is written back: give null for each cell that a write back does not change. A value other than null or an empty string in a cell that a merged range covers, other than its top-left cell, refuses with NotSupported, because the merge hides that cell. One value for a whole range refuses with NotSupported. A range reaches at most 100,000 cells."
+  },
+  "Range#numberFormat": {
+    "status": "partial",
+    "notes": "A read gives the format code that the cell format stores, or the ECMA-376 code of a built-in format (Part 1, 18.8.30): id 14 reads as mm-dd-yy, with no locale mapping. A read of a range that holds a built-in format whose code depends on the locale (ids 27 to 36 and 50 to 58), a format id that the styles part does not define, or a cell format index out of range refuses with NotSupported. The package publishes numberFormat read-only, because it does not write number formats: a set fails to compile. In JavaScript strict-mode code, such as an ES module or a class, a set throws a TypeError. In non-strict code, a set does nothing."
+  },
+  "Range#address": {
+    "status": "equivalent",
+    "notes": "The sheet name, then the cell or the rectangle in A1 form, with no $ marks. The sheet name is quoted only when it needs quotes."
+  },
+  "Worksheet#getRange": {
+    "status": "partial",
+    "notes": "Takes the address of one cell (A1) or of a rectangle (A1:B2), in either letter case, with optional $ marks. No address, an empty address, an address with a sheet name, a whole row or column, and a defined name refuse with NotSupported."
+  },
+  "WorksheetCollection#getItem": {
+    "status": "partial",
+    "notes": "Takes a worksheet name, matched without letter case. If two worksheet names differ only in case, only the exact name matches. A worksheet id is not accepted as the key. A chartsheet is not a worksheet."
+  },
+  "WorksheetCollection#getItemOrNullObject": {
+    "status": "partial",
+    "notes": "Takes a worksheet name, matched as getItem matches it. A read of a property of a null object, such as name, throws PropertyNotLoaded, where an Office.js host gives null."
+  },
+  "WorksheetCollection#getActiveWorksheet": {
+    "status": "partial",
+    "notes": "The worksheet that the workbook opens on: x:workbookView/@activeTab when it is a visible worksheet, else the first visible worksheet."
+  },
+  "WorksheetCollection#items": {
+    "status": "equivalent",
+    "notes": "Every worksheet in tab order, hidden ones included."
+  },
+  "OfficeExtension.ClientRequestContext#sync": {
+    "status": "partial",
+    "notes": "One sync is one atomic batch of at most 10,000 operations. Its range reads and writes reach at most 1,000,000 cells in all, and its value writes at most 10,000 cells; more refuse with ResourceLimitExceeded. A cell with more than 1,000 child elements in the file refuses its value read and write with ResourceLimitExceeded. So does a value write to a worksheet with more than 100,000 merged ranges. Each value write checks each merged range of its worksheet, and the value writes of one sync check at most 50,000,000 merged ranges in all; more refuse with ResourceLimitExceeded. A sync reads the workbook as it was before the sync, so a load of values or number formats that follows a write in the same sync refuses with NotSupported. A sync that writes after an earlier sync of the same context refuses with StaleDocument when another writer changed the workbook in between. Actions that no sync sent are dropped at the end of the run, where an Office.js host sends them with a final sync of its own, and a development build prints a warning for dropped writes."
+  },
+  "OfficeExtension.ClientRequestContext#load": {
+    "status": "partial",
+    "notes": "Takes a property name, a comma-separated list, an array of names, and { select, top, skip }, with one level of properties (and items on a collection). A name that is not a property of the object throws InvalidArgument at the call, with the list of properties. top and skip load a window of the worksheet collection; an object that is not a collection refuses them with InvalidArgument. A property tree such as { values: true }, and expand other than an empty list, throw NotSupported at the call."
+  }
+}

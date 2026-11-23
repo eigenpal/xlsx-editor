@@ -1,0 +1,24 @@
+{
+  "title": "v0.x (latest)",
+  "root": true,
+  "pages": [
+    "---Getting started---",
+    "index",
+    "quickstart",
+    "installation",
+    "customization",
+    "customization/language",
+    "xlsx-fidelity",
+    "accessibility",
+    "---React---",
+    "react/index",
+    "---Vue---",
+    "vue/index",
+    "---Editing API---",
+    "editor-api/index",
+    "---Reference---",
+    "i18n/index",
+    "known-approximations",
+    "workbook-limits"
+  ]
+}

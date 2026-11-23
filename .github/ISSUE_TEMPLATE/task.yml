@@ -1,0 +1,11 @@
+name: Task
+description: Propose maintenance, tooling, or documentation work.
+type: Task
+body:
+  - type: textarea
+    id: task
+    attributes:
+      label: What needs to be done?
+      description: Describe the work and how to know that it is complete.
+    validations:
+      required: true

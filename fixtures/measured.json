@@ -1,0 +1,1312 @@
+{
+  "version": 1,
+  "fixtures": {
+    "cell-styles": {
+      "workbook": "37a779f9eeb8b6fdadc5d5ab5a6c7bd102dc680082b301480dfaba4bbcae7f2b",
+      "cells": {
+        "B1": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B2": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B3": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B4": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B5": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B6": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B7": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B8": {
+          "text": "50,00%",
+          "fill": "FFFFFF",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B9": {
+          "text": "50,00%",
+          "fill": "FFFFFF",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B10": {
+          "text": "50,00%",
+          "fill": "FFFFFF",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B11": {
+          "text": "50,00%",
+          "fill": "FFFFFF",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B12": {
+          "text": "50,00%",
+          "fill": "FFFFFF",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B13": {
+          "text": "50,00%",
+          "fill": "FFFFFF",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B14": {
+          "text": "50,00%",
+          "fill": "FFFFFF",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B15": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true
+        },
+        "B16": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true
+        },
+        "B17": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true
+        },
+        "B18": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true
+        },
+        "B19": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true
+        },
+        "B20": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true
+        },
+        "B21": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true
+        },
+        "B22": {
+          "text": "0,5",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B23": {
+          "text": "0,5",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B24": {
+          "text": "0,5",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B25": {
+          "text": "0,5",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B26": {
+          "text": "0,5",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B27": {
+          "text": "0,5",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B28": {
+          "text": "0,5",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B29": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B30": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B31": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B32": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B33": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B34": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B35": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B36": {
+          "text": "50,00%",
+          "fill": "00B050",
+          "font": "C00000",
+          "fontName": "Carlito",
+          "bold": true,
+          "bottom": {
+            "color": "0070C0",
+            "style": "thin"
+          }
+        },
+        "B37": {
+          "text": "0,5",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        }
+      }
+    },
+    "colors-fonts": {
+      "workbook": "cad0ff704af053d2ba67cc8e7040fb9a742e67e8af0dccf27d6ab7053d51a7a0",
+      "cells": {
+        "B1": {
+          "text": "Sample",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B2": {
+          "text": "Sample",
+          "fill": "000000",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B3": {
+          "text": "Sample",
+          "fill": "E7E6E6",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B4": {
+          "text": "Sample",
+          "fill": "44546A",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B5": {
+          "text": "Sample",
+          "fill": "4472C4",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B6": {
+          "text": "Sample",
+          "fill": "ED7D31",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B7": {
+          "text": "Sample",
+          "fill": "A5A5A5",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B8": {
+          "text": "Sample",
+          "fill": "FFC000",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B9": {
+          "text": "Sample",
+          "fill": "5B9BD5",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B10": {
+          "text": "Sample",
+          "fill": "70AD47",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B11": {
+          "text": "Sample",
+          "fill": "203764",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B12": {
+          "text": "Sample",
+          "fill": "305496",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B13": {
+          "text": "Sample",
+          "fill": "7395D2",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B14": {
+          "text": "Sample",
+          "fill": "8EA9DB",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B15": {
+          "text": "Sample",
+          "fill": "A2B8E1",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B16": {
+          "text": "Sample",
+          "fill": "B4C6E7",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B17": {
+          "text": "Sample",
+          "fill": "D9E1F2",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B18": {
+          "text": "Sample",
+          "fill": "ECF0F9",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B19": {
+          "text": "Sample",
+          "fill": "FF0000",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B20": {
+          "text": "Sample",
+          "fill": "C0C0C0",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B21": {
+          "text": "Sample",
+          "fill": "00B050",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B22": {
+          "text": "Sample",
+          "fill": "FF0000",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B23": {
+          "text": "Sample",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B24": {
+          "text": "Sample",
+          "fill": "FFFFFF",
+          "font": "4472C4",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B25": {
+          "text": "Sample",
+          "fill": "FFFFFF",
+          "font": "FF0000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B26": {
+          "text": "Sample",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B27": {
+          "text": "Sample",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B28": {
+          "text": "Sample",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Liberation Sans",
+          "bold": false
+        },
+        "B29": {
+          "text": "Sample",
+          "fill": "FFFFFF",
+          "font": "FF0000",
+          "fontName": "Carlito",
+          "bold": true
+        },
+        "B31": {
+          "text": "Sample",
+          "fill": "375623",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B32": {
+          "text": "Sample",
+          "fill": "A9D08E",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B33": {
+          "text": "Sample",
+          "fill": "E2EFDA",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B34": {
+          "text": "Sample",
+          "fill": "8AA7DB",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B30": {
+          "text": "Sample",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false,
+          "bottom": {
+            "color": "000000",
+            "style": "thin"
+          }
+        }
+      }
+    },
+    "dates-1904": {
+      "workbook": "d9608ac1d316fde6db89618278bae73c7224697da95cde0b9faa53226838a63c",
+      "cells": {
+        "B1": {
+          "text": "01/01/1904",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B2": {
+          "text": "02/01/1904",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B3": {
+          "text": "1904-01-02",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B4": {
+          "text": "2027-03-16",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B5": {
+          "text": "1904-01-02 12:00",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B6": {
+          "text": "2024-03-01",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        }
+      }
+    },
+    "number-formats": {
+      "workbook": "7196e8c37fb5489a20c5d6f6eb6a755e931a14ae0ab67b52a00c8d552123dd18",
+      "cells": {
+        "B1": {
+          "text": "0",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B2": {
+          "text": "1234,5",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B3": {
+          "text": "-3,5",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B4": {
+          "text": "0,1",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B5": {
+          "text": "1234567,891",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B6": {
+          "text": "1,23457E+11",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B7": {
+          "text": "1,23457E+13",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B8": {
+          "text": "0,000012345",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B9": {
+          "text": "0,333333333",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B10": {
+          "text": "0,666666667",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B11": {
+          "text": "-0,000001",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B12": {
+          "text": "3",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B13": {
+          "text": "-3",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B14": {
+          "text": "3,14",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B15": {
+          "text": "1 234 567",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B16": {
+          "text": "1 234,50",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B17": {
+          "text": "-1 234,50",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B18": {
+          "text": "26%",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B19": {
+          "text": "25,68%",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B20": {
+          "text": "1,23E+04",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B21": {
+          "text": "1 3/4",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B22": {
+          "text": "  1/3 ",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B23": {
+          "text": "01/03/2024",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B24": {
+          "text": "01-Mar-24",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B25": {
+          "text": "01-Mar",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B26": {
+          "text": "Mar-24",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B27": {
+          "text": "6:00 PM",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B28": {
+          "text": "6:00:00 PM",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B29": {
+          "text": "18:00",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B30": {
+          "text": "12:00:35",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B31": {
+          "text": "01/03/2024 18:00",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B32": {
+          "text": "-1 234",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B33": {
+          "text": "-1 234",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B34": {
+          "text": "-1 234,50",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B35": {
+          "text": "-1 234,50",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B36": {
+          "text": "17:43",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B37": {
+          "text": "36:00:00",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B38": {
+          "text": "17:42,7",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B39": {
+          "text": "12,3E+3",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B40": {
+          "text": "42",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B41": {
+          "text": "3,142",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B42": {
+          "text": "2,3",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B43": {
+          "text": "1,5",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B44": {
+          "text": "2,",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B45": {
+          "text": "",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E1": {
+          "text": "00042",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E2": {
+          "text": "1,5 ",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E3": {
+          "text": "1 235",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E4": {
+          "text": "1,2M",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E5": {
+          "text": "$1 235",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E6": {
+          "text": "$5",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E7": {
+          "text": "26%",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E8": {
+          "text": "1,23E+04",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E9": {
+          "text": "12,3E+3",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E10": {
+          "text": "1 3/4",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E11": {
+          "text": "-2  2/5 ",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E12": {
+          "text": "-1 234,50",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E13": {
+          "text": "zero",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E14": {
+          "text": "-5",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E15": {
+          "text": "text:abc",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E16": {
+          "text": "150",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E17": {
+          "text": "-2,0",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E18": {
+          "text": "5,00",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E19": {
+          "text": "7",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E20": {
+          "text": "42",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E21": {
+          "text": "                                                                   - ",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E22": {
+          "text": "2024-03-01",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E23": {
+          "text": "Friday, March 1, 2024",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E24": {
+          "text": "Mar-24",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E25": {
+          "text": "March",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E26": {
+          "text": "6:00 PM",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E27": {
+          "text": "36:00:00",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E28": {
+          "text": "01:46,3",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E29": {
+          "text": "0:00:00",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E30": {
+          "text": "1900-02-28 00:00",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E31": {
+          "text": "1900-02-29 00:00",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E32": {
+          "text": "1900-03-01 00:00",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "E33": {
+          "text": "2024-03-01",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        }
+      }
+    },
+    "number-formats-more": {
+      "workbook": "fa6296bf30d193fe7e9f3bcfea273ec162c9f9afea89c1c7d99aafcf30f0a39d",
+      "cells": {
+        "B1": {
+          "text": "07:12",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B2": {
+          "text": "07:12:00",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B3": {
+          "text": "01/03/2024 07:12",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B4": {
+          "text": "1 234",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B5": {
+          "text": "1 234",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B6": {
+          "text": "1 234,50",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B7": {
+          "text": "1 234,50",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B8": {
+          "text": "###########################",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B9": {
+          "text": "###########################",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B10": {
+          "text": "###########################",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        },
+        "B11": {
+          "text": "8",
+          "fill": "FFFFFF",
+          "font": "000000",
+          "fontName": "Carlito",
+          "bold": false
+        }
+      }
+    }
+  }
+}

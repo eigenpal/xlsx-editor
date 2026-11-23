@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "records": {
+    "drawings.pictures": {
+      "sha256": "ff2b46820edb117cfcac48b044c5ba7651ddbe69300ceaa41d1854bc1b4def80",
+      "result": "verified"
+    },
+    "drawings.shapes": {
+      "sha256": "ff2b46820edb117cfcac48b044c5ba7651ddbe69300ceaa41d1854bc1b4def80",
+      "result": "verified"
+    },
+    "editing.alignment": {
+      "sha256": "b44ead8b1a1b7a14fa19a5066257ee081cd647aca81e3be05f3323f3e1a53ce2",
+      "result": "verified"
+    },
+    "editing.borders": {
+      "sha256": "40d764ac9ddeac4bdb7cb42f0ea44903683ef921ffed79b2aefbffc24004b778",
+      "result": "verified"
+    },
+    "editing.cell-editor": {
+      "sha256": "09cc8f9d10cbe18973bafd9223156a1e201e2eb69eb0b0c9e4706241b0be0cf5",
+      "result": "verified"
+    },
+    "editing.cell-values": {
+      "sha256": "0284422bdb188c1f7be68e4794a3ef6209d4c8411e8e2371f0a21e5ed6505e70",
+      "result": "verified"
+    },
+    "editing.clear": {
+      "sha256": "54e028664c5112f48dee0582154c154c7b676824477286c272eb7e2f0c051f6b",
+      "result": "verified"
+    },
+    "editing.clipboard": {
+      "sha256": "5a01c928805025bc40c7a28534411a1a4343a87bbb4af260a4f56f2692895fb7",
+      "result": "verified"
+    },
+    "editing.columns": {
+      "sha256": "cbc69dbdd7e7dc2ef129f8a5a145f2d3801b3a0f4f7bedf3f04d96ff9bd569e4",
+      "result": "verified"
+    },
+    "editing.custom-number-format": {
+      "sha256": "7d3d997b6532e1492bc22e8dc12f2b624936717832ba7643fde79e2f80f86322",
+      "result": "verified"
+    },
+    "editing.decimal-places": {
+      "sha256": "b7fb82564ec128b04641acecd138f12773186b8516cb98cfb1e3625d77f52407",
+      "result": "verified"
+    },
+    "editing.fill": {
+      "sha256": "7e2ad5666ef59197ab5bc3474044bad76764949982fd4cdd3a212d627619314c",
+      "result": "verified"
+    },
+    "editing.font-color": {
+      "sha256": "4057bb5b65d18c9e10dd23f9ab204f865131c716dff2226469f6546303d8ebf5",
+      "result": "verified"
+    },
+    "editing.font-name-size": {
+      "sha256": "5c6c7bf4362b379de976fa50c3c03d6e2732b16db92449bdf46b25cdfcc5eb4b",
+      "result": "verified"
+    },
+    "editing.font-style": {
+      "sha256": "6ec12942fc905af315aa1fee8e2daa7f89177894ae1ee335f588880c204e1e2f",
+      "result": "verified"
+    },
+    "editing.formula-bar": {
+      "sha256": "e5a04ffd56933438c50bbf9bf9ab3e24a6a70183e2a470f74062b221e4e7d523",
+      "result": "verified"
+    },
+    "editing.formulas": {
+      "sha256": "60d4017624a1fb638889c19a5a54493b4db08f15a37a22176fb63b82adda5692",
+      "result": "verified"
+    },
+    "editing.merge-cells": {
+      "sha256": "8c3ab3f70b1638671a8ae595ab60e3b3098e4dafbfaae7778317c7b7dbc4eae9",
+      "result": "verified"
+    },
+    "editing.number-format": {
+      "sha256": "a16b67f883b733b5f55fc557c5f8480f58800ca7d0444620191ade919384990e",
+      "result": "verified"
+    },
+    "editing.number-format-list": {
+      "sha256": "a83833dba928e10b21410966808dbbd0a0a8c36ef7d34df1163b1c15a66c7d0a",
+      "result": "verified"
+    },
+    "editing.resize": {
+      "sha256": "ba876480adb3d5610c18c54cc106fc5f1c2f8e6469ba995def9652d9fe52900d",
+      "result": "verified"
+    },
+    "editing.rows": {
+      "sha256": "34297399340fc46a5261bdcbe1a98e73f89c2a776856d9ce5dd108a912aa1d9a",
+      "result": "verified"
+    },
+    "editing.sheets": {
+      "sha256": "b085152c75227c7d53b260f6e3697d192c34de505292243d6b6db03c9095cb8f",
+      "result": "verified"
+    },
+    "editing.undo-redo": {
+      "sha256": "f72f976cc63ea296ae638248c24b9d97eb7285b53040a173d1aab3ec85bbb25d",
+      "result": "verified"
+    },
+    "save.calc-chain": {
+      "sha256": "9c07cbd6262632e4f0a25fd540045cd0748668a261bca2b397362918824dd4eb",
+      "result": "verified"
+    },
+    "save.full-calc-on-load": {
+      "sha256": "f34ca4d16059f3c79aeab24b854ff254a05c580b3f5221764017fb20c47433aa",
+      "result": "verified"
+    },
+    "save.hyperlinks": {
+      "sha256": "5e31b416cfd0e6980e0d65edb3f0d14d9e398b14cd0c49e9c1af0844f64356ac",
+      "result": "verified"
+    },
+    "save.preserved-content": {
+      "sha256": "f5f3a065ab7a207719be483b85ea41d30c82ad9c547c160f1ec26c7b98244cd1",
+      "result": "verified"
+    }
+  }
+}

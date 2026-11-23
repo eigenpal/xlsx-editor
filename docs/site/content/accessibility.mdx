@@ -1,0 +1,76 @@
+---
+title: 'Accessibility'
+description: 'What the host page provides, how the keyboard moves through the editor, what a screen reader hears, and the known limits.'
+category: 'Getting started'
+---
+
+The editor gives names, roles, and keyboard support to its parts. The page around the editor is yours. This page tells you what to add to your page, how the keyboard moves through the editor, and what a screen reader hears. For setup, see [Installation](/docs/installation).
+
+## Prepare the host page
+
+The editor renders inside your page. It adds one landmark, the region "Workbook editor" around the editor, and no other page structure. Give your page these items:
+
+- A `lang` attribute on `<html>`.
+- A `<title>` that names the page.
+- One `<main>` landmark that contains the editor.
+- A page heading (`<h1>`). The heading can be visually hidden.
+- A label for each control of your own, such as the file input that opens a workbook.
+
+For a component with these items, see [Quickstart](/docs/quickstart).
+
+If your own landmarks, such as a `<header>` or a `<main>`, are inside the viewport, set `label={false}` on `XlsxEditor.Viewport` (`:label="false"` on `XlsxEditorViewport` in Vue). The viewport then adds no region, and your landmarks stay at the top level. To give the region another name, pass a string as `label`. The demos in `examples/vite` and `examples/vue` follow these rules.
+
+If you build controls of your own, set `aria-disabled` in place of `disabled`, so a disabled control keeps the focus. Show the reason that `disabledReason` gives as its tooltip. For a sample, see [Controls of your own](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md#controls-of-your-own).
+
+## Use the keyboard
+
+You can use the editor with the keyboard alone:
+
+- The grid is one Tab stop. The arrow keys move the active cell, and a character key starts an edit.
+- In the toolbar, Tab moves to the next control, and the arrow keys move between the controls. A disabled control is a stop too.
+- The sheet tabs are one Tab stop. The arrow keys, Home, and End show another sheet and move the focus to its tab.
+- F6 and Shift+F6 move the keyboard between the regions: the toolbar, the formula bar, the grid, and the footer with the sheet tabs.
+- To leave the grid from any cell, press Escape and then Tab or Shift+Tab, or press F6.
+
+For each key, see [Keyboard](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md#keyboard) and [Toolbar keyboard](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md#toolbar-keyboard).
+
+## Hear the editor with a screen reader
+
+The editor takes its accessible names from the locale catalog, so they change with the language of the interface. With the English catalog, a screen reader hears these items:
+
+| Part | What a screen reader hears |
+| --- | --- |
+| Editor | A region "Workbook editor" that holds the chrome and the grid. |
+| Toolbar | A toolbar "Formatting controls". A disabled control has its reason as its description. |
+| Formula bar | The text box "Cell reference" for the name box, and the text box "Cell content" for the text of the active cell. |
+| Grid | A grid "Worksheet Sales", with the row and column count of a full worksheet. Its description tells how to leave the grid. Each cell in view that shows text is a grid cell with that text. |
+| Active cell | A polite announcement of the reference and the shown text, for example "B3, 1234.5678", or "B4, empty". For a formula, the formula follows the text. A result that can be out of date ends with "not recalculated". |
+| Selection | A polite announcement of the range, for example "A1:B4 selected". When Enter or Tab moves the active cell inside the range, the active cell follows: "A1:B4 selected. A2, North". |
+| Cell editor | The text box "Cell editor". |
+| Sheet tabs | A tab list "Sheets", with one tab for each sheet. The sheet actions are a menu "Sheet actions". |
+| Zoom | A group "Zoom level" with the buttons "Zoom out" and "Zoom in". Its reset button also says the zoom level: "Reset the zoom to 100%. The zoom is 150%." |
+| Status message | A status message for each notice, such as "Formula results can be out of date". A workbook that does not open is an alert. The grid announces the reason of a refused edit. |
+
+For the rules of each announcement, see [Screen readers](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/editing-cells.md#screen-readers).
+
+## Color modes and motion
+
+Set `colorMode` to `light`, `dark`, or `system`. `system` follows the operating system setting as it changes. Only the chrome changes. The grid always shows the colors of the workbook. See [Color mode](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#color-mode).
+
+The chrome and the grid show a focus ring while they have the keyboard. When the operating system asks for reduced motion, the cue that tells how to leave the grid shows with no fade.
+
+In a forced colors theme, such as a high contrast theme of the operating system, the browser replaces the chrome colors with system colors. The stylesheet keeps each state visible with system colors. These states are pressed toggles, the selected sheet tab, the selected list option, and focus rings. They also include the selection, the active cell, and disabled controls. The grid keeps the colors of the workbook. For each state, see [High contrast themes](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#high-contrast-themes). The tests check the forced colors rules of the stylesheet, but no test reads the computed colors in a browser.
+
+## Known limits
+
+These limits apply:
+
+- **Cells out of view.** The grid gives a screen reader only the cells in view, so the cost does not grow with the sheet size. To read other cells, move the active cell with the keyboard.
+- **Pictures.** A picture over the grid has no text alternative. A screen reader does not learn that the sheet holds a picture.
+- **Column and row sizes.** A drag on the edge of a heading changes a column width or a row height. A double-click on the edge fits it to its content. No key does these actions. Code can call `setColumnWidth` and `setRowHeight`, as [Sheets, clipboard, and sizes](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/sheets-clipboard-and-sizes.md#commands-on-the-editor-instance) describes.
+
+## Next steps
+
+- [Toolbar and keyboard](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md): the controls, the dialogs, and each key.
+- [Edit cells](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/editing-cells.md): typed values, the formula bar, the name box, and refusals.
+- [Layout and props](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md): the viewport props, such as `label`, and the color mode.

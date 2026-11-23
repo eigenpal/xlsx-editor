@@ -1,0 +1,234 @@
+{
+  "version": 1,
+  "comment": "Which React adapter members the Vue adapter pairs, under which name, and which it defers. After PPTX Editor's scripts/parity/parity.contract.json at d4502552, which follows DOCX Editor's at adf0e178. bun run check:parity enforces it against docs/api/{react,vue}/index.api.md.",
+  "components": {
+    "comment": "Each paired component: the React props type (read from docs/api/react/index.api.md, with its extends clause and Omit<> bases folded in) against the Vue component's runtime props and emits, with mount probes for class, className, and every mapped slot (packages/vue/test/parity-shape.ts). The React component is the reactNamesAsVueNames twin of the key, or the key itself. classUnprobed and hostClassGap acknowledge a class the probe cannot see, with the reason; topLevel marks the XlsxEditor sugar, whose callbacks must be emits and whose className and style must fall through as the class and style attributes.",
+    "XlsxEditor": {
+      "reactProps": "XlsxEditorProps",
+      "topLevel": true,
+      "paired": ["colorMode", "document", "fonts", "locale", "mode", "numberLocale", "opening"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {
+        "onChange": "change",
+        "onReady": "ready",
+        "onFontError": "fontError",
+        "onSave": "save",
+        "onSaveStart": "saveStart"
+      },
+      "reactRenderPropsAsVueSlots": {},
+      "reactClassNameAsVueClass": {
+        "className": "class",
+        "style": "style"
+      },
+      "vueExclusive": {}
+    },
+    "XlsxEditorRoot": {
+      "reactProps": "XlsxEditorRootProps",
+      "paired": ["colorMode", "document", "fonts", "locale", "mode", "numberLocale"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {
+        "onChange": "change",
+        "onReady": "ready",
+        "onFontError": "fontError"
+      },
+      "reactRenderPropsAsVueSlots": {
+        "children": "default"
+      },
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
+    },
+    "XlsxEditorViewport": {
+      "reactProps": "XlsxEditorViewportProps",
+      "paired": ["className", "label", "style"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {},
+      "reactRenderPropsAsVueSlots": {
+        "children": "default"
+      },
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
+    },
+    "XlsxEditorContent": {
+      "reactProps": "XlsxEditorContentProps",
+      "paired": ["className"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {},
+      "reactRenderPropsAsVueSlots": {},
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
+    },
+    "XlsxEditorToolbar": {
+      "reactProps": "XlsxEditorToolbarProps",
+      "paired": ["className", "hidden", "onSave", "onSaveStart", "opening", "overflow", "preset"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {},
+      "reactRenderPropsAsVueSlots": {
+        "children": "default"
+      },
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
+    },
+    "XlsxEditorToolbarSlot": {
+      "reactProps": "XlsxEditorToolbarSlotProps",
+      "paired": ["hidden", "slotId"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {},
+      "reactRenderPropsAsVueSlots": {
+        "children": "default"
+      },
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
+    },
+    "XlsxEditorToolbarGroup": {
+      "reactProps": "XlsxEditorToolbarGroupProps",
+      "paired": ["after", "className", "hidden", "id", "label", "labelKey"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {},
+      "reactRenderPropsAsVueSlots": {
+        "children": "default"
+      },
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
+    }
+  },
+  "propsUnchecked": {
+    "comment": "React component exports with a props type and no components entry, each with the reason. None today: every such component is checked."
+  },
+  "ref": {
+    "comment": "The members of each adapter's own XlsxEditorRef interface (React forwardRef on XlsxEditor and XlsxEditor.Root, Vue expose on XlsxEditor and XlsxEditorRoot). A paired member has the same name and type in both snapshots.",
+    "paired": ["focus", "getEditor", "load", "save", "saveInTasks", "snapshot"],
+    "deferredInVue": {},
+    "vueExclusive": {}
+  },
+  "exports": {
+    "comment": "Top-level exports of @xlsx-editor.dev/react and @xlsx-editor.dev/vue.",
+    "paired": [
+      "ActiveCellFormat",
+      "CellEditMode",
+      "ChromeDisabledReason",
+      "ChromeGroup",
+      "ChromeGroupId",
+      "ChromeHint",
+      "ChromeSlotId",
+      "CLIPBOARD_TYPE",
+      "ClipboardContent",
+      "ColorMode",
+      "composesKey",
+      "contentFieldText",
+      "CopyResult",
+      "CUSTOM_NUMBER_FORMAT_PREFIX",
+      "DecimalSteps",
+      "EditMove",
+      "editMoveOf",
+      "EditorFailure",
+      "EditorMode",
+      "EditorSheet",
+      "EditorSnapshot",
+      "EditRefusal",
+      "EditRefusalCode",
+      "EditResult",
+      "EditTextOptions",
+      "fieldHistoryKey",
+      "FieldKeys",
+      "FontSource",
+      "FormulaBar",
+      "GridPoint",
+      "GridRange",
+      "GridSelection",
+      "MAX_COLUMN_WIDTH",
+      "MAX_CONTENT_FIELD_CHARS",
+      "MAX_GO_TO_LENGTH",
+      "MAX_LISTED_NUMBER_FORMATS",
+      "MAX_RESIZE_NEW_ROWS",
+      "MAX_ROW_HEIGHT",
+      "MergeCommand",
+      "MergeCommandState",
+      "mergeCommandState",
+      "MergeOptions",
+      "NUMBER_FORMAT_CODE_PROBLEM_KEYS",
+      "NUMBER_FORMAT_SAMPLE",
+      "NumberFormatChoice",
+      "numberFormatChoiceCode",
+      "numberFormatChoices",
+      "NumberFormatChoiceValue",
+      "NumberFormatCodeProblem",
+      "numberFormatCodeProblem",
+      "NumberFormatDialogApplyStep",
+      "numberFormatDialogApplyStep",
+      "numberFormatDialogCurrent",
+      "NumberFormatDialogStart",
+      "numberFormatDialogStart",
+      "NumberFormatListEntry",
+      "NumberFormatListView",
+      "numberFormatListView",
+      "NumberFormatPreview",
+      "numberFormatValue",
+      "NumberLocale",
+      "PartPastLimit",
+      "PasteData",
+      "previewNumberFormat",
+      "refusalText",
+      "refusesEditText",
+      "refusesReference",
+      "ResolvedColorMode",
+      "SavedWorkbook",
+      "SheetCommand",
+      "SheetCommandInput",
+      "SheetCommandState",
+      "sheetCommandState",
+      "SheetProtection",
+      "SheetTabs",
+      "StatusMessage",
+      "ToolbarCommandState",
+      "ToolbarHintKey",
+      "Translations",
+      "translatorFor",
+      "trapTabWithin",
+      "useEditorColorMode",
+      "UseEditorColorModeReturn",
+      "useEditorCommand",
+      "useEditorSnapshot",
+      "useEditorState",
+      "useTranslation",
+      "useViewModeWaits",
+      "useXlsxEditor",
+      "WorkbookKind",
+      "workbookNumberFormatCodes",
+      "WorkbookProtection",
+      "XlsxEditor",
+      "XlsxEditorContent",
+      "XlsxEditorContentProps",
+      "XlsxEditorFonts",
+      "XlsxEditorInstance",
+      "XlsxEditorNamespace",
+      "XlsxEditorProps",
+      "XlsxEditorRef",
+      "XlsxEditorRoot",
+      "XlsxEditorRootProps",
+      "XlsxEditorToolbar",
+      "XlsxEditorToolbarGroup",
+      "XlsxEditorToolbarGroupProps",
+      "XlsxEditorToolbarNamespace",
+      "XlsxEditorToolbarProps",
+      "XlsxEditorToolbarSlot",
+      "XlsxEditorToolbarSlotProps",
+      "XlsxEditorViewport",
+      "XlsxEditorViewportProps",
+      "ZoomControl"
+    ],
+    "reactNamesAsVueNames": {
+      "XlsxEditorContext": "xlsxEditorKey",
+      "TranslationContext": "xlsxTranslationKey",
+      "EditorCommandState": "UseEditorCommandReturn"
+    },
+    "deferredInVue": {},
+    "reactExclusive": {},
+    "vueExclusive": {
+      "UseEditorSnapshotReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
+      "UseEditorStateReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
+      "UseTranslationReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
+      "UseViewModeWaitsReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
+      "UseXlsxEditorReturn": "Vue composables declare named return types (AGENTS.md, Public API)."
+    }
+  }
+}

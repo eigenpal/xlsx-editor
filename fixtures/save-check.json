@@ -1,0 +1,205 @@
+{
+  "version": 2,
+  "records": {
+    "basic-values": {
+      "saved": {
+        "sha256": "2a2a8fb421505c289caa8a3fbb189db4878e92b6fbfcb1f62cd7cead5ecf4af5",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "54755f7e6d27dfd148993afffa3f909750014945a704d20f681cd0b45a4abea1",
+        "result": "verified"
+      }
+    },
+    "cell-styles": {
+      "saved": {
+        "sha256": "b9c74061d79982b114f1159311e79e634615758dba2cd9489f779cab5e3d9126",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "882820fc231a7ecc904fff083774f6b9e85c227074b9b3d57c9ffd5a065b3d87",
+        "result": "verified"
+      }
+    },
+    "clipboard-edit": {
+      "saved": {
+        "sha256": "383ff54a5efcf375e638d68ded0a5cee57fdbc4a3eac211473afe139427989db",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "926e9a98c01294924a9fc3a1ac54750bbc43a0635332fb4f1bd01eaf529765bb",
+        "result": "verified"
+      }
+    },
+    "colors-fonts": {
+      "saved": {
+        "sha256": "10dbdb507b15dcf1274621693d785792e86970363b443f1d004f0fb4afa7fc55",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "a66955e99b5e049a0db39a1120a86c949f8ec22f9c075174bf748cfcee08e602",
+        "result": "verified"
+      }
+    },
+    "conditional-rules": {
+      "saved": {
+        "sha256": "0402e09b5f3976202dd7404246cde34f449abf3132ab65ff87de59d3ec0c360b",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "3bd7f33e302dc5f0c7ff7f284a60d316879bd29dd28e901f7fc94c03229072b8",
+        "result": "verified"
+      }
+    },
+    "dates-1904": {
+      "saved": {
+        "sha256": "e7adf68baae9b6eb3f2c306f6cb7523c0301578c2b5742b04e39fc29bb27d08b",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "56a95fca556b5797a5093f403c5faf32b578772d8b17869972ff55353c8911e5",
+        "result": "verified"
+      }
+    },
+    "fills-patterns": {
+      "saved": {
+        "sha256": "fc155a778ed62976ddb2eafae19b6c99b4025ada7ba071f13744db9861f5e8b3",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "cee707cba546cb353b517b103d0818355a8fe43b22c525515f2370282a2952fc",
+        "result": "verified"
+      }
+    },
+    "formula-overflow": {
+      "saved": {
+        "sha256": "a7bc381c1512077e67283f9518fd94ce445e6e88ece53a4f7d2a7fbb330af3aa",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "6fb0a6fe06e9682a258e60a71439b122c9b0ab76840333c672eb4db7814bd829",
+        "result": "verified"
+      }
+    },
+    "formulas": {
+      "saved": {
+        "sha256": "0ea465e03ca7bd6995df26b03d54dbcfd11edf2881028d2fbc8159374c73b69c",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "0096f7dd64a246a01e68bf1b9e60e10f34a181bf1a450f5bc2870d37ddd7f377",
+        "result": "verified"
+      }
+    },
+    "grid-structure": {
+      "saved": {
+        "sha256": "51efc8595441c3abe08262a22b3b9aceff4139d62cd162a944b5a5092a0354b2",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "4f0c6841da54c565968ea9a7af1625e37bdab4052ce52cebcd4ece50e835e62f",
+        "result": "verified"
+      }
+    },
+    "number-formats": {
+      "saved": {
+        "sha256": "f2b2640a6910198a7b79bd0ca86ba4bafb2317695aab29f4e5b6702be4f90263",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "a14ce784810df55ba6b09f17edd714bf58422077a61dbebf166814e56665e522",
+        "result": "verified"
+      }
+    },
+    "number-formats-more": {
+      "saved": {
+        "sha256": "7a22325b018c20f614722a2e0b7e8db7e3454ac3b3867cd4b64de0e93cae4f6d",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "561d7613f31a2a595197e1b893b29b9a25d86777ca2bd69712fc3458de588299",
+        "result": "verified"
+      }
+    },
+    "preserved-parts": {
+      "saved": {
+        "sha256": "3e82edc5f949a9a0c077a737478d9c6daf6369adbe18dbed41429f386974be58",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "3c9ee0fedf8681508a718c3418c6b8450ba1f4e975ab9841fec9c7897555bdf0",
+        "result": "verified"
+      }
+    },
+    "resize-edit": {
+      "saved": {
+        "sha256": "1f18de37337bcb64be26c2d8030cb6778a8c2911c8df226138514291fce84169",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "2f25718e6926bffa1e44397fb22336550ecf9102f6d2f684865e7f7c7bcc2cf7",
+        "result": "verified"
+      }
+    },
+    "sheet-add": {
+      "saved": {
+        "sha256": "99123878b18d0795146ce916d0b5736c5c9dd451e773c55721677c6bb0eea5c1",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "6e6ef1ab185f007c3575c506c88a017d321ce2a9f025d747a450e77874c4d11b",
+        "result": "verified"
+      }
+    },
+    "sheet-ops": {
+      "saved": {
+        "sha256": "5566b74c9dc73ed9facfb614f75d7fd33ba746fb731adaf34e19dba7e27f4835",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "660e39380ca8e627c05973c4d39931d6e60c683ce29e0875a031716aa91fd8ae",
+        "result": "verified"
+      }
+    },
+    "structure": {
+      "saved": {
+        "sha256": "67e9cb3576ab61a9725097405b5b368d9d2dbe59d0f135ae309d54aa2b1dfbe6",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "01814057bb067f3b18cc0f0fa67dfb63e5f3ae205774d6d177056f1673cd30f2",
+        "result": "verified"
+      }
+    },
+    "text-layout": {
+      "saved": {
+        "sha256": "d717ab019421522579b3758a5e3e82a68130e5ab88fa36a7e66e4e0bd730ebf6",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "97cc04c13879c6ae4829c2f5855d9a2ec66af4a850db4b256d7e0a1029e526f3",
+        "result": "verified"
+      }
+    },
+    "wrapped-formula": {
+      "saved": {
+        "sha256": "1a1f2aa4c32917396f056c7b627e9cbd660f98035379f4df37043da0ba8e6d6a",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "9bd8910055fa1526d50b11820b63d59b0f0957a3520520fa3680f22e2edf9a69",
+        "result": "verified"
+      }
+    },
+    "wrapped-only-formula": {
+      "saved": {
+        "sha256": "241d69d30157f4b1b42276b3f7ca84c3dad26e250b0a889d6dded446044d8f42",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "90273fd51134663994b9216e8b9ea5c1bd5c8eb5e58b2f9224c4eb4c86cdb3fd",
+        "result": "verified"
+      }
+    }
+  }
+}

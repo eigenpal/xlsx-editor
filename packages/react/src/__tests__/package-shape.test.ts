@@ -22,7 +22,9 @@ test('the core peer range accepts only the minor of core that the adapter releas
   };
   const [major, minor] = core.version.split('.');
   const range = manifest.peerDependencies?.['@xlsx-editor.dev/core'] ?? '';
-  expect(range).toMatch(new RegExp(`^~${major}\\.${minor}\\.\\d+$`));
+  // A prerelease of that minor (`~0.1.0-beta.0`) is the same minor: Changesets pre mode writes
+  // the prerelease version of core into the range.
+  expect(range).toMatch(new RegExp(`^~${major}\\.${minor}\\.\\d+(-[0-9A-Za-z.]+)?$`));
 });
 
 test('the adapter stylesheet holds no rules of its own', () => {

@@ -308,7 +308,7 @@ The following sample replaces the save control, removes the underline control, a
 ```tsx
 <XlsxEditor.Toolbar>
   <XlsxEditor.Toolbar.Slot slotId="file.save">
-    <SaveToDriveButton />
+    <SaveToCloudButton />
   </XlsxEditor.Toolbar.Slot>
   <XlsxEditor.Toolbar.Slot slotId="font.underline" hidden />
   <XlsxEditor.Toolbar.Group id="share" label="Share" after="history">

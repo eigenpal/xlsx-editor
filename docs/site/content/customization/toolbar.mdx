@@ -45,7 +45,7 @@ const boldIcon = h(BoldIcon);
 
 `hidden` on a named part equals `<Toolbar.Slot slotId="font.italic" hidden />`. The children of a button part are its icon. They do not replace the control.
 
-With `asChild`, your single child element renders the control. It receives the class, the accessible name, the state attributes, and the press of the control. The classes and styles join, and the handlers of the child run first. For every other prop, the child's own value wins, as in DOCX Editor. So a `title` or an `aria-describedby` on the child hides the disabled reason of the control: leave them off. An element that is not a `<button>` also gets the button role, a Tab stop, and Enter and Space as a press. A press on a disabled control or action stops the default action of the element, so a link does not navigate.
+With `asChild`, your single child element renders the control. It receives the class, the accessible name, the state attributes, and the press of the control. The classes and styles join, and the handlers of the child run first. For every other prop, the child's own value wins, as in DOCX Editor. So a `title` or an `aria-describedby` on the child hides the disabled reason of the control: leave them off. An element that is not a `<button>` or a link also gets the button role, a Tab stop, and Enter and Space as a press. A link (`<a href>`) keeps its link role. A press on a disabled control or action stops the default action of the element, so a link does not navigate.
 
 <FrameworkTabs>
 <Framework value="react">
@@ -98,7 +98,7 @@ Replace one built-in control with `Toolbar.Slot`. Your content keeps the control
 ```tsx
 <XlsxEditor.Toolbar>
   <XlsxEditor.Toolbar.Slot slotId="file.save">
-    <SaveToDriveButton />
+    <SaveToCloudButton />
   </XlsxEditor.Toolbar.Slot>
 </XlsxEditor.Toolbar>
 ```
@@ -109,7 +109,7 @@ Replace one built-in control with `Toolbar.Slot`. Your content keeps the control
 ```vue
 <XlsxEditorToolbar>
   <XlsxEditorToolbar.Slot slot-id="file.save">
-    <SaveToDriveButton />
+    <SaveToCloudButton />
   </XlsxEditorToolbar.Slot>
 </XlsxEditorToolbar>
 ```
@@ -193,18 +193,35 @@ Put a `Toolbar.Action` inside your own `Toolbar.Group`. The action keeps the cel
 <Framework value="vue">
 
 ```vue
-<XlsxEditorToolbar>
-  <XlsxEditorToolbar.Group id="ledger" label="Ledger" :priority="85">
-    <XlsxEditorToolbar.Action label="Post entries" :icon="postIcon" @select="post" />
-    <XlsxEditorToolbar.Separator />
-    <XlsxEditorToolbar.Action
-      label="Close period"
-      :disabled="!canClose"
-      disabled-reason="Post every entry first."
-      @select="closePeriod"
-    />
-  </XlsxEditorToolbar.Group>
-</XlsxEditorToolbar>
+<script setup lang="ts">
+import { h } from 'vue';
+import { XlsxEditorToolbar } from '@xlsx-editor.dev/vue';
+import PostIcon from './PostIcon.vue';
+
+defineProps<{ canClose: boolean }>();
+const postIcon = h(PostIcon);
+const post = () => {
+  /* Post the entries. */
+};
+const closePeriod = () => {
+  /* Close the period. */
+};
+</script>
+
+<template>
+  <XlsxEditorToolbar>
+    <XlsxEditorToolbar.Group id="ledger" label="Ledger" :priority="85">
+      <XlsxEditorToolbar.Action label="Post entries" :icon="postIcon" @select="post" />
+      <XlsxEditorToolbar.Separator />
+      <XlsxEditorToolbar.Action
+        label="Close period"
+        :disabled="!canClose"
+        disabled-reason="Post every entry first."
+        @select="closePeriod"
+      />
+    </XlsxEditorToolbar.Group>
+  </XlsxEditorToolbar>
+</template>
 ```
 
 </Framework>

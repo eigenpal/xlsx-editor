@@ -193,10 +193,13 @@ const BAR_ITEMS = 'button, input, select, textarea, a[href], [tabindex]';
 /**
  * The controls of the "More" panel that take the focus when it opens from the keyboard: the
  * controls of the bar (`BAR_ITEMS`), so a host element of `asChild` (a `<span role="button">`
- * with a Tab stop, a link) counts as a built-in button does. @internal
+ * with a Tab stop, a link) counts as a built-in button does. A control with `disabled` takes
+ * no focus, so it is left out; a built-in control that is off stays (`aria-disabled`). @internal
  */
 export const TOOLBAR_PANEL_ITEMS =
-  'button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"]), [role="button"]';
+  'button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
+  'textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"]):not([disabled]), ' +
+  '[role="button"]:not([disabled])';
 
 /**
  * The controls of the bar `bar` in order, at any depth: not those of a popup, a dialog, or a

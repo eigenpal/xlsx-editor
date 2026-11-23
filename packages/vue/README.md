@@ -119,14 +119,14 @@ Keep `StatusMessage` in your layout. It is the only part that shows the text of 
 <script setup lang="ts">
 import { XlsxEditorToolbar } from '@xlsx-editor.dev/vue';
 // Your own components.
-import SaveToDriveButton from './SaveToDriveButton.vue';
+import SaveToCloudButton from './SaveToCloudButton.vue';
 import ShareButton from './ShareButton.vue';
 </script>
 
 <template>
   <XlsxEditorToolbar>
     <XlsxEditorToolbar.Slot slot-id="file.save">
-      <SaveToDriveButton />
+      <SaveToCloudButton />
     </XlsxEditorToolbar.Slot>
     <XlsxEditorToolbar.Slot slot-id="font.underline" hidden />
     <XlsxEditorToolbar.Group id="share" label="Share" after="history">

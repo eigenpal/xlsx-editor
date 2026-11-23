@@ -1570,7 +1570,7 @@ export const TOOLBAR_NAMED_PARTS: {
 };
 
 // @internal
-export const TOOLBAR_PANEL_ITEMS = "button, input, select, textarea, a[href], [tabindex]:not([tabindex=\"-1\"]), [role=\"button\"]";
+export const TOOLBAR_PANEL_ITEMS: string;
 
 // @internal
 export const TOOLBAR_PINNED_GROUPS: ReadonlySet<string>;

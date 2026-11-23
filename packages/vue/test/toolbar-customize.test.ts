@@ -284,6 +284,49 @@ describe('XlsxEditorToolbar.Action', () => {
     expect(document.activeElement).toBe(send);
   });
 
+  test('a host @click, @mousedown, and @keydown run, and a disabled action runs no @click', async () => {
+    const off = ref(false);
+    const seen: string[] = [];
+    const { view } = await open(() =>
+      h(T, { preset: false }, () => [
+        h(T.Action, {
+          label: 'Send',
+          disabled: off.value,
+          onClick: () => seen.push('click'),
+          onMousedown: () => seen.push('mousedown'),
+          onKeydown: () => seen.push('keydown'),
+          onSelect: () => seen.push('select'),
+        }),
+      ])
+    );
+    const send = () => view.getByRole('button', { name: 'Send' });
+    // The guard still keeps the keyboard on the grid.
+    expect(fireEvent.mouseDown(send())).toBe(false);
+    fireEvent.keyDown(send(), { key: 'a' });
+    fireEvent.click(send());
+    expect(seen).toEqual(['mousedown', 'keydown', 'click', 'select']);
+    off.value = true;
+    await nextTick();
+    seen.length = 0;
+    fireEvent.click(send());
+    expect(seen).toEqual([]);
+  });
+
+  test('a host class as an array or an object joins the class of the button', async () => {
+    const { view } = await open(() =>
+      h(T, { preset: false }, () => [
+        h(T.Action, { label: 'One', class: ['host-a', { 'host-b': true, 'host-c': false }] }),
+        h(T.Action, { label: 'Two', class: { 'host-d': true }, className: 'own' }),
+      ])
+    );
+    expect(view.getByRole('button', { name: 'One' }).className).toBe(
+      'xlsx-toolbar-button host-a host-b'
+    );
+    expect(view.getByRole('button', { name: 'Two' }).className).toBe(
+      'xlsx-toolbar-button own host-d'
+    );
+  });
+
   test('a held Enter runs the action once', async () => {
     const { view } = await open(() =>
       h(T, { preset: false }, () => [h(T.Action, { label: 'Step' })])
@@ -302,8 +345,11 @@ describe('XlsxEditorToolbar.Action', () => {
         ]),
       ])
     );
-    const link = view.getByRole('button', { name: 'Open' });
+    // A link keeps its own role, Tab stop, and Enter.
+    const link = view.getByRole('link', { name: 'Open' });
     expect(link.tagName).toBe('A');
+    expect(link.hasAttribute('role')).toBe(false);
+    expect(link.hasAttribute('tabindex')).toBe(false);
     expect(link.className).toBe('xlsx-toolbar-button host-link');
     fireEvent.click(link);
     expect(pressed).toBe(1);
@@ -415,7 +461,7 @@ describe('asChild with a template child', () => {
         ]),
       ])
     );
-    expect(fireEvent.click(view.getByRole('button', { name: 'Open' }))).toBe(false);
+    expect(fireEvent.click(view.getByRole('link', { name: 'Open' }))).toBe(false);
   });
 
   test('the More panel opened from the keyboard focuses a host element of asChild', async () => {
@@ -424,6 +470,8 @@ describe('asChild with a template child', () => {
       const { bar, view } = await open(() =>
         h(T, null, () => [
           h(T.Group, { id: 'review', label: 'Review' }, () => [
+            // A host button with `disabled` takes no focus, so the panel skips it.
+            h('button', { type: 'button', disabled: true }, 'Off'),
             h(T.Action, { label: 'Go', asChild: true }, () => [h('span', null, 'Go')]),
           ]),
         ])

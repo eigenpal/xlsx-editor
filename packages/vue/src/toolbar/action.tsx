@@ -7,12 +7,27 @@
 //
 // Differences from React: the press is the `select` event (`@select`), as in DOCX Editor's Vue
 // adapter, in place of the `onSelect` prop; `icon` is a prop that takes a vnode or a string;
-// the content is the default slot; and a template `class` joins `className`.
+// the content is the default slot; a template `class` (a string, an array, or an object) joins
+// `className`; and a host `@click`, `@mousedown`, or `@keydown` runs before the action's own
+// handler (a disabled action runs no `@click`).
 
-import { defineComponent, inject, useId, type PropType, type VNodeChild } from 'vue';
+import {
+  defineComponent,
+  inject,
+  normalizeClass,
+  useId,
+  type PropType,
+  type VNodeChild,
+} from 'vue';
 import { guardToolbarMousedown, toolbarAsChildProblem } from '@xlsx-editor.dev/core/editor';
 import { asChildElement, renderAsChild } from './as-child.tsx';
 import { partLayoutKey, visibleNodes, warnToolbarProblems } from './host-parts.tsx';
+
+/** Call a host listener: a function, or the array that Vue keeps for several listeners. */
+function callHost(listener: unknown, event: Event): void {
+  for (const fn of Array.isArray(listener) ? listener : [listener])
+    if (typeof fn === 'function') (fn as (e: Event) => void)(event);
+}
 
 const toolbarActionProps = {
   /**
@@ -95,14 +110,22 @@ export const ToolbarAction = defineComponent({
       const reason = props.disabled && props.disabledReason ? props.disabledReason : null;
       const row = layout === 'row';
       // The host's other attributes land on the button, or on the element of `asChild`, also
-      // when a disabled reason renders beside it.
-      const { class: hostClass, ...hostAttrs } = attrs;
+      // when a disabled reason renders beside it. A host `class` can be a string, an array, or
+      // an object. A host listener runs before the action's own, as a child's handler runs
+      // first under `asChild`.
+      const {
+        class: hostClass,
+        onClick: hostClick,
+        onMousedown: hostMousedown,
+        onKeydown: hostKeydown,
+        ...hostAttrs
+      } = attrs;
       const shared = {
         ...hostAttrs,
         class: [
           row ? 'xlsx-toolbar-row' : 'xlsx-toolbar-button',
           props.className,
-          typeof hostClass === 'string' ? hostClass : undefined,
+          normalizeClass(hostClass),
         ]
           .filter(Boolean)
           .join(' '),
@@ -113,15 +136,23 @@ export const ToolbarAction = defineComponent({
         ...(props.active !== undefined ? { 'aria-pressed': props.active } : {}),
         ...(reason ? { 'aria-describedby': reasonId } : {}),
         title: reason ?? props.label,
-        onMousedown: guardToolbarMousedown,
+        onMousedown: (e: MouseEvent) => {
+          callHost(hostMousedown, e);
+          guardToolbarMousedown(e);
+        },
         onKeydown: (e: KeyboardEvent) => {
+          callHost(hostKeydown, e);
           if (e.key === 'Enter' && e.repeat) e.preventDefault();
         },
-        // A disabled action also stops the default of its element, so an `asChild` link does
-        // not navigate.
+        // A disabled action runs no listener and stops the default of its element, so an
+        // `asChild` link does not navigate.
         onClick: (e: MouseEvent) => {
-          if (props.disabled) e.preventDefault();
-          else emit('select');
+          if (props.disabled) {
+            e.preventDefault();
+            return;
+          }
+          callHost(hostClick, e);
+          emit('select');
         },
       };
       const note = reason ? (

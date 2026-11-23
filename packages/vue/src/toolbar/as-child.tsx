@@ -5,9 +5,9 @@
 // lists the rules. Differences from DOCX Editor: a function over the vnode in place of a
 // component, so the control's ref and the child's ref stay the child's own (no ref is
 // forwarded), with the same FULL_PROPS patch flag on the clone; `asChildElement` returns null for children that are not one element, so the
-// part can warn and fall back to its own button; and an element that is not a `<button>`
-// takes the role of a button, a place in the Tab order, and Enter and Space as a press, as in
-// React.
+// part can warn and fall back to its own button; and an element that is not a `<button>` or a
+// link takes the role of a button, a place in the Tab order, and Enter and Space as a press, as
+// in React.
 
 import { Comment, Fragment, Text, cloneVNode, isVNode, mergeProps, type VNode } from 'vue';
 
@@ -70,10 +70,12 @@ export function asChildElement(content: unknown): VNode | null {
 
 /**
  * The props that make an element that is not a button act as one: the button role, a place in
- * the Tab order, and Enter or Space as a click.
+ * the Tab order, and Enter or Space as a click. A link (`<a href>`) keeps its own role, Tab
+ * stop, and Enter.
  */
 function buttonRole(child: VNode): AnyProps {
   if (child.type === 'button') return { type: 'button' };
+  if (child.type === 'a' && child.props?.href != null) return {};
   return {
     role: 'button',
     tabindex: 0,

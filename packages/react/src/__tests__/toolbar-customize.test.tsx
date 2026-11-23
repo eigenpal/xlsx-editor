@@ -310,8 +310,11 @@ describe('XlsxEditor.Toolbar.Action', () => {
         </XlsxEditor.Toolbar.Action>
       </XlsxEditor.Toolbar>
     );
-    const link = view.getByRole('button', { name: 'Open' });
+    // A link keeps its own role, Tab stop, and Enter.
+    const link = view.getByRole('link', { name: 'Open' });
     expect(link.tagName).toBe('A');
+    expect(link.hasAttribute('role')).toBe(false);
+    expect(link.hasAttribute('tabindex')).toBe(false);
     expect(link.className).toBe('xlsx-toolbar-button host-link');
     fireEvent.click(link);
     expect(pressed).toBe(1);
@@ -356,7 +359,7 @@ describe('asChild and the More panel', () => {
         </XlsxEditor.Toolbar.Action>
       </XlsxEditor.Toolbar>
     );
-    expect(fireEvent.click(view.getByRole('button', { name: 'Open' }))).toBe(false);
+    expect(fireEvent.click(view.getByRole('link', { name: 'Open' }))).toBe(false);
   });
 
   test('a disabled control on a link stops the navigation', async () => {
@@ -367,7 +370,9 @@ describe('asChild and the More panel', () => {
         </XlsxEditor.Toolbar.Undo>
       </XlsxEditor.Toolbar>
     );
-    expect(fireEvent.click(slot(bar, 'history.undo')!)).toBe(false);
+    const undo = slot(bar, 'history.undo')!;
+    expect(undo.hasAttribute('role')).toBe(false);
+    expect(fireEvent.click(undo)).toBe(false);
   });
 
   test('the More panel opened from the keyboard focuses a host element of asChild', async () => {
@@ -376,6 +381,10 @@ describe('asChild and the More panel', () => {
       const { bar, view } = await open(
         <XlsxEditor.Toolbar>
           <XlsxEditor.Toolbar.Group id="review" label="Review">
+            {/* A host button with `disabled` takes no focus, so the panel skips it. */}
+            <button type="button" disabled>
+              Off
+            </button>
             <XlsxEditor.Toolbar.Action label="Go" asChild>
               <span>Go</span>
             </XlsxEditor.Toolbar.Action>

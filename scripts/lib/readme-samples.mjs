@@ -63,7 +63,7 @@ declare function upload(bytes: Uint8Array): void;
     prelude: `${editorElement}
 import type { ReactElement } from 'react';
 
-declare function SaveToDriveButton(): ReactElement;
+declare function SaveToCloudButton(): ReactElement;
 declare function ShareButton(): ReactElement;
 `,
   },

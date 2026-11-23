@@ -4,4 +4,4 @@
 '@xlsx-editor.dev/vue': minor
 ---
 
-Add the named toolbar parts (`Toolbar.Bold` and one for each slot), `icon`, `asChild`, `className`, and `overflowContent` on a slot, `Toolbar.Action`, `Toolbar.Separator`, and `priority`, `pinned`, and `overflowContent` on `Toolbar.Group`; behavior change: a host group with no `priority` now leaves the bar for the "More" panel before every built-in group, also when `after` places it at the start of the bar.
+Add a named toolbar part for each slot, such as `Toolbar.Bold`. A slot now takes `icon`, `asChild`, `className`, and `overflowContent`. Add `Toolbar.Action` and `Toolbar.Separator`. `Toolbar.Group` now takes `priority`, `pinned`, and `overflowContent`. Behavior change: a host group with no `priority` now leaves the bar before every built-in group.

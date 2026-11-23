@@ -6,9 +6,9 @@
 //   children, so the part can warn and fall back to its own button, as
 //   pptx-editor/packages/react/src/toolbar-action.tsx at 70052cf1 (EigenPal) does.
 // - The child's ref is read from its props in React 19 and from the element in React 18.
-// - An element that is not a `<button>` takes the role of a button, a place in the Tab order,
-//   and Enter and Space as a press (`buttonRole`), so the keyboard reaches a host `<span>` or
-//   `<div>` as it reaches the packaged buttons.
+// - An element that is not a `<button>` or a link (`<a href>`) takes the role of a button, a
+//   place in the Tab order, and Enter and Space as a press (`buttonRole`), so the keyboard
+//   reaches a host `<span>` or `<div>` as it reaches the packaged buttons. A link keeps its role.
 // The merge rules are DOCX Editor's: the class names join, the styles merge with the child's
 // value winning, the handlers run the child's first and skip the control's when the child
 // called `preventDefault()`, the refs fan out to both, and the child's value wins for each
@@ -57,10 +57,12 @@ export function asChildElement(children: ReactNode): ReactElement | null {
 
 /**
  * The props that make an element that is not a button act as one: the button role, a place in
- * the Tab order, and Enter or Space as a click.
+ * the Tab order, and Enter or Space as a click. A link (`<a href>`) keeps its own role, Tab
+ * stop, and Enter.
  */
 function buttonRole(child: ReactElement): AnyProps {
   if (child.type === 'button') return { type: 'button' };
+  if (child.type === 'a' && (child.props as { href?: unknown }).href != null) return {};
   return {
     role: 'button',
     tabIndex: 0,

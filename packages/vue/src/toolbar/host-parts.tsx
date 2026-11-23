@@ -187,8 +187,8 @@ const xlsxEditorToolbarSlotProps = {
    * Render the built-in control as the single element of the default slot: the element receives
    * the control's class, label, state attributes, and press. The element's own value wins for
    * each other prop, so its own `title` or `aria-describedby` hides the disabled reason. An
-   * element that is not a `<button>` also takes the button role, a Tab stop, and Enter and
-   * Space. Button slots only.
+   * element that is not a `<button>` or a link also takes the button role, a Tab stop, and Enter
+   * and Space. A link keeps its role. Button slots only.
    */
   asChild: { type: Boolean, default: undefined },
   /** Appended after the class of the control, or of the trigger of a value control. */

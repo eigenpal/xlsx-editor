@@ -243,6 +243,94 @@ describe('frozen panes', () => {
     expect(pane(s)).toEqual([undefined, '2', 'A3', 'bottomLeft']);
   });
 
+  // The band starts at `x:sheetView/@topLeftCell` (ECMA-376 Part 1, 18.3.1.87): rows 10 and 11.
+  const scrolled = () =>
+    frozen(
+      '<pane ySplit="2" topLeftCell="A12" activePane="bottomLeft" state="frozen"/>',
+      '<selection pane="bottomLeft" activeCell="A12" sqref="A12"/>',
+      'topLeftCell="A10"'
+    );
+  const band = (s: WorkbookDocumentStore) => [attr(view(s), 'topLeftCell'), ...pane(s)!];
+
+  test('an edit before a band that starts at row 10 moves the band, and keeps its size', () => {
+    const s = scrolled();
+    expect(s.transact([op('insertRows', 'S', 3, 2)]).ok).toBe(true);
+    expect(band(s)).toEqual(['A12', undefined, '2', 'A14', 'bottomLeft']);
+    expect(s.transact([op('deleteRows', 'S', 2, 3)]).ok).toBe(true);
+    expect(band(s)).toEqual(['A9', undefined, '2', 'A11', 'bottomLeft']);
+  });
+
+  test('an insertion at the first row of a band that starts at row 10 grows it', () => {
+    const s = scrolled();
+    expect(s.transact([op('insertRows', 'S', 10)]).ok).toBe(true);
+    expect(band(s)).toEqual(['A10', undefined, '3', 'A13', 'bottomLeft']);
+    // Right after the band: no growth, and the body moves down.
+    expect(s.transact([op('insertRows', 'S', 13)]).ok).toBe(true);
+    expect(band(s)).toEqual(['A10', undefined, '3', 'A14', 'bottomLeft']);
+  });
+
+  test('a deletion over the first row of a band that starts at row 10 shrinks it', () => {
+    const s = scrolled();
+    // Rows 9 and 10 go: row 11 is left in the band, and it is row 9 now.
+    expect(s.transact([op('deleteRows', 'S', 9, 2)]).ok).toBe(true);
+    expect(band(s)).toEqual(['A9', undefined, '1', 'A10', 'bottomLeft']);
+  });
+
+  test('a column band that starts at column C moves, grows, and shrinks on the columns axis', () => {
+    const s = frozen(
+      '<pane xSplit="2" topLeftCell="E1" activePane="topRight" state="frozen"/>',
+      '<selection pane="topRight" activeCell="E1" sqref="E1"/>',
+      'topLeftCell="C1"'
+    );
+    // Columns C and D are frozen. An insertion before them moves them.
+    expect(s.transact([op('insertColumns', 'S', 1)]).ok).toBe(true);
+    expect(band(s)).toEqual(['D1', '2', undefined, 'F1', 'topRight']);
+    // An insertion inside the band grows it.
+    expect(s.transact([op('insertColumns', 'S', 5)]).ok).toBe(true);
+    expect(band(s)).toEqual(['D1', '3', undefined, 'G1', 'topRight']);
+    // A deletion over the first column of the band shrinks it and moves it back.
+    expect(s.transact([op('deleteColumns', 'S', 3, 2)]).ok).toBe(true);
+    expect(band(s)).toEqual(['C1', '2', undefined, 'E1', 'topRight']);
+  });
+
+  test('a split past the end of the grid counts as layout cuts it', () => {
+    // Rows 1048570 to 1048575 are the band, as layout cuts it, and row 1048576 is the body.
+    const s = frozen(
+      '<pane ySplit="4294967295" topLeftCell="A1048576" activePane="bottomLeft" state="frozen"/>',
+      '<selection pane="bottomLeft" activeCell="A1048576" sqref="A1048576"/>',
+      'topLeftCell="A1048570"'
+    );
+    // A deletion inside the band shrinks the count that layout reads, 6, to 5, not the split.
+    expect(s.transact([op('deleteRows', 'S', 1048571)]).ok).toBe(true);
+    expect(band(s)).toEqual(['A1048570', undefined, '5', 'A1048575', 'bottomLeft']);
+  });
+
+  test('an edit before a band with a split past the grid writes the split of the band', () => {
+    const s = frozen(
+      '<pane ySplit="4294967295" topLeftCell="A12" activePane="bottomLeft" state="frozen"/>',
+      '<selection pane="bottomLeft" activeCell="A12" sqref="A12"/>',
+      'topLeftCell="A10"'
+    );
+    // Layout reads rows 10 to 1048575 as the band. The deletion moves it up two rows, and the
+    // split keeps its count, so the band does not grow into the last rows of the grid.
+    expect(s.transact([op('deleteRows', 'S', 1, 2)]).ok).toBe(true);
+    expect(band(s)).toEqual(['A8', undefined, String(1_048_576 - 1 - 9), 'A1048574', 'bottomLeft']);
+  });
+
+  test('a frozen view whose top-left cell is not one cell keeps it on an edit', () => {
+    const s = frozen(
+      '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>',
+      '<selection pane="bottomLeft" activeCell="A2" sqref="A2"/>',
+      'topLeftCell="A10:A11"'
+    );
+    // Layout reads the band from row 1, so the insertion at row 1 grows it.
+    expect(s.transact([op('insertRows', 'S', 1)]).ok).toBe(true);
+    expect(band(s)).toEqual(['A10:A11', undefined, '2', 'A3', 'bottomLeft']);
+    // Right after the band: the body moves down.
+    expect(s.transact([op('insertRows', 'S', 3)]).ok).toBe(true);
+    expect(band(s)).toEqual(['A10:A11', undefined, '2', 'A4', 'bottomLeft']);
+  });
+
   test('a deletion inside the band shrinks it; the scrolling pane starts after the band', () => {
     const s = frozen(
       '<pane ySplit="3" topLeftCell="A1" activePane="bottomLeft" state="frozen"/>',

@@ -82,7 +82,7 @@ test('the opening scroll puts the top-left cell next to the frozen band', () => 
   // Each column is 50 points wide and each row 20 points high.
   const axis = (size: number) => ({ offsetOf: (i: number) => i * size });
   const geometry = { columns: axis(50), rows: axis(20) } as unknown as SheetGeometry;
-  const frozen = { rows: 2, cols: 2 };
+  const frozen = { rows: 2, cols: 2, firstRow: 0, firstCol: 0 };
   expect(scrollToTopLeft(geometry, frozen, { row: 0, col: 4 })).toEqual({ x: 100, y: 0 });
   expect(scrollToTopLeft(geometry, frozen, { row: 5, col: 0 })).toEqual({ x: 0, y: 60 });
   // A cell inside the frozen band scrolls nothing on that axis.

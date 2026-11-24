@@ -413,12 +413,19 @@ describe('merged ranges, column entries, hyperlinks, and views', () => {
     const sel = child(view, 'x:selection')!;
     // The active cell was deleted with its range: it moves into the range that is left.
     expect([attr(sel, 'activeCell'), attr(sel, 'sqref')]).toEqual(['B8', 'B8:C9']);
-    // Row 1 is the frozen band: the insertion grows it, and the view keeps its top-left cell.
+    // Row 5, the top-left cell of the view, is the frozen band (ECMA-376 Part 1, 18.3.1.87). An
+    // insertion before the band moves it with the view.
     expect(s.transact([op('insertRows', 'S', 1)]).ok).toBe(true);
     const view2 = child(child(sheetRoot(s.package, 'S'), 'x:sheetViews'), 'x:sheetView')!;
-    expect(attr(view2, 'topLeftCell')).toBe('A5');
-    expect(attr(child(view2, 'x:pane'), 'ySplit')).toBe('2');
+    expect(attr(view2, 'topLeftCell')).toBe('A6');
+    expect(attr(child(view2, 'x:pane'), 'ySplit')).toBe('1');
     expect(attr(child(view2, 'x:pane'), 'topLeftCell')).toBe('A7');
+    // An insertion at the first row of the band grows it, and the view keeps its top-left cell.
+    expect(s.transact([op('insertRows', 'S', 6)]).ok).toBe(true);
+    const view3 = child(child(sheetRoot(s.package, 'S'), 'x:sheetViews'), 'x:sheetView')!;
+    expect(attr(view3, 'topLeftCell')).toBe('A6');
+    expect(attr(child(view3, 'x:pane'), 'ySplit')).toBe('2');
+    expect(attr(child(view3, 'x:pane'), 'topLeftCell')).toBe('A8');
     expect(attr(child(sheetRoot(s.package, 'S'), 'x:dimension'), 'ref')).toBeUndefined();
   });
 

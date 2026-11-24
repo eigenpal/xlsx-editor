@@ -52,6 +52,7 @@ import {
   type GridMetrics,
   type SheetGeometry,
 } from '../layout/index.ts';
+import { frozenSpan } from '../layout/panes.ts';
 import type { CellEditing } from './cell-editing.ts';
 import type { EditResult } from './cell-input.ts';
 import type { EditorSnapshot } from './editor-model.ts';
@@ -130,10 +131,11 @@ function edgeOnAxis(
     const cell = cellAtPoint(map, columns ? p : 0, columns ? 0 : p);
     return columns ? cell.col : cell.row;
   };
+  const frozen = frozenSpan(map.frozen, columns ? 'cols' : 'rows');
   const span = (i: number) =>
     axisSpans(
       columns ? map.geometry.columns : map.geometry.rows,
-      columns ? map.frozen.cols : map.frozen.rows,
+      frozen,
       columns ? map.scrollX : map.scrollY,
       columns ? map.width : map.height,
       i,
@@ -144,8 +146,10 @@ function edgeOnAxis(
   if (!s) return null;
   if (s[1] - at <= band) return i;
   if (at - s[0] > band) return null;
-  // Right of (below) an edge that a line of size 0 shares: that line, so it can widen again.
-  if (at >= s[0] && i > 0 && sizes.sizeOf(i - 1) === 0 && !hidden?.(axis, i - 1)) return i - 1;
+  // Right of (below) an edge that a line of size 0 shares: that line, so it can widen again. A
+  // line before the frozen band does not show, so it has no edge.
+  if (at >= s[0] && i > frozen.first && sizes.sizeOf(i - 1) === 0 && !hidden?.(axis, i - 1))
+    return i - 1;
   if (s[0] <= 0) return null;
   // The left or top edge of a column or row is the far edge of the one shown before it.
   const before = index(s[0] - 1e-6);
@@ -294,7 +298,7 @@ function edgePixels(edge: ResizeEdge, painted: PaintedGrid): number | undefined 
   const columns = edge.axis === 'columns';
   const span = axisSpans(
     columns ? map.geometry.columns : map.geometry.rows,
-    columns ? map.frozen.cols : map.frozen.rows,
+    frozenSpan(map.frozen, columns ? 'cols' : 'rows'),
     columns ? map.scrollX : map.scrollY,
     columns ? map.width : map.height,
     edge.index,

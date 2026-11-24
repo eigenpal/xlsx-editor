@@ -410,7 +410,7 @@ describe('rangeOutline', () => {
   const view = (over: Partial<ViewState>): ViewState =>
     ({
       geometry: { columns: axis, rows: axis },
-      frozen: { rows: 0, cols: 0 },
+      frozen: { rows: 0, cols: 0, firstRow: 0, firstCol: 0 },
       scrollX: 0,
       scrollY: 0,
       width: 200,
@@ -453,7 +453,7 @@ describe('rangeOutline', () => {
   });
 
   test('draws no line on the seam of a frozen pane', () => {
-    const frozen = { rows: 2, cols: 0 } as ViewState['frozen'];
+    const frozen: ViewState['frozen'] = { rows: 2, cols: 0, firstRow: 0, firstCol: 0 };
     const edges = named(rangeOutline(view({ frozen }), range(1, 0, 3, 0)));
     expect(edges).toEqual([
       'bottom 0,80 20',
@@ -466,7 +466,7 @@ describe('rangeOutline', () => {
   });
 
   test('keeps the frozen part still, and hides what scrolls under the pane', () => {
-    const frozen = { rows: 2, cols: 0 } as ViewState['frozen'];
+    const frozen: ViewState['frozen'] = { rows: 2, cols: 0, firstRow: 0, firstCol: 0 };
     const edges = rangeOutline(view({ frozen, scrollY: 200 }), range(1, 0, 3, 0));
     expect(named(edges)).toEqual(['left 0,20 20', 'right 20,20 20', 'top 0,20 20']);
   });

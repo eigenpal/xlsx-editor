@@ -33,17 +33,85 @@ describe('frozen panes', () => {
       viewChildren:
         '<pane xSplit="1" ySplit="2" topLeftCell="B3" activePane="bottomRight" state="frozen"/>',
     });
-    expect(frozenPanes(frozen)).toEqual({ rows: 2, cols: 1 });
+    expect(frozenPanes(frozen)).toEqual({ rows: 2, cols: 1, firstRow: 0, firstCol: 0 });
     const split = worksheet({
       rows: '',
       viewChildren: '<pane xSplit="1200" ySplit="900" topLeftCell="B3" state="split"/>',
     });
-    expect(frozenPanes(split)).toEqual({ rows: 0, cols: 0 });
+    expect(frozenPanes(split)).toEqual({ rows: 0, cols: 0, firstRow: 0, firstCol: 0 });
+  });
+
+  test('the band starts at the top-left cell of the view (ECMA-376 Part 1, 18.3.1.87)', () => {
+    // The view was frozen while it showed row 10 at the top: rows 10 and 11 stay.
+    const scrolled = worksheet({
+      rows: '',
+      viewAttrs: 'topLeftCell="A10"',
+      viewChildren: '<pane ySplit="2" topLeftCell="A12" activePane="bottomLeft" state="frozen"/>',
+    });
+    expect(frozenPanes(scrolled)).toEqual({ rows: 2, cols: 0, firstRow: 9, firstCol: 0 });
+    // Each axis reads its own part of the cell: only the frozen axis has a first line.
+    const both = worksheet({
+      rows: '',
+      viewAttrs: 'topLeftCell="C5"',
+      viewChildren: '<pane xSplit="3" topLeftCell="F5" activePane="topRight" state="frozen"/>',
+    });
+    expect(frozenPanes(both)).toEqual({ rows: 0, cols: 3, firstRow: 0, firstCol: 2 });
+  });
+
+  test('a top-left cell that does not parse starts the band at A1, and a split stays in the grid', () => {
+    const bad = worksheet({
+      rows: '',
+      viewAttrs: 'topLeftCell="A10:B12"',
+      viewChildren: '<pane xSplit="1" ySplit="2" state="frozen"/>',
+    });
+    expect(frozenPanes(bad)).toEqual({ rows: 2, cols: 1, firstRow: 0, firstCol: 0 });
+    const far = worksheet({
+      rows: '',
+      viewAttrs: 'topLeftCell="XFA1048570"',
+      viewChildren: '<pane xSplit="4294967295" ySplit="4294967295" state="frozen"/>',
+    });
+    expect(frozenPanes(far)).toEqual({
+      rows: 1_048_576 - 1 - 1_048_569,
+      cols: 16_384 - 1 - 16_380,
+      firstRow: 1_048_569,
+      firstCol: 16_380,
+    });
+  });
+
+  test('a band at row 10 draws at the top; the body starts after it, and rows 1 to 9 do not show', () => {
+    const frozen = { rows: 2, cols: 1, firstRow: 9, firstCol: 1 };
+    const panes = windowPanes(rows, cols, frozen, {
+      width: 200,
+      height: 100,
+      scrollX: 0,
+      scrollY: 0,
+    });
+    expect(
+      panes.map((p) => [p.range.firstRow, p.range.lastRow, p.range.firstCol, p.x, p.y])
+    ).toEqual([
+      [9, 10, 1, 0, 0],
+      [9, 10, 2, 50, 0],
+      [11, 15, 1, 0, 30],
+      [11, 15, 2, 50, 30],
+    ]);
+    // A scroll moves the body only.
+    const scrolled = windowPanes(rows, cols, frozen, {
+      width: 200,
+      height: 100,
+      scrollX: 0,
+      scrollY: 45,
+    });
+    expect(scrolled.map((p) => [p.range.firstRow, p.y])).toEqual([
+      [9, 0],
+      [9, 0],
+      [14, 30],
+      [14, 30],
+    ]);
   });
 
   test('the spec scenario: rows 1 and 2 stay while the rest scrolls down 50 rows', () => {
     const viewport = { width: 500, height: 300, scrollX: 0, scrollY: 50 * 15 };
-    const panes = windowPanes(rows, cols, { rows: 2, cols: 0 }, viewport);
+    const panes = windowPanes(rows, cols, { rows: 2, cols: 0, firstRow: 0, firstCol: 0 }, viewport);
     expect(panes).toHaveLength(2);
     const [top, body] = panes;
     expect(top!.range.firstRow).toBe(0);
@@ -59,7 +127,7 @@ describe('frozen panes', () => {
     const panes = windowPanes(
       rows,
       cols,
-      { rows: 1, cols: 1 },
+      { rows: 1, cols: 1, firstRow: 0, firstCol: 0 },
       {
         width: 200,
         height: 100,

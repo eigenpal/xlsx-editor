@@ -168,4 +168,10 @@ export const APPROXIMATIONS: readonly Approximation[] = Object.freeze([
   // a second point splits the places, as in `0.00" "0`, a step can move a place across the
   // literal, so a decrease and an increase do not return the code.
   { id: 'decimal-split-places', title: 'Decimal places split by a literal', perSheet: false },
+  {
+    id: 'frozen-band-origin',
+    title: 'Frozen band origin',
+    perSheet: false,
+    unmeasured: ['a frozen band that starts after row 1 or after column A'],
+  },
 ]);

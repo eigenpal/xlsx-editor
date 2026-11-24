@@ -81,7 +81,11 @@ export const WORK_HEADROOM = 2;
  * the window shows.
  */
 export const WIDE_WINDOW: ReadonlyMap<string, string> = new Map([
-  ['view-hostile', 'a frozen pane split past the grid makes a pane of 2000 by 2000 cells'],
+  ['frozen-split-huge', 'a frozen pane split past the grid makes a pane of 2000 by 2000 cells'],
+  [
+    'frozen-band-mid-grid',
+    'a frozen band from the middle of the grid to its end makes a pane of 2000 by 2000 cells',
+  ],
 ]);
 
 /** The counters of the work of a window that the reference bounds. */

@@ -343,9 +343,9 @@ export interface FontSource {
 
 // @public
 export interface FrozenPanes {
-    // (undocumented)
     readonly cols: number;
-    // (undocumented)
+    readonly firstCol: number;
+    readonly firstRow: number;
     readonly rows: number;
 }
 

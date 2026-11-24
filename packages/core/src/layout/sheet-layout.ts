@@ -55,6 +55,7 @@ import { rowAutoHeight } from './row-height.ts';
 import {
   type CellRange,
   frozenPanes,
+  frozenSpan,
   type FrozenPanes,
   mergeCoverage,
   mergeAnchoredAt,
@@ -937,11 +938,17 @@ export function layoutSheet(
   for (const d of drawings)
     if (d.kind === 'unsupported' && d.element === 'missingImage')
       record(ctx, { code: 'image-missing', detail: d.name });
-  const frozenWidth = geometry.columns.offsetOf(frozen.cols);
-  const frozenHeight = geometry.rows.offsetOf(frozen.rows);
+  // The frozen band of each axis starts at `x:sheetView/@topLeftCell` (ECMA-376 Part 1,
+  // 18.3.1.87); a pane that starts before the end of the band is a frozen pane.
+  const bandRows = frozenSpan(frozen, 'rows');
+  const bandCols = frozenSpan(frozen, 'cols');
+  const frozenWidth =
+    geometry.columns.offsetOf(bandCols.end) - geometry.columns.offsetOf(bandCols.first);
+  const frozenHeight =
+    geometry.rows.offsetOf(bandRows.end) - geometry.rows.offsetOf(bandRows.first);
   const panes = windowPanes(geometry.rows, geometry.columns, frozen, viewport).map((p) => {
-    const left = p.range.firstCol < frozen.cols;
-    const top = p.range.firstRow < frozen.rows;
+    const left = p.range.firstCol < bandCols.end;
+    const top = p.range.firstRow < bandRows.end;
     const clip: Rect = {
       x: left ? 0 : frozenWidth,
       y: top ? 0 : frozenHeight,

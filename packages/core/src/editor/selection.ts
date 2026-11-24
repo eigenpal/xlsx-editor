@@ -10,6 +10,7 @@
 import type { GridPoint, GridRange, GridSelection } from '../contracts/index.ts';
 import { MAX_COLS, MAX_ROWS, type HistorySelection, type RangeBox } from '../store/index.ts';
 import type { CellRange } from '../layout/index.ts';
+import type { HiddenLines } from './sheet-facts.ts';
 import { selectionRanges } from '../automation/structure-commands.ts';
 
 /**
@@ -180,12 +181,17 @@ export function openingSelection(
     readonly ranges: readonly GridRange[];
     readonly activeRange: number | undefined;
   },
-  merges: Merges
+  merges: Merges,
+  shown: ShownStart = {}
 ): GridSelection {
-  const one = selectCell(sheetIndex, opening.active, merges);
+  // An active cell before a frozen band does not show: the first cell of the band takes it,
+  // and the ranges of the file open only when one of them holds that cell.
+  const shownAt = shownCell(opening.active, shown);
+  const moved = shownAt.row !== opening.active.row || shownAt.col !== opening.active.col;
+  const one = selectCell(sheetIndex, shownAt, merges);
   const listed = opening.ranges.slice(0, MAX_SELECTION_RANGES);
   const holds = (r: GridRange) => inRange(r, one.active);
-  let at = opening.activeRange ?? listed.findIndex(holds);
+  let at = moved ? listed.findIndex(holds) : (opening.activeRange ?? listed.findIndex(holds));
   if (at < 0 || at >= listed.length) return one;
   const room = Math.max(1, Math.floor(OPEN_MERGE_CHECKS / Math.max(1, merges.length)));
   const kept = listed.filter((_, i) => i === at || i < room - 1);
@@ -235,7 +241,7 @@ export function step(
   dRow: number,
   dCol: number,
   merges: Merges,
-  hidden: { row(i: number): boolean; col(i: number): boolean }
+  hidden: HiddenLines
 ): GridPoint {
   const m = mergeAt(merges, p);
   let row = p.row;
@@ -244,15 +250,56 @@ export function step(
   if (dCol > 0 && m) col = m.lastCol;
   if (dRow < 0 && m) row = m.firstRow;
   if (dCol < 0 && m) col = m.firstCol;
-  // A hidden row or column is skipped; the search is bounded.
+  // A hidden row or column is skipped; the search is bounded. The lines before the first line
+  // that can show (a frozen band) are the edge of the sheet, and a step forward from one of them
+  // goes to that first line at once.
+  const minRow = hidden.firstRow ?? 0;
+  const minCol = hidden.firstCol ?? 0;
+  if (dRow > 0) row = Math.max(row, minRow - 1);
+  if (dCol > 0) col = Math.max(col, minCol - 1);
   for (let i = 0; i < 4096; i += 1) {
     const next = clampPoint({ row: row + dRow, col: col + dCol });
     if (next.row === row && next.col === col) return clampPoint(p);
+    if ((dRow < 0 && next.row < minRow) || (dCol < 0 && next.col < minCol)) return clampPoint(p);
     row = next.row;
     col = next.col;
     if ((dRow === 0 || !hidden.row(row)) && (dCol === 0 || !hidden.col(col))) break;
   }
-  return { row, col };
+  // A step forward from a cell before the band also leaves the lines before it on the other axis.
+  return dRow > 0 || dCol > 0 ? shownCell({ row, col }, hidden) : { row, col };
+}
+
+/** The first lines that can show: the lines before a frozen band do not. */
+type ShownStart = Pick<HiddenLines, 'firstRow' | 'firstCol'>;
+
+/** `p`, moved down and right to the first row and column that can show. */
+export function shownCell(p: GridPoint, shown: ShownStart): GridPoint {
+  return { row: Math.max(p.row, shown.firstRow ?? 0), col: Math.max(p.col, shown.firstCol ?? 0) };
+}
+
+/**
+ * A selection whose active cell lies before a frozen band, such as a selection of whole columns
+ * or of the whole sheet, takes the first cell of its range that can show as its active cell. The
+ * anchor and the focus (`focus`, or the active cell when it is undefined) move with it when they
+ * were at the active cell. A selection stays as it is when its range holds no such cell, or when
+ * a merged range covers that cell and does not start at it: only the first cell of a merged range
+ * takes a value (quick reference, `x:mergeCell`).
+ */
+export function shownSelection(
+  selection: GridSelection,
+  focus: GridPoint | undefined,
+  shown: ShownStart,
+  merges: Merges = []
+): { selection: GridSelection; focus: GridPoint } {
+  const s = selection;
+  const active = shownCell(s.active, shown);
+  const m = mergeAt(merges, active);
+  const covered = m !== undefined && (m.firstRow !== active.row || m.firstCol !== active.col);
+  const same = active.row === s.active.row && active.col === s.active.col;
+  if (same || covered || !inRange(s.range, active)) return { selection, focus: focus ?? s.active };
+  focus ??= s.active;
+  const at = (p: GridPoint) => (p.row === s.active.row && p.col === s.active.col ? active : p);
+  return { selection: { ...s, active, anchor: at(s.anchor) }, focus: at(focus) };
 }
 
 /** Whether a point lies in a range. */

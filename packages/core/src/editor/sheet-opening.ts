@@ -11,6 +11,7 @@ import {
   type XlsxPackage,
 } from '../store/index.ts';
 import { frozenPanes } from '../layout/index.ts';
+import { NO_FROZEN_PANES } from '../layout/panes.ts';
 import { readSqref } from './selection-ranges.ts';
 
 /** What a sheet opens with: its zoom, its active cell, its selection, and its top-left cell. */
@@ -46,7 +47,7 @@ export function sheetOpening(pkg: XlsxPackage, partName: string | undefined): Sh
   const pane = child(view, 'x:pane');
   // A pane that freezes no row or column, and a split pane, do not show: the editor shows the
   // view's top-left cell and the selection of the top-left pane.
-  const band = part ? frozenPanes(part.root) : { rows: 0, cols: 0 };
+  const band = part ? frozenPanes(part.root) : NO_FROZEN_PANES;
   const frozen = band.rows > 0 || band.cols > 0;
   const shown = frozen ? (attr(pane, 'activePane') ?? 'topLeft') : 'topLeft';
   const sels = children(view, 'x:selection');

@@ -19,6 +19,7 @@ import {
   xmlPartOf,
   type XlsxPackage,
 } from '../../../../packages/core/src/store/index.ts';
+import { fixtureFile } from '../../../../scripts/fixtures/catalog.ts';
 import { SHEET_GUIDE } from '../../../../scripts/sample-workbook/showcase-sheets.ts';
 import { fixtureBytes, fixtureNames, mountDemo, readSaved, type Demo } from './demo-harness.tsx';
 
@@ -87,7 +88,7 @@ describe('each committed fixture in the demo', () => {
 
       // The saved copy opens again in the demo, from a picked file, with the value.
       await openSample(demo);
-      demo.pickFile(`${fixture}.xlsx`, bytes);
+      demo.pickFile(fixtureFile(fixture), bytes);
       await demo.showsSheet(first.name);
       expect(demo.goTo(FIXTURE_EDIT_REF)).toBe(TEXT);
       // No step left an unsaved edit, so no open asked.

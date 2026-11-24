@@ -25,7 +25,7 @@ import { XMLParser } from 'fast-xml-parser';
 import { workbookOracles } from '../package-write/save.ts';
 import { NS } from '../package/namespaces.ts';
 import { parseCellRef } from '../cell-ref.ts';
-import { FIXTURES } from '../../../../../scripts/fixtures/catalog.ts';
+import { FIXTURES, fixtureFile } from '../../../../../scripts/fixtures/catalog.ts';
 
 function open(wb: FixtureWorkbook): XlsxPackage {
   const read = readXlsx(buildXlsx(wb));
@@ -34,7 +34,7 @@ function open(wb: FixtureWorkbook): XlsxPackage {
 }
 
 const fixture = (name: string): Uint8Array =>
-  new Uint8Array(readFileSync(`${import.meta.dir}/../../../../../fixtures/${name}.xlsx`));
+  new Uint8Array(readFileSync(`${import.meta.dir}/../../../../../fixtures/${fixtureFile(name)}`));
 
 function sheetPart(pkg: XlsxPackage, name: string) {
   const wb = workbookIndex(pkg)!;

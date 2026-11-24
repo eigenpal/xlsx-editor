@@ -10,6 +10,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fixtureFile } from '../fixtures/catalog.ts';
 
 export const FIXTURE_DIR = join(import.meta.dir, '..', '..', 'fixtures');
 export const MANIFEST = join(FIXTURE_DIR, 'references.json');
@@ -130,9 +131,9 @@ export const LETTER: readonly [number, number] = [612, 792];
  */
 export function missingFiles(names: readonly string[], dir: string = FIXTURE_DIR): string[] {
   return names.flatMap((name) => [
-    ...(existsSync(join(dir, `${name}.xlsx`))
+    ...(existsSync(join(dir, fixtureFile(name)))
       ? []
-      : [`fixtures/${name}.xlsx is missing: build it with \`bun run fixtures:build\`.`]),
+      : [`fixtures/${fixtureFile(name)} is missing: build it with \`bun run fixtures:build\`.`]),
     ...(existsSync(join(dir, `${name}.pdf`))
       ? []
       : [
@@ -144,7 +145,7 @@ export function missingFiles(names: readonly string[], dir: string = FIXTURE_DIR
 /** Why a fixture's reference is not current, or an empty list. */
 export function referenceProblems(name: string, manifest: Manifest = readManifest()): string[] {
   const record = Object.hasOwn(manifest.references, name) ? manifest.references[name] : undefined;
-  const workbookPath = join(FIXTURE_DIR, `${name}.xlsx`);
+  const workbookPath = join(FIXTURE_DIR, fixtureFile(name));
   const pdfPath = join(FIXTURE_DIR, `${name}.pdf`);
   if (!record) return [`${name}: no reference in fixtures/references.json`];
   const missing = missingFiles([name]);

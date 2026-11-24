@@ -6,6 +6,7 @@ import { buildXlsx, c, row } from '../fixtures/builder.ts';
 import { refusalCode } from '../corpus-runner/open-refusal.ts';
 import { saveGarbage, saveWithAttribute } from '../corpus-runner/test-saves.ts';
 import { ROOT } from '../corpus-runner/runner.ts';
+import { fixtureFile } from '../fixtures/catalog.ts';
 import { censusWorkbook, contentTypeName, planCensus, renderCensus } from './census.ts';
 
 /** Words that only the workbook holds. The census must not repeat any of them. */
@@ -173,9 +174,9 @@ describe('the census of one workbook', () => {
     );
   });
 
-  test('censuses committed fixtures of three kinds with no open refusal and no loss on save', () => {
-    for (const name of ['basic-values', 'preserved-parts', 'structure']) {
-      const census = censusWorkbook(new Uint8Array(readFileSync(`fixtures/${name}.xlsx`)));
+  test('censuses committed fixtures of four kinds with no open refusal and no loss on save', () => {
+    for (const name of ['basic-values', 'preserved-parts', 'structure', 'macro-enabled']) {
+      const census = censusWorkbook(new Uint8Array(readFileSync(`fixtures/${fixtureFile(name)}`)));
       expect(census.open).toBe('ok');
       expect(census.save).toBe('same');
     }

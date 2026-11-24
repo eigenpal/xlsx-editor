@@ -5,7 +5,7 @@ import { describe, expect, test } from 'bun:test';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { FIXTURES } from '../fixtures/catalog.ts';
+import { FIXTURES, fixtureFile } from '../fixtures/catalog.ts';
 import { workbookFamilies } from './fonts.ts';
 import {
   invalidField,
@@ -115,7 +115,7 @@ describe('the faces of the reference PDFs', () => {
         problems.push(`${name}: ${descriptors} font descriptors, ${programs} embedded programs`);
       // Each face is an open face, and a family that the fixture names: `LiberationSans-Bold`
       // is the family `liberation sans`.
-      const xlsx = readFileSync(join(import.meta.dir, '..', '..', 'fixtures', `${name}.xlsx`));
+      const xlsx = readFileSync(join(import.meta.dir, '..', '..', 'fixtures', fixtureFile(name)));
       const named = workbookFamilies(new Uint8Array(xlsx));
       for (const face of faces) {
         if (!OPEN_FACES.test(face)) problems.push(`${name}: embeds ${face}`);

@@ -101,6 +101,16 @@
         "result": "verified"
       }
     },
+    "macro-enabled": {
+      "saved": {
+        "sha256": "8ecdb811487a57fa3498a126a06b886bdd56b961bdcfb3173bd95cd683e9c3fd",
+        "result": "verified"
+      },
+      "edited": {
+        "sha256": "438626518886080e7c749aabe020d3384f0070762f79f22f6a3d00eac96a5a59",
+        "result": "verified"
+      }
+    },
     "number-formats": {
       "saved": {
         "sha256": "f2b2640a6910198a7b79bd0ca86ba4bafb2317695aab29f4e5b6702be4f90263",

@@ -4,7 +4,7 @@ import { buildXlsx, c, row } from '../../../../../scripts/fixtures/builder.ts';
 import { STYLE_CASES } from '../../../../../scripts/fixtures/cases.ts';
 import { STYLE_RESOLUTION_CASES } from '../../../../../scripts/fixtures/fill-style-cases.ts';
 import { measuredCells } from '../../../../../scripts/fixtures/measured.ts';
-import { FIXTURES } from '../../../../../scripts/fixtures/catalog.ts';
+import { FIXTURES, fixtureFile } from '../../../../../scripts/fixtures/catalog.ts';
 import { fixtureCopies } from '../../../../../scripts/save-check/records.ts';
 import { readXlsx, type XlsxPackage } from '../../store/package/package.ts';
 import { sheetByName, workbookIndex } from '../../store/workbook/workbook-index.ts';
@@ -24,7 +24,9 @@ function open(bytes: Uint8Array): XlsxPackage {
 }
 
 const fixture = (name: string) =>
-  open(new Uint8Array(readFileSync(`${import.meta.dir}/../../../../../fixtures/${name}.xlsx`)));
+  open(
+    new Uint8Array(readFileSync(`${import.meta.dir}/../../../../../fixtures/${fixtureFile(name)}`))
+  );
 
 /** The resolved format of one cell of a sheet. */
 function formatAt(pkg: XlsxPackage, sheet: string, ref: string) {

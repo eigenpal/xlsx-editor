@@ -12,7 +12,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readXlsx, saveXlsx, WorkbookDocumentStore } from '../../packages/core/src/store/index.ts';
-import { FIXTURES, fixtureEditOps, type Fixture } from '../fixtures/catalog.ts';
+import { FIXTURES, fixtureEditOps, fixtureFile, type Fixture } from '../fixtures/catalog.ts';
 
 // The zip writer stores entry times as local-time fields, so the copy bytes depend on the time
 // zone. The fixture build runs in UTC for the same reason (scripts/fixtures/build.ts).
@@ -52,7 +52,7 @@ export function writeRecords(records: Record<string, SaveRecord>): void {
 /** The saved and the edited copy of a fixture, as the editor writes them. */
 export function fixtureCopies(fixture: Fixture): { saved: Uint8Array; edited: Uint8Array } {
   const read = readXlsx(
-    new Uint8Array(readFileSync(join(ROOT, 'fixtures', `${fixture.name}.xlsx`)))
+    new Uint8Array(readFileSync(join(ROOT, 'fixtures', fixtureFile(fixture.name))))
   );
   if (!read.ok) throw new Error(`${fixture.name}: does not open (${read.error.reason})`);
   const store = new WorkbookDocumentStore(read.pkg);
@@ -78,13 +78,16 @@ export function recordProblems(name: string, records = readRecords()): string[] 
   return problems;
 }
 
-/** Write the copies of every fixture to `dir`, for the local check: `<name>.saved.xlsx`, `<name>.edited.xlsx`. */
+/**
+ * Write the copies of every fixture to `dir`, for the local check: `<name>.saved.xlsx` and
+ * `<name>.edited.xlsx`, with the extension of the fixture (`fixtureFile`).
+ */
 export function writeCopies(dir: string): string[] {
   mkdirSync(dir, { recursive: true });
   for (const fixture of FIXTURES) {
     const copies = fixtureCopies(fixture);
-    writeFileSync(join(dir, `${fixture.name}.saved.xlsx`), copies.saved);
-    writeFileSync(join(dir, `${fixture.name}.edited.xlsx`), copies.edited);
+    writeFileSync(join(dir, fixtureFile(fixture.name, '.saved')), copies.saved);
+    writeFileSync(join(dir, fixtureFile(fixture.name, '.edited')), copies.edited);
   }
   return FIXTURES.map((f) => f.name);
 }

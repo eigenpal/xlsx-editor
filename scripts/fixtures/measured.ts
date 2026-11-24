@@ -18,6 +18,7 @@ import {
   caseCell,
 } from './cases.ts';
 import { STYLE_RESOLUTION_CASES } from './fill-style-cases.ts';
+import { fixtureFile } from './catalog.ts';
 
 const FIXTURES = join(import.meta.dir, '..', '..', 'fixtures');
 export const MEASURED = join(FIXTURES, 'measured.json');
@@ -55,7 +56,7 @@ export const MEASURED_REFS: Readonly<Record<string, readonly string[]>> = {
 
 const sha256 = (bytes: Uint8Array): string => createHash('sha256').update(bytes).digest('hex');
 export const workbookHash = (name: string): string =>
-  sha256(new Uint8Array(readFileSync(join(FIXTURES, `${name}.xlsx`))));
+  sha256(new Uint8Array(readFileSync(join(FIXTURES, fixtureFile(name)))));
 
 export function readMeasured(): Record<string, MeasuredFixture> {
   if (!existsSync(MEASURED)) return {};

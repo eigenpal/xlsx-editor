@@ -8,6 +8,7 @@ import { runInNewContext } from 'node:vm';
 import { dirname, join } from 'node:path';
 import { Window } from 'happy-dom';
 import { buildXlsx, c, row } from '../../../../../scripts/fixtures/builder.ts';
+import { fixtureFile } from '../../../../../scripts/fixtures/catalog.ts';
 import { createXlsxEditor, type XlsxEditorInstance } from '../index.ts';
 import { flushEditor } from './flush-editor.ts';
 import { stepAnnouncement } from '../selection.ts';
@@ -30,7 +31,7 @@ const FONTS: FontSource[] = [
 }));
 
 const fixture = (name: string) =>
-  new Uint8Array(readFileSync(`${import.meta.dir}/../../../../../fixtures/${name}.xlsx`));
+  new Uint8Array(readFileSync(`${import.meta.dir}/../../../../../fixtures/${fixtureFile(name)}`));
 
 let viewers: XlsxEditorInstance[] = [];
 afterEach(() => {

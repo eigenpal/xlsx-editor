@@ -25,6 +25,12 @@ const NS_XDR = 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDraw
 const NS_PIC = 'http://schemas.openxmlformats.org/drawingml/2006/picture';
 const R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const CT = 'application/vnd.openxmlformats-officedocument';
+/**
+ * The macro-enabled form of the content type of the main part. ECMA-376 Part 1, 12.3.23 (Workbook
+ * Part) lists only the workbook and the template types. A macro-enabled package uses this type
+ * with the same root element and relationship (packages/core/src/store/package/main-part-type.ts).
+ */
+const MACRO_WORKBOOK = 'application/vnd.ms-excel.sheet.macroEnabled.main+xml';
 
 /** Escape text for XML character data and attribute values. */
 export const esc = (s: string): string =>
@@ -131,6 +137,14 @@ export interface FixtureWorkbook {
   readonly extraParts?: readonly (readonly [string, string, Uint8Array, string?])[];
   /** Raw `x:sheet` elements after the sheets, for example one that names an extra part. */
   readonly extraSheets?: string;
+  /**
+   * Give the main part the macro-enabled content type. The builder writes it in the `Override`
+   * element of the main part (ECMA-376 Part 2, 7.2.3.2.5, `CT_Override`). The builder writes no
+   * macro part. A script cannot make a valid macro project, and a consumer can report damage in
+   * an invalid one. So the package is a macro-enabled workbook with no code. Its catalog entry
+   * sets the extension `xlsm` (`scripts/fixtures/catalog.ts`).
+   */
+  readonly macroEnabled?: boolean;
 }
 
 const DEFAULT_FONT =
@@ -334,7 +348,7 @@ export function buildXlsx(wb: FixtureWorkbook): Uint8Array {
       `<calcPr ${wb.calcPr ?? 'calcId="191029"'}/>` +
       (wb.afterCalcPr ?? '') +
       '</workbook>',
-    `${CT}.spreadsheetml.sheet.main+xml`
+    wb.macroEnabled ? MACRO_WORKBOOK : `${CT}.spreadsheetml.sheet.main+xml`
   );
   put('xl/_rels/workbook.xml.rels', rels(wbRels));
   put('xl/styles.xml', styles(wb), `${CT}.spreadsheetml.styles+xml`);

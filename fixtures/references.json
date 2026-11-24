@@ -231,6 +231,29 @@
         }
       }
     },
+    "macro-enabled": {
+      "workbook": "86328563b6593d55bd166a68e767b6c917fb22b83f6b06211f91031df1f04c0c",
+      "pdf": "5d4dab4f5ede0f0f7e20401c3d47b28ed34e9531ee7166c294994fa386cbfae5",
+      "pages": 1,
+      "pageSizePt": [612, 792],
+      "locale": {
+        "decimal": ",",
+        "group": " ",
+        "builtins": {
+          "14": "dd/mm/yyyy",
+          "15": "dd-mmm-yy",
+          "16": "dd-mmm",
+          "17": "mmm-yy",
+          "20": "hh:mm",
+          "21": "hh:mm:ss",
+          "22": "dd/mm/yyyy hh:mm",
+          "37": "#,##0;-#,##0",
+          "38": "#,##0;[Red]-#,##0",
+          "39": "#,##0.00;-#,##0.00",
+          "40": "#,##0.00;[Red]-#,##0.00"
+        }
+      }
+    },
     "number-formats": {
       "workbook": "7196e8c37fb5489a20c5d6f6eb6a755e931a14ae0ab67b52a00c8d552123dd18",
       "pdf": "915e96a32913bf41fe67c694c6fe419df242f91d9a8138f2ed6358ce84bd1a45",

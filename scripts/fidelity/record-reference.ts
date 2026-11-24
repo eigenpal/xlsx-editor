@@ -29,7 +29,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { FIXTURES } from '../fixtures/catalog.ts';
+import { FIXTURES, fixtureFile } from '../fixtures/catalog.ts';
 import { firstLine } from './chromium.ts';
 import { FOREIGN_REFERENCE_REMEDY, familyId, foreignReferenceFonts } from './font-names.ts';
 import { FONTS_ENV, postScriptFamilies, referenceFontDirs, workbookFamilies } from './fonts.ts';
@@ -93,7 +93,7 @@ async function main(): Promise<number> {
       failed = true;
       continue;
     }
-    const xlsx = new Uint8Array(readFileSync(join(FIXTURE_DIR, `${name}.xlsx`)));
+    const xlsx = new Uint8Array(readFileSync(join(FIXTURE_DIR, fixtureFile(name))));
     const workbook = sha256(xlsx);
     const old = Object.hasOwn(references, name) ? references[name] : undefined;
     if (old && old.workbook !== workbook && old.pdf === sha256(pdf)) {

@@ -109,6 +109,10 @@
       "sha256": "5e31b416cfd0e6980e0d65edb3f0d14d9e398b14cd0c49e9c1af0844f64356ac",
       "result": "verified"
     },
+    "save.macro-enabled": {
+      "sha256": "8f33f959b09cf0fbd5b99a2c8bbef883836b06e00fe4eab4ab2f6b342111f4ed",
+      "result": "verified"
+    },
     "save.preserved-content": {
       "sha256": "f5f3a065ab7a207719be483b85ea41d30c82ad9c547c160f1ec26c7b98244cd1",
       "result": "verified"

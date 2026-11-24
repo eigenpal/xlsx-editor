@@ -194,6 +194,8 @@ const OUTSIDE = {
   'a sheet tab': `<div class="xlsx-sheet-tab" aria-selected="true" aria-disabled="true"
     data-test></div>`,
   'the add sheet button': '<button class="xlsx-sheet-add" aria-disabled="true" data-test></button>',
+  'a focused add sheet button': `<button class="xlsx-sheet-add" aria-disabled="true"
+    data-state-focus-visible data-test></button>`,
   'a zoom button': `<div class="xlsx-zoom"><button aria-disabled="true" data-test></button></div>`,
 };
 
@@ -240,6 +242,8 @@ describe('the text color that wins on a toolbar element', () => {
       expect(cascade(toolbar(DISABLED[name]), 'opacity', true).value).toBe('0.35');
     expect(cascade(toolbar(DISABLED['a focused bar button']), 'opacity', true).value).toBe('1');
     expect(cascade(toolbar(DISABLED['a panel row']), 'opacity', true).value).toBeUndefined();
+    expect(cascade(editor(OUTSIDE['the add sheet button']), 'opacity', true).value).toBe('0.35');
+    expect(cascade(editor(OUTSIDE['a focused add sheet button']), 'opacity', true).value).toBe('1');
   });
 
   test('without forced colors, a disabled row takes the subtle color and a control fades', () => {

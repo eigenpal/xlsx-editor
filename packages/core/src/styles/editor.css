@@ -786,9 +786,16 @@
   text-overflow: ellipsis;
   cursor: pointer;
 }
-.xlsx-sheet-tab:hover {
+/* `:where` keeps the weight of the hover rule, so the selected tab rule below still wins. */
+.xlsx-sheet-tab:hover:where(:not([aria-disabled='true'])) {
   background: var(--doc-bg-hover);
   color: var(--doc-text);
+}
+/* A chartsheet tab is disabled: it takes the subtle text color, as a disabled menu row does, and
+ * no hover. It takes no keyboard focus, so it needs no focus rule. */
+.xlsx-sheet-tab[aria-disabled='true'] {
+  color: var(--doc-text-subtle);
+  cursor: default;
 }
 .xlsx-sheet-tab[aria-selected='true'] {
   background: var(--doc-primary-light);
@@ -809,9 +816,19 @@
   color: var(--doc-text-muted);
   cursor: pointer;
 }
-.xlsx-sheet-add:hover {
+.xlsx-sheet-add:hover:not([aria-disabled='true']) {
   background: var(--doc-bg-hover);
   color: var(--doc-text);
+}
+/* In view mode, or when the workbook structure is locked, the add button stays focusable and gives
+ * its reason. It fades as a disabled toolbar button does (0.35), and its focus ring does not. */
+.xlsx-sheet-add[aria-disabled='true'] {
+  opacity: 0.35;
+  cursor: default;
+}
+.xlsx-sheet-add[aria-disabled='true']:focus-visible {
+  opacity: 1;
+  color: var(--doc-text-subtle);
 }
 .xlsx-sheet-add svg {
   width: 18px;
@@ -1922,7 +1939,8 @@
  * shadows. These rules draw each state with system colors: pressed, selected, and highlighted
  * controls in `Highlight`, focus rings in `Highlight`, disabled controls in `GrayText`, and the
  * grid's focus ring and selection, which a shadow or a tint drew, as outlines. A disabled
- * button, field, or color trigger keeps its 0.35 fade over `GrayText`, as in PPTX Editor; a
+ * button, field, or color trigger, and the add-sheet button, keep their 0.35 fade over
+ * `GrayText`, as in PPTX Editor; a
  * focused one does not fade. Color swatches
  * keep their colors. The workbook canvas is not chrome: it keeps the colors of the file, so the
  * marks over it are two-tone, as the pending copy edge is.
@@ -1932,8 +1950,9 @@
  * edge; the grid marks are two-tone; a disabled toggle has no pressed edge, because the
  * engine never reports a disabled toggle as pressed; the line between two toolbar groups
  * takes `CanvasText`, because forced colors draw a background in `Canvas`; and the focused
- * disabled rule covers the toolbar only (PPTX Editor: the whole editor), because the sheet tabs
- * and the sheet menu do not fade a disabled control.
+ * disabled rule covers the toolbar and the add-sheet button only (PPTX Editor: the whole
+ * editor), because the sheet tabs, the sheet menu, and the zoom buttons do not fade a disabled
+ * control. They take the subtle text color instead.
  * ============================================================================ */
 
 @media (forced-colors: active) {
@@ -2083,6 +2102,7 @@
   .xlsx-sheet-menu-item[aria-disabled],
   .xlsx-sheet-tab[aria-disabled='true'],
   .xlsx-sheet-add[aria-disabled='true'],
+  .xlsx-sheet-add[aria-disabled='true']:focus-visible,
   .xlsx-zoom button[aria-disabled='true'] {
     color: GrayText;
   }

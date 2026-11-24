@@ -14,16 +14,11 @@ export interface UnsavedEdits {
   /**
    * True when the open workbook has an edit after the last clean mark, or an open cell edit
    * with changed text, which a new load drops without a commit. With no open workbook, it is
-   * true only during a reopen that carries edits (`holdEdits`).
+   * false.
    */
   hasUnsavedEdits(): boolean;
-  /** Tells that a reopen runs whose saved bytes alone hold edits that are not saved to a file. */
-  holdEdits(held: boolean): void;
-  /**
-   * Marks `revision` as the state with no unsaved edit. With `carried`, a reopen kept edits
-   * that are not saved, so the new revision still has them.
-   */
-  markClean(revision: number, carried?: boolean): void;
+  /** Marks `revision` as the state with no unsaved edit. */
+  markClean(revision: number): void;
 }
 
 /**
@@ -32,20 +27,16 @@ export interface UnsavedEdits {
  * demo can ask when nothing is lost, never the reverse.
  */
 export function unsavedEdits(facts: () => EditFacts): UnsavedEdits {
-  let clean = { revision: 0, carried: false };
-  let held = false;
+  let clean = 0;
   return {
     revision: () => facts().revision,
     hasUnsavedEdits: () => {
       const s = facts();
-      if (s.status !== 'ready') return held;
-      return clean.carried || s.revision !== clean.revision || (s.editing && s.editChanged);
+      if (s.status !== 'ready') return false;
+      return s.revision !== clean || (s.editing && s.editChanged);
     },
-    holdEdits: (on) => {
-      held = on;
-    },
-    markClean: (at, carried = false) => {
-      clean = { revision: at, carried };
+    markClean: (at) => {
+      clean = at;
     },
   };
 }

@@ -10,11 +10,11 @@
 //   build shows.
 // - A held Control+S or Command+S saves once: a repeat stops before the toolbar, which claims
 //   the key in the viewport from its `onSave`, reads it.
-// - During an open, from the download or the file read to the end of the load, and during a
-//   headings switch, Control+S and Command+S, and a press of the toolbar Save, stay in the page
-//   and go to Save, which says why it waits. The toolbar would only refuse with the general
-//   text of its `opening` prop. The focus can be on the body, outside the editor: there a key
-//   that would type says that it did nothing.
+// - During an open, from the download or the file read to the end of the load, Control+S and
+//   Command+S, and a press of the toolbar Save, stay in the page and go to Save, which says why
+//   it waits. The toolbar would only refuse with the general text of its `opening` prop. The
+//   focus can be on the body, outside the editor: there a key that would type says that it did
+//   nothing.
 // - While the bytes of a save wait for a press of Save, Control+S and Command+S, and a press of
 //   the toolbar Save, also go to Save, which writes those bytes. The toolbar would prepare the
 //   bytes again.
@@ -30,7 +30,7 @@ export interface PageKeys {
   readonly editing: () => boolean;
   /** Closes the message. */
   readonly closeMessage: () => void;
-  /** Whether a workbook opens (its download, file read, or load) or the headings switch. */
+  /** Whether a workbook opens: its download, file read, or load. */
   readonly loading: () => boolean;
   /** Whether the bytes of a save wait for a press of Save. */
   readonly readyToSave: () => boolean;

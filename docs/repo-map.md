@@ -24,7 +24,7 @@ Read these in order before you change anything:
 | `packages/react/` | `@xlsx-editor.dev/react`, the React adapter: the root, the viewport, the grid, and the chrome parts. Core is its peer. See its [README](../packages/react/README.md) |
 | `packages/vue/` | `@xlsx-editor.dev/vue`, the Vue 3 adapter: the twin of the React adapter, with the same props, ref members, and chrome parts. Core is its peer. See its [README](../packages/vue/README.md) |
 | `examples/vite/` | The demo: a Vite page with the React editor. It opens the sample workbook (`public/sample.xlsx`) at start, and also a picked file. Its top bar has the brand lockup, the React and Vue switcher, the name of the open workbook, and the actions. `bun run demo` serves it on port 5180. `bun run build:demos` builds both demos into `examples/dist/`, the React demo at `/react/` and the Vue demo at `/vue/`. The root `vercel.json` deploys that folder |
-| `examples/vue/` | The Vue demo: a Vite page with the Vue editor. It opens the same sample workbook and a picked file, with the same top bar and shell styles as the React demo. Its open, headings, and save logic is in `src/session.ts`, with its tests. `bun run dev:vue` serves it on port 5181 |
+| `examples/vue/` | The Vue demo: a Vite page with the Vue editor. It opens the same sample workbook and a picked file, with the same top bar and shell styles as the React demo. Its open and save logic is in `src/session.ts`, with its tests. `bun run dev:vue` serves it on port 5181 |
 | `packages/ooxml-core/` | `@eigenpal/ooxml-core`, the format-neutral OOXML layer. Private. See its [README](../packages/ooxml-core/README.md) for each module and where it comes from |
 | `reference/ecma-376/` | ECMA-376 files, unmodified except one derived name list: the Transitional schemas (Part 4), seven Strict schemas (Part 1), the DrawingML preset geometry, and the predefined function names of Part 1, 18.17.7. See [`reference/README.md`](../reference/README.md) |
 | `reference/quick-ref/` | Short SpreadsheetML and theme color summaries, written for this project |
@@ -108,10 +108,10 @@ Read these in order before you change anything:
 | `packages/ooxml-core/src/__tests__/` | One test file for each shared module |
 | `packages/react/src/__tests__/`, `packages/vue/test/` | The adapter tests. `bun run test` runs them with the happy-dom preload, and `bun run test:dom` runs only them. `packages/vue/test/cross-adapter.test.ts` mounts both adapters and compares their markup and focus step by step |
 | `scripts/**/*.test.*` | Tests of the gates and the sample workbook |
-| `examples/vite/src/*.test.ts` | Tests of the demo's modules: the headings switch, the open check, the unsaved-edit state, the save, and the start theme, and the address of the other demo in the React and Vue switcher |
+| `examples/vite/src/*.test.ts` | Tests of the demo's modules: the open check, the unsaved-edit state, the save, and the start theme, and the address of the other demo in the React and Vue switcher |
 | `examples/vite/src/__tests__/adapter-switcher.test.tsx` | The React and Vue switcher in happy-dom: the current demo, the link targets, and one Tab stop |
-| `examples/vue/src/session.test.ts` | The open, headings, and save logic of the Vue demo, over a stand-in editor |
-| `examples/vite/src/__tests__/demo-*.test.tsx` | The flows of the demo in happy-dom, over the stand-ins of `demo-harness.tsx`: the start, the focus regions, view only, the theme, the saves, the number formats, typed entry, the headings switch, the questions before unsaved edits are lost, the work that overlaps a load, the download logic, and each fixture's open, edit, save, and reopen. They run with a DOM (`scripts/test/xlsx-suite.mjs`) |
+| `examples/vue/src/session.test.ts` | The open and save logic of the Vue demo, over a stand-in editor |
+| `examples/vite/src/__tests__/demo-*.test.tsx` | The flows of the demo in happy-dom, over the stand-ins of `demo-harness.tsx`: the start, the focus regions, view only, the theme, the saves, the number formats, typed entry, the headings that a file sets, the questions before unsaved edits are lost, the work that overlaps a load, the download logic, and each fixture's open, edit, save, and reopen. They run with a DOM (`scripts/test/xlsx-suite.mjs`) |
 | `.github/cla/cla.test.sh` | The CLA logic, run by CI |
 
 ## Where to look

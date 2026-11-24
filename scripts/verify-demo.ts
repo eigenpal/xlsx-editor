@@ -5,8 +5,8 @@
 //
 // The flows of the demo and of the editor run as happy-dom tests in `bun run test`: the start,
 // the focus regions, view only, the theme, the saves, the number formats, typed entry, the
-// headings switch, the questions before unsaved edits are lost, the work that overlaps a load,
-// the download logic, and each fixture's open, edit, save, and reopen
+// headings that a file sets, the questions before unsaved edits are lost, the work that overlaps
+// a load, the download logic, and each fixture's open, edit, save, and reopen
 // (`examples/vite/src/__tests__/demo-*.test.tsx`), and the editor tests of
 // `packages/core/src/editor/__tests__/` and the adapters. This check keeps one short smoke run
 // and the steps that need a real browser engine: paint and loaded fonts, the system clipboard

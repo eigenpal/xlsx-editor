@@ -28,7 +28,7 @@ const SHEET = '/xl/worksheets/sheet1.xml';
 describe('the hostile workbooks of the hang test', () => {
   test('use the options of an opened file only on a case that opens a file', () => {
     const misplaced = HANG_CASES.filter(
-      (c) => !c.bytes && (c.headingsOff || c.race || c.network === 'offline-after-start')
+      (c) => !c.bytes && (c.race || c.network === 'offline-after-start')
     );
     expect(misplaced.map((c) => c.id)).toEqual([]);
   });

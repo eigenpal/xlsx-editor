@@ -1,13 +1,13 @@
 /** @jsxImportSource react */
 // What the demo keeps when a save overlaps other work, in happy-dom (`demo-harness.tsx`): a later
 // edit keeps the message of a failed or cancelled save; during the download of the sample at start
-// and during a headings switch, each Save says why it waits and no save starts; while a workbook
-// is open and a picked file runs its steps before its load, the toolbar Save says that a workbook
-// is loading; and after a save that the browser refused for a late dialog, the next press writes
-// the kept bytes. These were steps of the browser check (`scripts/verify-demo.ts`).
+// and during the read of a picked file, each Save says why it waits and no save starts; while a
+// workbook is open and a picked file runs its steps before its load, the toolbar Save says that a
+// workbook is loading; and after a save that the browser refused for a late dialog, the next press
+// writes the kept bytes. These were steps of the browser check (`scripts/verify-demo.ts`).
 
 import { afterEach, describe, expect, test } from 'bun:test';
-import { act, cleanup, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import { SAVE_FAILED } from '../save.ts';
 import { mountDemo, settle, WAIT_MS } from './demo-harness.tsx';
 import {
@@ -16,7 +16,6 @@ import {
   EDIT,
   largeWorkbook,
   openFile,
-  pressHeadings,
   pressSave,
   pressToolbarSave,
   savesEnd,
@@ -30,7 +29,6 @@ afterEach(cleanup);
 describe('a save that overlaps other work', () => {
   test('a later edit does not replace the error of a failed write or the silence of a cancel', async () => {
     const demo = await mountDemo();
-    await demo.headingsTo(false);
     // The demo reports a failed write on the console, and this test causes that failure.
     const consoleError = console.error;
     console.error = (...args: unknown[]) => {
@@ -71,7 +69,7 @@ describe('a save that overlaps other work', () => {
     }
   });
 
-  test('during the download of the sample, the headings switch and each Save say why they wait, and no save starts', async () => {
+  test('during the download of the sample, each Save says why it waits, and no save starts', async () => {
     let release = () => {};
     const demo = await mountDemo({
       beforeStart: (services) => (release = services.hold('sample.xlsx')),
@@ -80,10 +78,6 @@ describe('a save that overlaps other work', () => {
     const counts = countingPicker(false);
     const savingSeen = watchSaving(demo);
     try {
-      pressHeadings(demo);
-      await demo.alertSays('Could not switch the headings: a workbook is opening');
-      expect(demo.headingsBox.checked).toBe(true);
-      closeAlert(demo);
       // The download is part of the open: a save key on the body stays in the page and says why.
       act(() => (document.activeElement as HTMLElement | null)?.blur());
       const onBody = new KeyboardEvent('keydown', {
@@ -124,8 +118,7 @@ describe('a save that overlaps other work', () => {
 
   test('while a workbook is open and a picked file runs its steps before its load, the toolbar Save says that a workbook is loading', async () => {
     const demo = await mountDemo();
-    // The option is on, so the picked file is rewritten in steps before its load starts.
-    await demo.headingsTo(true);
+    // The demo reads and checks the picked file in steps before its load starts.
     const counts = countingPicker(false);
     try {
       demo.pickFile('slow.xlsx', largeWorkbook('Slow'));
@@ -150,19 +143,22 @@ describe('a save that overlaps other work', () => {
     }
   });
 
-  test('during a headings switch, Control+S, the toolbar Save, and the top bar Save give one text, and no save starts', async () => {
+  test('while a picked file is still in its read, Control+S, the toolbar Save, and the top bar Save give one text, and no save starts', async () => {
     const demo = await mountDemo();
-    await demo.headingsTo(false);
-    await openFile(demo, 'Switch', largeWorkbook('Switch'));
     const counts = countingPicker(false);
     const savingSeen = watchSaving(demo);
-    const text = 'Could not save: the headings are switching';
+    const text = 'Could not save: a workbook is opening';
+    // The read of the file waits for the test, so the open runs during each press.
+    let release = () => {};
+    const held = new Promise<void>((resolve) => (release = resolve));
+    const bytes = smallWorkbook('Held');
+    const file = {
+      name: 'held.xlsx',
+      size: bytes.length,
+      arrayBuffer: async () => (await held, bytes.slice().buffer),
+    };
     try {
-      pressHeadings(demo);
-      await waitFor(() => expect(demo.busy()).toContain('Switching the headings'), {
-        timeout: WAIT_MS,
-        interval: 1,
-      });
+      act(() => void fireEvent.change(demo.openInput, { target: { files: [file] } }));
       demo.saveKey();
       await demo.alertSays(text);
       closeAlert(demo);
@@ -171,17 +167,17 @@ describe('a save that overlaps other work', () => {
       closeAlert(demo);
       pressSave(demo);
       await demo.alertSays(text);
-      // The switch still runs, so the presses landed inside it.
-      expect(demo.busy()).toContain('Switching the headings');
       // The status strip of the editor shows no refusal of its own.
       expect(document.querySelector('.xlsx-refusal')?.textContent ?? '').toBe('');
-      await waitFor(() => expect(demo.busy()).not.toContain('Switching the headings'), {
-        timeout: WAIT_MS,
-      });
-      expect(demo.headingsBox.checked).toBe(true);
+      // A save that started shows its status after 300 ms, and opens the file dialog at its end.
+      await settle(1000);
+      expect(demo.workbookName()).toBe('Sample workbook.xlsx');
+      release();
+      await demo.showsSheet('Held');
       expect(counts.calls).toBe(0);
       expect(savingSeen()).toBe(false);
     } finally {
+      release();
       savingSeen();
       setPicker(demo.services.keepingPicker);
     }
@@ -190,7 +186,6 @@ describe('a save that overlaps other work', () => {
   for (const press of ['key', 'toolbar Save'] as const)
     test(`after a save that the browser refused for a late dialog, the ${press} writes the kept bytes`, async () => {
       const demo = await mountDemo();
-      await demo.headingsTo(true);
       // Each press opens its own sheet, so the test does not pass on another workbook.
       const sheet = press === 'key' ? 'Ready' : 'Toolbar';
       await openFile(demo, sheet, largeWorkbook(sheet));

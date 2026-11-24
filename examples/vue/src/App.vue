@@ -3,19 +3,19 @@
 // form. It opens the sample workbook of the React demo at start, or a workbook that you pick,
 // and downloads the saved copy. The shell is the React demo's (examples/vite/src/demo.css): the
 // top bar with the brand lockup, the React | Vue switcher, the name of the open workbook with
-// its muted extension, the editor's menu bar, Show all headings, View only, the theme toggle, Open a file, and Save;
-// then the toolbar, and the formula bar, grid, and footer in one card. The workbook name is a
-// text field, as in the React demo: a click edits it, File > Rename workbook focuses it, and
-// the download takes the name that the user gave. The demo's own text is
-// English and stays out of `packages/i18n` (AGENTS.md, "i18n").
+// its muted extension, the editor's menu bar, View only, the theme toggle, Open a file, and
+// Save; then the toolbar, and the formula bar, grid, and footer in one card. The workbook name
+// is a text field, as in the React demo: a click edits it, File > Rename workbook focuses it,
+// and the download takes the name that the user gave. The demo's own text is English and stays
+// out of `packages/i18n` (AGENTS.md, "i18n").
 //
-// The open, headings, and save logic is in `session.ts`, as the React demo does it: an open
-// checks the file before it asks about unsaved edits, a newer pick stops an older open, the
-// headings option is on at start, and Save puts the file's own heading flags back.
+// The open and save logic is in `session.ts`, as the React demo does it: an open checks the
+// file before it asks about unsaved edits, and a newer pick stops an older open. The editor
+// shows the row and column headings of each sheet as the file sets them.
 //
 // It leaves out these parts of the React demo: the file save picker (Save always downloads),
 // the status of a long save, the F6 stop in the top bar, the refusal of keys during an open,
-// the sheet zooms of a reopen, and the notices after a save or a headings switch.
+// the phone zoom of each sheet, and the notices after a save.
 import {
   computed,
   onBeforeUnmount,
@@ -144,13 +144,6 @@ function pick(event: Event) {
   if (file) void session.openFile(file);
 }
 
-/** Switches the headings option. The box shows the option in force after the switch. */
-async function onHeadings(event: Event) {
-  const box = event.target as HTMLInputElement;
-  await session.setHeadings(box.checked);
-  box.checked = state.headings;
-}
-
 /** Closes the message and gives the focus back to the grid. */
 function closeMessage() {
   session.clearMessage();
@@ -159,8 +152,6 @@ function closeMessage() {
 
 const toolbarSave = (bytes: Uint8Array<ArrayBuffer>, result: SavedWorkbook) =>
   void session.save(bytes, result);
-const toolbarSaveStart = (started: Promise<SavedWorkbook | null>) =>
-  session.onToolbarSaveStart(started);
 
 /** A held Enter repeats the click, and each click would build the file again. */
 function onSaveKey(e: KeyboardEvent) {
@@ -222,10 +213,9 @@ void session.openSample(async () => {
              Open, File > Save its save, and File > Rename workbook focuses the name field. -->
         <XlsxEditorMenu
           class-name="demo-menubar"
-          :opening="state.opening || state.switching"
+          :opening="state.opening"
           :on-open="() => openInput?.click()"
           :on-save="toolbarSave"
-          :on-save-start="toolbarSaveStart"
         >
           <XlsxEditorMenu.File>
             <XlsxEditorMenu.Separator />
@@ -241,23 +231,8 @@ void session.openSample(async () => {
         </XlsxEditorMenu>
         <div class="demo-topbar__actions">
           <span class="demo-busy" role="status">{{
-            state.switching
-              ? 'Switching the headings.'
-              : state.opening
-                ? 'Opening the workbook.'
-                : ''
+            state.opening ? 'Opening the workbook.' : ''
           }}</span>
-          <label class="demo-pill" title="Show the row and column headings of every sheet">
-            <input
-              type="checkbox"
-              class="demo-sr-only"
-              aria-label="Show all headings"
-              :checked="state.headings"
-              @change="onHeadings"
-            />
-            <Icon name="table_chart" />
-            <span class="demo-pill__label">Show all headings</span>
-          </label>
           <label class="demo-pill" title="Refuse every edit">
             <input v-model="viewOnly" type="checkbox" class="demo-sr-only" aria-label="View only" />
             <Icon name="visibility" />
@@ -295,11 +270,7 @@ void session.openSample(async () => {
       <main class="demo-main">
         <h1 class="demo-sr-only">XLSX Editor</h1>
         <div class="demo-dock">
-          <XlsxEditorToolbar
-            :opening="state.opening || state.switching"
-            :on-save="toolbarSave"
-            :on-save-start="toolbarSaveStart"
-          />
+          <XlsxEditorToolbar :opening="state.opening" :on-save="toolbarSave" />
         </div>
         <div class="demo-workspace">
           <div class="demo-canvas">

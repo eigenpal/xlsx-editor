@@ -2,8 +2,7 @@
 // The saves of the demo, in happy-dom (`demo-harness.tsx`): the top bar Save, the toolbar Save,
 // and Control+S each write one copy that keeps the edit and every sheet; the number format
 // dialog, the number format list, the decimal step, and typed entry write codes that a save
-// keeps; and the headings option keeps the edit, the sheet, its zoom, and the heading flags of
-// the file. These were steps of the browser check (`scripts/verify-demo.ts`).
+// keeps. These were steps of the browser check (`scripts/verify-demo.ts`).
 
 import { afterEach, describe, expect, test } from 'bun:test';
 import { act, cleanup, fireEvent, waitFor } from '@testing-library/react';
@@ -12,21 +11,11 @@ import { numberFormatChoiceCode } from '../../../../packages/core/src/editor/ind
 import { attr, child, textOf, workbookIndex } from '../../../../packages/core/src/store/index.ts';
 import { SAMPLE_BOLD_EDIT } from '../../../../scripts/sample-workbook/edits.ts';
 import { SHEET_GUIDE } from '../../../../scripts/sample-workbook/showcase-sheets.ts';
-import {
-  flagsOf,
-  formatAt,
-  mountDemo,
-  readSaved,
-  sampleBytes,
-  settle,
-  WAIT_MS,
-  type Demo,
-} from './demo-harness.tsx';
+import { formatAt, mountDemo, readSaved, settle, WAIT_MS, type Demo } from './demo-harness.tsx';
 
 afterEach(cleanup);
 
 const { sheet, ref } = SAMPLE_BOLD_EDIT;
-const [SAMPLE_SHEET] = SHEET_GUIDE[0]!;
 
 /** Reads a saved copy, and checks that it holds every sheet of the sample. */
 function savedSample(bytes: Uint8Array) {
@@ -37,11 +26,9 @@ function savedSample(bytes: Uint8Array) {
 
 const boldIn = (bytes: Uint8Array) => formatAt(savedSample(bytes), sheet, ref).bold;
 
-/** Mounts the demo with the headings option off, on the sheet of the Bold edit. */
+/** Mounts the demo on the sheet of the Bold edit. */
 async function onEditSheet(): Promise<Demo> {
   const demo = await mountDemo();
-  await demo.setHeadings(false);
-  demo.closeMessage();
   await demo.tab(sheet);
   return demo;
 }
@@ -140,41 +127,5 @@ describe('a save of the demo', () => {
     };
     expect(at('K5')).toEqual({ type: 'n', value: '0.12', numFmtId: 9 });
     expect(at('K6')).toEqual({ type: 'n', value: '46338', numFmtId: 14 });
-  });
-
-  test('the headings option on and off keeps the edit, the sheet, its zoom, and the heading flags of the file', async () => {
-    const demo = await onEditSheet();
-    demo.bold();
-    const flags = flagsOf(sampleBytes());
-    const level = () => document.querySelector('.demo-root .xlsx-zoom-level')?.textContent;
-    act(() => void fireEvent.click(demo.view.getAllByRole('button', { name: 'Zoom in' })[0]!));
-    const zoom = level();
-    expect(zoom).not.toBe('100%');
-    await demo.setHeadings(true);
-    expect(demo.shownSheet()).toBe(sheet);
-    await waitFor(() => expect(level()).toBe(zoom), { timeout: WAIT_MS });
-    for (const from of ['header', 'toolbar'] as const) {
-      const bytes = await demo.save(from);
-      expect(boldIn(bytes)).toBe(true);
-      expect(flagsOf(bytes)).toBe(flags);
-    }
-    await demo.tab(SAMPLE_SHEET);
-    expect(demo.headingsShown()).toBe(true);
-    await demo.setHeadings(false);
-    expect(demo.headingsShown()).toBe(false);
-    const without = await demo.save();
-    expect(boldIn(without)).toBe(true);
-    expect(flagsOf(without)).toBe(flags);
-  });
-
-  test('a workbook that opens with the headings option on shows its headings and saves its own flags', async () => {
-    const demo = await mountDemo();
-    demo.pickFixture('basic-values');
-    await demo.showsSheet('Values');
-    demo.pickSample();
-    await demo.showsSheet(SAMPLE_SHEET);
-    expect(demo.headingsBox.checked).toBe(true);
-    expect(demo.headingsShown()).toBe(true);
-    expect(flagsOf(await demo.save())).toBe(flagsOf(sampleBytes()));
   });
 });

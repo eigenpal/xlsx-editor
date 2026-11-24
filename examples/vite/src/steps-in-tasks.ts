@@ -1,7 +1,7 @@
-// The demo's loop for the work that it does itself on a workbook: the check before an open and
-// the heading rewrite. The store gives this work as steps (`Generator<void, T>`). The loop runs
-// the steps for a few milliseconds at a time, each slice in its own task, so the page stays
-// responsive during a large workbook. The editor runs its own load and save in short tasks.
+// The demo's loop for the work that it does itself on a workbook: the check before an open. The
+// store gives this work as steps (`Generator<void, T>`). The loop runs the steps for a few
+// milliseconds at a time, each slice in its own task, so the page stays responsive during a large
+// workbook. The editor runs its own load and save in short tasks.
 
 /** The work of one slice, in milliseconds. */
 const SLICE_MS = 12;

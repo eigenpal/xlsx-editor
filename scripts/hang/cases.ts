@@ -32,8 +32,6 @@ export type HangNetwork =
 
 export interface HangCase {
   readonly id: string;
-  /** Turn off the demo's headings option, because that step rewrites the hostile value. */
-  readonly headingsOff?: true;
   /** The text that cell A1 must show, for a case that could lose its data and still open. */
   readonly firstCell?: string;
   /** The hostile input or the fault. The report and each failure line show it. */
@@ -53,7 +51,7 @@ export interface HangCase {
 }
 
 /** The long work of the demo during which the test opens another workbook. */
-export type HangRace = 'headings-switch' | 'headings-second-press' | 'save';
+export type HangRace = 'save';
 
 /** The name of the first sheet of every hostile workbook, which the test waits for. */
 export const HOSTILE_SHEET = 'Hostile';
@@ -439,7 +437,6 @@ const FILE_CASES: readonly HangCase[] = [
     id: 'sst-count-huge',
     covers: 'x:sst/@count and @uniqueCount state 4294967295 items',
     expect: 'open',
-    headingsOff: true,
     bytes: () =>
       patchPart(book(sheet(stringRows(3)), { strings: ['one', 'two', 'three'] }), STRINGS, (xml) =>
         xml.replace(/<sst\b[^>]*>/, (tag) =>
@@ -922,21 +919,6 @@ const FILE_CASES: readonly HangCase[] = [
     id: 'sheet-dense',
     covers: 'a worksheet of 500000 numeric cells in 20 columns',
     expect: 'open',
-    bytes: denseWorkbook,
-  },
-  {
-    id: 'race-open-during-switch',
-    covers: 'another workbook opens while the headings switch of a large workbook runs',
-    expect: 'open',
-    race: 'headings-switch',
-    bytes: denseWorkbook,
-  },
-  {
-    id: 'race-second-press-during-switch',
-    covers:
-      'a second press of the headings option and a Save during the switch of a large workbook',
-    expect: 'open',
-    race: 'headings-second-press',
     bytes: denseWorkbook,
   },
   {

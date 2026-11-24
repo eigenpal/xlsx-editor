@@ -1,15 +1,14 @@
-// The open, headings, and save logic of the Vue demo (`session.ts`), under Bun, over a stand-in
-// editor: Save puts the file's own heading flags back, an open asks before unsaved edits are
-// lost and only after the file passes its checks, a newer pick or a no stops an earlier open, and
-// a name that the user gives in the top bar names the download until the next open.
+// The open and save logic of the Vue demo (`session.ts`), under Bun, over a stand-in editor: the
+// editor gets the bytes of the file and Save downloads the bytes that the editor saves, an open
+// asks before unsaved edits are lost and only after the file passes its checks, a newer pick or a
+// no stops an earlier open, a save waits for an open, and a name that the user gives in the top
+// bar names the download until the next open.
 
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { EditorSnapshot, SavedWorkbook } from '@xlsx-editor.dev/core/editor';
-import { readXlsx } from '@xlsx-editor.dev/core/store';
 import { fixtureFile } from '../../../scripts/fixtures/catalog.ts';
-import { headingFlags } from '../../vite/src/headings.ts';
 import { DemoSession, MAX_FILE_BYTES, type PickedFile, type SessionEditor } from './session.ts';
 
 const ROOT = join(import.meta.dir, '../../..');
@@ -17,9 +16,6 @@ const sampleBytes = () =>
   new Uint8Array(readFileSync(join(ROOT, 'examples/vite/public/sample.xlsx')));
 const fixtureBytes = (name: string) =>
   new Uint8Array(readFileSync(join(ROOT, 'fixtures', fixtureFile(name))));
-
-/** The heading flags of every worksheet view of `bytes`, as text to compare. */
-const flagsOf = (bytes: Uint8Array) => JSON.stringify([...headingFlags(readXlsx(bytes))]);
 
 /** A stand-in editor: it keeps the loaded bytes and a revision that a test moves. */
 class FakeEditor implements SessionEditor {
@@ -64,7 +60,7 @@ class FakeEditor implements SessionEditor {
       this.editing = false;
       return { ok: true };
     };
-    return { commitEdit, setActiveSheet() {}, select() {} } as never;
+    return { commitEdit } as never;
   }
 }
 
@@ -125,22 +121,15 @@ const picked = (name: string, bytes: Uint8Array): PickedFile => ({
 });
 
 describe('the Vue demo session', () => {
-  test('opens the sample with every heading shown, and Save puts the flags of the file back', async () => {
+  test('opens the bytes of the sample as they are, and Save downloads the bytes that the editor saves', async () => {
     const { demo, editor, downloads } = session();
     const sample = sampleBytes();
     await demo.openSample(async () => sample.slice().buffer);
     expect(demo.state.label).toBe('sample');
-    // The sample hides the headings of a sheet, and the shown copy shows them.
-    expect(flagsOf(editor.loaded[0]!)).not.toBe(flagsOf(sample));
+    expect(editor.loaded[0]).toEqual(sample);
     await demo.saveNow();
     expect(downloads.map((d) => d.name)).toEqual(['sample-edited.xlsx']);
-    expect(flagsOf(await downloads[0]!.bytes)).toBe(flagsOf(sample));
-    // With the option off, the reopen shows the flags of the file, and Save keeps them.
-    await demo.setHeadings(false);
-    expect(demo.state.headings).toBe(false);
-    expect(flagsOf(editor.loaded.at(-1)!)).toBe(flagsOf(sample));
-    await demo.saveNow();
-    expect(flagsOf(await downloads[1]!.bytes)).toBe(flagsOf(sample));
+    expect(await downloads[0]!.bytes).toEqual(sample);
   });
 
   test('a name that the user gives names the download, and the next open drops it', async () => {
@@ -267,25 +256,6 @@ describe('the Vue demo session', () => {
     expect(demo.state.label).toBe('sample');
   });
 
-  test('an edit during the headings steps of an accepted pick asks again, and a no keeps it', async () => {
-    const { demo, editor, asked, answers } = session();
-    await demo.openSample(async () => sampleBytes().buffer);
-    editor.revision = 5;
-    // The edit comes right after the yes, while the picked file runs its headings steps.
-    answers.onAsk = () => {
-      answers.onAsk = () => {};
-      queueMicrotask(() => {
-        editor.revision += 1;
-        answers.accept = false;
-      });
-    };
-    await demo.openFile(picked('basic-values.xlsx', fixtureBytes('basic-values')));
-    expect(asked.length).toBe(2);
-    expect(editor.loaded.length).toBe(1);
-    expect(demo.state.label).toBe('sample');
-    expect(demo.hasUnsavedEdits()).toBe(true);
-  });
-
   test('a top bar Save and a toolbar Save during it download one copy', async () => {
     const { demo, editor, downloads } = session();
     await demo.openSample(async () => sampleBytes().buffer);
@@ -297,40 +267,18 @@ describe('the Vue demo session', () => {
     expect(downloads.length).toBe(1);
   });
 
-  test('a headings switch is refused while a toolbar save has not delivered its bytes', async () => {
-    const { demo } = session();
+  test('a save during an open is refused and downloads nothing', async () => {
+    const { demo, downloads } = session();
     await demo.openSample(async () => sampleBytes().buffer);
-    let deliver = (_: SavedWorkbook | null) => {};
-    demo.onToolbarSaveStart(new Promise((resolve) => (deliver = resolve)));
-    await demo.setHeadings(false);
+    const later = heldFile('basic-values.xlsx', fixtureBytes('basic-values'));
+    const open = demo.openFile(later.file);
+    await demo.saveNow();
     expect(demo.state.error).toBe(
-      'Could not switch the headings: a save is running. Try again when it ends.'
+      'Could not save: a workbook is opening. Try again when it shows.'
     );
-    expect(demo.state.headings).toBe(true);
-    deliver(null);
-    await new Promise((done) => setTimeout(done, 0));
-    await demo.setHeadings(false);
-    expect(demo.state.headings).toBe(false);
-  });
-
-  test('the headings switch keeps edits protected during the reopen, and refuses during an open', async () => {
-    const { demo, editor } = session();
-    const open = demo.openSample(async () => sampleBytes().buffer);
-    await demo.setHeadings(false);
-    expect(demo.state.error).toBe(
-      'Could not switch the headings: a workbook is opening. Try again when it shows.'
-    );
+    expect(downloads.length).toBe(0);
+    later.release();
     await open;
-    editor.revision = 2;
-    let protectedDuringReopen = false;
-    const load = editor.load.bind(editor);
-    editor.load = async (bytes) => {
-      protectedDuringReopen = demo.hasUnsavedEdits();
-      return load(bytes);
-    };
-    await demo.setHeadings(false);
-    expect(protectedDuringReopen).toBe(true);
-    // The reopen starts the revisions again, and the edits from before it stay unsaved.
-    expect(demo.hasUnsavedEdits()).toBe(true);
+    expect(demo.state.label).toBe('basic-values.xlsx');
   });
 });

@@ -730,7 +730,6 @@ class Editor implements XlsxEditorInstance {
   }
 
   // ------------------------------------------------------------------ surface
-
   attach(element: HTMLElement): void {
     if (this.destroyed) return;
     if (this.host === element) return;
@@ -748,6 +747,7 @@ class Editor implements XlsxEditorInstance {
       onScroll: () => this.scroll.onScroll(),
       exitHint: () => this.t('grid.exitHint'),
       live: this.live,
+      menus: this.events,
       // Mod+wheel and a trackpad pinch zoom (`WheelZoom`); a plain wheel scrolls.
       onWheel: (e) => {
         const step = this.wheelZoom.step(e);

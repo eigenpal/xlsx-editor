@@ -1,6 +1,6 @@
 /**
  * The rows of the support matrix for the customization of the chrome by host code: the theme
- * scope, the editor events, the language of the chrome, and the menu bar. `support-matrix.ts` lists
+ * scope, the editor events, the language of the chrome, the menu bar, and the grid context menu. `support-matrix.ts` lists
  * them in its order; the rules of that file hold here.
  */
 
@@ -27,7 +27,7 @@ export const CUSTOMIZATION_FEATURES: readonly SupportFeature[] = [
     category: 'viewer',
     status: 'supported',
     notes:
-      'A host subscribes to four events with `useEditorEvent` or `editor.on`. `change` fires for an edit, an undo, a redo, a settled load, and a close. `selectionChange` fires when the sheet or the selection changes. `rejection` fires once for each refused command. `openFailure` fires when a workbook does not open. A zoom change fires no event.',
+      'A host subscribes to five events with `useEditorEvent` or `editor.on`. `change` fires for an edit, an undo, a redo, a settled load, and a close. `selectionChange` fires when the sheet or the selection changes. `rejection` fires once for each refused command. `openFailure` fires when a workbook does not open. `contextMenu` fires when the user asks for the grid context menu. A zoom change fires no event.',
     docsLink: '/docs/customization/events',
     evidence: {
       tests: [
@@ -67,6 +67,22 @@ export const CUSTOMIZATION_FEATURES: readonly SupportFeature[] = [
         `${CORE}/editor/__tests__/menu-bar.test.ts`,
         'packages/react/src/__tests__/menu.test.tsx',
         'packages/vue/test/menu.test.ts',
+      ],
+    },
+  },
+  {
+    id: 'viewer.context-menu',
+    name: 'Grid context menu',
+    category: 'viewer',
+    status: 'supported',
+    notes:
+      "A secondary press on the grid opens a context menu at the pointer, and Shift+F10 or the Menu key opens it at the active cell. A press outside the selection selects the cell, row, column, or sheet under the pointer first. The rows follow what the press hit: the clipboard, insert and delete of rows or columns, clear, merge for cells, and the number format dialog. Each row is a chrome slot with the label, enabled state, and command of the toolbar. A secondary press in an open cell edit keeps the browser menu. Hosts hide, replace, and add rows, or remove the menu. The menu writes no change of its own: each row runs the edit of its slot, which that edit's row covers.",
+    docsLink: '/docs/customization/menus',
+    evidence: {
+      tests: [
+        `${CORE}/editor/__tests__/grid-context-menu.test.ts`,
+        'packages/react/src/__tests__/context-menu.test.tsx',
+        'packages/vue/test/context-menu.test.ts',
       ],
     },
   },

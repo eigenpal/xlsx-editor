@@ -548,7 +548,7 @@ function renderRows(
 }
 
 /** The rows of a panel: the registry rows with the host's rows merged, or only the host's. */
-function panelRows(
+export function panelRows(
   entries: readonly ChromeMenuEntry[] | undefined,
   children: ReactNode,
   preset: boolean,
@@ -599,6 +599,8 @@ export function MenuPanel(props: {
   readonly focusEdge?: MutableRefObject<'first' | 'last' | null>;
   /** For a bar menu's panel: the menu, whose keyboard open the bar asks for. */
   readonly menuId?: string;
+  /** The owner places the panel, as the context menu does at its point (`placeContextMenu`). */
+  readonly placed?: boolean;
   readonly onClose: () => void;
   readonly className?: string;
   readonly children: ReactNode;
@@ -624,11 +626,12 @@ export function MenuPanel(props: {
   });
   // While the panel shows, it stays inside the viewport (`placeMenuPanel`).
   const prefer = props.menuId === MORE_MENU_ID ? 'end' : undefined;
+  const placed = props.placed === true;
   useLayoutEffect(() => {
     const node = ref.current;
-    if (!node || hidden) return undefined;
+    if (!node || hidden || placed) return undefined;
     return placeMenuPanel(node, { submenu, ...(prefer ? { prefer } : {}) });
-  }, [hidden, submenu, prefer]);
+  }, [hidden, submenu, prefer, placed]);
   const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     const panel = ref.current;
     if (!panel) return;

@@ -77,7 +77,7 @@ const TAP_SLOP = 10;
 /** How far, in CSS pixels, a double-click on a heading edge may be from the press before it. */
 const PRESS_SLOP = 2;
 
-type Hit = { kind: 'corner' } | { kind: 'columns' | 'rows' | 'cells'; cell: GridPoint };
+export type Hit = { kind: 'corner' } | { kind: 'columns' | 'rows' | 'cells'; cell: GridPoint };
 
 export class GridPointer {
   #drag: { pointerId: number; kind: 'cells' | 'columns' | 'rows' } | null = null;
@@ -141,6 +141,40 @@ export class GridPointer {
     if (y < box.headHeight) return { kind: 'columns', cell };
     if (x < box.headWidth) return { kind: 'rows', cell };
     return { kind: 'cells', cell };
+  }
+
+  /**
+   * A secondary press that opens the grid context menu (`grid-context-menu.ts`): commit the open
+   * cell edit, focus the grid, and select what the press hits when the selection does not hold
+   * it, so the menu acts on the cells under the pointer. A press inside the selection keeps it.
+   * Returns what the press hit and the selection after it, or null when it hit nothing or the
+   * store refused the commit.
+   */
+  contextPress(e: MouseEvent): { readonly hit: Hit; readonly selection: GridSelection } | null {
+    const at = this.hit(e);
+    const cur = this.#host.current();
+    if (!at || !cur || !this.#host.commitOpenEdit()) return null;
+    this.#host.focus();
+    const target =
+      at.kind === 'cells'
+        ? null
+        : at.kind === 'corner'
+          ? selectBand(cur.sheet, 'all', 0, 0)
+          : selectBand(
+              cur.sheet,
+              at.kind,
+              at.kind === 'columns' ? at.cell.col : at.cell.row,
+              at.kind === 'columns' ? at.cell.col : at.cell.row
+            );
+    const range = cur.selection.range;
+    const holds = target
+      ? inRange(range, target.range.start) && inRange(range, target.range.end)
+      : inRange(range, (at as { cell: GridPoint }).cell);
+    if (!holds) {
+      if (target) this.#host.setSelection(target, target.active, target.active);
+      else this.#host.select((at as { cell: GridPoint }).cell);
+    }
+    return { hit: at, selection: this.#host.current()?.selection ?? cur.selection };
   }
 
   down(e: PointerEvent): void {

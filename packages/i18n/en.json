@@ -608,5 +608,8 @@
     "zoomMax": "The zoom is at its largest.",
     "zoomMin": "The zoom is at its smallest.",
     "zoomActual": "The zoom is 100%."
+  },
+  "contextMenu": {
+    "ariaLabel": "Context menu"
   }
 }

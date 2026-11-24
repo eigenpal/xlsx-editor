@@ -621,6 +621,9 @@ const enJson: {
         zoomMin: string;
         zoomActual: string;
     };
+    contextMenu: {
+        ariaLabel: string;
+    };
 };
 
 // @public

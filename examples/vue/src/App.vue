@@ -30,6 +30,7 @@ import {
   SheetTabs,
   StatusMessage,
   XlsxEditorContent,
+  XlsxEditorContextMenu,
   XlsxEditorMenu,
   XlsxEditorRoot,
   XlsxEditorToolbar,
@@ -308,6 +309,7 @@ void session.openSample(async () => {
               <SheetTabs />
               <ZoomControl />
             </div>
+            <XlsxEditorContextMenu />
           </div>
           <div v-if="state.error" class="demo-message demo-message--error">
             <span class="demo-message__text" role="alert">{{ state.error }}</span>

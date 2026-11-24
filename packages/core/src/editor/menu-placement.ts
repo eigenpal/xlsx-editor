@@ -168,3 +168,101 @@ export function placeMenuPanel(
     panel.removeAttribute('data-scrolls');
   };
 }
+
+// After `placeInViewport` of pptx-editor/packages/react/src/ContextMenu.tsx at 9d7d60b7.
+/**
+ * Where the grid context menu opens around the point (`x`, `y`), in viewport px: below and toward
+ * the end of the point first, above it when the bottom has no room, and toward the start when the
+ * end has no room; clamped to the margins when neither side has room. @internal
+ */
+export function contextMenuPlacement(input: {
+  readonly x: number;
+  readonly y: number;
+  readonly rtl: boolean;
+  readonly width: number;
+  readonly height: number;
+  readonly viewportWidth: number;
+  readonly viewportHeight: number;
+  readonly margin?: number;
+}): { readonly left: number; readonly top: number; readonly maxHeight: number } {
+  const margin = input.margin ?? MENU_PANEL_MARGIN;
+  const maxHeight = Math.max(0, input.viewportHeight - margin * 2);
+  const width = Math.min(input.width, Math.max(0, input.viewportWidth - margin * 2));
+  const height = Math.min(input.height, maxHeight);
+  const clamp = (v: number, size: number, room: number) =>
+    Math.max(margin, Math.min(v, room - margin - size));
+  const toEnd = input.rtl ? input.x - width : input.x;
+  const toStart = input.rtl ? input.x : input.x - width;
+  const endFits = toEnd >= margin && toEnd + width <= input.viewportWidth - margin;
+  const left = clamp(endFits ? toEnd : toStart, width, input.viewportWidth);
+  // Below the point when it fits, else above it when that fits, else as near the point as the
+  // viewport allows.
+  const below = input.y + height <= input.viewportHeight - margin;
+  const above = input.y - height >= margin;
+  const top = clamp(below || !above ? input.y : input.y - height, height, input.viewportHeight);
+  return { left, top, maxHeight };
+}
+
+/**
+ * Place the grid context menu `panel` at the point (`x`, `y`) in window px. `anchor` is the
+ * panel's parent: it stands at the point with `position: fixed`, also inside a host that
+ * translates the editor, and the panel stands against it inside the viewport
+ * (`contextMenuPlacement`). Where the browser has the top layer (`popover="manual"`), the anchor
+ * goes there, so no host element with a higher stacking order covers the menu; elsewhere the
+ * stylesheet's `--doc-z-context` orders it. A panel taller than the viewport scrolls
+ * (`data-scrolls`). Returns a function that stops the placement and leaves the top layer.
+ * @internal
+ */
+export function placeContextMenu(
+  anchor: HTMLElement,
+  panel: HTMLElement,
+  x: number,
+  y: number
+): () => void {
+  const view = hostWindowOf(panel);
+  const layer = anchor as HTMLElement & { showPopover?: () => void; hidePopover?: () => void };
+  let raised = false;
+  if (typeof layer.showPopover === 'function') {
+    try {
+      anchor.setAttribute('popover', 'manual');
+      layer.showPopover();
+      raised = true;
+    } catch {
+      // A browser that refuses the top layer keeps the stacking order of the stylesheet.
+    }
+  }
+  anchor.style.position = 'fixed';
+  anchor.style.left = `${x}px`;
+  anchor.style.top = `${y}px`;
+  // A transformed host moves the box of `fixed`: the difference corrects a translation.
+  const moved = anchor.getBoundingClientRect();
+  anchor.style.left = `${2 * x - moved.left}px`;
+  anchor.style.top = `${2 * y - moved.top}px`;
+  const place = (): void => {
+    const at = contextMenuPlacement({
+      x,
+      y,
+      rtl: view.getComputedStyle(panel).direction === 'rtl',
+      width: panel.offsetWidth,
+      height: panel.offsetHeight,
+      viewportWidth: view.innerWidth,
+      viewportHeight: view.innerHeight,
+    });
+    panel.style.maxHeight = `${at.maxHeight}px`;
+    panel.style.right = 'auto';
+    panel.style.left = `${at.left - x}px`;
+    panel.style.top = `${at.top - y}px`;
+    panel.toggleAttribute('data-scrolls', panel.scrollHeight > panel.clientHeight + 1);
+  };
+  place();
+  view.addEventListener('resize', place);
+  return () => {
+    view.removeEventListener('resize', place);
+    if (!raised) return;
+    try {
+      layer.hidePopover?.();
+    } catch {
+      // The anchor already left the top layer.
+    }
+  };
+}

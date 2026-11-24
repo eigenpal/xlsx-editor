@@ -10,8 +10,8 @@
 // `editor.on`, report the same events as `subscribe` sees.
 //
 // Intended differences from DOCX Editor:
-// - The map has the four events that this editor makes: `change`, `selectionChange`,
-//   `rejection`, and `openFailure`. DOCX Editor's drag, drop, paragraph, review, history, and
+// - The map has the five events that this editor makes: `change`, `selectionChange`,
+//   `rejection`, `openFailure`, and `contextMenu`. DOCX Editor's drag, drop, paragraph, review, history, and
 //   host events have no feature here yet.
 // - `rejection` and `openFailure` are PPTX Editor's events, in place of DOCX Editor's
 //   `diagnostic` and `error`. DOCX Editor's `diagnostic` is an anonymous channel with a
@@ -51,6 +51,7 @@ import type { GridSelection } from '../contracts/index.ts';
 import { runListeners } from '../store/store/listener-error.ts';
 import type { EditRefusal } from './cell-input.ts';
 import type { EditorFailure, EditorSnapshot } from './editor-model.ts';
+import type { GridContextMenuRequest } from './grid-context-menu.ts';
 
 /**
  * What caused a `change` event.
@@ -105,6 +106,14 @@ export interface EditorEvents {
   rejection: (refusal: EditRefusal, snapshot: EditorSnapshot) => void;
   /** A workbook did not open (`snapshot.failure`, with `snapshot.status` `'failed'`). */
   openFailure: (failure: EditorFailure, snapshot: EditorSnapshot) => void;
+  /**
+   * A secondary press on the grid, Shift+F10, or the Menu key asks for the grid context menu.
+   * The press selected the cells under the pointer first when the selection did not hold them.
+   * While at least one handler listens, the editor cancels the browser's own menu; with none,
+   * the browser shows its menu. A secondary press in the open cell editor keeps the browser's
+   * menu, for its text. The adapters' `ContextMenu` part listens to this event.
+   */
+  contextMenu: (request: GridContextMenuRequest) => void;
 }
 
 const samePoint = (a: GridSelection['active'], b: GridSelection['active']): boolean =>
@@ -155,6 +164,9 @@ function happened(event: keyof EditorEvents, prev: EditorSnapshot, next: EditorS
       return !!next.refusal && next.refusal !== prev.refusal;
     case 'openFailure':
       return !!next.failure && next.status === 'failed' && next.failure !== prev.failure;
+    case 'contextMenu':
+      // A request is no state change: `EditorListeners.requestContextMenu` calls its handlers.
+      return false;
   }
 }
 
@@ -204,6 +216,7 @@ export function onEditorEvent<E extends keyof EditorEvents>(
  */
 export class EditorListeners {
   readonly #listeners = new Set<() => void>();
+  readonly #menu = new Set<EditorEvents['contextMenu']>();
   readonly #editor: Pick<EventSource, 'snapshot'>;
   readonly #known: () => EditRefusal | null;
 
@@ -221,13 +234,33 @@ export class EditorListeners {
     return () => void this.#listeners.delete(listener);
   };
 
-  readonly on = <E extends keyof EditorEvents>(event: E, handler: EditorEvents[E]): (() => void) =>
-    onEditorEvent(
+  readonly on = <E extends keyof EditorEvents>(
+    event: E,
+    handler: EditorEvents[E]
+  ): (() => void) => {
+    if (event === 'contextMenu') {
+      // A fresh function per subscription, so the same handler twice unsubscribes once each.
+      const call: EditorEvents['contextMenu'] = (r) => (handler as EditorEvents['contextMenu'])(r);
+      this.#menu.add(call);
+      return () => void this.#menu.delete(call);
+    }
+    return onEditorEvent(
       { snapshot: () => this.#editor.snapshot(), subscribe: this.subscribe },
       event,
       handler,
       this.#known()
     );
+  };
+
+  /** Whether a handler listens to `contextMenu`: the editor then cancels the browser's menu. */
+  hasContextMenu(): boolean {
+    return this.#menu.size > 0;
+  }
+
+  /** Call every `contextMenu` handler with `request` (`runListeners`). */
+  requestContextMenu(request: GridContextMenuRequest): void {
+    runListeners([...this.#menu].map((handler) => () => handler(request)));
+  }
 
   /**
    * Call every listener. `restore`: the snapshot puts back the state from before a load that
@@ -241,5 +274,6 @@ export class EditorListeners {
   /** Drop every listener: the editor is destroyed. */
   clear(): void {
     this.#listeners.clear();
+    this.#menu.clear();
   }
 }

@@ -2372,3 +2372,28 @@
     outline-color: CanvasText;
   }
 }
+
+/* The grid context menu: a point that stands where the menu opens (`placeContextMenu`), and its
+   panel against it. The point is a manual popover in the top layer where the browser has one: the
+   rules below remove the browser's popover box, and keep it shown while closed, so the panel can
+   take the focus before the point enters the top layer. */
+.xlsx-context-menu {
+  position: fixed;
+  inset: auto;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  z-index: var(--doc-z-context);
+}
+.xlsx-context-menu > .xlsx-menu-panel {
+  top: 0;
+  left: 0;
+}

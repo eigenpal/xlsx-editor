@@ -4,7 +4,7 @@ description: 'Run your own code when the workbook content, the selection, a refu
 category: 'Customization'
 ---
 
-The editor reports four typed events. Use them to save on a content change, to follow the selection in your own panel, to show a refused edit in your own message, or to log a failed open.
+The editor reports five typed events. Use them to save on a content change, to follow the selection in your own panel, to show a refused edit in your own message, to log a failed open, or to show your own grid context menu.
 
 | Event | Fires when | Handler arguments |
 | --- | --- | --- |
@@ -12,6 +12,7 @@ The editor reports four typed events. Use them to save on a content change, to f
 | `selectionChange` | The shown sheet or the selection changes, also when a load settles or the workbook closes. | `(snapshot)` |
 | `rejection` | The editor refuses a command, an edit, or a save. | `(refusal, snapshot)` |
 | `openFailure` | A workbook does not open. | `(failure, snapshot)` |
+| `contextMenu` | A secondary press on the grid, Shift+F10, or the Menu key asks for the grid context menu. While a handler listens, the editor cancels the browser's menu. | `(request)` |
 
 A zoom change, a mode change, and the text of an open cell edit fire no event. A change to view mode that commits an open cell edit with changed text fires `change` for that commit. Nothing fires for the state at the time that you subscribe.
 

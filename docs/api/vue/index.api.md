@@ -45,6 +45,8 @@ import { ExtractPublicPropTypes } from 'vue';
 import { fieldHistoryKey } from '@xlsx-editor.dev/core/editor';
 import { FieldKeys } from '@xlsx-editor.dev/core/editor';
 import { FontSource } from '@xlsx-editor.dev/core/editor';
+import { GridContextMenuRequest } from '@xlsx-editor.dev/core/editor';
+import { GridContextMenuTargetKind } from '@xlsx-editor.dev/core/editor';
 import { GridPoint } from '@xlsx-editor.dev/core/editor';
 import { GridRange } from '@xlsx-editor.dev/core/editor';
 import { GridSelection } from '@xlsx-editor.dev/core/editor';
@@ -149,6 +151,20 @@ export { composesKey }
 
 export { contentFieldText }
 
+// @public
+export interface ContextMenuAnchor {
+    readonly trigger: 'pointer' | 'keyboard';
+    readonly x: number;
+    readonly y: number;
+}
+
+// @public
+export interface ContextMenuTarget {
+    readonly kind: GridContextMenuTargetKind;
+    readonly range: GridRange;
+    readonly sheetIndex: number;
+}
+
 export { CopyResult }
 
 export { CUSTOM_NUMBER_FORMAT_PREFIX }
@@ -210,6 +226,10 @@ const formulaBarProps: {
         readonly default: undefined;
     };
 };
+
+export { GridContextMenuRequest }
+
+export { GridContextMenuTargetKind }
 
 export { GridPoint }
 
@@ -585,6 +605,18 @@ export function useChromeTranslate(overrides?: MaybeRefOrGetter<ReadonlyMap<stri
 export type UseChromeTranslateReturn = ComputedRef<ChromeTranslate>;
 
 // @public
+export function useContextMenuAnchor(): UseContextMenuAnchorReturn;
+
+// @public
+export type UseContextMenuAnchorReturn = ComputedRef<ContextMenuAnchor | null>;
+
+// @public
+export function useContextMenuTarget(): UseContextMenuTargetReturn;
+
+// @public
+export type UseContextMenuTargetReturn = ComputedRef<ContextMenuTarget | null>;
+
+// @public
 export function useEditorColorMode(): UseEditorColorModeReturn;
 
 // @public
@@ -692,6 +724,10 @@ const XlsxEditor$1: vue.DefineComponent<vue.ExtractPropTypes<{
         readonly type: PropType<boolean | XlsxEditorMenuProps>;
         readonly default: undefined;
     };
+    readonly contextMenu: {
+        readonly type: PropType<boolean | XlsxEditorContextMenuProps>;
+        readonly default: undefined;
+    };
 }>, () => vue.VNode<vue.RendererNode, vue.RendererElement, {
     [key: string]: any;
 }>, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {
@@ -733,6 +769,10 @@ const XlsxEditor$1: vue.DefineComponent<vue.ExtractPropTypes<{
         readonly type: PropType<boolean | XlsxEditorMenuProps>;
         readonly default: undefined;
     };
+    readonly contextMenu: {
+        readonly type: PropType<boolean | XlsxEditorContextMenuProps>;
+        readonly default: undefined;
+    };
 }>> & Readonly<{
     onChange?: ((_snapshot: EditorSnapshot) => any) | undefined;
     onFontError?: ((_failure: EditorFailure) => any) | undefined;
@@ -748,6 +788,7 @@ const XlsxEditor$1: vue.DefineComponent<vue.ExtractPropTypes<{
     readonly colorMode: ColorMode;
     readonly opening: boolean;
     readonly menu: boolean | XlsxEditorMenuProps;
+    readonly contextMenu: boolean | XlsxEditorContextMenuProps;
 }, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
 
 // @public
@@ -780,6 +821,78 @@ const xlsxEditorContentProps: {
         readonly default: undefined;
     };
 };
+
+// @public
+export const XlsxEditorContextMenu: XlsxEditorContextMenuNamespace;
+
+// @public
+export interface XlsxEditorContextMenuNamespace {
+    (props: XlsxEditorContextMenuProps & AllowedComponentProps): VNode;
+    // (undocumented)
+    readonly ClearAll: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ClearContents: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ClearFormatting: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Copy: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Cut: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly DeleteColumns: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly DeleteRows: XlsxEditorMenuNamedRow;
+    readonly Group: typeof XlsxEditorMenuGroup;
+    // (undocumented)
+    readonly InsertColumns: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly InsertRows: XlsxEditorMenuNamedRow;
+    readonly Item: typeof XlsxEditorMenuItem;
+    // (undocumented)
+    readonly MergeAndCenter: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly MergeCells: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly NumberFormat: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Paste: XlsxEditorMenuNamedRow;
+    readonly Row: typeof XlsxEditorMenuRow;
+    // (undocumented)
+    readonly Separator: typeof XlsxEditorMenuSeparator;
+    readonly Start: typeof XlsxEditorContextMenuStart;
+    // (undocumented)
+    readonly Submenu: typeof XlsxEditorMenuSubmenu;
+    // (undocumented)
+    readonly UnmergeCells: XlsxEditorMenuNamedRow;
+}
+
+// @public
+export type XlsxEditorContextMenuProps = ExtractPublicPropTypes<typeof xlsxEditorContextMenuProps>;
+
+// @public (undocumented)
+const xlsxEditorContextMenuProps: {
+    readonly preset: {
+        readonly type: BooleanConstructor;
+        readonly default: true;
+    };
+    readonly disabled: {
+        readonly type: BooleanConstructor;
+        readonly default: false;
+    };
+    readonly onOpenChange: {
+        readonly type: PropType<(open: boolean) => void>;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+};
+
+// @public
+export const XlsxEditorContextMenuStart: vue.DefineComponent<{}, () => VNode<vue.RendererNode, vue.RendererElement, {
+    [key: string]: any;
+}>[] | undefined, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<{}> & Readonly<{}>, {}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
 
 // @public
 export type XlsxEditorFonts = readonly FontSource[] | (() => Promise<readonly FontSource[]>);
@@ -1496,6 +1609,7 @@ export type XlsxEditorNamespace = typeof XlsxEditor$1 & {
     readonly Content: typeof XlsxEditorContent;
     readonly Toolbar: typeof XlsxEditorToolbar;
     readonly Menu: typeof XlsxEditorMenu;
+    readonly ContextMenu: typeof XlsxEditorContextMenu;
     readonly FormulaBar: typeof FormulaBar;
     readonly SheetTabs: typeof SheetTabs;
     readonly ZoomControl: typeof ZoomControl;
@@ -1537,6 +1651,10 @@ const xlsxEditorProps: {
     };
     readonly menu: {
         readonly type: PropType<boolean | XlsxEditorMenuProps>;
+        readonly default: undefined;
+    };
+    readonly contextMenu: {
+        readonly type: PropType<boolean | XlsxEditorContextMenuProps>;
         readonly default: undefined;
     };
 };

@@ -103,6 +103,35 @@ export async function vueAdapterShape(contract?: ParityContract): Promise<VueAda
     },
   });
   const inOpenBar: Wrap = (node) => inViewport(h(OpenBar, null, () => [node]));
+  // The context menu renders its rows only while open: an editor whose `contextMenu` handler
+  // gets a request at once, for the active cell.
+  const OpenContextMenu = defineComponent({
+    setup(_props, { slots }) {
+      const real = vue.useXlsxEditor();
+      const opened = computed(() => {
+        const editor = real.value;
+        if (!editor) return null;
+        const on: typeof editor.on = (event, handler) => {
+          if (event !== 'contextMenu') return editor.on(event, handler);
+          (handler as Parameters<typeof editor.on<'contextMenu'>>[1])({
+            x: 0,
+            y: 0,
+            trigger: 'keyboard',
+            kind: 'cells',
+            sheetIndex: 0,
+            range: { start: { row: 0, col: 0 }, end: { row: 0, col: 0 } },
+          });
+          return () => undefined;
+        };
+        return new Proxy(editor, {
+          get: (target, key) => (key === 'on' ? on : (Reflect.get(target, key, target) as unknown)),
+        });
+      });
+      provide(vue.xlsxEditorKey, opened);
+      return () => slots.default?.();
+    },
+  });
+  const inOpenContextMenu: Wrap = (node) => inViewport(h(OpenContextMenu, null, () => [node]));
 
   const probes: Record<
     string,
@@ -198,6 +227,22 @@ export async function vueAdapterShape(contract?: ParityContract): Promise<VueAda
           props: { preset: false },
           shows: (s) =>
             s.querySelector('[role="menubar"]') !== null && s.querySelector('[data-menu]') === null,
+        },
+      },
+    },
+    XlsxEditorContextMenu: {
+      component: vue.XlsxEditorContextMenu,
+      wrap: inOpenContextMenu,
+      values: {
+        preset: {
+          props: { preset: false },
+          shows: (s) =>
+            s.querySelector('.xlsx-context-menu [role="menu"]') !== null &&
+            s.querySelector('.xlsx-context-menu [data-slot]') === null,
+        },
+        disabled: {
+          props: { disabled: true },
+          shows: (s) => s.querySelector('.xlsx-context-menu [role="menu"]') === null,
         },
       },
     },

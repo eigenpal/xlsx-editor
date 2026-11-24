@@ -37,6 +37,7 @@ import type { GridPointer } from './grid-pointer.ts';
 import type { LiveAnnouncer } from './live-announcer.ts';
 import { handleGridKey, type GridKeyHost } from './grid-keys.ts';
 import { GridExit } from './grid-exit.ts';
+import { bindGridContextMenu, type GridContextMenuInput } from './grid-context-menu.ts';
 import { scrollToTopLeft, type ViewState } from './view-map.ts';
 
 /** The view state of one sheet: zoom, scroll in points, and selection. */
@@ -178,6 +179,8 @@ export interface SurfaceInput {
   exitHint(): string;
   /** The live region of the grid. */
   readonly live: Pick<LiveAnnouncer, 'say' | 'entered'>;
+  /** The handlers of the grid context menu (`grid-context-menu.ts`). */
+  readonly menus: GridContextMenuInput['menus'];
 }
 
 /**
@@ -226,6 +229,13 @@ export function bindSurface(cleanups: (() => void)[], els: SurfaceElements, s: S
     if (s.pointer.hit(e)?.kind !== 'cells') return;
     e.preventDefault();
     s.beginEdit(undefined, 'edit');
+  });
+  // A secondary press, Shift+F10, or the Menu key asks for the grid context menu.
+  bindGridContextMenu(on, els, {
+    pointer: s.pointer,
+    input: s.input,
+    selection: () => s.editor.selection,
+    menus: s.menus,
   });
   // An input method that starts on the grid composes in the cell editor (`grid-keys.ts`).
   on(els.scroller, 'compositionstart', (e) => {

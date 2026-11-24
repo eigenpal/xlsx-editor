@@ -1,6 +1,6 @@
 ---
 title: 'Menus'
-description: 'Customize the XLSX editor menu bar with packaged commands, your own rows and menus, and file handlers.'
+description: 'Customize the XLSX editor menu bar and grid context menu with packaged commands, your own rows and menus, and file handlers.'
 category: 'Customization'
 ---
 
@@ -261,7 +261,72 @@ function askThenOpen() {
 
 ## Context menu
 
-A grid context menu comes in a later release. It will reuse the row parts and the arrangement rules of the menu bar.
+A secondary press on the grid opens the grid context menu at the pointer. Shift+F10 and the Menu key open it at the active cell. A press outside the selection selects the cell, the row, the column, or the sheet under the pointer first. A press inside the selection keeps it. The rows follow what the press hit:
+
+| Press on | Rows |
+| --- | --- |
+| A cell | Cut, Copy, Paste, Insert rows, Insert columns, Delete rows, Delete columns, Clear contents, Clear formats, Merge cells, Unmerge cells, More number formats |
+| A row heading | Cut, Copy, Paste, Insert rows, Delete rows, Clear contents, Clear formats, More number formats |
+| A column heading | Cut, Copy, Paste, Insert columns, Delete columns, Clear contents, Clear formats, More number formats |
+| The corner | Cut, Copy, Paste, Clear contents, Clear formats, More number formats |
+
+Each row is a chrome slot, as in the menu bar, with the same label, enabled state, and command. A secondary press in an open cell edit shows the browser's own menu, for the text of the edit.
+
+The packaged `XlsxEditor` mounts the context menu. Set `contextMenu` to `false` to remove it and give the browser its own menu back, or pass an object of context menu props. In your own layout, place `XlsxEditor.ContextMenu` (React) or `XlsxEditorContextMenu` (Vue) inside the viewport.
+
+The context menu takes the row parts of the menu bar. A row that names a packaged row replaces it in place, and `hidden` removes it. Your other rows render after the packaged rows. Rows in `ContextMenu.Start` render first, with a separator after them. `preset={false}` shows only your rows.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+function AddNote() {
+  // What the menu acts on: the sheet, the range, and its kind.
+  const target = useContextMenuTarget();
+  return <XlsxEditor.ContextMenu.Row label="Add note" onSelect={() => addNote(target)} />;
+}
+
+<XlsxEditor contextMenu={false} document={bytes} />
+
+<XlsxEditor.ContextMenu onOpenChange={(open) => setMenuOpen(open)}>
+  <XlsxEditor.ContextMenu.Start>
+    <AddNote />
+  </XlsxEditor.ContextMenu.Start>
+  <XlsxEditor.ContextMenu.Paste hidden />
+  <XlsxEditor.ContextMenu.Row label="Share range" onSelect={shareRange} />
+</XlsxEditor.ContextMenu>
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<XlsxEditor :context-menu="false" :document="bytes" />
+
+<XlsxEditorContextMenu :on-open-change="(open) => (menuOpen = open)">
+  <XlsxEditorContextMenu.Start>
+    <AddNote />
+  </XlsxEditorContextMenu.Start>
+  <XlsxEditorContextMenu.Paste hidden />
+  <XlsxEditorContextMenu.Row label="Share range" @select="shareRange" />
+</XlsxEditorContextMenu>
+```
+
+</Framework>
+</FrameworkTabs>
+
+| Part or hook | Options |
+| --- | --- |
+| `ContextMenu` | `preset`, `disabled`, `onOpenChange`, `className`. `disabled` gives the browser its own menu back. |
+| `ContextMenu.Start` | Rows that render before the packaged rows. |
+| `ContextMenu.Item`, `.Row`, `.Group`, `.Separator`, `.Submenu` | As in the menu bar. |
+| Named rows | `Cut`, `Copy`, `Paste`, `InsertRows`, `InsertColumns`, `DeleteRows`, `DeleteColumns`, `ClearContents`, `ClearFormatting`, `ClearAll`, `MergeCells`, `MergeAndCenter`, `UnmergeCells`, `NumberFormat`. |
+| `useContextMenuTarget()` | What the open menu acts on: `kind` (`cells`, `rows`, `columns`, or `all`), `sheetIndex`, and `range`. Null while the menu is closed. |
+| `useContextMenuAnchor()` | Where the open menu stands and how it opened: `x`, `y`, and `trigger` (`pointer` or `keyboard`). |
+
+The menu follows the WAI-ARIA menu pattern. It opens with the focus on its first row. The arrows move between rows, a letter moves to the next row that starts with it, and Escape closes the menu and returns the focus to the grid. A press outside the menu, a wheel, a scroll of the page, a resize, and a window blur close it. The menu stays inside the viewport: it opens above the point when the space below has no room, and toward the start when the end has no room.
+
+To build a menu of your own, listen to the `contextMenu` event (see [Events](/docs/customization/events)). While a handler listens, the editor cancels the browser's menu.
 
 ## See also
 

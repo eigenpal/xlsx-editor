@@ -8,6 +8,7 @@
       "topLevel": true,
       "paired": [
         "colorMode",
+        "contextMenu",
         "document",
         "fonts",
         "locale",
@@ -207,6 +208,17 @@
       "reactClassNameAsVueClass": {},
       "vueExclusive": {}
     },
+    "XlsxEditorContextMenu": {
+      "reactProps": "XlsxEditorContextMenuProps",
+      "paired": ["className", "disabled", "onOpenChange", "preset"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {},
+      "reactRenderPropsAsVueSlots": {
+        "children": "default"
+      },
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
+    },
     "XlsxEditorMenuMenu": {
       "reactProps": "XlsxEditorMenuMenuProps",
       "paired": ["after", "className", "hidden", "id", "label", "labelKey", "preset"],
@@ -291,7 +303,8 @@
     }
   },
   "propsUnchecked": {
-    "comment": "React component exports with a props type and no components entry, each with the reason. None today: every such component is checked."
+    "comment": "React component exports with a props type and no components entry, each with the reason. None today: every such component is checked.",
+    "XlsxEditorContextMenuStart": "Its one prop is children: the rows of the Vue part are its default slot, which packages/vue/test/context-menu.test.ts checks."
   },
   "ref": {
     "comment": "The members of each adapter's own XlsxEditorRef interface (React forwardRef on XlsxEditor and XlsxEditor.Root, Vue expose on XlsxEditor and XlsxEditorRoot). A paired member has the same name and type in both snapshots.",
@@ -320,6 +333,8 @@
       "ChromeTranslate",
       "ClipboardContent",
       "ColorMode",
+      "ContextMenuAnchor",
+      "ContextMenuTarget",
       "CopyResult",
       "DecimalSteps",
       "DocumentChange",
@@ -337,6 +352,8 @@
       "FontSource",
       "FormulaBar",
       "FormulaBarProps",
+      "GridContextMenuRequest",
+      "GridContextMenuTargetKind",
       "GridPoint",
       "GridRange",
       "GridSelection",
@@ -394,6 +411,10 @@
       "XlsxEditor",
       "XlsxEditorContent",
       "XlsxEditorContentProps",
+      "XlsxEditorContextMenu",
+      "XlsxEditorContextMenuNamespace",
+      "XlsxEditorContextMenuProps",
+      "XlsxEditorContextMenuStart",
       "XlsxEditorFonts",
       "XlsxEditorInstance",
       "XlsxEditorMenu",
@@ -455,6 +476,8 @@
       "trapTabWithin",
       "useChromeDir",
       "useChromeTranslate",
+      "useContextMenuAnchor",
+      "useContextMenuTarget",
       "useEditorColorMode",
       "useEditorCommand",
       "useEditorEvent",
@@ -472,10 +495,14 @@
       "EditorCommandState": "UseEditorCommandReturn"
     },
     "deferredInVue": {},
-    "reactExclusive": {},
+    "reactExclusive": {
+      "XlsxEditorContextMenuStartProps": "The Vue Start part takes no props: its rows are its default slot."
+    },
     "vueExclusive": {
       "UseChromeDirReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
       "UseChromeTranslateReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
+      "UseContextMenuAnchorReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
+      "UseContextMenuTargetReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
       "UseEditorEventReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
       "UseEditorSnapshotReturn": "Vue composables declare named return types (AGENTS.md, Public API).",
       "UseEditorStateReturn": "Vue composables declare named return types (AGENTS.md, Public API).",

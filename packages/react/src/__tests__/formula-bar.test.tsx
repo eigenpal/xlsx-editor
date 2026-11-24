@@ -566,6 +566,21 @@ describe('the name box', () => {
     expect([viewer.snapshot().activeSheet, viewer.snapshot().selectionRef]).toEqual([1, 'B2']);
   });
 
+  test('Enter with no typed text keeps several ranges; typed ranges select each one', async () => {
+    const { viewer, nameBox, grid } = await open();
+    act(() => {
+      viewer.selectRanges([{ anchor: { row: 0, col: 0 } }, { anchor: { row: 3, col: 3 } }]);
+    });
+    nameBox.focus();
+    fireEvent.keyDown(nameBox, { key: 'Enter' });
+    expect(viewer.snapshot().selectionRef).toBe('A1 D4');
+    expect(document.activeElement).toBe(grid);
+    nameBox.focus();
+    typeIn(nameBox, 'b2:c4 e5');
+    fireEvent.keyDown(nameBox, { key: 'Enter' });
+    expect(viewer.snapshot().selectionRef).toBe('B2:C4 E5');
+  });
+
   test('a refused reference keeps the text, marks the field, and shows why', async () => {
     const { view, viewer, nameBox } = await open();
     nameBox.focus();

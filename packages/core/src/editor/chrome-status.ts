@@ -37,10 +37,13 @@ export const statusSlice = (s: EditorSnapshot) => ({
   conditionalHidden: s.conditionalHidden,
 });
 
-/** The part of the snapshot that the formula bar renders. @internal */
+/**
+ * The part of the snapshot that the formula bar renders. The name box shows the selected range,
+ * or the active cell of a selection of several ranges. @internal
+ */
 export const formulaSlice = (s: EditorSnapshot) => ({
   status: s.status,
-  ref: s.selectionRef,
+  ref: (s.selection?.ranges?.length ?? 0) > 1 ? (s.activeCell?.ref ?? null) : s.selectionRef,
   text: s.editText ?? s.activeCell?.content ?? '',
   editing: s.editing,
   view: s.mode === 'view',

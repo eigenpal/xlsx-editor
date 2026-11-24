@@ -299,10 +299,11 @@ interface GridRange {
 interface GridSelection {
     // (undocumented)
     readonly active: GridPoint;
+    readonly activeRange?: number;
     // (undocumented)
     readonly anchor: GridPoint;
-    // (undocumented)
     readonly range: GridRange;
+    readonly ranges?: readonly GridRange[];
     // (undocumented)
     readonly sheetIndex: number;
 }

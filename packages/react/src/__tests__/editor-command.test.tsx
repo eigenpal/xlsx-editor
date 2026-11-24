@@ -76,6 +76,30 @@ describe('useEditorCommand', () => {
     expect(seen.at(-1)!.isActive).toBe(true);
   });
 
+  test('a selection of several ranges disables a one-range slot with its reason', async () => {
+    const several = buildXlsx({
+      sheets: [
+        {
+          name: 'S',
+          rows: row(1, [c('A1', 1), c('B1', 'two')]),
+          viewChildren: '<selection activeCell="C3" activeCellId="1" sqref="A1 C3:D4"/>',
+        },
+      ],
+    });
+    const { seen, viewer } = await probe('cells.insertRows', several);
+    expect(viewer.snapshot().selectionRef).toBe('A1 C3:D4');
+    expect(seen.at(-1)).toMatchObject({
+      isEnabled: false,
+      disabledReason: 'The selection has several ranges. This command acts on one range.',
+    });
+    // A format command applies to every range in one undo step.
+    expect(viewer.applyFormat({ bold: true }).ok).toBe(true);
+    act(() => viewer.select({ row: 0, col: 0 }));
+    expect(viewer.snapshot().activeFormat?.bold).toBe(true);
+    act(() => viewer.select({ row: 3, col: 3 }));
+    expect(viewer.snapshot().activeFormat?.bold).toBe(true);
+  });
+
   test('the result keeps its identity while its fields are equal', async () => {
     const { seen, viewer } = await probe('font.bold');
     const before = seen.length;

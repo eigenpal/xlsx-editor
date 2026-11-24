@@ -31,6 +31,7 @@ const enJson: {
         selectedColumn: string;
         selectedColumns: string;
         selectedSheet: string;
+        selectedRanges: string;
         selectionCell: string;
         decimalsIncreased: string;
         decimalsDecreased: string;
@@ -182,6 +183,8 @@ const enJson: {
             "nothing-to-redo": string;
             "not-editable": string;
             "whole-sheet": string;
+            "multiple-ranges": string;
+            "too-many-ranges": string;
             "merged-range": string;
             "paste-html": string;
             "clipboard-read": string;
@@ -244,6 +247,7 @@ const enJson: {
             "cell-alternate-content": string;
             "shared-formula": string;
             "invalid-sheet": string;
+            "multiple-ranges": string;
             other: string;
         };
         cutRefusedUnnamed: {
@@ -565,6 +569,7 @@ const enJson: {
         structureBlockedUnnamed: string;
         structureUnavailable: string;
         wholeSheet: string;
+        multipleRanges: string;
         noSave: string;
         viewMode: string;
         locked: string;

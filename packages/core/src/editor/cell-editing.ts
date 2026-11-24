@@ -15,6 +15,9 @@
 // announced twice. A new selection or another sheet clears the refusal.
 //
 // In `view` mode every command here is refused with `view-mode` before it reads the workbook.
+//
+// A clear or a format applies to every range of a selection (`selection-ranges.ts`) in one undo
+// step. A command that acts on one range refuses several ranges with `multiple-ranges`.
 
 import type { GridPoint } from '../contracts/index.ts';
 import {
@@ -40,8 +43,6 @@ import {
   type HistorySelection,
 } from '../store/index.ts';
 import {
-  clearOps,
-  formatOps,
   isWholeSheet,
   mergeOps,
   structureOp,
@@ -51,11 +52,12 @@ import {
   type MergeOptions,
 } from '../automation/index.ts';
 import { rangeRect, rangeRects, type ViewState } from './view-map.ts';
-import { selectCell, type Merges } from './selection.ts';
+import { historyRanges, isMultiRange, selectCell, type Merges } from './selection.ts';
 import type { StageBox } from './grid-surface.ts';
 import { CellEditor, editMoveStep, type CellEditMode, type EditMove } from './cell-editor.ts';
 import { refusalOf, refusalText, type EditRefusal, type EditResult } from './cell-input.ts';
-import { cellContent, resolvedFormatAt, selectionRef, typedInput } from './editor-model.ts';
+import { cellContent, resolvedFormatAt, typedInput } from './editor-model.ts';
+import { rangeOps, selectionClearOps, selectionFormatOps } from './selection-ranges.ts';
 import { decimalStepOps } from './decimal-selection.ts';
 import { entryOps, formatsFit, lineBreakWrapOp } from './entry-ops.ts';
 
@@ -457,8 +459,9 @@ export class CellEditing {
     if (!open.ok) return open;
     const target = this.#host.target();
     if (!target) return this.#refuse({ code: 'not-editable' });
-    const ref = selectionRef(target.selection);
-    return this.#transact(target, [{ op: 'clearValues', sheet: target.entry.name, ref }], 'clear');
+    const sheet = target.entry.name;
+    const ops = rangeOps(target.selection, (ref) => [{ op: 'clearValues', sheet, ref }]);
+    return this.#transact(target, ops, 'clear');
   }
 
   /**
@@ -471,11 +474,9 @@ export class CellEditing {
     if (!open.ok) return open;
     const target = this.#host.target();
     if (!target) return this.#refuse({ code: 'not-editable' });
-    return this.#transact(
-      target,
-      clearOps(target.entry.name, selectionRef(target.selection), kind),
-      kind === 'all' ? 'clearAll' : 'clear'
-    );
+    const r = selectionClearOps(target, kind);
+    if ('refusal' in r) return this.#refuse(r.refusal);
+    return this.#transact(target, r.ops, kind === 'all' ? 'clearAll' : 'clear');
   }
 
   /**
@@ -491,8 +492,8 @@ export class CellEditing {
     if (!open.ok) return open;
     const target = this.#host.target();
     if (!target) return this.#refuse({ code: 'not-editable' });
-    const r = formatOps(target.entry.name, selectionRef(target.selection), patch);
-    if (!r.ok) return this.#refuse(refusalOf(r.rejection));
+    const r = selectionFormatOps(target, patch);
+    if ('refusal' in r) return this.#refuse(r.refusal);
     const done = this.#transact(target, r.ops, 'format');
     if (done.ok && patch.numberFormat !== undefined && !typed)
       this.#host.confirm?.(this.#host.t('grid.numberFormatChanged'));
@@ -521,6 +522,7 @@ export class CellEditing {
     if (!open.ok) return open;
     const target = this.#host.target();
     if (!target) return this.#refuse({ code: 'not-editable' });
+    if (isMultiRange(target.selection)) return this.#refuse({ code: 'multiple-ranges' });
     const { pkg, index, entry, selection } = target;
     // A sheet that does not allow formats refuses the step before it reads any cell, as the
     // slot state does, also when no cell could step.
@@ -562,6 +564,7 @@ export class CellEditing {
     if (!open.ok) return open;
     const target = this.#host.target();
     if (!target) return this.#refuse({ code: 'not-editable' });
+    if (isMultiRange(target.selection)) return this.#refuse({ code: 'multiple-ranges' });
     if (isWholeSheet(target.selection)) return this.#refuse({ code: 'whole-sheet' });
     return this.#transact(
       target,
@@ -581,6 +584,7 @@ export class CellEditing {
     if (!open.ok) return open;
     const target = this.#host.target();
     if (!target) return this.#refuse({ code: 'not-editable' });
+    if (isMultiRange(target.selection)) return this.#refuse({ code: 'multiple-ranges' });
     const name = target.entry.name;
     if (options === 'unmerge')
       return this.#transact(target, [unmergeOp(name, target.selection)], undefined);
@@ -917,6 +921,7 @@ export class CellEditing {
       active,
       anchor,
       focus: target.focus,
+      ...historyRanges(target.selection),
     };
     const after = history ? history.after(selection) : selection;
     // The ops name cells by reference at the target's revision: a later revision refuses them.

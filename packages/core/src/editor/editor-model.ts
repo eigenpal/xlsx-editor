@@ -6,10 +6,7 @@ import type { SubstituteFontFailure } from './substitute-fonts.ts';
 import type { GridPoint, GridSelection } from '../contracts/index.ts';
 import {
   attr,
-  child,
-  children,
   formatCellRef,
-  parseCellRef,
   sheetIndex,
   sheetMayHoldFormula,
   cellKey,
@@ -17,9 +14,6 @@ import {
   xmlPartOf,
   structureBlocker,
   isIsoDate,
-  MAX_FORMAT_NEW_CELLS,
-  formatRangeOverflow,
-  clearFormatsOverflow,
   type RangeBox,
   readSheetProtection,
   styleLists,
@@ -45,7 +39,7 @@ import {
   type NumberLocale,
   type ResolvedCellFormat,
 } from '../cascade/index.ts';
-import { frozenPanes, type FontSource, type TextMeasurer } from '../layout/index.ts';
+import type { FontSource, TextMeasurer } from '../layout/index.ts';
 import type { AccessibleGridLabels } from '../output/index.ts';
 import {
   readCellEntry,
@@ -56,6 +50,19 @@ import {
 } from './cell-input.ts';
 import { cellContent } from './cell-content.ts';
 import { isWholeSheet } from '../automation/index.ts';
+import { selectionRanges } from '../automation/structure-commands.ts';
+import { isMultiRange } from './selection.ts';
+import {
+  boxOfRange,
+  clearRefusalOf,
+  firstOf,
+  formatRefusalOf,
+  rangeRef,
+  unionCover,
+} from './selection-ranges.ts';
+// Not on the public store entry: only the state of several ranges reads it.
+import { lockedCellInBoxes } from '../store/store/sheet-protection.ts';
+
 import { builtinOrCode } from './number-format-commands.ts';
 import {
   selectionDecimalSteps,
@@ -156,8 +163,15 @@ export interface EditorSnapshot {
   readonly sheets: readonly EditorSheet[];
   /** The position of the shown sheet in `sheets`, or -1. */
   readonly activeSheet: number;
+  /**
+   * The selection of the shown sheet. A selection of several ranges lists them in `ranges`:
+   * `selection.ranges ?? [selection.range]` gives every range.
+   */
   readonly selection: GridSelection | null;
-  /** The selected range as an A1 reference, such as `B2:D2`. */
+  /**
+   * The selected ranges as A1 references, space delimited as `ST_Sqref` writes them (ECMA-376
+   * Part 1, 18.18.76): `B2:D2` for one range, `B2:C4 E5:F8 H2` for several.
+   */
   readonly selectionRef: string | null;
   /**
    * The active cell's reference and its edit text: formula text, or the value in a form that
@@ -224,14 +238,15 @@ export interface EditorSnapshot {
   readonly decimalSteps: DecimalSteps;
   /**
    * Why the structural commands (insert and delete rows and columns) are refused, or null:
-   * `whole-sheet` when the whole sheet is selected, or the refusal of the shown sheet whatever
-   * the selection. A command that this does not refuse can still be
+   * `multiple-ranges` when the selection holds several ranges, `whole-sheet` when the whole
+   * sheet is selected, or the refusal of the shown sheet whatever the selection. A command that
+   * this does not refuse can still be
    * refused by its own rows or columns, for example with `grid-full`.
    */
   readonly structureRefusal: EditRefusal | null;
   /**
    * Why a format patch is refused for the selection (`range-too-large`: it would create more
-   * than `MAX_FORMAT_NEW_CELLS` cells), or null.
+   * than `MAX_FORMAT_NEW_CELLS` cells, counted over every range of the selection), or null.
    */
   readonly formatRefusal: EditRefusal | null;
   /**
@@ -318,10 +333,12 @@ export interface EditorSnapshot {
   /**
    * Whether the selection meets a merged range of the shown sheet: a merge of the selection is
    * then refused with `merge-overlap`, and an unmerge changes it. `mergeCommandState` reads it.
+   * False for a selection of several ranges, which the merge commands refuse.
    */
   readonly selectionMerged: boolean;
   /**
-   * Whether the selection is one cell, or exactly one merged range. A pick of the number format
+   * Whether the selection is one cell, or exactly one merged range. False for a selection of
+   * several ranges. A pick of the number format
    * list that shows the current entry then keeps the format, and a decimal step reason speaks
    * of this cell, not of a selected cell.
    */
@@ -560,53 +577,9 @@ export function openingSheet(sheets: readonly EditorSheet[], activeTab: number):
   return sheets.findIndex(ok);
 }
 
-/** What a sheet opens with: its zoom, its active cell, and its top-left cell. */
-export interface SheetOpening {
-  readonly zoom: number;
-  readonly active: GridPoint;
-  readonly topLeft: GridPoint;
-  readonly headings: boolean;
-}
-
-/**
- * The view of a sheet that the file states: the first `x:sheetView` (`CT_SheetView`, sml.xsd,
- * ECMA-376 Part 1, 18.3.1.87). It reads `@zoomScale` (default 100), `@topLeftCell`,
- * `@showRowColHeaders` (default true), and `x:selection/@activeCell` (`CT_Selection`, 18.3.1.78).
- * With a frozen `x:pane` (`CT_Pane`, 18.3.1.66), the scroll comes from `x:pane/@topLeftCell`, the
- * top-left visible cell of the bottom-right pane, and the active cell from the selection whose
- * `@pane` is `x:pane/@activePane` (`ST_Pane`, 18.18.52; both default `topLeft`).
- */
-export function sheetOpening(pkg: XlsxPackage, partName: string | undefined): SheetOpening {
-  const part = xmlPartOf(pkg, partName);
-  const view = part ? child(child(part.root, 'x:sheetViews'), 'x:sheetView') : undefined;
-  const zoomRaw = Number(attr(view, 'zoomScale') ?? '100');
-  const zoom = Number.isFinite(zoomRaw) && zoomRaw >= 10 && zoomRaw <= 400 ? zoomRaw / 100 : 1;
-  const pane = child(view, 'x:pane');
-  // A pane that freezes no row or column, and a split pane, do not show: the editor shows the
-  // view's top-left cell and the selection of the top-left pane.
-  const band = part ? frozenPanes(part.root) : { rows: 0, cols: 0 };
-  const frozen = band.rows > 0 || band.cols > 0;
-  const shown = frozen ? (attr(pane, 'activePane') ?? 'topLeft') : 'topLeft';
-  const sels = children(view, 'x:selection');
-  const sel = sels.find((s) => (attr(s, 'pane') ?? 'topLeft') === shown) ?? sels[0];
-  const cell = (raw: string | undefined) => (raw ? parseCellRef(raw.split(':')[0]!) : null);
-  const point = (a: { row: number; col: number } | null): GridPoint =>
-    a ? { row: a.row, col: a.col } : { row: 0, col: 0 };
-  const paneTop = frozen ? cell(attr(pane, 'topLeftCell')) : null;
-  const headings = attr(view, 'showRowColHeaders');
-  return {
-    zoom,
-    active: point(cell(attr(sel, 'activeCell'))),
-    topLeft: point(paneTop ?? cell(attr(view, 'topLeftCell'))),
-    headings: headings === undefined || headings === '1' || headings === 'true',
-  };
-}
-
-/** The A1 reference of a selection's range: one cell, or `start:end`. */
+/** The A1 reference of the range that holds the active cell: one cell, or `start:end`. */
 export function selectionRef(sel: GridSelection): string {
-  const a = formatCellRef(sel.range.start);
-  const b = formatCellRef(sel.range.end);
-  return a === b ? a : `${a}:${b}`;
+  return rangeRef(sel.range);
 }
 
 /**
@@ -746,13 +719,8 @@ export const NO_SHEET_STATE: SheetState = Object.freeze({
   selectionDropsValuesAt: null,
 });
 
-/** The selected range in the store's range shape. */
-const boxOf = ({ range: { start, end } }: GridSelection): RangeBox => [
-  start.row,
-  start.col,
-  end.row,
-  end.col,
-];
+/** The range that holds the active cell, in the store's range shape. */
+const boxOf = (selection: GridSelection): RangeBox => boxOfRange(selection.range);
 
 /** The snapshot state of the shown sheet: the active cell, its format, and the refusals. */
 export function sheetState(
@@ -767,16 +735,25 @@ export function sheetState(
   const part = xmlPartOf(pkg, entry.partName);
   const protection = part ? readSheetProtection(part.root) : null;
   const format = resolvedFormatAt(pkg, index, entry.partName, at);
-  const merged = part !== undefined && meetsMerge(part.root, selection);
+  // A selection of several ranges: the clear and format checks read every range, as the
+  // commands apply to every range. The merge, the decimal steps, and the structure commands
+  // refuse it (`multiple-ranges`), so their state reads no cell.
+  const multi = isMultiRange(selection);
+  const boxes = selectionRanges(selection).map(boxOfRange);
+  const merged = !multi && part !== undefined && meetsMerge(part.root, selection);
   // The checks that a clear runs before it changes a cell (`clearRangeBlocker`).
-  const cleared = part ? clearRangeBlocker(part, entry.name, boxOf(selection)) : undefined;
+  const cleared = part
+    ? firstOf(boxes, (box) => clearRangeBlocker(part, entry.name, box))
+    : undefined;
   return {
     activeCell: {
       ref: formatCellRef(at),
       content: cellContent(pkg, index, entry.partName, at, locale),
     },
     activeFormat: activeFormatOf(format, locale),
-    decimalSteps: selectionDecimalSteps(pkg, index, entry.partName, selection, locale, shown),
+    decimalSteps: multi
+      ? NO_DECIMAL_STEPS
+      : selectionDecimalSteps(pkg, index, entry.partName, selection, locale, shown),
     // The editor adds the layout budget cause and clears `conditionalFormat` after a cut. The
     // active cell of a merged range is its top-left cell (`selectCell`).
     conditionalHidden: part ? sheetHasHiddenRules(part.root) : false,
@@ -789,23 +766,24 @@ export function sheetState(
     stale: part
       ? sheetStale(index, part.root) && (sheetIndex(part).formulas > 0 || sheetMayHoldFormula(part))
       : false,
-    // The command refuses a whole-sheet selection before it reads the blockers, so the state
-    // gives the same refusal first.
-    structureRefusal: isWholeSheet(selection)
-      ? { code: 'whole-sheet' }
-      : structureRefusalOf(pkg, entry.name),
+    // The command refuses a selection of several ranges, then a whole-sheet selection, before
+    // it reads the blockers, so the state gives the same refusals first.
+    structureRefusal: multi
+      ? { code: 'multiple-ranges' }
+      : isWholeSheet(selection)
+        ? { code: 'whole-sheet' }
+        : structureRefusalOf(pkg, entry.name),
     formatRefusal: formatRefusalOf(pkg, entry.partName, selection),
-    clearRefusal:
-      part && clearFormatsOverflow(part.root, sheetIndex(part), boxOf(selection)) !== null
-        ? { code: 'clear-too-large' }
-        : null,
+    clearRefusal: part ? clearRefusalOf(part, selection) : null,
     protection,
     activeCellLocked:
       protection !== null && part !== undefined && cellLocked(pkg, index, part, at.row, at.col),
     selectionContentLocked:
       protection !== null &&
       part !== undefined &&
-      lockedCellIn(pkg, index, part, boxOf(selection)) !== undefined,
+      (multi
+        ? lockedCellInBoxes(pkg, index, part, boxes, unionCover(selectionRanges(selection)).holds)
+        : lockedCellIn(pkg, index, part, boxes[0]!)) !== undefined,
     selectionContentBlocked:
       cleared?.code === 'cell-alternate-content' ? (cleared.subject ?? null) : null,
     selectionFormulaRangeBlocked:
@@ -817,10 +795,10 @@ export function sheetState(
     selectionFormulaRangeMasterCell:
       cleared?.code === 'shared-formula' ? (cleared.masterCell ?? null) : null,
     selectionMerged: merged,
-    selectionSingle: isSingleSelection(part?.root, selection),
+    selectionSingle: !multi && isSingleSelection(part?.root, selection),
     // A selection of one cell, or one that meets a merged range, never merges: no scan.
     selectionDropsValuesAt:
-      part && !merged && !isOneCell(selection)
+      part && !multi && !merged && !isOneCell(selection)
         ? (firstValueLost(part, boxOf(selection), edit ?? undefined) ?? null)
         : null,
   };
@@ -922,28 +900,6 @@ export function structureRefusalOf(pkg: XlsxPackage, sheet: string): EditRefusal
   const refusal = rejection ? refusalOf(rejection) : null;
   bySheet.set(sheet, refusal);
   return refusal;
-}
-
-/**
- * Why a format patch is refused for a selection, or null: `range-too-large` when the patch
- * would create more than `MAX_FORMAT_NEW_CELLS` cells, by the store's own count
- * (`formatRangeOverflow`), so the state and the command refuse the same ranges. The count reads
- * the cells inside the range only when the range is larger than the limit, and never walks the
- * range.
- */
-export function formatRefusalOf(
-  pkg: XlsxPackage,
-  partName: string | undefined,
-  selection: GridSelection
-): EditRefusal | null {
-  const { start, end } = selection.range;
-  const area = (end.row - start.row + 1) * (end.col - start.col + 1);
-  if (area <= MAX_FORMAT_NEW_CELLS) return null;
-  const part = xmlPartOf(pkg, partName);
-  if (!part) return null;
-  return formatRangeOverflow(sheetIndex(part), boxOf(selection))
-    ? { code: 'range-too-large' }
-    : null;
 }
 
 /** The words that the accessible rows of the grid add to a cell text, from the catalog. */

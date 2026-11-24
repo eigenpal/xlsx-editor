@@ -32,6 +32,7 @@
 // `@formatRows`). A scroll during the drag moves the guide with the edge of the dragged line
 // while the line shows.
 
+import { selectionRanges } from '../automation/structure-commands.ts';
 import type { GridSelection } from '../contracts/index.ts';
 import {
   attr,
@@ -172,24 +173,25 @@ export function resizeEdgeAt(
 }
 
 /**
- * The columns or rows that a drag of `edge` resizes: every column (row) of a selection of whole
- * columns (rows) that holds it, or the one column (row). The selection is one range, so the
- * result is one band of adjacent indexes.
+ * The columns or rows that a drag of `edge` resizes: every column (row) of a selected band of
+ * whole columns (rows) that holds it, or the one column (row). In a selection of several ranges,
+ * it is the band that holds the edge, so the result is one band of adjacent indexes.
  */
 export function resizeBand(edge: ResizeEdge, selection: GridSelection): [number, number] {
-  const { start, end } = selection.range;
-  const whole =
-    edge.axis === 'columns'
-      ? start.row === 0 &&
-        end.row === MAX_ROWS - 1 &&
-        edge.index >= start.col &&
-        edge.index <= end.col
-      : start.col === 0 &&
-        end.col === MAX_COLS - 1 &&
-        edge.index >= start.row &&
-        edge.index <= end.row;
-  if (!whole) return [edge.index, edge.index];
-  return edge.axis === 'columns' ? [start.col, end.col] : [start.row, end.row];
+  for (const { start, end } of selectionRanges(selection)) {
+    const whole =
+      edge.axis === 'columns'
+        ? start.row === 0 &&
+          end.row === MAX_ROWS - 1 &&
+          edge.index >= start.col &&
+          edge.index <= end.col
+        : start.col === 0 &&
+          end.col === MAX_COLS - 1 &&
+          edge.index >= start.row &&
+          edge.index <= end.row;
+    if (whole) return edge.axis === 'columns' ? [start.col, end.col] : [start.row, end.row];
+  }
+  return [edge.index, edge.index];
 }
 
 /** The painted state that a resize reads: the stage, its box, the view, and the metrics. */

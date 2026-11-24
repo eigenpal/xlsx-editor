@@ -289,6 +289,36 @@ function firstLocked(sheet: SheetIndex, box: RangeBox, lock: LockReader): string
   return undefined;
 }
 
+/**
+ * The first locked cell, as `A1`, that a value edit of every box of `boxes` would change, or
+ * undefined: `lockedCellIn` for each box, with one pass over the stored cells for all the boxes
+ * of more than one cell. `holds` tells whether a cell is in one of the boxes, so the cost stays
+ * with the number of stored cells, not that number times the number of boxes.
+ */
+export function lockedCellInBoxes(
+  pkg: XlsxPackage,
+  index: WorkbookIndex,
+  part: XmlPart,
+  boxes: readonly RangeBox[],
+  holds: (row: number, col: number) => boolean
+): string | undefined {
+  const sheet = sheetIndex(part);
+  const lock = lockReader(pkg, index);
+  let ranges = false;
+  for (const box of boxes) {
+    const [top, left, bottom, right] = box;
+    if (top !== bottom || left !== right) ranges = true;
+    else if (lock.locked(formatAt(sheet, top, left, lock.count)))
+      return formatCellRef({ row: top, col: left });
+  }
+  if (!ranges) return undefined;
+  for (const e of sheet.cells.values()) {
+    if (!holds(e.row, e.col) || !clearsValue(e.el)) continue;
+    if (lock.locked(formatIndex(attr(e.el, 's')) ?? 0)) return formatCellRef(e);
+  }
+  return undefined;
+}
+
 /** The reads of the protection checks, which `protectionChecks` caches. */
 interface ProtectionReads {
   /** The sheet with a name (`sheetByName`). */

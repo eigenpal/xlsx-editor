@@ -124,6 +124,15 @@ export function menuSlotState(
   }
   // The composed text belongs to the input method until it ends, as for every toolbar slot.
   if (snapshot.editing && snapshot.composing) return off(id, { key: 'disabledReason.composing' });
+  // A copy, a cut, and a paste act on one range, and so does a merge (`mergeCommandState`): a
+  // selection of several ranges disables them, as the commands refuse it (`multiple-ranges`).
+  // In an open cell edit, the clipboard slots act on the text of the cell editor.
+  if (
+    (id === 'edit.cut' || id === 'edit.copy' || id === 'edit.paste') &&
+    !snapshot.editing &&
+    (snapshot.selection.ranges?.length ?? 0) > 1
+  )
+    return off(id, { key: 'disabledReason.multipleRanges' });
   const merge = MERGE[id];
   if (merge) {
     const state = mergeCommandState(snapshot, merge);

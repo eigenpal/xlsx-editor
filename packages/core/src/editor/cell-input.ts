@@ -13,6 +13,7 @@ import {
 } from '../store/index.ts';
 import type { ChromeDisabledReason } from './toolbar-commands.ts';
 import { DECIMAL_REASON_KEYS, MAX_DECIMAL_STEP_CELLS, groupDigits } from './decimal-reasons.ts';
+import { MAX_SELECTION_RANGES } from './selection.ts';
 import { readNumberForm, type CellEntryOptions, type NumberFormatRef } from './typed-forms.ts';
 
 /**
@@ -168,6 +169,8 @@ export const EDIT_REFUSAL_CODES = [
   'nothing-to-redo',
   'not-editable',
   'whole-sheet',
+  'multiple-ranges',
+  'too-many-ranges',
   'merged-range',
   'paste-html',
   'clipboard-read',
@@ -419,6 +422,7 @@ export const CUT_REFUSAL_CODES = [
   'cell-alternate-content',
   'shared-formula',
   'invalid-sheet',
+  'multiple-ranges',
 ] as const satisfies readonly EditRefusalCode[];
 
 const CUT_CODES: ReadonlySet<EditRefusalCode> = new Set(CUT_REFUSAL_CODES);
@@ -609,6 +613,7 @@ export function refusalText(
   if (code === 'decimals-too-large') params.limit = groupDigits(MAX_DECIMAL_STEP_CELLS, locale);
   else if (code === 'range-too-large' || code === 'clear-too-large' || code === 'copy-too-large')
     params.limit = groupDigits(MAX_FORMAT_NEW_CELLS, locale);
+  else if (code === 'too-many-ranges') params.limit = groupDigits(MAX_SELECTION_RANGES, locale);
   if (subject !== undefined) params.subject = subject;
   const p = Object.keys(params).length ? params : undefined;
   const unnamed = subject === undefined && NAMES_SUBJECT.has(code);

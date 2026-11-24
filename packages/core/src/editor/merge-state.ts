@@ -23,7 +23,8 @@ export interface MergeCommandState {
   readonly enabled: boolean;
   /**
    * The engine's reason when disabled, as a catalog key: `loading`, `editorNotReady`, `viewMode`,
-   * `composing`, `mergeLocked`, `mergeOneCell`, `mergeOverlap`, `stylesUnread`, `rangeTooLarge`,
+   * `composing`, `multipleRanges`, `mergeLocked`, `mergeOneCell`, `mergeOverlap`, `stylesUnread`,
+   * `rangeTooLarge`,
    * or `noMergedRange` (`mergeCommandState` gives the order).
    */
   readonly disabledReason: ChromeDisabledReason | null;
@@ -40,7 +41,8 @@ export interface MergeCommandState {
  * The state of a merge command, from the snapshot alone. It first gives the reasons of
  * `toolbarCommandState`, in its order, and they must stay equal: a workbook that loads or is not
  * ready, view mode, and a composing input method. Then it gives the reasons of the command: a
- * protected sheet (`mergeLocked`); for a merge, a selection of one cell (`mergeOneCell`), then
+ * selection of several ranges (`multipleRanges`), a protected sheet (`mergeLocked`); for a merge, a
+ * selection of one cell (`mergeOneCell`), then
  * one that overlaps a merged range (`mergeOverlap`); for a merge and center, also a styles part
  * that stays as bytes (`stylesUnread`) and a range too large to format (`rangeTooLarge`), as the
  * format controls; and for an unmerge, a selection with no merged range (`noMergedRange`). A
@@ -63,6 +65,8 @@ export function mergeCommandState(
     return off('disabledReason.editorNotReady');
   if (snapshot.mode === 'view') return off('disabledReason.viewMode');
   if (snapshot.editing && snapshot.composing) return off('disabledReason.composing');
+  // Each merge command acts on one range: a selection of several ranges refuses it.
+  if ((snapshot.selection.ranges?.length ?? 0) > 1) return off('disabledReason.multipleRanges');
   if (snapshot.protection) return off('disabledReason.mergeLocked');
   if (command === 'unmerge') {
     if (!snapshot.selectionMerged) return off('disabledReason.noMergedRange');

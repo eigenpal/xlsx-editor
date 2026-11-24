@@ -363,7 +363,11 @@ const NameBox = defineComponent({
             if (stepFieldHistory(e, ed, draft.value !== null || ed.snapshot().editing)) return;
             if (e.key === 'Enter') {
               e.preventDefault();
-              go(ed, (e.currentTarget as HTMLInputElement).value);
+              // With no typed text, Enter keeps a selection of several ranges, which the name box
+              // does not show; for one range it goes to that range, as typed text does.
+              if (draft.value === null && (ed.snapshot().selection?.ranges?.length ?? 0) > 1)
+                ed.focus();
+              else go(ed, (e.currentTarget as HTMLInputElement).value);
             } else if (e.key === 'Escape') {
               e.preventDefault();
               e.stopPropagation();

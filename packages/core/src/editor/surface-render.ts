@@ -21,7 +21,7 @@ import {
 } from '../output/index.ts';
 import { hostTimers, hostWindowOf } from './host-realm.ts';
 import { TaskMark } from './task-mark.ts';
-import type { SheetOpening } from './editor-model.ts';
+import type { SheetOpening } from './sheet-opening.ts';
 import {
   drawHeadings,
   drawSelection,
@@ -130,7 +130,8 @@ export interface WindowPaint {
   readonly map: ViewState;
   readonly pictures: PictureStore;
   readonly labels: AccessibleGridLabels;
-  readonly selection: GridRange;
+  /** Every range of the selection, in the order of selection (`selectionRanges`). */
+  readonly selection: readonly GridRange[];
   /** The range of the active cell: its merged range, or the cell. */
   readonly active: GridRange;
   /** The source range of a pending copy or cut on this sheet, or null. */

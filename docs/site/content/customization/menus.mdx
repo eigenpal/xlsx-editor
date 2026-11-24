@@ -321,7 +321,7 @@ function AddNote() {
 | `ContextMenu.Start` | Rows that render before the packaged rows. |
 | `ContextMenu.Item`, `.Row`, `.Group`, `.Separator`, `.Submenu` | As in the menu bar. |
 | Named rows | `Cut`, `Copy`, `Paste`, `InsertRows`, `InsertColumns`, `DeleteRows`, `DeleteColumns`, `ClearContents`, `ClearFormatting`, `ClearAll`, `MergeCells`, `MergeAndCenter`, `UnmergeCells`, `NumberFormat`. |
-| `useContextMenuTarget()` | What the open menu acts on: `kind` (`cells`, `rows`, `columns`, or `all`), `sheetIndex`, and `range`. Null while the menu is closed. |
+| `useContextMenuTarget()` | What the open menu acts on: `kind` (`cells`, `rows`, `columns`, or `all`), `sheetIndex`, and `range`, the active range when the selection has several ranges. Null while the menu is closed. |
 | `useContextMenuAnchor()` | Where the open menu stands and how it opened: `x`, `y`, and `trigger` (`pointer` or `keyboard`). |
 
 The menu follows the WAI-ARIA menu pattern. It opens with the focus on its first row. The arrows move between rows, a letter moves to the next row that starts with it, and Escape closes the menu and returns the focus to the grid. A press outside the menu, a wheel, a scroll of the page, a resize, and a window blur close it. The menu stays inside the viewport: it opens above the point when the space below has no room, and toward the start when the end has no room.

@@ -45,7 +45,10 @@ export interface GridContextMenuRequest {
   readonly kind: GridContextMenuTargetKind;
   /** The sheet of the selection, 0-based. */
   readonly sheetIndex: number;
-  /** The selected range after the press, 0-based and inclusive. */
+  /**
+   * The active range of the selection after the press, 0-based and inclusive. A press inside any
+   * range of a selection of several ranges keeps them all: read them from `snapshot().selection`.
+   */
   readonly range: GridRange;
 }
 

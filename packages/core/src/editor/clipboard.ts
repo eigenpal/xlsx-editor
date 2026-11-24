@@ -88,7 +88,7 @@ import {
   type RunHistory,
 } from './cell-editing.ts';
 import { refusalOf, type EditRefusal, type EditResult } from './cell-input.ts';
-import type { Merges } from './selection.ts';
+import { isMultiRange, type Merges } from './selection.ts';
 import { cellContent, selectionRef, typedInput } from './editor-model.ts';
 import { copiedDateText } from './typed-forms.ts';
 import { formatsFit, pastedFormatOps, type FormattedCell } from './entry-ops.ts';
@@ -427,6 +427,8 @@ export class WorkbookClipboard {
     const target = this.#host.target();
     const part = target && xmlPartOf(target.pkg, target.entry.partName);
     if (!target || !part) return refuse({ code: 'not-editable' });
+    // A copy holds one range: a selection of several ranges is refused, not copied in part.
+    if (isMultiRange(target.selection)) return refuse({ code: 'multiple-ranges' });
     const { start, end } = target.selection.range;
     const rows = end.row - start.row + 1;
     const cols = end.col - start.col + 1;
@@ -612,6 +614,9 @@ export class WorkbookClipboard {
     if (!open.ok) return open;
     const target = this.#host.target();
     if (!target?.entry.partName) return edits.refuse({ code: 'not-editable' });
+    // A paste writes from the active cell over one range: a selection of several ranges is
+    // refused, as a copy of it is.
+    if (isMultiRange(target.selection)) return edits.refuse({ code: 'multiple-ranges' });
     this.#sweep();
     // An expired copy stays refused with its code until a new copy, cut, or reset.
     const spent = this.#spent;

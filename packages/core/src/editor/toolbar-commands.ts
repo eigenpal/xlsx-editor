@@ -93,6 +93,7 @@ export const DISABLED_REASON_KEYS = [
   'disabledReason.structureBlockedUnnamed',
   'disabledReason.structureUnavailable',
   'disabledReason.wholeSheet',
+  'disabledReason.multipleRanges',
   'disabledReason.noSave',
   'disabledReason.viewMode',
   'disabledReason.locked',
@@ -399,6 +400,7 @@ function structureReason(refusal: EditRefusal): ChromeDisabledReason {
       ? { key: 'disabledReason.structureBlocked', about: refusal.about }
       : { key: 'disabledReason.structureBlockedUnnamed' };
   if (refusal.code === 'whole-sheet') return { key: 'disabledReason.wholeSheet' };
+  if (refusal.code === 'multiple-ranges') return { key: 'disabledReason.multipleRanges' };
   return { key: 'disabledReason.structureUnavailable' };
 }
 
@@ -545,6 +547,9 @@ export function toolbarCommandState(
   if (STRUCTURE_SLOTS.has(id) && snapshot.structureRefusal)
     return disabled(id, structureReason(snapshot.structureRefusal));
   const step = DECIMAL_STEPS.get(id);
+  // A decimal step reads each cell of one range: a selection of several ranges refuses it.
+  if (step !== undefined && (snapshot.selection.ranges?.length ?? 0) > 1)
+    return disabled(id, { key: 'disabledReason.multipleRanges' });
   if (step !== undefined) {
     // Explicit codes step per cell; the `General` numbers of a column share one step. No cell
     // is created but the active one, so the limit of `formatRefusal` does not apply: the

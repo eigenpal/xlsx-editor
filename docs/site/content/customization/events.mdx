@@ -147,6 +147,8 @@ Call `useEditorEvent` in `setup`. The subscription ends with the component.
 
 ## Subscribe without an adapter
 
+A selection can hold several ranges. `snapshot.selection.ranges` lists them, and is absent for one range, so `selection.ranges ?? [selection.range]` gives every range. `editor.selectRanges([{ anchor, focus }, ...])` selects several ranges from your code.
+
 `editor.on(event, handler)` subscribes to an editor instance directly. It returns the unsubscribe function. The adapter hooks call it, so both report the same events. The `EditorEvents` type lists the events and their handlers.
 
 ```ts

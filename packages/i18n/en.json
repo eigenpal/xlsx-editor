@@ -19,6 +19,7 @@
     "selectedColumn": "Column {first} selected",
     "selectedColumns": "Columns {first} to {last} selected",
     "selectedSheet": "Whole sheet selected",
+    "selectedRanges": "{count} ranges selected: {ranges}",
     "selectionCell": "{selection}. {cell}",
     "decimalsIncreased": "Decimal places increased.",
     "decimalsDecreased": "Decimal places decreased.",
@@ -170,6 +171,8 @@
       "nothing-to-redo": "There is nothing to redo.",
       "not-editable": "The edit was not applied: no workbook is open for editing.",
       "whole-sheet": "The rows or columns were not inserted or deleted: the whole sheet is selected. Select whole rows, whole columns, or a range of cells.",
+      "multiple-ranges": "The command did not run: the selection has several ranges, and this command acts on one range. Select one range, then try again.",
+      "too-many-ranges": "The selection did not change: a selection holds at most {limit} ranges. Select fewer ranges, then try again.",
       "merged-range": "The cells were not copied or pasted: the range meets a merged range. Select a range with no merged cells, then try again.",
       "paste-html": "The paste was not applied: the clipboard holds only formatted content. Copy the content as plain text, then paste again.",
       "clipboard-read": "The paste was not applied: the browser did not let the page read the clipboard. Press Control or Command and V in the grid.",
@@ -232,6 +235,7 @@
       "cell-alternate-content": "The cells were not cut: cell {subject} holds data in a form that the editor cannot update. The editor cannot change the value of that cell, so a cut cannot clear it. Cut a range without that cell.",
       "shared-formula": "The cells were not cut: clearing them would change the formula range at {subject}, which the editor cannot rewrite or remove. Cut a range without cells of that range.",
       "invalid-sheet": "The cells were not cut: the editor cannot safely change the cell structure of the sheet. Copy the cells instead.",
+      "multiple-ranges": "The cells were not cut: the selection has several ranges. Select one range, then try again.",
       "other": "The cells were not cut: the editor cannot clear the cut cells. Copy the cells instead."
     },
     "cutRefusedUnnamed": {
@@ -553,6 +557,7 @@
     "structureBlockedUnnamed": "Content in this workbook can refer to cells that would move, and the editor cannot move such a reference.",
     "structureUnavailable": "This sheet has a cell structure that the editor cannot change safely.",
     "wholeSheet": "The whole sheet is selected. Select whole rows, whole columns, or a range of cells.",
+    "multipleRanges": "The selection has several ranges. This command acts on one range.",
     "noSave": "Saving is not set up for this editor.",
     "viewMode": "The workbook is open for viewing.",
     "locked": "The sheet is protected, and a cell in the selection is locked.",

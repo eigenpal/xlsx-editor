@@ -16,7 +16,9 @@
 // |                                       | Tab goes down to the column where the Tab run  |
 // |                                       | started (`tab-return.ts`)                      |
 // |                                       | (inside a multi-cell selection: move the active |
-// |                                       | cell in it, wrap, and keep the range)          |
+// |                                       | cell in it, wrap, and keep the range; in a     |
+// |                                       | selection of several ranges, go on to the next |
+// |                                       | range, in the order of selection)              |
 // | Shift+Tab in column A; Tab in the last | Leave the grid for the previous or next control |
 // | Alt+Page Up, Alt+Page Down            | The previous or next sheet                     |
 // | Mod+Shift+=, Mod+- on whole rows      | Insert, delete the selected rows (or columns)  |
@@ -37,9 +39,19 @@
 
 import type { GridPoint, GridSelection } from '../contracts/index.ts';
 import { historyShortcutOf } from './history-shortcut.ts';
-import { inRange as holds, mergeAt, selectBand, step, type Merges } from './selection.ts';
+import {
+  activeRangeIndex,
+  inRange as holds,
+  isMultiRange,
+  mergeAt,
+  selectBand,
+  step,
+  withActiveRange,
+  type Merges,
+} from './selection.ts';
 import type { CellEditMode } from './cell-editor.ts';
 import { selectionBand, type FormatToggle } from '../automation/index.ts';
+import { selectionRanges } from '../automation/structure-commands.ts';
 import { MAX_COLS, MAX_ROWS, type StructuralOpName } from '../store/index.ts';
 import type { TabReturn } from './tab-return.ts';
 
@@ -157,10 +169,49 @@ function cyclesIn(range: GridSelection['range'], at: GridPoint, merges: Merges):
   );
 }
 
+/** Whether `next` comes at or before `at` in the order of a step by rows or by columns. */
+function wrapped(at: GridPoint, next: GridPoint, byRow: boolean, dir: 1 | -1): boolean {
+  const key = (p: GridPoint) => (byRow ? p.row * 2 ** 20 + p.col : p.col * 2 ** 20 + p.row);
+  return dir > 0 ? key(next) <= key(at) : key(next) >= key(at);
+}
+
+/**
+ * The selection after Enter or Tab moves the active cell from `at`: the next cell of the range
+ * that holds it (`cycleInRange`). In a selection of several ranges, a step past the last cell of
+ * that range (the first, with `dir` -1) goes on to the first (last) cell of the next (previous)
+ * range, in the order of selection, with a wrap; every range stays selected.
+ */
+export function cycleSelection(
+  sel: GridSelection,
+  at: GridPoint,
+  byRow: boolean,
+  dir: 1 | -1,
+  hidden: { row(i: number): boolean; col(i: number): boolean },
+  merges: Merges
+): GridSelection {
+  const ranges = selectionRanges(sel);
+  const index = activeRangeIndex(sel);
+  const own = ranges[index]!;
+  if (cyclesIn(own, at, merges)) {
+    const next = cycleInRange(own, at, byRow, dir, hidden, merges);
+    if (ranges.length === 1 || !wrapped(at, next, byRow, dir)) return { ...sel, active: next };
+  }
+  if (ranges.length === 1) return sel;
+  const to = (index + dir + ranges.length) % ranges.length;
+  const range = ranges[to]!;
+  // A step from the last cell wraps to the first cell, which a hidden line or a merge can move.
+  const active =
+    dir > 0
+      ? cycleInRange(range, range.end, byRow, 1, hidden, merges)
+      : cycleInRange(range, range.start, byRow, -1, hidden, merges);
+  return { ...sel, active, anchor: active, range, activeRange: to };
+}
+
 /**
  * Where a committed edit moves the active cell: one step from `cell`, or, for Enter and Tab
- * (`inRange`) inside a multi-cell selection that is not one merged cell, the next cell in it,
- * and the selection stays (`keep`), as the keys do without an edit.
+ * (`inRange`) inside a multi-cell selection that is not one merged cell, or a selection of
+ * several ranges, the next cell in it (`cycleSelection`), and the selection stays (`keep` is
+ * the new selection), as the keys do without an edit.
  */
 export function commitMove(
   sel: GridSelection,
@@ -169,13 +220,13 @@ export function commitMove(
   inRange: boolean,
   merges: Merges,
   hidden: { row(i: number): boolean; col(i: number): boolean }
-): { at: GridPoint; keep: boolean } {
-  const r = sel.range;
-  if (inRange && cyclesIn(r, cell, merges)) {
+): { at: GridPoint; keep: GridSelection | null } {
+  if (inRange && (isMultiRange(sel) || cyclesIn(sel.range, cell, merges))) {
     const dir = (move[0] || move[1]) < 0 ? -1 : 1;
-    return { at: cycleInRange(r, cell, move[1] !== 0, dir, hidden, merges), keep: true };
+    const next = cycleSelection(sel, cell, move[1] !== 0, dir, hidden, merges);
+    return { at: next.active, keep: next };
   }
-  return { at: step(cell, move[0], move[1], merges, hidden), keep: false };
+  return { at: step(cell, move[0], move[1], merges, hidden), keep: null };
 }
 
 /** Whether a key types text: one character, with no modifier that makes it a shortcut. */
@@ -233,7 +284,11 @@ export function handleGridKey(host: GridKeyHost, e: KeyboardEvent, grid: EventTa
       rows ? r.end.row : r.end.col
     );
     const keep = { active: host.selection.active, anchor: host.selection.anchor };
-    return host.setSelection({ ...band, ...keep }, host.focusCell);
+    // In a selection of several ranges, the band takes the place of the range of the active cell.
+    return host.setSelection(
+      { ...withActiveRange(host.selection, band.range), ...keep },
+      host.focusCell
+    );
   }
   if (typesText(e)) return (done(), host.beginEdit(e.key, 'enter'));
   if (e.key === 'F2') return (done(), host.beginEdit(undefined, 'edit'));
@@ -267,19 +322,20 @@ export function handleGridKey(host: GridKeyHost, e: KeyboardEvent, grid: EventTa
     };
   } else if (e.key === 'Tab' || e.key === 'Enter') {
     const back = e.shiftKey;
-    const r = sel.range;
-    if (cyclesIn(r, sel.active, host.merges)) {
-      // Inside a multi-cell selection, the keys move the active cell and keep the range.
+    if (isMultiRange(sel) || cyclesIn(sel.range, sel.active, host.merges)) {
+      // Inside a multi-cell selection, the keys move the active cell and keep the range; in a
+      // selection of several ranges, they go on to the next range.
       done();
-      const active = cycleInRange(
-        r,
+      const next = cycleSelection(
+        sel,
         sel.active,
         e.key === 'Tab',
         back ? -1 : 1,
         host.hidden(),
         host.merges
       );
-      host.setSelection({ ...sel, active }, host.focusCell, active);
+      const focus = next.range === sel.range ? host.focusCell : next.active;
+      host.setSelection(next, focus, next.active);
       return;
     }
     const d: [number, number] = e.key === 'Tab' ? [0, back ? -1 : 1] : [back ? -1 : 1, 0];
@@ -312,5 +368,5 @@ export function handleGridKey(host: GridKeyHost, e: KeyboardEvent, grid: EventTa
   );
   // The active cell stays while the band holds it, as `extendTo` keeps it.
   const active = holds(next.range, sel.active) ? sel.active : sel.anchor;
-  host.setSelection({ ...next, active, anchor: sel.anchor }, to, to);
+  host.setSelection({ ...withActiveRange(sel, next.range), active, anchor: sel.anchor }, to, to);
 }

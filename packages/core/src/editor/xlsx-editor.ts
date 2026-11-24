@@ -36,12 +36,14 @@ import {
   selectionWords,
   stepAnnouncement,
   selectCell,
+  openingSelection,
   type Merges,
 } from './selection.ts';
 import type { CellEditMode, EditMove, EditTextOptions } from './cell-editor.ts';
 import { goTo } from './go-to.ts';
 import { saveInSlices } from './editor-save.ts';
 import { readError, readWorkbookForLoad, registerPickedLoad } from './load-steps.ts';
+import { sheetOpening } from './sheet-opening.ts';
 import { CellEditing, registerEditing, type EditTarget } from './cell-editing.ts';
 import { LiveAnnouncer } from './live-announcer.ts';
 import { commitMove } from './grid-keys.ts';
@@ -49,7 +51,9 @@ import { TabReturn } from './tab-return.ts';
 import type { EditResult } from './cell-input.ts';
 import type { FormatPatch, HistorySelection, StructuralOpName } from '../store/index.ts';
 import type { FormatToggle, MergeOptions } from '../automation/index.ts';
-import type { SavedWorkbook, XlsxEditorInstance } from './editor-instance.ts';
+import { selectionRanges } from '../automation/structure-commands.ts';
+import type { SavedWorkbook, SelectionRangeInput, XlsxEditorInstance } from './editor-instance.ts';
+import { rangesSelection, selectionSqref } from './selection-ranges.ts';
 import { dataEdge, hiddenLines, NONE_HIDDEN, sheetFacts, type HiddenLines } from './sheet-facts.ts';
 import { ConditionalCut } from './conditional-cut.ts';
 import { WheelZoom } from './wheel-zoom.ts';
@@ -60,8 +64,6 @@ import {
   cellFont,
   clampZoom,
   zoomStepFrom,
-  selectionRef,
-  sheetOpening,
   sheetState,
   accessibleLabels,
   type EditorFailure,
@@ -191,10 +193,12 @@ class Editor implements XlsxEditorInstance {
       setSelection: (selection, focus, reveal) => this.setSelection(selection, focus, reveal),
       select: (anchor, focus) => this.select(anchor, focus),
       extend: (to) => this.extend(to),
+      merges: () => this.mergesOf(this.active),
       commitOpenEdit: () => this.edits.commitOpenEdit().ok,
       focus: () => this.focus(),
       refusal: () => this.edits.refusal,
       showRefusal: (refusal) => void this.edits.refuse(refusal),
+      hasContextMenu: () => this.events.hasContextMenu(),
       resize: (axis, first, last, size) => this.resizeAxis(axis, first, last, size),
       sizeState: () => this.state,
     });
@@ -236,7 +240,7 @@ class Editor implements XlsxEditorInstance {
       sheets: o?.sheets ?? [],
       activeSheet: o ? this.active : -1,
       selection: view?.selection ?? null,
-      selectionRef: view ? selectionRef(view.selection) : null,
+      selectionRef: view ? selectionSqref(view.selection) : null,
       ...this.conditionalCut.apply(sheet, o?.store, o?.index.sheets[this.active]?.partName),
       zoom: view?.zoom ?? 1,
       editing: this.edits.editing,
@@ -391,7 +395,7 @@ class Editor implements XlsxEditorInstance {
     let view = o.views.get(sheet);
     if (view) return view;
     const opening = sheetOpening(o.pkg, o.index.sheets[sheet]!.partName);
-    view = openingView(opening, selectCell(sheet, opening.active, this.mergesOf(sheet)));
+    view = openingView(opening, openingSelection(sheet, opening, this.mergesOf(sheet)));
     o.views.set(sheet, view);
     return view;
   }
@@ -437,22 +441,16 @@ class Editor implements XlsxEditorInstance {
     if (view) this.setZoom(zoomStepFrom(view.zoom, direction));
   }
 
-  /** `reveal`, for the engine's own callers, is the cell to scroll to: `focus` by default. */
   select(anchor: GridPoint, focus?: GridPoint, reveal?: GridPoint): boolean {
-    const view = this.view();
-    const finite = (p: GridPoint) => Number.isFinite(p.row) && Number.isFinite(p.col);
-    if (!view || this.state.status !== 'ready' || !finite(anchor)) return false;
-    if ((focus && !finite(focus)) || !this.edits.commitOpenEdit().ok) return false;
-    const merges = this.mergesOf(this.active);
-    let sel = selectCell(this.active, anchor, merges);
-    if (focus) sel = extendTo(sel, focus, merges);
-    view.selection = sel;
-    view.focus = focus ? clampPoint(focus) : sel.active;
-    this.edits.clearRefusal();
-    this.reveal(reveal ? clampPoint(reveal) : view.focus);
-    this.live.selected();
-    this.publish();
-    this.schedule();
+    return this.selectRanges([{ anchor, focus }], reveal);
+  }
+
+  /** `reveal`, for the engine's own callers, is the cell to scroll to: the focus by default. */
+  selectRanges(ranges: readonly SelectionRangeInput[], reveal?: GridPoint): boolean {
+    const ready = this.view() && this.state.status === 'ready';
+    const made = ready ? rangesSelection(this.active, ranges, this.merges) : null;
+    if (!made || !this.edits.commitOpenEdit().ok) return false;
+    this.setSelection(made.selection, made.focus, reveal ? clampPoint(reveal) : made.focus);
     return true;
   }
 
@@ -859,7 +857,7 @@ class Editor implements XlsxEditorInstance {
       map,
       pictures: o.pictures,
       labels: accessibleLabels(this.t),
-      selection: view.selection.range,
+      selection: selectionRanges(view.selection),
       active: selectCell(this.active, view.selection.active, this.mergesOf(this.active)).range,
       pending: this.clipboard.pendingRange(entry.partName),
       headings: view.headings,
@@ -943,7 +941,9 @@ class Editor implements XlsxEditorInstance {
     const before = view.selection;
     const from = this.tabReturn.origin(before, cell, move, inRange);
     const m = commitMove(before, from, move, inRange, this.merges, this.hidden());
-    if (m.keep) this.setSelection({ ...before, active: m.at }, view.focus, m.at);
+    // A move to another range of a selection of several ranges puts the focus on the new cell.
+    const kept = m.keep?.range === before.range;
+    if (m.keep) this.setSelection(m.keep, kept ? view.focus : m.at, m.at);
     else this.select(m.at);
     this.tabReturn.moved(before, cell, m.keep ? before : view.selection, move, inRange);
   }

@@ -627,11 +627,14 @@ export const unchanged = (pkg: XlsxPackage): OpResult => ({
 /**
  * Apply ops in order to a package. Atomic: a refused op refuses the whole list. Inverse ops are
  * refused unless `history` is set, which only undo and redo of the document store set.
+ * `openedParts` holds the part names of the package that the store opened, for the sheet ops
+ * (`applySheetOp`).
  */
 export function applyOps(
   pkg: XlsxPackage,
   ops: readonly HistoryOp[],
-  history = false
+  history = false,
+  openedParts?: ReadonlySet<string>
 ): ApplyResult {
   if (!history)
     for (const op of ops)
@@ -690,7 +693,7 @@ export function applyOps(
             : setCellValues(current, run as Extract<WorkbookOp, { op: 'setCellValue' }>[]);
     // Ranges that overlap apply one by one, with no new batch for the rest of the run.
     if (run && !batch && op.op === 'applyFormat') unbatched = end;
-    const r = batch ?? applyOp(current, op);
+    const r = batch ?? applyOp(current, op, openedParts);
     i = batch ? end : i + 1;
     if (!r.ok) return r;
     current = r.pkg;
@@ -723,7 +726,7 @@ export function applyOps(
 /** Whether a patch is valid, so its op can join a run of applyFormat ops. */
 const validPatch = (patch: FormatPatch): boolean => patchProblem(patch) === undefined;
 
-function applyOp(pkg: XlsxPackage, op: HistoryOp): OpResult {
+function applyOp(pkg: XlsxPackage, op: HistoryOp, openedParts?: ReadonlySet<string>): OpResult {
   if (op.op === 'setFullCalcOnLoad' || op.op === 'dropCalcChain') {
     const next = op.op === 'setFullCalcOnLoad' ? withFullCalcOnLoad(pkg) : withoutCalcChain(pkg);
     return { ok: true, pkg: next ?? pkg, inverse: [], value: false, formula: false };
@@ -747,7 +750,7 @@ function applyOp(pkg: XlsxPackage, op: HistoryOp): OpResult {
     op.op === 'deleteSheet' ||
     op.op === 'moveSheet'
   )
-    return applySheetOp(pkg, op);
+    return applySheetOp(pkg, op, openedParts);
   if (op.op === 'setColumnWidth' || op.op === 'setRowHeight') return applyAxisSize(pkg, op);
   if (op.op === 'mergeCells' || op.op === 'unmergeCells') return applyMerge(pkg, op);
   if (op.op === 'setColumnWidths') return applyColumnWidths(pkg, op);

@@ -5,13 +5,12 @@
 import {
   contentTypeOf,
   readWorkbookProtection,
-  workbookPartBlocker,
   type WorkbookIndex,
   type XlsxPackage,
 } from '../store/index.ts';
 import { isMacroEnabledType, isTemplateType } from '../store/package/main-part-type.ts';
 import { workbookTheme } from '../cascade/index.ts';
-import { refusalOf, type EditRefusal } from './cell-input.ts';
+import { fileSheetRefusal } from './editor-sheets.ts';
 import { partsPastLimit } from './parts-past-limit.ts';
 import type { EditorSnapshot, WorkbookKind } from './editor-model.ts';
 
@@ -36,18 +35,12 @@ export const NO_WORKBOOK_STATE: WorkbookState = Object.freeze({
   themeColors: [],
 });
 
-const sheetEditRefusals = new WeakMap<XlsxPackage, EditRefusal | null>();
-
 /**
  * The snapshot state of the workbook: its kind, its protection, and the refusal of a rename or
- * a delete of any sheet (`workbookPartBlocker`), read once for each package.
+ * a delete of each sheet of the opened file (`fileSheetRefusal`), read once for each package.
  */
 export function workbookState(pkg: XlsxPackage, index: WorkbookIndex): WorkbookState {
-  let refusal = sheetEditRefusals.get(pkg);
-  if (refusal === undefined) {
-    const rejection = workbookPartBlocker(pkg, index);
-    sheetEditRefusals.set(pkg, (refusal = rejection ? refusalOf(rejection) : null));
-  }
+  const refusal = fileSheetRefusal(pkg, index);
   return {
     workbookKind: workbookKindOf(pkg, index),
     macroEnabled: isMacroEnabledType(contentTypeOf(pkg, index.mainPart)),

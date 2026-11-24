@@ -65,7 +65,7 @@ The store SHALL add a worksheet with a new part, relationship, content type over
 
 ### Requirement: Rename a sheet
 
-The store SHALL rewrite every reference to a renamed sheet in formulas, defined names, internal hyperlink locations, and hyperlink relationship targets that are a fragment (`#Data!A1`). It SHALL refuse the rename when the workbook holds a chart, a pivot table, a sheet that is not a worksheet, or a relationship outside the allowlist of design D4 of the first change. It SHALL also refuse the rename when other content that it does not rewrite names the sheet.
+The store SHALL rewrite every reference to a renamed sheet in formulas, defined names, internal hyperlink locations, and hyperlink relationship targets that are a fragment (`#Data!A1`). It SHALL refuse the rename of a sheet of the opened file when the workbook holds a chart, a pivot table, a sheet that is not a worksheet, or a relationship outside the allowlist of design D4 of the first change. It SHALL also refuse the rename when other content that it does not rewrite names the sheet.
 
 #### Scenario: A formula on another sheet
 
@@ -85,7 +85,7 @@ The store SHALL rewrite every reference to a renamed sheet in formulas, defined 
 #### Scenario: The sheet menu in a workbook with a chart
 
 - **WHEN** the workbook holds a chart, a pivot table, a sheet that is not a worksheet, or a workbook or package relationship outside the allowlist, and the user opens the menu of a sheet tab
-- **THEN** Rename and Delete are disabled with the reason `sheetEditBlocked`, which names the part. F2 or a double-click starts no rename. Each worksheet tab shows that reason in its title and its accessible description
+- **THEN** Rename and Delete of each sheet of the opened file are disabled with the reason `sheetEditBlocked`, which names the part. F2 or a double-click starts no rename. Each such tab shows that reason in its title and its accessible description
 
 #### Scenario: The sheet tabs in a workbook that holds macros
 
@@ -101,6 +101,20 @@ The store SHALL rewrite every reference to a renamed sheet in formulas, defined 
 
 - **WHEN** a shape on another sheet has a `textlink` to `Sheet1!$A$1`, and the user renames `Sheet1`
 - **THEN** the store refuses the edit with `structure-blocked`, with the drawing part as the subject
+
+### Requirement: Rename or delete a sheet that the session added
+
+In a workbook whose content refuses a rename and a delete of the sheets of the opened file, the store SHALL apply a rename or a delete of a sheet that an add op of the session made, subject to the other rules of the op. It SHALL refuse it when that content can refer to the sheet: its text names the sheet, it relates to the sheet part, or it is not text.
+
+#### Scenario: A sheet added to a workbook with a chart
+
+- **WHEN** the workbook holds a chart that does not name `Sheet3`, and the user adds `Sheet3` and then renames or deletes it
+- **THEN** the store applies the edit, and the sheet menu enables Rename and Delete of `Sheet3`. After a save and a reopen, `Sheet3` is a sheet of the file, and the store refuses its rename
+
+#### Scenario: A chart that names the added sheet
+
+- **WHEN** a chart formula names `Sheet3!$A$1` and no sheet has that name, and the user adds `Sheet3`
+- **THEN** the store refuses a rename and a delete of `Sheet3` with `structure-blocked`, with the chart part as the subject, and the sheet menu disables them with `sheetEditBlocked`
 
 ### Requirement: Delete a sheet
 

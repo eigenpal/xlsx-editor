@@ -15,4 +15,9 @@ export interface Opened {
   readonly sheets: readonly EditorSheet[];
   readonly pictures: PictureStore;
   readonly views: Map<number, SheetView>;
+  /**
+   * The part names of the opened package, as the store keeps them: a sheet whose part is not
+   * among them is a sheet that an add op of the session made (`EditorSheet.editRefusal`).
+   */
+  readonly openedParts: ReadonlySet<string>;
 }

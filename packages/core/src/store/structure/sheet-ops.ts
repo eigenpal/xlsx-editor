@@ -32,7 +32,10 @@
 // end of one (`sheet-range-blocked`), when the sheet to delete has a relationship other than a
 // hyperlink, its own printer settings, images, or a Drawings part that holds only pictures and
 // shapes, when a custom workbook view shows the sheet to delete, and
-// when a delete would leave no visible sheet (`last-sheet`).
+// when a delete would leave no visible sheet (`last-sheet`). A chart or pivot part, a sheet that
+// is not a worksheet, or a workbook relationship outside the allowlist refuses a rename and a
+// delete of each sheet of the opened file, and of an added sheet only when it names that sheet
+// (`sheetEditBlocker`).
 //
 // Undo: the inverse is one `restoreParts` op of every part that the op changed, added, or
 // removed, as for the structural edits of design D4 (`structure.ts`).
@@ -82,10 +85,10 @@ import {
   cellsOrNamesMention,
   longSheetNameBlocker,
   sheetBlocker,
+  sheetEditBlocker,
   sheetMentions,
   workbookMentionBlocker,
   macroBlocker,
-  workbookPartBlocker,
   type SheetMentions,
 } from './blockers.ts';
 import { rewriteSheetPrefixes, sheetNameProblem, type PrefixEdit } from './sheet-refs.ts';
@@ -596,7 +599,12 @@ function addSheet(pkg: XlsxPackage, name: string, at: number): OpResult {
   return result(pkg, changes, { value: stale, formula: false });
 }
 
-function renameSheet(pkg: XlsxPackage, sheet: string, name: string): OpResult {
+function renameSheet(
+  pkg: XlsxPackage,
+  sheet: string,
+  name: string,
+  openedParts?: ReadonlySet<string>
+): OpResult {
   const c = context(pkg);
   if (isRefusal(c)) return { ok: false, rejection: c };
   const { index, main, sheets } = c;
@@ -606,7 +614,8 @@ function renameSheet(pkg: XlsxPackage, sheet: string, name: string): OpResult {
   if (problem) return { ok: false, rejection: problem };
   if (name === entry.name) return { ok: true, pkg, inverse: [], value: false, formula: false };
   const blocker =
-    workbookPartBlocker(pkg, index) ?? mentionBlocker(pkg, index, sheetMentions(entry.name));
+    sheetEditBlocker(pkg, index, entry, openedParts) ??
+    mentionBlocker(pkg, index, sheetMentions(entry.name));
   if (blocker) return { ok: false, rejection: blocker };
   // Another sheet with the same name without case refuses the rename only when a reference
   // names one of the two, so a rename of a twin that nothing names ends the ambiguity.
@@ -689,7 +698,7 @@ function nearestVisible(list: readonly SheetEntry[], at: number): number {
   return 0;
 }
 
-function deleteSheet(pkg: XlsxPackage, sheet: string): OpResult {
+function deleteSheet(pkg: XlsxPackage, sheet: string, openedParts?: ReadonlySet<string>): OpResult {
   const c = context(pkg);
   if (isRefusal(c)) return { ok: false, rejection: c };
   const { index, main, sheets } = c;
@@ -717,7 +726,7 @@ function deleteSheet(pkg: XlsxPackage, sheet: string): OpResult {
     };
   const blocker =
     twinBlocker(index, entry) ??
-    workbookPartBlocker(pkg, index) ??
+    sheetEditBlocker(pkg, index, entry, openedParts) ??
     longSheetNameBlocker(index) ??
     mentionBlocker(
       pkg,
@@ -897,15 +906,24 @@ function spanCheck(
   };
 }
 
-/** Apply one sheet op. */
-export function applySheetOp(pkg: XlsxPackage, op: SheetOp): OpResult {
+/**
+ * Apply one sheet op. `openedParts` holds the part names of the package that the store opened
+ * (`partNamesOf`): a rename or a delete of a sheet that an add op of the session made is not
+ * refused for the whole workbook (`sheetEditBlocker`). Without it, every sheet counts as a sheet
+ * of the file.
+ */
+export function applySheetOp(
+  pkg: XlsxPackage,
+  op: SheetOp,
+  openedParts?: ReadonlySet<string>
+): OpResult {
   switch (op.op) {
     case 'addSheet':
       return addSheet(pkg, op.name, op.index);
     case 'renameSheet':
-      return renameSheet(pkg, op.sheet, op.name);
+      return renameSheet(pkg, op.sheet, op.name, openedParts);
     case 'deleteSheet':
-      return deleteSheet(pkg, op.sheet);
+      return deleteSheet(pkg, op.sheet, openedParts);
     case 'moveSheet':
       return moveSheet(pkg, op.sheet, op.index);
   }

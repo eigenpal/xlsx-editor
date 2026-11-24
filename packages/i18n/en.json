@@ -571,7 +571,7 @@
     "workbookLocked": "The workbook is protected, and adding, renaming, deleting, or moving sheets is not allowed.",
     "lastSheet": "The sheet cannot be deleted: a workbook must keep one visible sheet.",
     "notWorksheet": "This sheet is not a worksheet, or its part is missing. The editor cannot show, rename, delete, or move it.",
-    "sheetEditBlocked": "Sheets cannot be renamed or deleted: {subject} can refer to any sheet, and the editor cannot update that reference.",
+    "sheetEditBlocked": "This sheet cannot be renamed or deleted: {subject} can refer to it, and the editor cannot update that reference.",
     "sheetOrderBlocked": "Sheets cannot be added or moved: {subject} can read a sheet by its position, and the editor cannot update that reference.",
     "composing": "Finish the text that the input method composes first.",
     "decimalsNoNumberSelection": "No selected cell holds a number, so there are no decimal places to change.",

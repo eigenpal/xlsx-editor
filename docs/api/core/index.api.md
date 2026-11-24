@@ -869,6 +869,7 @@ export function editorRowsSlice(snapshot: EditorSnapshot, slots: readonly Chrome
 
 // @public
 export interface EditorSheet {
+    readonly editRefusal?: EditRefusal | null;
     readonly index: number;
     // (undocumented)
     readonly name: string;

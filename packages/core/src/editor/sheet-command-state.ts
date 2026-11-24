@@ -41,7 +41,13 @@ export interface SheetCommandState {
   readonly to?: number;
 }
 
-/** What the state reads from the editor snapshot. @public */
+/**
+ * What the state reads from the editor snapshot. The reason of a rename or a delete comes from
+ * each sheet (`EditorSheet.editRefusal`). `sheetEditRefusal`, the reason of the sheets of the
+ * opened file, applies to a sheet that does not set it.
+ *
+ * @public
+ */
 export type SheetCommandInput = Pick<
   EditorSnapshot,
   'mode' | 'sheets' | 'workbookProtection' | 'sheetEditRefusal'
@@ -54,16 +60,17 @@ const disabled = (key: ChromeDisabledReason['key'] | null): SheetCommandState =>
 const ENABLED: SheetCommandState = { enabled: true, disabledReason: null };
 
 /**
- * The state of a sheet command on the sheet at workbook position `sheet` (ignored by `add`).
- * View mode disables every command with `viewMode`, and a workbook protection that locks the
- * sheet list with `workbookLocked`. A sheet that is not a worksheet (a chartsheet, a macro
- * sheet, a dialog sheet, or a sheet whose part is missing) has every command but `add`
- * disabled with `notWorksheet`, except that macros come first for the moves. Delete needs
- * another visible sheet (`lastSheet`). A chart, a pivot table, a sheet that is not a
- * worksheet, or a workbook or package relationship outside the allowlist (for example data
- * connections) disables Rename and Delete of every sheet with `sheetEditBlocked`
- * (`snapshot.sheetEditRefusal`), as the store refuses them with `structure-blocked`. Macros
- * also disable Add and the moves with `sheetOrderBlocked`.
+ * The state of a sheet command on the sheet at workbook position `sheet` (ignored by `add`). View
+ * mode disables every command with `viewMode`, and a workbook protection that locks the sheet list
+ * with `workbookLocked`. A sheet that is not a worksheet (a chartsheet, a macro sheet, a dialog
+ * sheet, or a sheet whose part is missing) has every command but `add` disabled with
+ * `notWorksheet`, except that macros come first for the moves. Delete needs another visible sheet
+ * (`lastSheet`). A chart, a pivot table, a sheet that is not a worksheet, or a workbook or package
+ * relationship outside the allowlist (for example data connections) disables Rename and Delete of
+ * each sheet of the opened file with `sheetEditBlocked`, as the store refuses them with
+ * `structure-blocked`. A sheet that the editor added in the session stays enabled, unless such
+ * content can refer to it. The reason of each sheet is its `EditorSheet.editRefusal`. Macros
+ * block every sheet, and also disable Add and the moves with `sheetOrderBlocked`.
  *
  * @public
  */
@@ -91,7 +98,8 @@ export function sheetCommandState(
   // refuses a rename and a delete for it, and its disabled tab opens no menu, so the tabs move
   // no such sheet (design D4). The reason lets a host menu and the tab title say why.
   if (!tabs[at]!.worksheet) return disabled('disabledReason.notWorksheet');
-  const blocked = snapshot.sheetEditRefusal;
+  const own = tabs[at]!.editRefusal;
+  const blocked = own === undefined ? snapshot.sheetEditRefusal : own;
   // Every part blocker names what refuses the edit (`about`). The fallback words never show a
   // raw part path, which is file text.
   const blockedState = (): SheetCommandState => ({

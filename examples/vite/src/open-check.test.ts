@@ -17,7 +17,8 @@ import {
   XML_HARD_MAX_BYTES,
 } from '../../../packages/ooxml-core/src/xml-reader.ts';
 import { buildXlsx, type FixtureSheet } from '../../../scripts/fixtures/builder.ts';
-import { openingSheet, editorSheets } from '../../../packages/core/src/editor/editor-model.ts';
+import { openingSheet } from '../../../packages/core/src/editor/editor-model.ts';
+import { editorSheets } from '../../../packages/core/src/editor/editor-sheets.ts';
 import {
   MAX_STORED_SHEET_NAME,
   readXlsx,
@@ -56,7 +57,7 @@ describe('the demo open check', () => {
       const read = readXlsx(bytes);
       if (!read.ok) throw new Error(read.error.reason);
       const index = workbookIndex(read.pkg)!;
-      const editor = openingSheet(editorSheets(index), index.activeTab) >= 0;
+      const editor = openingSheet(editorSheets(read.pkg, index), index.activeTab) >= 0;
       expect(hasSheetToShow(index)).toBe(editor);
     });
 

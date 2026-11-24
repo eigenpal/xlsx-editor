@@ -317,7 +317,7 @@ class Editor implements XlsxEditorInstance {
       this.failLoad(read.ok ? { code: 'no-worksheet' } : read.failure, kept);
       return this.state;
     }
-    const { index, sheets, first } = read;
+    const { index, sheets, first, openedParts } = read;
     if (kept) this.edits.drop();
     this.edits.settleLoad();
     this.release();
@@ -326,7 +326,7 @@ class Editor implements XlsxEditorInstance {
     this.offPictures = pictures.onReady(() => this.schedule());
     const store = new WorkbookDocumentStore(read.pkg);
     this.offStore = store.subscribe(() => this.onStoreChange(store));
-    this.opened = { store, pkg: read.pkg, index, sheets, pictures, views: new Map() };
+    this.opened = { store, pkg: read.pkg, index, sheets, pictures, views: new Map(), openedParts };
     if (first < 0) {
       this.active = -1;
       this.fail({ code: 'no-worksheet' });
@@ -492,7 +492,7 @@ class Editor implements XlsxEditorInstance {
     if (!index) return;
     // A sheet op or its undo moves sheets: each view and the shown sheet follow their sheet.
     const shown = o.index.sheets[this.active]?.partName;
-    const next = followSheets(o.index, index, o.views, this.active);
+    const next = followSheets(o, store.package, index, this.active);
     this.opened = { ...o, pkg: store.package, index, sheets: next.sheets, views: next.views };
     this.active = next.active;
     if (index.sheets[this.active]?.partName !== shown && this.active >= 0) {

@@ -79,7 +79,7 @@ function AcmeHelpPopup({ open }: { open: boolean }) {
   if (!open) return null;
   return createPortal(
     <div role="dialog" aria-label="Help" className={`${scope}acme-theme acme-popup`}>
-      Press F6 to move between the toolbar and the grid.
+      Press F6 to move between the regions of the editor.
     </div>,
     document.body
   );
@@ -114,7 +114,7 @@ const scope = useScopeClassName();
 <template>
   <Teleport to="body">
     <div v-if="open" role="dialog" aria-label="Help" :class="`${scope}acme-theme acme-popup`">
-      Press F6 to move between the toolbar and the grid.
+      Press F6 to move between the regions of the editor.
     </div>
   </Teleport>
 </template>

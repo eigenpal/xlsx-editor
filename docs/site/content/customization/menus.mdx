@@ -1,0 +1,269 @@
+---
+title: 'Menus'
+description: 'Customize the XLSX editor menu bar with packaged commands, your own rows and menus, and file handlers.'
+category: 'Customization'
+---
+
+The menu bar shows File, Edit, View, Insert, and Format above the toolbar. Each packaged row is a chrome slot, so it takes its label, icon, enabled state, and command from the same source as the toolbar control for that command. A row for a command that the editor does not run is not in the menus.
+
+## Show or hide the menu bar
+
+The packaged `XlsxEditor` shows the menu bar by default. Set `menu` to `false` to remove it, or pass an object of menu bar props. Those props win over `onSave`, `onSaveStart`, and `opening`, which the editor passes to the menu bar.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+<XlsxEditor document={bytes} onSave={upload} menu={{ onOpen: pickFromLibrary }} />
+<XlsxEditor document={bytes} menu={false} />
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<XlsxEditor :document="bytes" :menu="{ onOpen: pickFromLibrary }" @save="upload" />
+<XlsxEditor :document="bytes" :menu="false" />
+```
+
+</Framework>
+</FrameworkTabs>
+
+In your own layout, place `XlsxEditor.Menu` (React) or `XlsxEditorMenu` (Vue) inside the viewport, before the toolbar.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+<XlsxEditor.Root document={bytes}>
+  <XlsxEditor.Viewport>
+    <XlsxEditor.Menu onSave={upload} />
+    <XlsxEditor.Toolbar onSave={upload} />
+    <XlsxEditor.Content />
+  </XlsxEditor.Viewport>
+</XlsxEditor.Root>
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<XlsxEditorRoot :document="bytes">
+  <XlsxEditorViewport>
+    <XlsxEditorMenu :on-save="upload" />
+    <XlsxEditorToolbar :on-save="upload" />
+    <XlsxEditorContent />
+  </XlsxEditorViewport>
+</XlsxEditorRoot>
+```
+
+</Framework>
+</FrameworkTabs>
+
+## The packaged menus
+
+| Menu | Rows |
+| --- | --- |
+| File | Open, Save |
+| Edit | Undo, Redo, Cut, Copy, Paste, Clear (contents, formats, all), Delete rows, Delete columns, Select all |
+| View | Zoom in, Zoom out, Zoom to 100% |
+| Insert | Insert rows, Insert columns, Insert sheet |
+| Format | Bold, Italic, Underline, Alignment, Wrap text, Merge cells, Merge and center, Unmerge cells, Borders, More number formats, Increase and Decrease decimals, Clear formats |
+
+A row shows the shortcut that the editor binds, for the platform: Command where the Command key is the shortcut modifier, and Control elsewhere. Zoom out shows no shortcut, because Control or Command and `-` deletes the selected rows or columns when whole rows or columns are selected. A disabled row stays focusable, and its title and accessible description give the reason. A checked row, such as Bold on a bold cell, shows a check mark. The alignment rows are one-of sets (`menuitemradio`): the check mark is on the alignment of the active cell. In view mode, Open, Copy, Select all, and the zoom rows stay enabled.
+
+The slots `file.open`, `edit.*`, `view.*`, `sheet.add`, and `merge.*` are only in the menu bar. The preset toolbar does not show them. You can place one in a toolbar group with `Toolbar.Slot`. Paste reads the clipboard there too. Open is disabled there, because only the menu bar has a file picker.
+
+## Hide or replace a row
+
+Put a row part in the menu that holds the row. A row that names a packaged row replaces it in place, and `hidden` removes it. A named row, such as `Menu.Paste`, is shorthand for `Menu.Item` with its `slotId`.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+<XlsxEditor.Menu>
+  <XlsxEditor.Menu.Edit>
+    <XlsxEditor.Menu.Paste hidden />
+    <XlsxEditor.Menu.Item slotId="edit.copy" label="Copy cells" />
+  </XlsxEditor.Menu.Edit>
+</XlsxEditor.Menu>
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<XlsxEditorMenu>
+  <XlsxEditorMenu.Edit>
+    <XlsxEditorMenu.Paste hidden />
+    <XlsxEditorMenu.Item slot-id="edit.copy" label="Copy cells" />
+  </XlsxEditorMenu.Edit>
+</XlsxEditorMenu>
+```
+
+</Framework>
+</FrameworkTabs>
+
+Set `preset={false}` on a menu to choose every row of its panel. Set it on the menu bar to show only the menus that you write.
+
+## Add an application action
+
+`Menu.Row` runs your handler after the menu closes. To disable it, pass `disabled` and `disabledReason`. In Vue, bind the handler with `@select`. Your rows render after the packaged rows. Group them with `Group`, `Separator`, and `Submenu`.
+
+A child of the menu bar that is not a menu part, such as a button, renders after the menus, outside the menu bar element. It keeps its own tab stop.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+<XlsxEditor.Menu>
+  <XlsxEditor.Menu.File>
+    <XlsxEditor.Menu.Separator />
+    <XlsxEditor.Menu.Row label="Share" onSelect={share} />
+  </XlsxEditor.Menu.File>
+  <XlsxEditor.Menu.Menu id="review" label="Review" after="insert">
+    <XlsxEditor.Menu.Row label="Request review" disabled disabledReason="Sign in first." />
+  </XlsxEditor.Menu.Menu>
+</XlsxEditor.Menu>
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<XlsxEditorMenu>
+  <XlsxEditorMenu.File>
+    <XlsxEditorMenu.Separator />
+    <XlsxEditorMenu.Row label="Share" @select="share" />
+  </XlsxEditorMenu.File>
+  <XlsxEditorMenu.Menu id="review" label="Review" after="insert">
+    <XlsxEditorMenu.Row label="Request review" disabled disabled-reason="Sign in first." />
+  </XlsxEditorMenu.Menu>
+</XlsxEditorMenu>
+```
+
+</Framework>
+</FrameworkTabs>
+
+## Configure file actions
+
+| Prop | Behavior |
+| --- | --- |
+| `onOpen` | Replaces the packaged file picker. |
+| `onOpenFile` | Receives the picked file before the packaged open loads it. |
+| `onSave` | Receives the workbook bytes and the save result. Without it, Save is disabled. |
+| `onSaveStart` | Receives the promise of the save when a delivery starts. |
+| `opening` | Disables Open and Save while your page opens another workbook. |
+
+The packaged Open reads a file that the user picks and passes its bytes to `load`. The editor never fetches a workbook. A picked file that the browser cannot read or the editor cannot open replaces nothing: the open workbook, its edits, and an open cell edit stay as they were, and the status strip shows the refusal `open-failed`. Such a file is not a workbook, is too large or too complex to open, or has no worksheet to show. With no workbook open, a file that the browser cannot read fails with the code `read`. A `load` call that starts while the picked file loads wins over it, and Open is disabled while a workbook loads. File > Save and Control or Command and S use the same save as the toolbar.
+
+## Configure menu parts
+
+Every part accepts `className`.
+
+| Part | Options |
+| --- | --- |
+| `Menu` | `preset`, `overflow`, file props, child menus. |
+| Named menu: `File`, `Edit`, `View`, `Insert`, `Format` | `preset`, `hidden`, `label`, `labelKey`. Replaces its menu in place. |
+| `Menu.Menu` | `id`, `label` or `labelKey`, `icon`, `after`, `preset`, `hidden`. A new `id` adds a menu. |
+| `Menu.Item` and named rows | `slotId` (`Item` only), `label`, `labelKey`, `shortcut`, `hidden`. |
+| `Menu.Row` | `label`, `icon`, `shortcut`, `disabled`, `disabledReason`, `active`, `selected`, `onSelect`. With `selected`, the row is one of a one-of set (`menuitemradio`), and `active` marks the one value. |
+| `Menu.Group`, `Menu.Submenu` | `label` or `labelKey`. `Submenu` also takes `paths`. |
+| `Menu.Entry` | `entry`: one entry of `CHROME_MENUS`. |
+| `Menu.Separator` | `className` only. |
+
+In Vue, `icon` is a slot.
+
+In development, the console warns about a part that does nothing: a hidden `Menu.Item` whose slot is not in its menu (also in a menu with `preset={false}`, which has no rows to hide), a `Menu.Item` or a named row placed directly in `Menu`, and a `Menu.Menu` with the reserved id `xlsx-menu-more`. The bar leaves the last two out.
+
+## Keyboard and layout
+
+The menu bar follows the WAI-ARIA menubar pattern. It is one tab stop. ArrowLeft and ArrowRight move between menus, and Home and End go to the ends. ArrowDown, Enter, and Space open a menu on its first row, and ArrowUp opens it on its last row. In a panel, the arrows move between rows, a letter moves to the next row that starts with it, ArrowRight opens a submenu, and Escape closes one level and returns the focus. Escape on a closed menu returns the focus to the grid. F6 moves the focus to the menu bar first, then to the toolbar, the formula bar, the grid, and the footer. A pointer press on the menu bar keeps the focus in the grid. After a menu that opened from the keyboard, a host row and File > Open return the focus to the menu trigger, unless the row's action moved it, for example to the grid. After a menu that opened with a pointer press, the focus stays where it was. A panel and a submenu stay inside the viewport: a submenu opens toward the start of the bar when the end has no room, and a menu taller than the space below its trigger scrolls.
+
+When the menus do not fit, the bar moves them, from the end, into a "More menus" menu, where each one is a submenu. Set `overflow={false}` to let the bar wrap instead. The bar measures its own width, so give it a width that does not follow its content. In a flex row, for example, give the bar a fixed basis that can shrink, such as `flex: 0 1 18rem` and `min-width: 0`.
+
+## Limits
+
+- The packaged File > Open does not ask first. The picked workbook replaces the open workbook, also when it has unsaved edits. To ask first, pass your own `onOpen`. The snapshot `revision` tells you whether the workbook changed since your last save. To remove the row, hide `Open` in your own menu bar.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+const editor = useRef<XlsxEditorRef>(null);
+// The revision of the last save. An open starts again at revision 0.
+const savedRevision = useRef(0);
+// `onSave` receives the bytes and the save result. `saved.revision` is the revision of the bytes.
+const save = (bytes: Uint8Array, saved: SavedWorkbook) => {
+  savedRevision.current = saved.revision;
+  void upload(bytes);
+};
+const askThenOpen = () => {
+  const changed = (editor.current?.snapshot().revision ?? 0) !== savedRevision.current;
+  if (!changed || window.confirm('Discard your unsaved changes?')) {
+    savedRevision.current = 0;
+    openFromYourPicker();
+  }
+};
+
+<XlsxEditor ref={editor} document={bytes} onSave={save} menu={{ onOpen: askThenOpen }} />
+
+// Or remove the row:
+<XlsxEditor.Menu>
+  <XlsxEditor.Menu.File>
+    <XlsxEditor.Menu.Open hidden />
+  </XlsxEditor.Menu.File>
+</XlsxEditor.Menu>
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<script setup lang="ts">
+const editor = ref<XlsxEditorRef | null>(null);
+// The revision of the last save. An open starts again at revision 0.
+let savedRevision = 0;
+// `save` receives the bytes and the save result. `saved.revision` is the revision of the bytes.
+function save(bytes: Uint8Array, saved: SavedWorkbook) {
+  savedRevision = saved.revision;
+  void upload(bytes);
+}
+function askThenOpen() {
+  const changed = (editor.value?.snapshot().revision ?? 0) !== savedRevision;
+  if (!changed || window.confirm('Discard your unsaved changes?')) {
+    savedRevision = 0;
+    openFromYourPicker();
+  }
+}
+</script>
+
+<XlsxEditor ref="editor" :document="bytes" :menu="{ onOpen: askThenOpen }" @save="save" />
+
+<!-- Or remove the row: -->
+<XlsxEditorMenu>
+  <XlsxEditorMenu.File>
+    <XlsxEditorMenu.Open hidden />
+  </XlsxEditorMenu.File>
+</XlsxEditorMenu>
+```
+
+</Framework>
+</FrameworkTabs>
+
+- A hidden row does not block its command in the toolbar, a shortcut, or the API.
+- Paste reads the text of the system clipboard where the browser allows it. Otherwise Paste is disabled. When the browser refuses the read, the status message says so. In both cases, press Control or Command and V in the grid.
+- A page cannot read the private clipboard type of a copy. So while the copy is pending (its dashed outline shows on its sheet), and the clipboard text is the text of that copy, Paste pastes that copy, as the paste key does: a cut moves its cells, and a copy keeps its formulas and cell formats. This also applies when you paste on another sheet. Other text pastes as typed values. While the copy is pending, the same text from another source also pastes the editor's copy.
+- After the outline ends (Escape, an edit, an undo, or a paste that ends it), the two differ. The paste key still pastes the copy with its formulas and cell formats. Paste in the menu bar pastes the clipboard text as typed values, and a cut moves nothing.
+- In an open cell edit, Cut, Copy, and Paste act on the text of the edit, as the keys do.
+- Merge cells and Merge and center are disabled when cells other than the top-left cell hold values. The reason names one such cell. A merge keeps only the value of the top-left cell, so clear those cells first. The menu bar never drops values.
+
+## Context menu
+
+A grid context menu comes in a later release. It will reuse the row parts and the arrangement rules of the menu bar.
+
+## See also
+
+- [Appearance](/docs/customization/appearance)
+- [Events](/docs/customization/events)

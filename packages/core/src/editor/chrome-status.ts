@@ -346,7 +346,9 @@ export function statusView(
         ? t('status.failed.fonts')
         : code === 'no-worksheet'
           ? t('status.failed.noWorksheet')
-          : packageFailureText({ limit: snap.failureLimit, part: snap.failurePart }, t);
+          : code === 'read'
+            ? t('status.failed.read')
+            : packageFailureText({ limit: snap.failureLimit, part: snap.failurePart }, t);
     return { kind: 'message', role: 'alert', text, refusals };
   }
   return {

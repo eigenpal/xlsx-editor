@@ -1976,3 +1976,242 @@
     background: Highlight;
   }
 }
+
+/* The menu bar (`XlsxEditor.Menu`): one row of menu triggers above the toolbar, and the panels
+ * they open. After the menu bar rules of DOCX Editor (`.docx-menubar`), with this editor's
+ * tokens. The bar stays one line and moves the menus that do not fit into the "More" menu
+ * (`data-overflow`); without it, the bar wraps. */
+.xlsx-menubar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 32px;
+  padding: 2px 8px;
+  background: var(--doc-surface);
+  color: var(--doc-text);
+  font-size: 13px;
+}
+/* The `menubar` element holds the menus; the host's loose children stand after it, in the row. */
+.xlsx-menubar-menus {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.xlsx-menubar[data-overflow],
+.xlsx-menubar[data-overflow] > .xlsx-menubar-menus {
+  flex-wrap: nowrap;
+}
+.xlsx-menu,
+.xlsx-menubar-fixed {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+.xlsx-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--doc-radius-control, 6px);
+  background: transparent;
+  color: var(--doc-text);
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.xlsx-menu-trigger svg,
+.xlsx-menu-trigger-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+.xlsx-menu-trigger-icon {
+  display: inline-flex;
+}
+.xlsx-menu-trigger:hover,
+.xlsx-menu-trigger[data-open] {
+  background: var(--doc-bg-hover);
+}
+.xlsx-menu-trigger:focus-visible,
+.xlsx-menu-row:focus-visible {
+  outline: 2px solid var(--doc-focus-ring);
+  outline-offset: -2px;
+}
+/* The offsets below are where a panel opens with room. While a panel shows, the adapters set its
+   left and top inline (`placeMenuPanel`), so it stays inside the viewport. */
+.xlsx-menu-panel {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  z-index: var(--doc-z-overlay);
+  box-sizing: border-box;
+  min-width: 240px;
+  max-width: calc(100vw - 16px);
+  margin: 0;
+  padding: 4px;
+  background: var(--doc-popover-bg);
+  color: var(--doc-popover-fg);
+  border: 1px solid var(--doc-border);
+  border-radius: var(--doc-radius-panel, 12px);
+  box-shadow: var(--doc-card-shadow-strong);
+}
+.xlsx-menu-panel:dir(rtl) {
+  left: auto;
+  right: 0;
+}
+/* The "More" menu stands at the end of the bar: its panel opens from its end. */
+.xlsx-menu[data-menu-more] > .xlsx-menu-panel {
+  left: auto;
+  right: 0;
+}
+.xlsx-menu-sub {
+  position: relative;
+}
+/* A panel taller than the viewport space below its trigger scrolls (`placeMenuPanel`). Its
+   submenus then stand against the viewport, so the scroll box does not clip them. */
+.xlsx-menu-panel[data-scrolls] {
+  overflow-y: auto;
+}
+/* A submenu panel opens beside its row. */
+.xlsx-menu-panel-sub {
+  top: -5px;
+  left: calc(100% + 4px);
+}
+.xlsx-menu-panel-sub:dir(rtl) {
+  left: auto;
+  right: calc(100% + 4px);
+}
+.xlsx-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 32px;
+  margin: 0;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: var(--doc-radius-control, 6px);
+  background: transparent;
+  color: var(--doc-text);
+  font: inherit;
+  text-align: start;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.xlsx-menu-row:hover,
+.xlsx-menu-row:focus,
+.xlsx-menu-row[aria-expanded='true'] {
+  background: var(--doc-bg-hover);
+}
+/* A disabled row keeps its focus and its reason, with the subtle text color, as a disabled row
+ * of a toolbar menu. */
+.xlsx-menu-row[aria-disabled='true'] {
+  color: var(--doc-text-subtle);
+  cursor: default;
+}
+.xlsx-menu-icon {
+  display: inline-flex;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+}
+.xlsx-menu-row svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: currentColor;
+}
+.xlsx-menu-label {
+  flex: 1 1 auto;
+}
+.xlsx-menu-shortcut {
+  margin-inline-start: 24px;
+  color: var(--doc-text-muted);
+  font-size: 12px;
+}
+.xlsx-menu-row svg.xlsx-menu-caret {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+}
+.xlsx-menu-caret:dir(rtl) {
+  transform: scaleX(-1);
+}
+/* The check column: every row keeps it, so the labels of a panel align. A checked row
+ * (`menuitemcheckbox` or `menuitemradio`) draws a check mark in it, in the text color, so the
+ * state does not depend on color and stays in forced colors. The mark is 6px wide, its border
+ * included, with 4px of margin on each side: the column is 14px, as the empty column. */
+.xlsx-menu-row::before {
+  content: '';
+  flex: 0 0 14px;
+  height: 0;
+}
+.xlsx-menu-row[aria-checked='true']::before {
+  flex-basis: 6px;
+  height: 11px;
+  margin: 0 4px 3px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+/* A disabled checked row keeps the subtle color of a disabled row. */
+.xlsx-menu-row[aria-checked='true']:not([aria-disabled='true']) {
+  color: var(--doc-primary);
+}
+.xlsx-menu-separator {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--doc-border);
+}
+.xlsx-menu-group + .xlsx-menu-group,
+.xlsx-menu-row + .xlsx-menu-group {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--doc-border);
+}
+.xlsx-menu-heading {
+  display: block;
+  padding: 4px 10px;
+  color: var(--doc-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+@media (forced-colors: active) {
+  .xlsx-menu-panel {
+    border-color: CanvasText;
+  }
+  .xlsx-menu-trigger:is(:hover, [data-open]),
+  .xlsx-menu-row:is(:hover, :focus, [aria-expanded='true']),
+  .xlsx-menu-row[aria-checked='true']:not([aria-disabled='true']):is(:hover, :focus) {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+  }
+  .xlsx-menu-row[aria-disabled='true'] {
+    color: GrayText;
+  }
+  .xlsx-menu-row[aria-disabled='true']:is(:hover, :focus) {
+    color: HighlightText;
+  }
+  /* Only at rest: a hovered or focused row takes HighlightText, and a disabled row GrayText. */
+  .xlsx-menu-row[aria-checked='true']:not(:hover, :focus, [aria-disabled='true']) {
+    color: inherit;
+  }
+  .xlsx-menu-separator {
+    background: CanvasText;
+  }
+  .xlsx-menu-trigger:focus-visible,
+  .xlsx-menu-row:focus-visible {
+    outline-color: CanvasText;
+  }
+}

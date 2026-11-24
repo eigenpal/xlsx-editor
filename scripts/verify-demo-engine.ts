@@ -144,6 +144,125 @@ export async function verifyClipboard(page: Page, mode: 'copy' | 'cut'): Promise
   return `Mod+${mode === 'cut' ? 'X' : 'C'} and Mod+V ${did} ${SOURCE} into ${TARGET}, and ${undos} undos took back the edits${lane}`;
 }
 
+/** The menu bar of the demo top bar, and a choice of one row of one of its menus. */
+function menuBarOf(page: Page) {
+  const bar = page.getByRole('menubar', { name: 'Menu bar' });
+  const choose = async (menu: string, row: string, role: 'menuitem' | 'menuitemcheckbox') => {
+    await bar.getByRole('menuitem', { name: menu, exact: true }).click();
+    await bar.getByRole('menu', { name: menu }).getByRole(role, { name: row, exact: true }).click();
+  };
+  return { bar, choose };
+}
+
+/** Undo until SOURCE and TARGET are empty again, at most `limit` times. Returns the count. */
+async function undoToEmpty(page: Page, limit: number, what: string): Promise<number> {
+  const undo = page.getByRole('button', { name: 'Undo', exact: true });
+  let undos = 0;
+  const empty = async () => (await goTo(page, SOURCE)) === '' && (await goTo(page, TARGET)) === '';
+  while (!(await empty())) {
+    if (++undos > limit) throw new Error(`${limit} undos did not take back ${what}`);
+    await undo.click();
+  }
+  return undos;
+}
+
+/** The content of the cell editor once it is `want`, or after five seconds. */
+async function contentSoon(page: Page, ref: string, want: string): Promise<string> {
+  await page
+    .waitForFunction(
+      (text) =>
+        (document.querySelector('[aria-label="Cell content"]') as HTMLTextAreaElement | null)
+          ?.value === text,
+      want,
+      { timeout: 5000 }
+    )
+    .catch(() => undefined);
+  return goTo(page, ref);
+}
+
+/**
+ * The menu bar's clipboard rows in the demo top bar: Edit > Copy and Edit > Paste copy a typed
+ * value into the next cell, and Edit > Cut and Edit > Paste move it. The test context grants the
+ * clipboard read that Edit > Paste needs, and takes the grant back after the step. Undo then
+ * takes back each edit, so the step leaves the workbook as it found it.
+ */
+export async function verifyMenuClipboard(page: Page): Promise<string> {
+  const context = page.context();
+  const origin = new URL(page.url()).origin;
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin });
+  try {
+    for (const ref of [SOURCE, TARGET]) {
+      const was = await goTo(page, ref);
+      if (was !== '') throw new Error(`${ref} of the sample holds "${was}", not an empty cell`);
+    }
+    const { choose } = menuBarOf(page);
+    const engine = context.browser()?.browserType().name() ?? 'browser';
+    const text = `Menu copy in ${engine} ${Date.now()}`;
+    await goTo(page, SOURCE);
+    await page.keyboard.type(text);
+    await page.keyboard.press('Enter');
+    await goTo(page, SOURCE);
+    await choose('Edit', 'Copy', 'menuitem');
+    await goTo(page, TARGET);
+    await choose('Edit', 'Paste', 'menuitem');
+    const pasted = await contentSoon(page, TARGET, text);
+    if (pasted !== text)
+      throw new Error(`Edit > Paste into ${TARGET} gave "${pasted}", not "${text}"`);
+    const copyUndos = await undoToEmpty(page, 3, 'the menu copy and paste');
+    // Edit > Cut and Edit > Paste move the value: the source cell is empty after the paste.
+    const moved = `Menu cut in ${engine} ${Date.now()}`;
+    await goTo(page, SOURCE);
+    await page.keyboard.type(moved);
+    await page.keyboard.press('Enter');
+    await goTo(page, SOURCE);
+    await choose('Edit', 'Cut', 'menuitem');
+    await goTo(page, TARGET);
+    await choose('Edit', 'Paste', 'menuitem');
+    const arrived = await contentSoon(page, TARGET, moved);
+    const left = await goTo(page, SOURCE);
+    if (arrived !== moved)
+      throw new Error(
+        `Edit > Paste after Edit > Cut gave "${arrived}" in ${TARGET}, not "${moved}"`
+      );
+    if (left !== '') throw new Error(`Edit > Cut and Edit > Paste left "${left}" in ${SOURCE}`);
+    const cutUndos = await undoToEmpty(page, 3, 'the menu cut and paste');
+    return `Edit > Copy and Edit > Paste copied ${SOURCE} into ${TARGET}, Edit > Cut and Edit > Paste moved it, and ${copyUndos + cutUndos} undos took back the edits`;
+  } finally {
+    await context.clearPermissions();
+  }
+}
+
+/**
+ * Format > Bold in the demo top bar: a press makes the cell bold, which the row then shows
+ * checked, and a second press takes it back. Undo then takes back the edits.
+ */
+export async function verifyMenuBold(page: Page): Promise<string> {
+  const { bar, choose } = menuBarOf(page);
+  const was = await goTo(page, TARGET);
+  if (was !== '') throw new Error(`${TARGET} of the sample holds "${was}", not an empty cell`);
+  await page.keyboard.type('Bold');
+  await page.keyboard.press('Enter');
+  // Format > Bold: the row is a checkbox item, checked on a bold cell.
+  const boldRow = async () => {
+    const format = bar.getByRole('menuitem', { name: 'Format', exact: true });
+    await format.click();
+    const row = bar.getByRole('menuitemcheckbox', { name: 'Bold', exact: true });
+    const checked = await row.getAttribute('aria-checked');
+    // A second press on the trigger closes the menu.
+    if ((await format.getAttribute('aria-expanded')) === 'true') await format.click();
+    return checked;
+  };
+  await goTo(page, TARGET);
+  if ((await boldRow()) !== 'false') throw new Error('Format > Bold is checked on a plain cell');
+  await choose('Format', 'Bold', 'menuitemcheckbox');
+  if ((await boldRow()) !== 'true') throw new Error('Format > Bold is not checked after a press');
+  await goTo(page, TARGET);
+  await choose('Format', 'Bold', 'menuitemcheckbox');
+  if ((await boldRow()) !== 'false') throw new Error('a second Format > Bold left the cell bold');
+  const undos = await undoToEmpty(page, 4, 'the menu edits');
+  return `Format > Bold checked and unchecked its row, and ${undos} undos took back the edits`;
+}
+
 /**
  * Copy right after the grid takes the focus, with no page selection: by a press on a cell, and
  * by Shift+F6 from the footer. An engine can send a clipboard event to the node of the page

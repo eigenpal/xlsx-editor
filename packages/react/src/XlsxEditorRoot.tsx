@@ -357,8 +357,8 @@ export interface XlsxEditorViewportProps {
 /**
  * The editor's styling scope and landmark region: carries the `.xlsx-editor` class, and
  * `xlsx-editor-viewport`, which keeps its width from following its content. F6 and
- * Shift+F6 inside it move the keyboard among the toolbar, the formula bar, the grid, and the
- * footer.
+ * Shift+F6 inside it move the keyboard among the menu bar, the toolbar, the formula bar, the
+ * grid, and the footer.
  *
  * @public
  */
@@ -377,8 +377,8 @@ export function XlsxEditorViewport({ className, label, style, children }: XlsxEd
         .join(' ')}
       {...(style ? { style } : {})}
       {...region}
-      // F6 and Shift+F6 move the keyboard among the toolbar, the formula bar, the grid, and the
-      // footer.
+      // F6 and Shift+F6 move the keyboard among the menu bar, the toolbar, the formula bar, the
+      // grid, and the footer.
       onKeyDown={(e) => void cycleRegion(e, e.currentTarget, editor)}
     >
       <ScopedByAncestorContext.Provider value>{children}</ScopedByAncestorContext.Provider>

@@ -41,8 +41,10 @@ import {
   CHROME_GROUPS,
   chromeSlotId,
   isToolbarButtonSlot,
+  notInToolbar,
   toolbarAsChildProblem,
   toolbarGroupHeading,
+  toolbarSlotAdvice,
   type ChromeControl,
   type ChromeGroup,
   type ChromeGroupId,
@@ -258,7 +260,10 @@ export function XlsxEditorToolbarSlot(props: XlsxEditorToolbarSlotProps) {
   const override = found ? slotOverrideOf(props) : null;
   const badChild = asChild && !hidden && !override?.asChild;
   useEffect(() => {
-    if (unknown) warnToolbarProblems([unknownSlotProblem(slotId, 'XlsxEditor.Toolbar.Slot')]);
+    if (unknown)
+      warnToolbarProblems([
+        unknownSlotProblem(slotId, 'XlsxEditor.Toolbar.Slot', 'XlsxEditor.Toolbar.Group'),
+      ]);
     else if (badChild)
       warnToolbarProblems([toolbarAsChildProblem('XlsxEditor.Toolbar.Slot', slotId)]);
   }, [unknown, badChild, slotId]);
@@ -453,11 +458,13 @@ export function readToolbarChildren(children: ReactNode): ToolbarChildren {
   return { slots, groups, appended, slotRequests, groupRequests };
 }
 
-/** The problem of a `Toolbar.Slot` outside the preset whose id names no slot. */
-export function unknownSlotProblem(slotId: string, part: string): string {
+/**
+ * The problem of a `Toolbar.Slot` outside the preset whose id names no slot. A slot that only the
+ * menu bar shows is named as such, in the words of the preset toolbar (`notInToolbar`).
+ */
+export function unknownSlotProblem(slotId: string, part: string, group: string): string {
   return (
-    `"${slotId}" is not a toolbar slot id, so its ${part} renders nothing. Use a ChromeSlotId, ` +
-    `such as "font.bold".`
+    `${notInToolbar(slotId)}, so its ${part} renders nothing. ` + toolbarSlotAdvice(slotId, group)
   );
 }
 

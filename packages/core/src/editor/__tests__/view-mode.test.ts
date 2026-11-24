@@ -196,14 +196,28 @@ describe('view mode', () => {
     expect(viewer.snapshot().mode).toBe('view');
   });
 
-  test('toolbarCommandState disables every slot but save, and keeps the values', async () => {
+  test('toolbarCommandState disables every slot that edits, and keeps the values', async () => {
     const { viewer } = await mount('view');
-    const host = { save: () => undefined };
+    const host = { save: () => undefined, open: () => undefined };
     const snap = viewer.snapshot();
+    // Save, Open, Copy, Select all, and the zoom read the workbook or change only the view.
+    const reads = new Set<string>([
+      'file.save',
+      'file.open',
+      'edit.copy',
+      'edit.selectAll',
+      'view.zoomIn',
+      'view.zoomOut',
+    ]);
     for (const slot of CHROME_SLOT_IDS) {
       const state = toolbarCommandState(snap, slot, host);
-      if (slot === 'file.save') {
-        expect(state.enabled).toBe(true);
+      if (reads.has(slot)) {
+        expect({ slot, enabled: state.enabled }).toEqual({ slot, enabled: true });
+        continue;
+      }
+      // At 100%, Zoom to 100% has nothing to do: its own reason, not view mode.
+      if (slot === 'view.zoomReset') {
+        expect(state.disabledReason?.key).toBe('disabledReason.zoomActual');
         continue;
       }
       expect({ slot, enabled: state.enabled }).toEqual({ slot, enabled: false });

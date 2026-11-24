@@ -1,6 +1,7 @@
 /** @jsxImportSource react */
-// The composed editor: the toolbar, the formula bar, the grid, and a footer with the sheet tabs
-// and the zoom.
+// The composed editor: the menu bar, the toolbar, the formula bar, the grid, and a footer with
+// the sheet tabs and the zoom. The `menu` prop shows or hides the menu bar, as DOCX Editor's
+// `menu` prop does (docx-editor/packages/react/src/components/DocxEditor.tsx at ad686574).
 
 import { forwardRef, type CSSProperties } from 'react';
 import type { EditorSnapshot, SavedWorkbook } from '@xlsx-editor.dev/core/editor';
@@ -17,6 +18,7 @@ import { SheetTabs } from './SheetTabs.tsx';
 import { useEditorState } from './context.ts';
 import { XlsxEditorToolbar } from './toolbar/Toolbar.tsx';
 import { useChromeDir } from './locale.tsx';
+import { XlsxEditorMenu, type XlsxEditorMenuProps } from './menu/Menu.tsx';
 
 /** Props for `XlsxEditor`: the root's props and the viewport's class. @public */
 export interface XlsxEditorProps extends Omit<XlsxEditorRootProps, 'children'> {
@@ -49,6 +51,17 @@ export interface XlsxEditorProps extends Omit<XlsxEditorRootProps, 'children'> {
    * `opening` prop of `XlsxEditor.Toolbar`.
    */
   readonly opening?: boolean;
+  /**
+   * The menu bar above the toolbar: `true` (the default) shows it, `false` leaves it out, and an
+   * object shows it with those props, which win over the ones that the editor passes (`onSave`,
+   * `onSaveStart`, and `opening`).
+   *
+   * The default File > Open replaces the open workbook with the picked file and does not ask
+   * first, also when the workbook has unsaved edits. To ask first, pass your own `onOpen` in the
+   * object; `snapshot().revision` tells you whether the workbook changed since your last save.
+   * To remove the row, set `menu` to `false` and compose the menu bar with a hidden `Open` row.
+   */
+  readonly menu?: boolean | XlsxEditorMenuProps;
 }
 
 const statusOf = (snapshot: EditorSnapshot) => snapshot.status;
@@ -57,12 +70,21 @@ function Body({
   onSave,
   onSaveStart,
   opening,
-}: Pick<XlsxEditorProps, 'onSave' | 'onSaveStart' | 'opening'>) {
+  menu = true,
+}: Pick<XlsxEditorProps, 'onSave' | 'onSaveStart' | 'opening' | 'menu'>) {
   // The status alone: the body renders again only when it changes, not on each key of an edit.
   const status = useEditorState(statusOf);
   const dir = useChromeDir();
   return (
     <>
+      {menu !== false ? (
+        <XlsxEditorMenu
+          {...(onSave ? { onSave } : {})}
+          {...(onSaveStart ? { onSaveStart } : {})}
+          {...(opening === undefined ? {} : { opening })}
+          {...(typeof menu === 'object' ? menu : {})}
+        />
+      ) : null}
       <XlsxEditorToolbar
         {...(onSave ? { onSave } : {})}
         {...(onSaveStart ? { onSaveStart } : {})}
@@ -81,7 +103,7 @@ function Body({
 
 /** A workbook editor with its chrome. Takes a `ref` to an `XlsxEditorRef`. @public */
 export const XlsxEditor = forwardRef<XlsxEditorRef, XlsxEditorProps>(function XlsxEditor(
-  { className, style, onSave, onSaveStart, opening, ...props },
+  { className, style, onSave, onSaveStart, opening, menu, ...props },
   ref
 ) {
   return (
@@ -91,6 +113,7 @@ export const XlsxEditor = forwardRef<XlsxEditorRef, XlsxEditorProps>(function Xl
           {...(onSave ? { onSave } : {})}
           {...(onSaveStart ? { onSaveStart } : {})}
           {...(opening === undefined ? {} : { opening })}
+          {...(menu === undefined ? {} : { menu })}
         />
       </XlsxEditorViewport>
     </XlsxEditorRoot>

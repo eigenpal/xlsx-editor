@@ -14,6 +14,7 @@ import {
   type FixtureWorkbook,
 } from '../../../../../scripts/fixtures/builder.ts';
 import en from '../../../../i18n/en.json';
+import { MENU_ONLY_SLOTS } from '../menu-commands.ts';
 import {
   CHROME_GROUPS,
   CHROME_SLOT_IDS,
@@ -228,7 +229,8 @@ describe('the chrome registry', () => {
     // made holds: they run on the viewer, after every other slot.
     const steps = new Set<ChromeSlotId>(['number.increaseDecimals', 'number.decreaseDecimals']);
     for (const slot of CHROME_SLOT_IDS) {
-      if (steps.has(slot)) continue;
+      // The menu bar's own slots have their tests in menu-commands.test.ts.
+      if (steps.has(slot) || MENU_ONLY_SLOTS.has(slot)) continue;
       calls.length = 0;
       const r = runToolbarCommand(fake, slot, VALUE[slot], { save: (b) => saved.push(b) });
       expect({ slot, ok: r.ok }).toEqual({ slot, ok: true });
@@ -275,7 +277,10 @@ describe('toolbarCommandState', () => {
     for (const slot of CHROME_SLOT_IDS) {
       const s = toolbarCommandState(viewer.snapshot(), slot, { save: () => undefined });
       expect(s.enabled).toBe(false);
-      expect(s.disabledReason?.key).toBe('disabledReason.editorNotReady');
+      // Open needs no workbook, only the host's open.
+      expect(s.disabledReason?.key).toBe(
+        slot === 'file.open' ? 'disabledReason.noOpen' : 'disabledReason.editorNotReady'
+      );
     }
   });
 

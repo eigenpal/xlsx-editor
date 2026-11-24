@@ -6,8 +6,8 @@
 // default, is a view option of the demo: Save writes the heading flags of the opened file, not the
 // option. A pill switches the editor to view mode. The page shell, its top bar, and its light and
 // dark theme follow the PPTX Editor and DOCX Editor demos (`demo.css`): the brand lockup, the React
-// | Vue switcher, the name of the open workbook with its muted extension, then the actions. The
-// demo's own text is English and stays out of `packages/i18n` (AGENTS.md, "i18n").
+// | Vue switcher, the name of the open workbook with its muted extension, the menu bar, then the
+// actions. The demo's own text is English and stays out of `packages/i18n` (AGENTS.md, "i18n").
 //
 // The demo reads each file before the editor gets it, so a file that does not read leaves the
 // open workbook, its name, and its flags as they were. It opens a file with
@@ -801,6 +801,15 @@ export function App() {
           {SHOW_ADAPTER_SWITCHER ? <AdapterSwitcher current="react" theme={theme} /> : null}
           <span className="demo-topbar__divider" />
           <WorkbookName label={name} />
+          {/* The menu bar after the name, as the family demos place theirs. File > Open runs the
+              demo's own Open, which asks first over unsaved edits, and File > Save its save. */}
+          <XlsxEditor.Menu
+            className="demo-menubar"
+            opening={openingShown}
+            onOpen={() => openInput.current?.click()}
+            onSaveStart={onToolbarSaveStart}
+            onSave={(bytes, saved) => void saveOnce(() => onSave(bytes, saved))}
+          />
           <div className="demo-topbar__actions">
             <span className="demo-busy" role="status">
               {busyText}

@@ -10,6 +10,11 @@ import { ChromeDisabledReason } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroup } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroupId } from '@xlsx-editor.dev/core/editor';
 import { ChromeHint } from '@xlsx-editor.dev/core/editor';
+import { ChromeMenuEntry } from '@xlsx-editor.dev/core/editor';
+import { ChromeMenuId } from '@xlsx-editor.dev/core/editor';
+import { ChromeMenuItemEntry } from '@xlsx-editor.dev/core/editor';
+import { ChromeMenuSeparatorEntry } from '@xlsx-editor.dev/core/editor';
+import { ChromeMenuSubmenuEntry } from '@xlsx-editor.dev/core/editor';
 import { ChromePartTranslate } from '@xlsx-editor.dev/core/editor';
 import { ChromeSlotId } from '@xlsx-editor.dev/core/editor';
 import { ChromeTranslate } from '@xlsx-editor.dev/core/editor';
@@ -109,6 +114,16 @@ export { ChromeGroup }
 export { ChromeGroupId }
 
 export { ChromeHint }
+
+export { ChromeMenuEntry }
+
+export { ChromeMenuId }
+
+export { ChromeMenuItemEntry }
+
+export { ChromeMenuSeparatorEntry }
+
+export { ChromeMenuSubmenuEntry }
 
 export { ChromePartTranslate }
 
@@ -461,11 +476,233 @@ export type XlsxEditorFonts = readonly FontSource[] | (() => Promise<readonly Fo
 export { XlsxEditorInstance }
 
 // @public
+export const XlsxEditorMenu: XlsxEditorMenuNamespace;
+
+// @public
+export function XlsxEditorMenuEntry(input: XlsxEditorMenuEntryProps): react.JSX.Element;
+
+// @public
+export interface XlsxEditorMenuEntryProps {
+    // (undocumented)
+    readonly entry: ChromeMenuEntry;
+}
+
+// @public
+export function XlsxEditorMenuGroup(props: XlsxEditorMenuGroupProps): react.JSX.Element | null;
+
+// @public
+export interface XlsxEditorMenuGroupProps {
+    // (undocumented)
+    readonly children?: ReactNode;
+    readonly className?: string;
+    readonly hidden?: boolean;
+    readonly label?: string;
+    readonly labelKey?: string;
+}
+
+// @public
+export function XlsxEditorMenuItem(props: XlsxEditorMenuItemProps): react.JSX.Element | null;
+
+// @public
+export interface XlsxEditorMenuItemProps {
+    readonly className?: string;
+    readonly hidden?: boolean;
+    readonly label?: string;
+    readonly labelKey?: string;
+    readonly shortcut?: string;
+    readonly slotId: ChromeSlotId;
+}
+
+// @public
+export function XlsxEditorMenuMenu(props: XlsxEditorMenuMenuProps): react.JSX.Element | null;
+
+// @public
+export interface XlsxEditorMenuMenuProps {
+    readonly after?: string;
+    // (undocumented)
+    readonly children?: ReactNode;
+    readonly className?: string;
+    readonly hidden?: boolean;
+    readonly icon?: ReactNode;
+    readonly id: ChromeMenuId | (string & {});
+    readonly label?: string;
+    readonly labelKey?: string;
+    readonly preset?: boolean;
+}
+
+// @public
+export type XlsxEditorMenuNamedRow = (props: XlsxEditorMenuNamedRowProps) => ReactNode;
+
+// @public
+export type XlsxEditorMenuNamedRowProps = Omit<XlsxEditorMenuItemProps, 'slotId'>;
+
+// @public
+export interface XlsxEditorMenuNamespace {
+    (props: XlsxEditorMenuProps): ReactElement;
+    // (undocumented)
+    readonly AlignBottom: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly AlignCenter: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly AlignLeft: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly AlignMiddle: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly AlignRight: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly AlignTop: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Bold: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly BordersAll: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly BordersNone: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly BordersOutline: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ClearAll: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ClearContents: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ClearFormatting: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Copy: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Cut: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly DecreaseDecimals: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly DeleteColumns: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly DeleteRows: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Edit: XlsxEditorMenuPart;
+    readonly Entry: typeof XlsxEditorMenuEntry;
+    // (undocumented)
+    readonly File: XlsxEditorMenuPart;
+    // (undocumented)
+    readonly Format: XlsxEditorMenuPart;
+    readonly Group: typeof XlsxEditorMenuGroup;
+    // (undocumented)
+    readonly IncreaseDecimals: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Insert: XlsxEditorMenuPart;
+    // (undocumented)
+    readonly InsertColumns: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly InsertRows: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly InsertSheet: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Italic: XlsxEditorMenuNamedRow;
+    readonly Item: typeof XlsxEditorMenuItem;
+    readonly Menu: typeof XlsxEditorMenuMenu;
+    // (undocumented)
+    readonly MergeAndCenter: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly MergeCells: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly NumberFormat: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Open: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Paste: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Redo: XlsxEditorMenuNamedRow;
+    readonly Row: typeof XlsxEditorMenuRow;
+    // (undocumented)
+    readonly Save: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly SelectAll: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Separator: typeof XlsxEditorMenuSeparator;
+    // (undocumented)
+    readonly Submenu: typeof XlsxEditorMenuSubmenu;
+    // (undocumented)
+    readonly Underline: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Undo: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly UnmergeCells: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly View: XlsxEditorMenuPart;
+    // (undocumented)
+    readonly WrapText: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ZoomIn: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ZoomOut: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ZoomReset: XlsxEditorMenuNamedRow;
+}
+
+// @public
+export type XlsxEditorMenuPart = (props: XlsxEditorMenuPartProps) => ReactNode;
+
+// @public
+export type XlsxEditorMenuPartProps = Omit<XlsxEditorMenuMenuProps, 'id'>;
+
+// @public
+export interface XlsxEditorMenuProps {
+    // (undocumented)
+    readonly children?: ReactNode;
+    readonly className?: string;
+    readonly onOpen?: () => void;
+    readonly onOpenFile?: (file: File) => void;
+    readonly onSave?: (bytes: Uint8Array<ArrayBuffer>, saved: SavedWorkbook) => void;
+    readonly onSaveStart?: (saving: Promise<SavedWorkbook | null>) => void;
+    readonly opening?: boolean;
+    readonly overflow?: boolean;
+    readonly preset?: boolean;
+}
+
+// @public
+export function XlsxEditorMenuRow(props: XlsxEditorMenuRowProps): react.JSX.Element;
+
+// @public
+export interface XlsxEditorMenuRowProps {
+    readonly active?: boolean;
+    // (undocumented)
+    readonly children?: ReactNode;
+    readonly className?: string;
+    readonly disabled?: boolean;
+    readonly disabledReason?: string;
+    readonly icon?: ReactNode;
+    readonly label?: string;
+    readonly onSelect?: () => void;
+    readonly selected?: boolean;
+    readonly shortcut?: string;
+}
+
+// @public
+export function XlsxEditorMenuSeparator(input: XlsxEditorMenuSeparatorProps): react.JSX.Element;
+
+// @public
+export interface XlsxEditorMenuSeparatorProps {
+    readonly className?: string;
+}
+
+// @public
+export function XlsxEditorMenuSubmenu(props: XlsxEditorMenuSubmenuProps): react.JSX.Element;
+
+// @public
+export interface XlsxEditorMenuSubmenuProps {
+    // (undocumented)
+    readonly children?: ReactNode;
+    readonly className?: string;
+    readonly label?: string;
+    readonly labelKey?: string;
+    readonly paths?: readonly string[] | null;
+}
+
+// @public
 export interface XlsxEditorNamespace extends ForwardRefExoticComponent<XlsxEditorProps & RefAttributes<XlsxEditorRef>> {
     // (undocumented)
     readonly Content: typeof XlsxEditorContent;
     // (undocumented)
     readonly FormulaBar: typeof FormulaBar;
+    // (undocumented)
+    readonly Menu: typeof XlsxEditorMenu;
     // (undocumented)
     readonly Root: typeof XlsxEditorRoot;
     // (undocumented)
@@ -483,6 +720,7 @@ export interface XlsxEditorNamespace extends ForwardRefExoticComponent<XlsxEdito
 // @public
 export interface XlsxEditorProps extends Omit<XlsxEditorRootProps, 'children'> {
     readonly className?: string;
+    readonly menu?: boolean | XlsxEditorMenuProps;
     readonly onSave?: (bytes: Uint8Array<ArrayBuffer>, saved: SavedWorkbook) => void;
     readonly onSaveStart?: (saving: Promise<SavedWorkbook | null>) => void;
     readonly opening?: boolean;

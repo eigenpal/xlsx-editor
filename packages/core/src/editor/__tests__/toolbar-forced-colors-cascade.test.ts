@@ -263,3 +263,29 @@ describe('the text color that wins on a toolbar element', () => {
     expect(cascade(option, 'color', true).value).toBe('inherit');
   });
 });
+
+describe('the colors that win on a checked menu row', () => {
+  const row = (attrs: string) =>
+    editor(`<div class="xlsx-menubar"><div class="xlsx-menu-panel" role="menu">
+      <button class="xlsx-menu-row" role="menuitemcheckbox" aria-checked="true" ${attrs}
+        data-test></button></div></div>`);
+
+  test('forced colors give a focused or hovered checked row HighlightText on Highlight', () => {
+    for (const state of ['data-state-focus', 'data-state-hover']) {
+      expect(cascade(row(state), 'color', true).value).toBe('HighlightText');
+      expect(cascade(row(state), 'background', true).value).toBe('Highlight');
+    }
+  });
+
+  test('forced colors give a disabled checked row GrayText, and a checked row at rest its text color', () => {
+    expect(cascade(row('aria-disabled="true"'), 'color', true).value).toBe('GrayText');
+    expect(cascade(row(''), 'color', true).value).toBe('inherit');
+  });
+
+  test('without forced colors, a disabled checked row takes the subtle color', () => {
+    expect(cascade(row('aria-disabled="true"'), 'color', false).value).toBe(
+      'var(--doc-text-subtle)'
+    );
+    expect(cascade(row(''), 'color', false).value).toBe('var(--doc-primary)');
+  });
+});

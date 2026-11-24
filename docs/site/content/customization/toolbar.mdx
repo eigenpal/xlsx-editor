@@ -165,7 +165,7 @@ With `preset={false}`, the toolbar renders only its children, in your order. Nam
 </Framework>
 </FrameworkTabs>
 
-For every group and slot identifier, read `CHROME_GROUPS` from `@xlsx-editor.dev/core/editor`. A slot id is `${groupId}.${controlId}`, such as `font.bold`.
+For every group and slot identifier, read `CHROME_GROUPS` from `@xlsx-editor.dev/core/editor`. A slot id is `${groupId}.${controlId}`, such as `font.bold`. The preset toolbar shows `defaultChromeGroups()`: the groups of `CHROME_GROUPS` without the slots that only the [menu bar](/docs/customization/menus) shows. You can place such a slot in a toolbar group. Paste reads the clipboard there too, and Open is disabled, because only the menu bar has a file picker.
 
 ## Add application actions
 

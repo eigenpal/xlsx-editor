@@ -80,7 +80,13 @@ import {
 } from '../cascade/index.ts';
 import { protectionChecks } from '../store/store/sheet-protection.ts';
 import { clearOps } from '../automation/index.ts';
-import type { CellEditing, EditTarget, RefusedBy, RunHistory } from './cell-editing.ts';
+import {
+  editingOf,
+  type CellEditing,
+  type EditTarget,
+  type RefusedBy,
+  type RunHistory,
+} from './cell-editing.ts';
 import { refusalOf, type EditRefusal, type EditResult } from './cell-input.ts';
 import type { Merges } from './selection.ts';
 import { cellContent, selectionRef, typedInput } from './editor-model.ts';
@@ -126,6 +132,8 @@ interface CopiedCell {
 
 interface Snapshot {
   readonly token: string;
+  /** The `text/plain` of the copy, for `tokenOfText`. */
+  readonly text: string;
   /** The store of the copy. Another store (a workbook opened later) takes the plain lane. */
   readonly store: WorkbookDocumentStore;
   /** The source range, its sheet by name and part, at the revision of the copy. */
@@ -292,6 +300,15 @@ function pasteProblemCode(problem: FormulaWriteProblem): EditRefusal['code'] {
   }
 }
 
+/** The clipboard of each editor, by its cell editing, for the menu bar's Paste (`clipboardOf`). */
+const clipboards = new WeakMap<object, WorkbookClipboard>();
+
+/** The clipboard of `editor`, when the engine made it. @internal */
+export function clipboardOf(editor: object): WorkbookClipboard | undefined {
+  const edits = editingOf(editor);
+  return edits ? clipboards.get(edits) : undefined;
+}
+
 /** The copy, cut, and paste commands of one editor. */
 export class WorkbookClipboard {
   readonly #host: ClipboardHost;
@@ -305,6 +322,7 @@ export class WorkbookClipboard {
 
   constructor(host: ClipboardHost) {
     this.#host = host;
+    clipboards.set(host.edits, this);
   }
 
   /** Forget the last copy: the editor opened another workbook or was destroyed. */
@@ -540,8 +558,10 @@ export class WorkbookClipboard {
     const deps = copyDeps(pkg, index, formulas, formats, source, scopedSheet);
     const named = deps.sheets.map((dep) => dep.name);
     this.#spent = null;
+    const text = lines.join('\r\n');
     this.#snapshot = {
       token,
+      text,
       store: target.store,
       sheet: target.entry.name,
       partName: target.entry.partName!,
@@ -564,7 +584,24 @@ export class WorkbookClipboard {
     this.#host.edits.succeeded();
     const range = selectionRef(target.selection);
     this.#host.announce(this.#host.t(cut ? 'grid.cut' : 'grid.copied', { ref: range }));
-    return { ok: true, content: { text: lines.join('\r\n'), token } };
+    return { ok: true, content: { text, token } };
+  }
+
+  /**
+   * The token of the pending copy or cut whose text is `text`, or undefined. A paste that reads
+   * only the text of the system clipboard, such as the menu bar's Paste, gives it with the text,
+   * so the paste takes the lane that the paste key takes with the private type: a cut moves its
+   * cells, and a copy keeps its formulas and cell formats. Only a copy whose outline shows
+   * matches (`#marked`): after Escape, an edit, or a paste that ends the outline, and for an
+   * expired copy, the text takes the plain lane, as text from elsewhere does. The line breaks
+   * (`\r\n`, `\r`, or `\n`) and one trailing line break do not count. @internal
+   */
+  tokenOfText(text: string): string | undefined {
+    this.#sweep();
+    const snap = this.#snapshot;
+    if (!snap || !this.#marked(snap)) return undefined;
+    const lines = (t: string) => t.replace(/\r\n?/g, '\n').replace(/\n$/, '');
+    return lines(snap.text) === lines(text) ? snap.token : undefined;
   }
 
   /** Paste clipboard data at the active cell, as one transaction and one undo step. */

@@ -333,7 +333,10 @@ describe('a chartsheet tab and the empty bar', () => {
     expect(tabWhy?.textContent).toStartWith('Sheets cannot be renamed or deleted:');
     expect(tabWhy?.closest('[role="tablist"]')).toBeNull();
     fireEvent.contextMenu(tab, { clientX: 10 });
-    const [rename, del, , right] = view.getAllByRole('menuitem');
+    // The sheet menu's rows, not the menu bar's triggers.
+    const [rename, del, , right] = view
+      .getAllByRole('menuitem')
+      .filter((m) => !m.closest('[role="menubar"]'));
     for (const row of [rename!, del!]) {
       expect(row.getAttribute('aria-disabled')).toBe('true');
       expect(row.getAttribute('title')).toStartWith(

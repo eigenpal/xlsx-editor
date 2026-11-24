@@ -1,7 +1,7 @@
 /**
  * The rows of the support matrix for the customization of the chrome by host code: the theme
- * scope, the editor events, and the language of the chrome. `support-matrix.ts` lists them in
- * its order; the rules of that file hold here.
+ * scope, the editor events, the language of the chrome, and the menu bar. `support-matrix.ts` lists
+ * them in its order; the rules of that file hold here.
  */
 
 import type { SupportFeature } from './support-matrix.ts';
@@ -51,6 +51,22 @@ export const CUSTOMIZATION_FEATURES: readonly SupportFeature[] = [
         'packages/i18n/src/direction.test.ts',
         'packages/react/src/__tests__/chrome-translate.test.tsx',
         'packages/vue/test/chrome-translate.test.ts',
+      ],
+    },
+  },
+  {
+    id: 'viewer.menu-bar',
+    name: 'Menu bar with host rows and menus',
+    category: 'viewer',
+    status: 'supported',
+    notes:
+      'File, Edit, View, Insert, and Format above the toolbar. Each packaged row is a chrome slot with the state of `toolbarCommandState`. A host hides or replaces a row by slot, adds rows, groups, submenus, and menus, and sets `preset={false}`. The bar follows the WAI-ARIA menubar pattern and moves the menus that do not fit into a "More menus" menu. Paste needs a clipboard that the browser lets a page read. Merge cells is disabled when cells other than the top-left cell hold values.',
+    docsLink: '/docs/customization/menus',
+    evidence: {
+      tests: [
+        `${CORE}/editor/__tests__/menu-bar.test.ts`,
+        'packages/react/src/__tests__/menu.test.tsx',
+        'packages/vue/test/menu.test.ts',
       ],
     },
   },

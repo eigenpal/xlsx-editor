@@ -3,7 +3,7 @@
 // form. It opens the sample workbook of the React demo at start, or a workbook that you pick,
 // and downloads the saved copy. The shell is the React demo's (examples/vite/src/demo.css): the
 // top bar with the brand lockup, the React | Vue switcher, the name of the open workbook with
-// its muted extension, Show all headings, View only, the theme toggle, Open a file, and Save;
+// its muted extension, the editor's menu bar, Show all headings, View only, the theme toggle, Open a file, and Save;
 // then the toolbar, and the formula bar, grid, and footer in one card. The demo's own text is
 // English and stays out of `packages/i18n` (AGENTS.md, "i18n").
 //
@@ -28,6 +28,7 @@ import {
   SheetTabs,
   StatusMessage,
   XlsxEditorContent,
+  XlsxEditorMenu,
   XlsxEditorRoot,
   XlsxEditorToolbar,
   XlsxEditorViewport,
@@ -49,6 +50,8 @@ import ThemeToggle from './ThemeToggle.vue';
 import { DemoSession, initialSessionState } from './session.ts';
 
 const editor = useTemplateRef<XlsxEditorRef>('editor');
+// The file input of Open a file, which File > Open of the menu bar also opens.
+const openInput = useTemplateRef<HTMLInputElement>('openInput');
 // The status of the editor, so the grid shows idle until a workbook is ready.
 const status = shallowRef<EditorSnapshot['status']>('empty');
 const viewOnly = shallowRef(false);
@@ -147,6 +150,15 @@ void session.openSample(async () => {
             <span v-if="shown.ext" class="demo-file__ext">{{ shown.ext }}</span>
           </template>
         </div>
+        <!-- The menu bar after the name, as in the React demo: File > Open runs the demo's own
+             Open, and File > Save its save. -->
+        <XlsxEditorMenu
+          class-name="demo-menubar"
+          :opening="state.opening || state.switching"
+          :on-open="() => openInput?.click()"
+          :on-save="toolbarSave"
+          :on-save-start="toolbarSaveStart"
+        />
         <div class="demo-topbar__actions">
           <span class="demo-busy" role="status">{{
             state.switching
@@ -179,6 +191,7 @@ void session.openSample(async () => {
             <Icon name="folder_open" />
             <span class="demo-btn__label">Open a file</span>
             <input
+              ref="openInput"
               class="demo-sr-only"
               type="file"
               aria-label="Open a file"

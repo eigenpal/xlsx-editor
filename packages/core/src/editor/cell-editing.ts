@@ -620,6 +620,14 @@ export class CellEditing {
     return this.#host.viewing();
   }
 
+  /** Refuse a picked file that did not open: an edit that the pick's load dropped stays shown. */
+  refuseOpen(): void {
+    const dropped = this.#dropped;
+    this.#refuse({ code: 'open-failed' });
+    this.#dropped = dropped;
+    this.#host.publish();
+  }
+
   /** Refuse a command before it reaches the store, through the refusal channel. */
   refuse(refusal: EditRefusal, by?: RefusedBy): EditResult {
     return this.#refuse(refusal, by);

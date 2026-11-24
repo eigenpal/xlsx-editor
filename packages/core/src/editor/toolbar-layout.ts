@@ -7,8 +7,8 @@
 
 import { inlineStep, isRightToLeft } from './chrome-direction.ts';
 import {
-  CHROME_GROUPS,
   chromeSlotId,
+  defaultChromeGroups,
   type ChromeGroup,
   type ChromeSlotId,
 } from './chrome-controls.ts';
@@ -17,13 +17,13 @@ import { TOOLBAR_COLLAPSE_ORDER, collapseOrder } from './toolbar-arrange.ts';
 import { scrollIntoNearestScroller } from './scroll-nearest.ts';
 
 /**
- * The groups of the bar, in registry order, without the hidden slots. A group whose slots are
+ * The groups of the bar (`defaultChromeGroups`), in registry order, without the hidden slots. A group whose slots are
  * all hidden is left out. @internal
  */
 export function toolbarGroups(hidden: readonly ChromeSlotId[] = []): readonly ChromeGroup[] {
   const leave = new Set<string>(hidden);
   const groups: ChromeGroup[] = [];
-  for (const g of CHROME_GROUPS as readonly ChromeGroup[]) {
+  for (const g of defaultChromeGroups()) {
     const controls = g.controls.filter((c) => !leave.has(chromeSlotId(g, c)));
     if (controls.length === 0) continue;
     groups.push(controls.length === g.controls.length ? g : { ...g, controls });
@@ -516,6 +516,14 @@ export const isHexColor = (value: string | null | undefined): value is string =>
   !!value && /^[0-9A-Fa-f]{6}$/.test(value);
 
 /**
+ * The save key events that a listener of `listenSaveKey` has taken. The toolbar and the menu bar
+ * each listen, and the first one takes the key, so one key saves once. A mark, not
+ * `defaultPrevented`: a host page that calls `preventDefault` to block the browser's own save
+ * still gets the editor's save.
+ */
+const HANDLED_SAVE_KEYS = new WeakSet<Event>();
+
+/**
  * Run `save` for Control or Command and S in the editor that holds the bar `el`, as DOCX
  * Editor's menu bar (`DocxEditorMenu`) does, key `s` with the platform modifier. Scoped to this
  * editor: only a key in the viewport that holds the bar, so a host page's own field keeps the key.
@@ -531,6 +539,9 @@ export function listenSaveKey(el: HTMLElement, save: () => void): () => void {
     const scope = el.closest('.xlsx-editor') ?? el;
     const target = e.target as Node | null;
     if (!target || !scope.contains(target)) return;
+    // The toolbar and the menu bar each listen: the first one takes the key.
+    if (HANDLED_SAVE_KEYS.has(e)) return;
+    HANDLED_SAVE_KEYS.add(e);
     e.preventDefault();
     if ((target as Element).closest?.('[data-xlsx-dialog], [aria-modal="true"]')) return;
     save();

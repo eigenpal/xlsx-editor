@@ -3,10 +3,11 @@
 //   after the grid. The closing Escape is used, so it does not also arm the grid's exit or end
 //   a pending copy or cut.
 // - F6 and Shift+F6 move the focus among the regions of the page: the top bar, then the
-//   editor's toolbar, grid, and footer. The editor viewport holds the top bar and cycles its own
-//   regions (packages/react/src/landmarks.ts): from the top bar, F6 goes to the toolbar and
-//   Shift+F6 to the footer. The demo adds the top bar to the cycle: F6 from the footer and
-//   Shift+F6 from the toolbar go to Open a file, the top bar control that every build shows.
+//   editor's menu bar, toolbar, grid, and footer. The editor viewport holds the top bar and
+//   cycles its own regions (packages/react/src/landmarks.ts): from the top bar, F6 goes to the
+//   menu bar and Shift+F6 to the footer. The demo adds the top bar to the cycle: F6 from the
+//   footer and Shift+F6 from the menu bar go to Open a file, the top bar control that every
+//   build shows.
 // - A held Control+S or Command+S saves once: a repeat stops before the toolbar, which claims
 //   the key in the viewport from its `onSave`, reads it.
 // - During an open, from the download or the file read to the end of the load, and during a
@@ -60,7 +61,7 @@ export function usePageKeys(keys: PageKeys): void {
       }
       const at = e.target instanceof win.Element ? e.target : null;
       if (e.key === 'F6' && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        const out = e.shiftKey ? at?.closest('[role="toolbar"]') : at?.closest('.xlsx-footer');
+        const out = e.shiftKey ? at?.closest('[role="menubar"]') : at?.closest('.xlsx-footer');
         if (!out) return;
         e.preventDefault();
         e.stopPropagation();

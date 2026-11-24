@@ -7,7 +7,9 @@
 // docx-editor/packages/react/src/editor/toolbar/ToolbarOverflow.tsx at a0825f1f, and `123`,
 // `decimal_increase`, and `decimal_decrease` from google/material-design-icons at 10ecc147,
 // symbols/web/<name>/materialsymbolsoutlined/<name>_24px.svg, which DOCX Editor does not use.
-// Difference: only the icons of the XLSX Editor toolbar. Never hand-draw or edit a path here:
+// `folder_open`, `content_cut`, `content_copy`, `content_paste`, `chevron_right`, and `add` of the
+// menu bar are from pptx-editor/packages/core/src/editor/icon-paths.ts at fef01c93.
+// Difference: only the icons of the XLSX Editor toolbar and menu bar. Never hand-draw or edit a path here:
 // every entry is an official Material Symbol.
 
 /** Material Symbol name to SVG path data. */
@@ -91,6 +93,20 @@ export const ICON_PATHS = {
   more_horiz: [
     'M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z',
   ],
+  folder_open: [
+    'M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640H447l-80-80H160v480l96-320h684L837-217q-8 26-29.5 41.5T760-160H160Zm84-80h516l72-240H316l-72 240Zm0 0 72-240-72 240Zm-84-400v-80 80Z',
+  ],
+  content_cut: [
+    'M760-120 480-400l-94 94q8 15 11 32t3 34q0 66-47 113T240-80q-66 0-113-47T80-240q0-66 47-113t113-47q17 0 34 3t32 11l94-94-94-94q-15 8-32 11t-34 3q-66 0-113-47T80-720q0-66 47-113t113-47q66 0 113 47t47 113q0 17-3 34t-11 32l494 494v40H760ZM600-520l-80-80 240-240h120v40L600-520ZM240-640q33 0 56.5-23.5T320-720q0-33-23.5-56.5T240-800q-33 0-56.5 23.5T160-720q0 33 23.5 56.5T240-640Zm240 180q8 0 14-6t6-14q0-8-6-14t-14-6q-8 0-14 6t-6 14q0 8 6 14t14 6ZM240-160q33 0 56.5-23.5T320-240q0-33-23.5-56.5T240-320q-33 0-56.5 23.5T160-240q0 33 23.5 56.5T240-160Z',
+  ],
+  content_copy: [
+    'M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z',
+  ],
+  content_paste: [
+    'M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h167q11-35 43-57.5t70-22.5q40 0 71.5 22.5T594-840h166q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560h-80v120H280v-120h-80v560Zm280-560q17 0 28.5-11.5T520-800q0-17-11.5-28.5T480-840q-17 0-28.5 11.5T440-800q0 17 11.5 28.5T480-760Z',
+  ],
+  chevron_right: ['M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z'],
+  add: ['M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z'],
 } as const satisfies Readonly<Record<string, readonly string[]>>;
 
 /** The name of an icon of the toolbar. */

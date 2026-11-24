@@ -11,6 +11,7 @@
     "customization/layout",
     "customization/toolbar",
     "customization/events",
+    "customization/menus",
     "customization/language",
     "xlsx-fidelity",
     "accessibility",

@@ -3,7 +3,7 @@
 // adapter's `toolbar/Toolbar.tsx`, which is after
 // docx-editor/packages/react/src/editor/toolbar/DocxEditorToolbar.tsx at a0825f1f (EigenPal);
 // the header there explains the rules and the differences from DOCX Editor. The default
-// arrangement is derived from `CHROME_GROUPS` (`toolbarGroups`), the bar measures itself and
+// arrangement is derived from `defaultChromeGroups()` (`toolbarGroups`), the bar measures itself and
 // moves the groups that do not fit, in collapse order, into a "More" panel (`measureToolbar`,
 // `observeToolbar`), the arrow keys move between its controls (`moveBarFocus`), Control or
 // Command and S runs the save (`listenSaveKey`), and the parts in its default slot change the
@@ -48,6 +48,7 @@ import {
   type EditorSnapshot,
   type SavedWorkbook,
   type ToolbarArrangement,
+  editorClipboardReader,
   type ToolbarHost,
   type ChromePartTranslate,
 } from '@xlsx-editor.dev/core/editor';
@@ -117,7 +118,8 @@ const xlsxEditorToolbarProps = {
   /**
    * `false` renders only the default slot, in its order, with no measure and no "More" panel.
    * An `XlsxEditorToolbar.Slot` there renders the built-in control of its slot, or its default
-   * slot. The default is `true`: the groups of `CHROME_GROUPS`, changed by the default slot,
+   * slot. The default is `true`: the groups of `defaultChromeGroups()` (the toolbar groups of
+   * `CHROME_GROUPS`, without the menu bar's), changed by the default slot,
    * where `XlsxEditorToolbar.Slot` replaces or hides one slot where it stands and
    * `XlsxEditorToolbar.Group` adds a host group or changes a built-in group. Other content
    * shows in one block after the groups, which never moves into the "More" panel.
@@ -304,12 +306,16 @@ const XlsxEditorToolbarRoot = defineComponent({
     const editor = useXlsxEditor();
     // A press reads `opening` at its call, so a press and the state of each control agree. A
     // change of a prop gives a new host, so each control reads its state again.
+    // A slot of the menu bar in a toolbar group reads the same host: Paste reads the clipboard
+    // of the editor's window. Open needs the menu bar's `onOpen`, so in a toolbar it is disabled.
     const host = computed<ToolbarHost>(() => {
       const opening = props.opening;
+      const read = editorClipboardReader(editor.value);
       return {
         ...(props.onSave ? { save: props.onSave } : {}),
         ...(props.onSaveStart ? { saveStart: props.onSaveStart } : {}),
         ...(opening === undefined ? {} : { opening: () => props.opening ?? false }),
+        ...(read ? { readClipboard: read } : {}),
       };
     });
     provide(toolbarHostKey, host);

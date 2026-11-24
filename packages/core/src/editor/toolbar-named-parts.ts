@@ -8,7 +8,8 @@
 // The names are DOCX Editor's where the idea is the same (`Undo`, `Bold`, `FontFamily`,
 // `AlignLeft`, `ClearFormatting`, `Save`). The other names come from the label of the slot.
 // Differences from PPTX Editor: the slots of the workbook toolbar, and a test in place of a
-// compile-time check that each slot of `CHROME_GROUPS` has exactly one name.
+// compile-time check that each slot of the preset toolbar (`defaultChromeGroups`) has exactly one
+// name.
 //
 // Adapter support, not a stable API: `@internal`.
 

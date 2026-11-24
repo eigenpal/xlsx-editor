@@ -5,7 +5,11 @@
 // where focus in the pages does; the editor's own modals carry `data-xlsx-dialog` or
 // `data-xlsx-modal` instead of `data-docx-dialog` or `data-docx-modal`; and the comments say
 // "grid" for "pages", "keyboard" for "caret" in the focus rule, and the one line of the
-// instance-container comment is rewrapped. The logic is unchanged.
+// instance-container comment is rewrapped. One intended difference in the logic: an Escape from
+// outside the editor that closes the popup also calls `preventDefault` (not `stopPropagation`).
+// One Escape closes one layer, and the open popup is the top layer. A host that closes its own
+// layer on Escape, such as a side panel that holds the editor, checks `defaultPrevented` and
+// keeps its layer open; in DOCX Editor, the same Escape closed the popup and the panel.
 //
 // Escape for toolbar popups (pickers, the overflow panel) that open with focus left in
 // the grid.
@@ -20,8 +24,8 @@
 // comes from inside this editor (the popup, the chrome root that holds it, the instance's
 // `.xlsx-editor` container, or its viewport), also prevent the default and stop
 // propagation, so the surface does not spend the same key on its mode. When the key comes
-// from elsewhere (a host input, a host dialog, another editor), close the popup and let the
-// key go on untouched. Ownership reads the event's composed path, so a popup inside a
+// from elsewhere (a host input, a host dialog, another editor), close the popup, prevent the
+// default so the host knows that the key closed a layer, and let the key go on. Ownership reads the event's composed path, so a popup inside a
 // shadow root still recognises its own keys.
 //
 // NESTED POPUPS: listeners on one node run in the order they were added, so an outer panel
@@ -97,9 +101,8 @@ export function listenForPopupEscape(options: PopupEscapeOptions): () => void {
     ];
     const own = fromInside || owners.some((element) => element != null && path.includes(element));
     options.close(fromInside);
-    if (!own) return;
     event.preventDefault();
-    event.stopPropagation();
+    if (own) event.stopPropagation();
   };
   owner.addEventListener('keydown', onKeyDown, true);
   return () => owner.removeEventListener('keydown', onKeyDown, true);

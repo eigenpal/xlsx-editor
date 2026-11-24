@@ -18,7 +18,7 @@ The editor renders inside your page. It adds one landmark, the region "Workbook 
 
 For a component with these items, see [Quickstart](/docs/quickstart).
 
-If your own landmarks, such as a `<header>` or a `<main>`, are inside the viewport, set `label={false}` on `XlsxEditor.Viewport` (`:label="false"` on `XlsxEditorViewport` in Vue). The viewport then adds no region, and your landmarks stay at the top level. To give the region another name, pass a string as `label`. The demos in `examples/vite` and `examples/vue` follow these rules.
+If your own landmarks, such as a `<header>` or a `<main>`, are inside the viewport, set `label={false}` on `XlsxEditor.Viewport` (`:label="false"` on `XlsxEditorViewport` in Vue). The viewport then adds no region, and your landmarks stay at the top level. To give the region another name, pass a string as `label`. If the viewport is inside a named region of your own, such as a side panel with an `aria-label`, also set `label={false}`, so the page does not have two nested regions. The demos in `examples/vite` and `examples/vue` follow these rules, and so does the chat example in `examples/chat`.
 
 If you build controls of your own, set `aria-disabled` in place of `disabled`, so a disabled control keeps the focus. Show the reason that `disabledReason` gives as its tooltip. For a sample, see [Controls of your own](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/toolbar-and-keyboard.md#controls-of-your-own).
 
@@ -29,6 +29,7 @@ You can use the editor with the keyboard alone:
 - The grid is one Tab stop. The arrow keys move the active cell, and a character key starts an edit.
 - In the toolbar, Tab moves to the next control, and the arrow keys move between the controls. A disabled control is a stop too.
 - After a pointer press opens a menu or a toolbar list, the arrow keys, Enter, Space, and a character act on the open menu or list, not on the grid.
+- Escape closes an open menu or toolbar list, also when the keyboard is in your page, outside the editor. A key from your page then has its default prevented, so a handler of your own that closes a panel on Escape checks `event.defaultPrevented` and leaves the panel open. The arrow keys from your page stay with your page.
 - The sheet tabs are one Tab stop. The arrow keys, Home, and End show another sheet and move the focus to its tab.
 - F6 and Shift+F6 move the keyboard between the regions: the menu bar, the toolbar, the formula bar, the grid, and the footer with the sheet tabs.
 - To leave the grid from any cell, press Escape and then Tab or Shift+Tab, or press F6.

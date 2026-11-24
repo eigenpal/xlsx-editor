@@ -32,13 +32,17 @@
 //   stale flag and the dropped calculation chain) are not separate transactions: `applyOps`
 //   adds them to the transaction that needs them, with no inverse, so one user command is one
 //   revision and one undo step, and undo never brings the stale chain back or clears the flag.
-// The store holds no session state in the tree: history lives here.
+// The store holds no session state in the tree: history lives here, and so do the part names of
+// the package that the store opened. A sheet whose part is not among them is a sheet that an add
+// op of the session made, which the sheet ops can rename and delete in a workbook whose content
+// refuses that for the sheets of the file (`sheetEditBlocker`).
 //
 // Listeners are isolated: one that throws does not stop delivery to the others, and never makes
 // a committed transaction look failed.
 
 import type { XlsxPackage } from '../package/package.ts';
 import { applyOps, type HistoryOp, type OpRejection, type WorkbookOp } from './ops.ts';
+import { partNamesOf } from '../structure/blockers.ts';
 import { touchedPartViolation } from './part-checks.ts';
 import { reportListenerError } from './listener-error.ts';
 import { sameNode } from './calc.ts';
@@ -243,6 +247,7 @@ export function changedParts(a: XlsxPackage, b: XlsxPackage): string[] {
 /** The transactional document store of one workbook. */
 export class WorkbookDocumentStore {
   #pkg: XlsxPackage;
+  readonly #openedParts: ReadonlySet<string>;
   #revision = 0;
   #undo: HistoryEntry[] = [];
   #redo: HistoryEntry[] = [];
@@ -253,6 +258,7 @@ export class WorkbookDocumentStore {
 
   constructor(pkg: XlsxPackage) {
     this.#pkg = pkg;
+    this.#openedParts = partNamesOf(pkg);
   }
 
   /** The current package. Reference-stable until the next commit. */
@@ -357,7 +363,7 @@ export class WorkbookDocumentStore {
         readonly effects: readonly WorkbookOp[];
       }
     | { readonly ok: false; readonly rejection: OpRejection } {
-    const r = applyOps(this.#pkg, ops, history);
+    const r = applyOps(this.#pkg, ops, history, this.#openedParts);
     if (!r.ok) return r;
     const parts = changedParts(this.#pkg, r.pkg);
     const violation = touchedPartViolation(this.#pkg, r.pkg, parts, history);

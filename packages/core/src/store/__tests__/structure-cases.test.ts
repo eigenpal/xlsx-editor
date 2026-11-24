@@ -74,6 +74,16 @@ describe('parts that can name the edited sheet', () => {
     expect(refusal(s, op('insertRows', "It's", 2))?.subject).toBe('/xl/tables/table1.xml');
   });
 
+  test('a table formula that a CDATA section or a comment splits still names the edited sheet', () => {
+    for (const formula of ['Da<![CDATA[ta]]>!A1*2', 'Dat<!--x-->a!A1*2'] as const) {
+      const s = storeOf({
+        sheets: [data(), other()],
+        extraParts: [['xl/tables/table1.xml', TABLE, table(formula)]],
+      });
+      expect([formula, refusal(s)?.subject]).toEqual([formula, '/xl/tables/table1.xml']);
+    }
+  });
+
   test('a query table part that names the edited sheet refuses', () => {
     const s = storeOf({
       sheets: [data()],

@@ -8,7 +8,8 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { cleanup } from '@testing-library/react';
 import { cellValue, sheetStale } from '../../../../packages/core/src/cascade/index.ts';
-import { editorSheets, openingSheet } from '../../../../packages/core/src/editor/editor-model.ts';
+import { openingSheet } from '../../../../packages/core/src/editor/editor-model.ts';
+import { editorSheets } from '../../../../packages/core/src/editor/editor-sheets.ts';
 import {
   cellKey,
   parseCellRef,
@@ -61,7 +62,7 @@ describe('each committed fixture in the demo', () => {
       const read = readXlsx(fixtureBytes(fixture));
       if (!read.ok) throw new Error(`the fixture does not read (${read.error.reason})`);
       const index = workbookIndex(read.pkg)!;
-      const sheets = editorSheets(index);
+      const sheets = editorSheets(read.pkg, index);
       const first = sheets[openingSheet(sheets, index.activeTab)];
       if (!first) throw new Error('the fixture has no sheet to open');
       // A fixture that opens on a sheet with the name of the sample's first sheet cannot be told

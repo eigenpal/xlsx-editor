@@ -85,6 +85,14 @@ export interface EditorSheet {
    * dialog sheet, or a sheet whose part is missing is not.
    */
   readonly worksheet: boolean;
+  /**
+   * Why the workbook refuses a rename or a delete of this sheet (`structure-blocked`), or null.
+   * For a sheet of the opened file, it is `sheetEditRefusal`. A sheet that the editor added in
+   * this session is refused only when content of the file can refer to it, for example a chart
+   * formula that the add made live. `sheetCommandState` disables Rename and Delete with it. The
+   * snapshot always sets it; when a host omits it, `sheetCommandState` reads `sheetEditRefusal`.
+   */
+  readonly editRefusal?: EditRefusal | null;
 }
 
 /**
@@ -334,12 +342,13 @@ export interface EditorSnapshot {
    */
   readonly workbookProtection: WorkbookProtection | null;
   /**
-   * Why a rename or a delete of any sheet is refused, whatever the sheet, or null: macros, a
+   * Why a rename or a delete of each sheet of the opened file is refused, or null: macros, a
    * chart, a pivot table, or a sheet that is not a worksheet in the workbook, or a workbook or
-   * package relationship outside the allowlist (`structure-blocked`). The sheet menu disables
-   * Rename and Delete with it (`sheetCommandState`). When its `about` kind is `macros`, Add and
-   * the moves are disabled too. A rename or a delete that this does not refuse can still be
-   * refused by its own sheet.
+   * package relationship outside the allowlist (`structure-blocked`). A sheet that the editor
+   * added in this session has its own reason in `EditorSheet.editRefusal`, which the sheet menu
+   * reads (`sheetCommandState`). When its `about` kind is `macros`, it holds for every sheet, and
+   * Add and the moves are disabled too. A rename or a delete that this does not refuse can still
+   * be refused by its own sheet.
    */
   readonly sheetEditRefusal: EditRefusal | null;
   /** `edit`, or `view` when every edit command is refused (`setMode`). */
@@ -543,16 +552,6 @@ export const zoomStepFrom = (z: number, direction: 1 | -1): number =>
   direction > 0
     ? (ZOOM_STEPS.find((s) => s > z + 0.001) ?? ZOOM_STEPS[ZOOM_STEPS.length - 1]!)
     : ([...ZOOM_STEPS].reverse().find((s) => s < z - 0.001) ?? ZOOM_STEPS[0]!);
-
-/** The tabs of a workbook. */
-export function editorSheets(index: WorkbookIndex): EditorSheet[] {
-  return index.sheets.map((s) => ({
-    index: s.index,
-    name: s.name,
-    visible: s.state === 'visible',
-    worksheet: s.kind === 'worksheet',
-  }));
-}
 
 /** The sheet a workbook opens on: `activeTab` when it can show, else the first that can. */
 export function openingSheet(sheets: readonly EditorSheet[], activeTab: number): number {

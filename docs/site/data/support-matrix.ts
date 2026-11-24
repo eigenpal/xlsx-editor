@@ -526,11 +526,12 @@ export const supportFeatures: readonly SupportFeature[] = [
     category: 'drawings',
     status: 'unsupported',
     notes:
-      'A save keeps the chart part. The grid does not draw it, and structural edits are refused.',
+      'A save keeps the chart part. The grid does not draw it, and structural edits are refused. A sheet that the editor added in the session can be renamed and deleted, unless a chart can refer to it.',
     evidence: {
       tests: [
         `${CORE}/layout/__tests__/drawings.test.ts`,
         `${CORE}/store/__tests__/structure-refusals.test.ts`,
+        `${CORE}/store/__tests__/sheet-ops-added.test.ts`,
       ],
     },
   },
@@ -954,10 +955,11 @@ export const supportFeatures: readonly SupportFeature[] = [
     category: 'save',
     status: 'unsupported',
     notes:
-      'A save keeps them (`x:table`, `x:pivotTableDefinition`, and `x:dataValidations`). The grid does not show them, and structural edits are refused.',
+      'A save keeps them (`x:table`, `x:pivotTableDefinition`, and `x:dataValidations`). The grid does not show them, and structural edits are refused. A sheet that the editor added in the session can be renamed and deleted, unless a pivot cache can refer to it.',
     evidence: {
       tests: [
         `${CORE}/store/__tests__/structure-refusals.test.ts`,
+        `${CORE}/store/__tests__/sheet-ops-added.test.ts`,
         `${CORE}/store/__tests__/preserved-content.test.ts`,
       ],
     },
@@ -968,11 +970,12 @@ export const supportFeatures: readonly SupportFeature[] = [
     category: 'save',
     status: 'unsupported',
     notes:
-      'The engine never loads or runs them (`x:externalLink`, `x:connections`, and `vbaProject.bin`). A save keeps their parts byte for byte, and writes their relationship parts in a normalized form. A macro-enabled workbook opens, and its macro part stays inert (`save.macro-enabled`).',
+      'The engine never loads or runs them (`x:externalLink`, `x:connections`, and `vbaProject.bin`). A save keeps their parts byte for byte, and writes their relationship parts in a normalized form. A macro-enabled workbook opens, and its macro part stays inert (`save.macro-enabled`). A data connection refuses a rename and a delete of each sheet of the file. A sheet that the editor added in the session takes both, unless the connection can refer to it.',
     evidence: {
       tests: [
         `${CORE}/store/__tests__/package-read.test.ts`,
         `${CORE}/store/__tests__/security.test.ts`,
+        `${CORE}/store/__tests__/sheet-ops-added.test.ts`,
       ],
     },
   },

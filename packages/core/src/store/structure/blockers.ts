@@ -21,7 +21,8 @@
 //   a worksheet, a relationship of the workbook or of the package to a part outside an
 //   allowlist (`WORKBOOK_RELS`, `PACKAGE_RELS`), for example connections, volatile
 //   dependencies, or revisions, and a workbook element outside an allowlist that names the
-//   edited sheet.
+//   edited sheet. A rename or a delete of a sheet that an add op of the session made is not
+//   refused for those parts, only when one of them names it (`sheetEditBlocker`).
 // - The drawing, VML drawing, and control property parts of every other sheet: a shape linked
 //   to a cell (`xdr:sp/@textlink`), a control linked to a cell (`@fmlaLink`, `@fmlaRange`), or
 //   a legacy control (`x:FmlaLink`, `x:FmlaRange`) can name the edited sheet. Such a part
@@ -33,7 +34,7 @@
 //   edited sheet refuses it through the relationship rule of that sheet.
 
 import { asciiFold } from '@eigenpal/ooxml-core';
-import type { Element, XmlPart } from '../package/tree.ts';
+import type { Element, Node, XmlPart } from '../package/tree.ts';
 import {
   contentTypeOf,
   equivalentPartName,
@@ -45,7 +46,7 @@ import {
 } from '../package/package.ts';
 import { NS, REL } from '../package/namespaces.ts';
 import { child } from '../package/query.ts';
-import { sheetNameKey, type WorkbookIndex } from '../workbook/workbook-index.ts';
+import { sheetNameKey, type SheetEntry, type WorkbookIndex } from '../workbook/workbook-index.ts';
 import type { OpRejection, StructureSubject, StructureSubjectKind } from '../store/ops.ts';
 import { blocked } from './sheet-cells.ts';
 import { MAX_SHEET_NAME } from './sheet-refs.ts';
@@ -377,9 +378,11 @@ function foreignEncoding(text: string): boolean {
  * legacy drawing) names the sheet. The bytes are decoded as XML text, and the predefined and
  * numeric character references are resolved, so `&apos;My sheet&apos;!` reads as
  * `'My sheet'!`. When the sheet name holds non-ASCII characters, bytes that do not decode
- * cleanly or that declare another encoding count as a mention, so the edit is refused.
+ * cleanly or that declare another encoding count as a mention, so the edit is refused. With
+ * `strict`, bytes that do not decode count as a mention for every name: they are not text, so
+ * the scan cannot read them (a macro part, an embedded package).
  */
-function bytesMention(bytes: Uint8Array, needles: SheetMentions): boolean {
+function bytesMention(bytes: Uint8Array, needles: SheetMentions, strict = false): boolean {
   const utf16 =
     bytes[0] === 0xff && bytes[1] === 0xfe
       ? 'utf-16le'
@@ -392,21 +395,68 @@ function bytesMention(bytes: Uint8Array, needles: SheetMentions): boolean {
   } catch {
     // Bytes that are not valid in the encoding: a name with non-ASCII characters cannot be
     // found with certainty, so the part counts as a mention.
-    if (nonAscii(needles)) return true;
+    if (strict || nonAscii(needles)) return true;
     text = new TextDecoder(utf16).decode(bytes);
   }
   // A declared encoding other than UTF-8 or UTF-16 (a legacy VML part can declare one) spells
   // non-ASCII characters in other bytes, so such a name counts as a mention.
-  if (nonAscii(needles) && foreignEncoding(text)) return true;
-  const plain = text.replace(
-    /&(#x[0-9a-fA-F]{1,6}|#[0-9]{1,7}|[a-z]{2,4});/g,
-    (all, ref: string) => {
-      if (ref[0] !== '#') return ENTITY[ref] ?? all;
-      const code = ref[1] === 'x' ? parseInt(ref.slice(2), 16) : parseInt(ref.slice(1), 10);
-      return code <= 0x10ffff ? String.fromCodePoint(code) : all;
+  if ((strict || nonAscii(needles)) && foreignEncoding(text)) return true;
+  // A NUL character is not XML text: in strict mode, the bytes are not text (UTF-16 with no
+  // byte order mark, or a binary format).
+  if (strict && text.includes('\u0000')) return true;
+  // The text as it is, and the text as an XML reader reads it: comments and processing
+  // instructions hold no reference, and a CDATA section is text, so `Sh<![CDATA[eet3]]>!A1`
+  // and `Sheet<!--x-->3!A1` read as `Sheet3!A1`. Either one that names the sheet refuses.
+  // A strict scan does not expand the entities of a document type declaration.
+  if (strict && text.includes('<!DOCTYPE')) return true;
+  // An XML reader also reads a literal tab, line feed, or carriage return in an attribute
+  // value as a space (XML 1.0, 3.3.3), so each text is read with that change too.
+  const read = withoutMarkup(text);
+  const spaced = (t: string) => t.replace(/\r\n|[\t\n\r]/g, ' ');
+  for (const t of new Set([text, read, spaced(text), spaced(read)]))
+    if (textMentions(withReferences(t), needles)) return true;
+  return false;
+}
+
+/** XML text with its predefined and numeric character references resolved. */
+const withReferences = (text: string): string =>
+  text.replace(/&(#x[0-9a-fA-F]+|#[0-9]+|[a-z]{2,4});/g, (all, ref: string) => {
+    if (ref[0] !== '#') return ENTITY[ref] ?? all;
+    const code = ref[1] === 'x' ? parseInt(ref.slice(2), 16) : parseInt(ref.slice(1), 10);
+    return code <= 0x10ffff ? String.fromCodePoint(code) : all;
+  });
+
+/** The markup that {@link withoutMarkup} reads: its opener, its end, and whether it is text. */
+const MARKUP: readonly (readonly [string, string, boolean])[] = [
+  ['<![CDATA[', ']]>', true],
+  ['<!--', '-->', false],
+  ['<?', '?>', false],
+];
+
+/**
+ * XML text without its comments and processing instructions, and with each CDATA section
+ * replaced by its text. One pass in linear time: a search for an end starts after its opener,
+ * and when an end is missing, the rest stays as it is.
+ */
+function withoutMarkup(text: string): string {
+  let out = '';
+  let at = 0;
+  while (at < text.length) {
+    const lt = text.indexOf('<', at);
+    if (lt < 0) break;
+    out += text.slice(at, lt);
+    const kind = MARKUP.find(([open]) => text.startsWith(open, lt));
+    const end = kind ? text.indexOf(kind[1], lt + kind[0].length) : -1;
+    if (!kind || end < 0) {
+      if (kind) return out + text.slice(lt);
+      out += '<';
+      at = lt + 1;
+      continue;
     }
-  );
-  return textMentions(plain, needles);
+    if (kind[2]) out += text.slice(lt + kind[0].length, end);
+    at = end + kind[1].length;
+  }
+  return out + text.slice(at);
 }
 
 /** Whether the text or the attribute values of an element name a sheet. Bounded by depth. */
@@ -414,10 +464,19 @@ function mentions(el: Element, needles: SheetMentions, depth = 0): boolean {
   if (depth > MAX_SCAN_DEPTH) return true;
   const hit = (s: string) => textMentions(s, needles);
   if (el.attrs.some((a) => hit(a.value))) return true;
+  // The reader can split one text at a CDATA section or a comment, so adjacent text nodes are
+  // read as one text.
+  let run = '';
   for (const c of el.children) {
-    if (c.type === 'text' ? hit(c.value) : mentions(c, needles, depth + 1)) return true;
+    if (c.type === 'text') {
+      run += c.value;
+      continue;
+    }
+    if (run && hit(run)) return true;
+    run = '';
+    if (c.type === 'element' && mentions(c, needles, depth + 1)) return true;
   }
-  return false;
+  return !!run && hit(run);
 }
 
 /**
@@ -442,8 +501,10 @@ export function cellsOrNamesMention(
 }
 
 /** Whether a part names the sheet: an XML tree, or bytes read as XML text. */
-function partMentions(part: PackagePart, needles: SheetMentions): boolean {
-  return part.kind === 'xml' ? mentions(part.xml.root, needles) : bytesMention(part.bytes, needles);
+function partMentions(part: PackagePart, needles: SheetMentions, strict = false): boolean {
+  return part.kind === 'xml'
+    ? mentions(part.xml.root, needles)
+    : bytesMention(part.bytes, needles, strict);
 }
 
 /**
@@ -603,7 +664,8 @@ export function macroBlocker(
 /**
  * The first part that refuses every edit that moves or renames a reference, whatever it names:
  * a chart or pivot part, a sheet that is not a worksheet, or a relationship outside the
- * allowlists. Undefined when there is none.
+ * allowlists. Undefined when there is none. Keep `opaqueContent` in step: the scan of an added
+ * sheet reads the parts that this function refuses for.
  */
 export function workbookPartBlocker(
   pkg: XlsxPackage,
@@ -644,6 +706,228 @@ export function workbookPartBlocker(
         { kind: 'workbook-content' }
       );
     }
+  return undefined;
+}
+
+/**
+ * The folded names of the parts of a package. The store keeps them for the package that it
+ * opened: a sheet whose part is not among them is a sheet that an add op of the session made.
+ */
+export function partNamesOf(pkg: XlsxPackage): ReadonlySet<string> {
+  return new Set([...pkg.parts.keys()].map(asciiFold));
+}
+
+/**
+ * Why the workbook refuses a rename or a delete of the sheet `entry` before the checks of the op
+ * itself, or undefined. For a sheet of the opened file, it is {@link workbookPartBlocker}.
+ * `openedParts` holds the part names of the opened package ({@link partNamesOf}); without it, every
+ * sheet counts as a sheet of the file. A worksheet whose part is not in `openedParts` is a sheet
+ * that an add op of the session made (`x:sheet`, `CT_Sheet`, ECMA-376 Part 1, 18.2.19), and it gets
+ * {@link addedSheetBlocker} in place of the rule for the whole workbook.
+ */
+export function sheetEditBlocker(
+  pkg: XlsxPackage,
+  index: WorkbookIndex,
+  entry: SheetEntry,
+  openedParts?: ReadonlySet<string>
+): OpRejection | undefined {
+  const blocker = workbookPartBlocker(pkg, index);
+  // Macros stay a block for every sheet: macro code can name or count any sheet, also an
+  // added one, and the editor never reads it (`macroBlocker`).
+  if (!blocker || blocker.about?.kind === 'macros') return blocker;
+  return isAddedSheet(entry, openedParts) ? addedSheetBlocker(pkg, index, entry) : blocker;
+}
+
+/**
+ * Whether `entry` is a worksheet whose part is not in `openedParts`, the part names of the opened
+ * package ({@link partNamesOf}): a sheet that an add op of the session made.
+ */
+export function isAddedSheet(
+  entry: SheetEntry,
+  openedParts: ReadonlySet<string> | undefined
+): boolean {
+  return (
+    !!openedParts &&
+    entry.kind === 'worksheet' &&
+    !!entry.partName &&
+    !openedParts.has(asciiFold(entry.partName))
+  );
+}
+
+/**
+ * Related parts that hold no sheet name and no cell reference: the scan does not read them. The
+ * pivot cache records hold cached values only (ECMA-376 Part 1, 12.3.13), not references.
+ */
+const NAMELESS_RELS = new Set<string>([
+  REL.image,
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/printerSettings',
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheRecords',
+]);
+
+/**
+ * What {@link workbookPartBlocker} refuses for, with what the refusal names: the chart and pivot
+ * parts, the parts of the sheets that are not worksheets, and the targets of the workbook and
+ * package relationships outside the allowlists. `external` holds the external relationships
+ * among them, as their type and their target (undefined when the reader did not keep it).
+ */
+interface OpaqueContent {
+  readonly parts: ReadonlyMap<string, StructureSubject>;
+  readonly external: readonly (readonly [string, string | undefined])[];
+}
+
+/** {@link OpaqueContent} of a package: a cache, as the package does not change. */
+const opaqueCache = new WeakMap<XlsxPackage, OpaqueContent>();
+
+function opaqueContent(pkg: XlsxPackage, index: WorkbookIndex): OpaqueContent {
+  const cached = opaqueCache.get(pkg);
+  if (cached) return cached;
+  const parts = new Map<string, StructureSubject>();
+  const external: (readonly [string, string | undefined])[] = [];
+  for (const name of pkg.parts.keys()) {
+    const type = contentTypeOf(pkg, name) ?? '';
+    if (type.includes('chart')) parts.set(name, { kind: 'chart' });
+    else if (type.includes('pivot') && !type.includes('pivotCacheRecords'))
+      parts.set(name, { kind: 'pivot-table' });
+  }
+  for (const sheet of index.sheets)
+    if (sheet.kind === 'other' && sheet.partName && !parts.has(sheet.partName))
+      parts.set(sheet.partName, { kind: 'other-sheet', name: sheet.name });
+  for (const [source, allowed] of [
+    [index.mainPart, WORKBOOK_RELS],
+    ['/', PACKAGE_RELS],
+  ] as const)
+    for (const rel of relationshipsOf(pkg, source)) {
+      if (allowed.has(rel.type)) continue;
+      if (!rel.target) external.push([rel.type, rel.externalTarget]);
+      else if (!parts.has(rel.target)) parts.set(rel.target, { kind: 'workbook-content' });
+    }
+  const out = { parts, external };
+  opaqueCache.set(pkg, out);
+  return out;
+}
+
+/**
+ * Whether `after` holds the same content as `before` for {@link addedSheetBlocker}: the same
+ * parts, each the same object, but the worksheets that the scan of `before` did not read. A value
+ * edit of a number often changes only its worksheet, so the editor keeps the reason of each sheet
+ * without a scan. An edit that changes another part scans again.
+ * When true, `after` takes the content of `before` in the cache.
+ */
+export function sameOpaqueContent(
+  before: XlsxPackage,
+  after: XlsxPackage,
+  index: WorkbookIndex
+): boolean {
+  const opaque = opaqueCache.get(before);
+  if (!opaque || before.parts.size !== after.parts.size) return false;
+  const worksheets = new Set<string>();
+  for (const s of index.sheets)
+    if (s.kind === 'worksheet' && s.partName) worksheets.add(s.partName);
+  for (const [name, part] of after.parts) {
+    if (before.parts.get(name) === part) continue;
+    if (!worksheets.has(name) || opaque.parts.has(name)) return false;
+  }
+  // The content is the same, so the next revision can compare with `after`.
+  opaqueCache.set(after, opaque);
+  return true;
+}
+
+/**
+ * What {@link addedSheetBlocker} found in a part, by the folded sheet name. A cache, not
+ * document state: a part keeps its identity until an op replaces it, so the editor reads each
+ * chart or pivot part once for each name, not once for each revision.
+ */
+const strictScans = new WeakMap<PackagePart, Map<string, boolean>>();
+
+function strictMention(part: PackagePart, needles: SheetMentions, key: string): boolean {
+  let byName = strictScans.get(part);
+  if (!byName) strictScans.set(part, (byName = new Map()));
+  let hit = byName.get(key);
+  if (hit === undefined) byName.set(key, (hit = partMentions(part, needles, true)));
+  return hit;
+}
+
+const isElement = (n: Node): n is Element => n.type === 'element';
+
+/**
+ * Why a rename or a delete of a sheet that an add op of the session made is refused in a workbook
+ * that {@link workbookPartBlocker} refuses, or undefined. The opened file did not hold the sheet. A
+ * part of it can hold the `sheetId` that the add takes, as a stale number, but a rename keeps the
+ * `sheetId` and the position, and a delete gives the number up again. The sheets of the file keep
+ * their relative order through each add, move, and delete of the sheet. A part can refer to the
+ * sheet by its name only, when the name was a dangling reference that the add made live: a chart
+ * formula (`c:f`, ECMA-376 Part 1, 21.2.2.65) or a pivot cache source (`worksheetSource/@sheet`,
+ * 18.10.1.95). So each opaque part, and each part that it relates to, refuses the op when its text
+ * holds the bare sheet name, when it relates to the sheet part (`worksheetSource/@r:id`), or when
+ * its bytes are not text. An external relationship target (`#Sheet2!A1`) counts as its text, also
+ * with its percent escapes decoded. An external target that the reader did not keep, an internal
+ * target that names no part, and a relationship part that is not XML count as a mention. Images,
+ * printer settings, and pivot cache records are not read. Worksheets and the workbook part are not
+ * read either: the op rewrites or checks them. The walk reads each part once.
+ */
+export function addedSheetBlocker(
+  pkg: XlsxPackage,
+  index: WorkbookIndex,
+  entry: SheetEntry
+): OpRejection | undefined {
+  const { n, q } = folded(entry.name);
+  const needles: SheetMentions = { direct: n === q ? [n] : [n, q], starts: [], ends: [] };
+  const own = asciiFold(entry.partName ?? '');
+  const skip = new Set([asciiFold(index.mainPart)]);
+  const names = new Map<string, string>();
+  for (const s of index.sheets) {
+    if (!s.partName) continue;
+    names.set(s.partName, s.name);
+    if (s.kind === 'worksheet') skip.add(asciiFold(s.partName));
+  }
+  const reason = 'it refers to the edited sheet, and the editor does not update it';
+  const opaque = opaqueContent(pkg, index);
+  // A reason of `workbookPartBlocker` that this scan does not read refuses the op.
+  if (opaque.parts.size === 0 && opaque.external.length === 0)
+    return workbookPartBlocker(pkg, index);
+  // An external target names the sheet in its text, or the reader did not keep it.
+  const outside = (target: string | undefined) => {
+    if (target === undefined || textMentions(target, needles)) return true;
+    try {
+      return textMentions(decodeURIComponent(target), needles);
+    } catch {
+      return true;
+    }
+  };
+  const link = opaque.external.find(([, target]) => outside(target));
+  if (link) return blocked(link[0], reason, { kind: 'workbook-content' });
+  const queue = [...opaque.parts];
+  const seen = new Set(queue.map(([name]) => asciiFold(name)));
+  for (let i = 0; i < queue.length; i += 1) {
+    const [name, about] = queue[i]!;
+    const refuse = () => blocked(names.get(name) ?? name, reason, about);
+    const part = pkg.parts.get(name);
+    if (part && strictMention(part, needles, n)) return refuse();
+    const rels = pkg.parts.get(equivalentPartName(pkg, relsPartName(name)) ?? '');
+    if (rels && rels.kind !== 'xml') return refuse();
+    const all = relationshipsOf(pkg, name);
+    // A relationship that the reader drops (its target does not resolve) cannot be read.
+    const written = rels?.kind === 'xml' ? rels.xml.root.children.filter(isElement).length : 0;
+    if (written > all.length) return refuse();
+    for (const rel of all) {
+      if (NAMELESS_RELS.has(rel.type)) continue;
+      const t = rel.target;
+      if (!t) {
+        if (outside(rel.externalTarget)) return refuse();
+        continue;
+      }
+      // A target with a fragment or a query names the part before it. A target that names no
+      // part of the package cannot be read, so it refuses.
+      const bare = t.replace(/[#?][\s\S]*$/, '');
+      if (asciiFold(bare) === own) return refuse();
+      const target = equivalentPartName(pkg, bare);
+      if (!target) return refuse();
+      const key = asciiFold(target);
+      if (skip.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      queue.push([target, about]);
+    }
+  }
   return undefined;
 }
 

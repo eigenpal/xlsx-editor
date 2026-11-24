@@ -5,8 +5,9 @@
 import { openLimitOf } from '../automation/open-diagnostics.ts';
 import { readXlsxSteps, type XlsxPackage } from '../store/index.ts';
 import { workbookIndex, type WorkbookIndex } from '../store/workbook/workbook-index.ts';
+import { partNamesOf } from '../store/structure/blockers.ts';
+import { editorSheets } from './editor-sheets.ts';
 import {
-  editorSheets,
   openingSheet,
   type EditorFailure,
   type EditorSheet,
@@ -68,6 +69,8 @@ export type WorkbookRead =
       readonly index: WorkbookIndex;
       readonly sheets: EditorSheet[];
       readonly first: number;
+      /** The part names of the package (`partNamesOf`): a sheet that an add makes is not one. */
+      readonly openedParts: ReadonlySet<string>;
     }
   | { readonly ok: false; readonly failure: EditorFailure };
 
@@ -90,8 +93,9 @@ export async function readWorkbookForLoad(
   if (!read?.ok) return read;
   const index = workbookIndex(read.pkg);
   if (!index) return { ok: false, failure: { code: 'package', detail: 'no workbook part' } };
-  const sheets = editorSheets(index);
-  return { ok: true, pkg: read.pkg, index, sheets, first: openingSheet(sheets, index.activeTab) };
+  const sheets = editorSheets(read.pkg, index);
+  const first = openingSheet(sheets, index.activeTab);
+  return { ok: true, pkg: read.pkg, index, sheets, first, openedParts: partNamesOf(read.pkg) };
 }
 
 // The load of a picked file of each editor: it keeps the open workbook when the file does not

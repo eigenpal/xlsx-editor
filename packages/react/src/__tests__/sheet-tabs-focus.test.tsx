@@ -328,9 +328,11 @@ describe('a chartsheet tab and the empty bar', () => {
     fireEvent.keyDown(tab, { key: 'F2' });
     fireEvent.doubleClick(tab);
     expect(view.queryByLabelText('Sheet name')).toBeNull();
-    expect(tab.getAttribute('title')).toStartWith(`${tab.textContent}: Sheets cannot be renamed`);
+    expect(tab.getAttribute('title')).toStartWith(
+      `${tab.textContent}: This sheet cannot be renamed`
+    );
     const tabWhy = tab.ownerDocument.getElementById(tab.getAttribute('aria-describedby') ?? '');
-    expect(tabWhy?.textContent).toStartWith('Sheets cannot be renamed or deleted:');
+    expect(tabWhy?.textContent).toStartWith('This sheet cannot be renamed or deleted:');
     expect(tabWhy?.closest('[role="tablist"]')).toBeNull();
     fireEvent.contextMenu(tab, { clientX: 10 });
     // The sheet menu's rows, not the menu bar's triggers.
@@ -340,10 +342,34 @@ describe('a chartsheet tab and the empty bar', () => {
     for (const row of [rename!, del!]) {
       expect(row.getAttribute('aria-disabled')).toBe('true');
       expect(row.getAttribute('title')).toStartWith(
-        `${row.textContent}: Sheets cannot be renamed or deleted:`
+        `${row.textContent}: This sheet cannot be renamed or deleted:`
       );
     }
     expect(right!.hasAttribute('aria-disabled')).toBe(false);
+  });
+
+  test('a sheet added to the workbook takes a rename from its tab', async () => {
+    const { view, viewer } = await open(withChartsheet());
+    const before = names(view).length;
+    fireEvent.click(view.getByRole('button', { name: 'Add a sheet' }), { detail: 1 });
+    await waitFor(() => expect(names(view)).toHaveLength(before + 1));
+    const at = viewer.snapshot().activeSheet;
+    const tab = view.getAllByRole('tab')[at]!;
+    expect(tab.getAttribute('title') ?? '').not.toContain('cannot be renamed');
+    fireEvent.contextMenu(tab, { clientX: 10 });
+    const [rename, del] = view
+      .getAllByRole('menuitem')
+      .filter((m) => !m.closest('[role="menubar"]'));
+    expect([rename!.hasAttribute('aria-disabled'), del!.hasAttribute('aria-disabled')]).toEqual([
+      false,
+      false,
+    ]);
+    fireEvent.keyDown(rename!, { key: 'Escape' });
+    fireEvent.doubleClick(view.getAllByRole('tab')[at]!);
+    const field = view.getByLabelText('Sheet name') as HTMLInputElement;
+    fireEvent.change(field, { target: { value: 'Notes' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    await waitFor(() => expect(names(view)).toContain('Notes'));
   });
 
   test('a press on the empty part of the bar keeps the grid focus', async () => {

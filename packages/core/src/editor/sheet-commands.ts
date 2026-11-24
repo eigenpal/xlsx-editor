@@ -15,10 +15,17 @@
 // shown sheet is gone, the nearest visible worksheet shows.
 
 import type { GridSelection } from '../contracts/index.ts';
-import { sheetByName, sheetNameKey, sheetsByKey, type WorkbookIndex } from '../store/index.ts';
+import {
+  sheetByName,
+  sheetNameKey,
+  sheetsByKey,
+  type WorkbookIndex,
+  type XlsxPackage,
+} from '../store/index.ts';
 import type { CellEditing } from './cell-editing.ts';
 import type { EditRefusal, EditResult } from './cell-input.ts';
-import { editorSheets, type EditorSheet } from './editor-model.ts';
+import type { EditorSheet } from './editor-model.ts';
+import { editorSheets } from './editor-sheets.ts';
 
 /** What the sheet commands read from the editor. */
 export interface SheetCommandHost {
@@ -174,14 +181,24 @@ export class SheetCommands {
 /** The key that finds a sheet across revisions: its part name, or its name for a gap. */
 const sheetKey = (s: WorkbookIndex['sheets'][number]): string => s.partName ?? `#${s.name}`;
 
-/** The sheet list, the views, and the shown sheet after a change of the sheet list. */
+/**
+ * The sheet list, the views, and the shown sheet after a change of the sheet list. `o` is the
+ * open workbook before the change, and `pkg` and `after` its package and index after it.
+ */
 export function followSheets<V extends { selection: GridSelection }>(
-  before: WorkbookIndex,
+  o: {
+    readonly pkg: XlsxPackage;
+    readonly index: WorkbookIndex;
+    readonly sheets: readonly EditorSheet[];
+    readonly views: Map<number, V>;
+    readonly openedParts: ReadonlySet<string>;
+  },
+  pkg: XlsxPackage,
   after: WorkbookIndex,
-  views: Map<number, V>,
   active: number
 ): { sheets: EditorSheet[]; views: Map<number, V>; active: number } {
-  const sheets = editorSheets(after);
+  const { index: before, views } = o;
+  const sheets = editorSheets(pkg, after, o.openedParts, o);
   const same =
     before.sheets.length === after.sheets.length &&
     before.sheets.every((s, i) => sheetKey(s) === sheetKey(after.sheets[i]!));

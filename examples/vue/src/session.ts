@@ -14,6 +14,8 @@
 //   another switch runs; an open and a save are refused while a switch runs.
 // - One save runs at a time over the top bar's Save, the toolbar's Save, and the keys, and a
 //   second download of the same revision soon after the first is dropped, as in the React demo.
+// - A name that the user gives the workbook in the top bar (`rename`) is the name of its
+//   download, as in the React demo. Each open starts with no such name.
 // The state is one object that `App.vue` makes reactive. The demo's text is English and stays
 // out of `packages/i18n` (AGENTS.md, "i18n").
 
@@ -31,9 +33,9 @@ import {
 } from '../../vite/src/headings.ts';
 import { readForOpen, whyNotOpen } from '../../vite/src/open-check.ts';
 import { SAMPLE } from '../../vite/src/sample.ts';
-import { savedName, saveRepeatGuard } from '../../vite/src/save.ts';
+import { saveFileName, saveRepeatGuard } from '../../vite/src/save.ts';
 import { runInTasks } from '../../vite/src/steps-in-tasks.ts';
-import { titleOf } from '../../vite/src/workbook-names.ts';
+import { renamedTo, shownName, titleOf } from '../../vite/src/workbook-names.ts';
 
 /** The largest file that the demo reads into memory: 64 MiB, as in the React demo. */
 export const MAX_FILE_BYTES = 64 * 1024 * 1024;
@@ -80,6 +82,8 @@ export interface SessionHost {
 export interface SessionState {
   /** The open workbook (the sample's key or a picked file's name), or null before one is ready. */
   label: string | null;
+  /** The name that the user gave the open workbook in the top bar, with no extension, or null. */
+  chosen: string | null;
   error: string | undefined;
   /** Whether an open runs, from its read or download to the end of its load. */
   opening: boolean;
@@ -92,6 +96,7 @@ export interface SessionState {
 /** The state at start: no workbook, and the headings option on. */
 export const initialSessionState = (): SessionState => ({
   label: null,
+  chosen: null,
   error: undefined,
   opening: false,
   switching: false,
@@ -158,6 +163,18 @@ export class DemoSession {
     return s.revision !== this.cleanAt || (s.editing && s.editChanged);
   }
 
+  /**
+   * Keeps the name that the user typed in the top bar for the open workbook (`renamedTo`): an
+   * empty name keeps the name before it. Does nothing with no workbook open.
+   */
+  rename(typed: string): void {
+    const { label, chosen } = this.state;
+    if (label === null) return;
+    const before = chosen ?? shownName(label).name;
+    const next = renamedTo(typed, before);
+    if (next !== before) this.state.chosen = next;
+  }
+
   /** Clears the message. */
   clearMessage(): void {
     this.state.error = undefined;
@@ -183,7 +200,7 @@ export class DemoSession {
         return keepEdits();
       }
     }
-    const shown = titleOf(this.state.label ?? SAMPLE);
+    const shown = titleOf(this.state.chosen ?? this.state.label ?? SAMPLE);
     return (
       !this.hasUnsavedEdits() ||
       this.host.confirm(
@@ -279,6 +296,7 @@ export class DemoSession {
       }
       this.flags = opened;
       this.state.label = label;
+      this.state.chosen = null;
       this.cleanAt = result.revision;
       // A newer pick can have its own message.
       if (pick !== this.picks) return;
@@ -344,6 +362,7 @@ export class DemoSession {
   private async write(bytes: Uint8Array<ArrayBuffer>, result: SavedWorkbook): Promise<void> {
     // Another open ended this workbook during the save: these bytes are not the open workbook.
     const label = this.state.label;
+    const chosen = this.state.chosen;
     if (!result.stillOpen || this.replacing > 0) {
       this.say(SAVE_REPLACED);
       return;
@@ -375,7 +394,7 @@ export class DemoSession {
     // gives, is dropped (`saveRepeatGuard`, as the React demo's `downloadOnce`). A reload starts
     // the revisions again, so the key holds the number of the load too.
     await this.downloadOnce(at * 1_000_000_000 + result.revision, async () => {
-      this.host.download(blob, savedName(label, file.ext));
+      this.host.download(blob, saveFileName(label, chosen, file.ext));
       return true;
     });
     if (at === this.loads) this.cleanAt = result.revision;

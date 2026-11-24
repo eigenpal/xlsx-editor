@@ -249,7 +249,8 @@ async function verifyTypeSaveReopen(page: Page): Promise<string> {
   // The top bar names the file, with its extension apart, once the editor shows it.
   await page.waitForFunction(
     () =>
-      document.querySelector('.demo-topbar .demo-file__name')?.textContent === 'sample-edited' &&
+      document.querySelector<HTMLInputElement>('.demo-topbar .demo-file__name')?.value ===
+        'sample-edited' &&
       document.querySelector('.demo-topbar .demo-file__ext')?.textContent === '.xlsx',
     null,
     { timeout: WAIT_MS }

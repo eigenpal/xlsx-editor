@@ -1,6 +1,7 @@
 // The open, headings, and save logic of the Vue demo (`session.ts`), under Bun, over a stand-in
 // editor: Save puts the file's own heading flags back, an open asks before unsaved edits are
-// lost and only after the file passes its checks, and a newer pick or a no stops an earlier open.
+// lost and only after the file passes its checks, a newer pick or a no stops an earlier open, and
+// a name that the user gives in the top bar names the download until the next open.
 
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
@@ -139,6 +140,26 @@ describe('the Vue demo session', () => {
     expect(flagsOf(editor.loaded.at(-1)!)).toBe(flagsOf(sample));
     await demo.saveNow();
     expect(flagsOf(await downloads[1]!.bytes)).toBe(flagsOf(sample));
+  });
+
+  test('a name that the user gives names the download, and the next open drops it', async () => {
+    const { demo, downloads } = session();
+    demo.rename('Ignored');
+    expect(demo.state.chosen).toBe(null);
+    await demo.openSample(async () => sampleBytes().slice().buffer);
+    // The same name as before, and an empty name, keep the name of the file.
+    demo.rename('Sample workbook');
+    demo.rename('   ');
+    expect(demo.state.chosen).toBe(null);
+    demo.rename(' Budget 2026.XLSX ');
+    expect(demo.state.chosen).toBe('Budget 2026');
+    demo.rename('');
+    expect(demo.state.chosen).toBe('Budget 2026');
+    await demo.saveNow();
+    await demo.openFile(picked('basic-values.xlsx', fixtureBytes('basic-values')));
+    expect(demo.state.chosen).toBe(null);
+    await demo.saveNow();
+    expect(downloads.map((d) => d.name)).toEqual(['Budget 2026.xlsx', 'basic-values-edited.xlsx']);
   });
 
   test('a sample that does not download names no workbook and says what to do', async () => {

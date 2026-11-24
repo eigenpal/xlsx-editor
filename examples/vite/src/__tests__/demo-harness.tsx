@@ -447,7 +447,8 @@ export class Demo {
 
   /** The name of the open workbook in the top bar, with its extension. */
   workbookName(): string {
-    const name = document.querySelector('.demo-topbar .demo-file__name')?.textContent ?? '';
+    const field = document.querySelector<HTMLInputElement>('.demo-topbar .demo-file__name');
+    const name = field?.value ?? '';
     return name + (document.querySelector('.demo-topbar .demo-file__ext')?.textContent ?? '');
   }
 

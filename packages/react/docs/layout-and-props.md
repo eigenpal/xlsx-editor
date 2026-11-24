@@ -30,7 +30,7 @@ Each part is also a named export: `XlsxEditorRoot`, `XlsxEditorViewport`, `XlsxE
 
 | Prop | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `document` | `Uint8Array` or `ArrayBuffer` | none | The bytes of a workbook (`.xlsx`) or a template (`.xltx`). A new array or buffer opens the new workbook. A change to `undefined` closes the workbook, and the editor shows none. |
+| `document` | `Uint8Array` or `ArrayBuffer` | none | The bytes of a workbook (`.xlsx`), a template (`.xltx`), or their macro-enabled forms (`.xlsm` and `.xltm`). A new array or buffer opens the new workbook. A change to `undefined` closes the workbook, and the editor shows none. |
 | `fonts` | `FontSource[]` or a function that resolves to them | the packaged substitute faces | The faces that measure and paint text. Different faces replace the current faces in place: the workbook, the selection, and the undo history stay. A list is compared by its faces, so an inline list with the same faces loads nothing. A function is compared by identity, so keep it stable, for example with `useCallback`. |
 | `numberLocale` | `NumberLocale` | US English separators | The separators and built-in format codes of the shown values, and how typed values read. See [Number locale](#number-locale). |
 | `mode` | `'edit'` or `'view'` | `'edit'` | Whether the editor takes edits. A change applies without a reload. For when a change applies and when it waits, see [View mode](view-mode-and-protection.md#view-mode). |

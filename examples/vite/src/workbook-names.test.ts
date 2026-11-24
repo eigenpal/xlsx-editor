@@ -17,6 +17,8 @@ describe('the shown name of a workbook', () => {
     expect(shownName(SAMPLE)).toEqual({ name: 'Sample workbook', ext: '.xlsx' });
     expect(shownName('a.xlsx')).toEqual({ name: 'a', ext: '.xlsx' });
     expect(shownName('Plan.XLTX')).toEqual({ name: 'Plan', ext: '.xltx' });
+    expect(shownName('Macros.xlsm')).toEqual({ name: 'Macros', ext: '.xlsm' });
+    expect(shownName('Form.XLTM')).toEqual({ name: 'Form', ext: '.xltm' });
     expect(shownName('a‮xslx.exe')).toEqual({ name: 'axslx.exe', ext: '' });
     expect(shownName('.xlsx')).toEqual({ name: '.xlsx', ext: '' });
     expect(shownName('notes')).toEqual({ name: 'notes', ext: '' });
@@ -28,6 +30,8 @@ describe('the shown name of a workbook', () => {
     expect(shownExtension(shownName('notes'), 'workbook')).toBe('.xlsx');
     expect(shownExtension(shownName('notes'), 'template')).toBe('.xltx');
     expect(shownExtension(shownName('notes'), null)).toBe('');
+    expect(shownExtension(shownName('a.xlsx'), 'macroWorkbook')).toBe('.xlsm');
+    expect(shownExtension(shownName('a.xlsm'), 'macroTemplate')).toBe('.xltm');
     expect(shownExtension(shownName('notes'), 'workbook')).toBe('.xlsx');
   });
 });

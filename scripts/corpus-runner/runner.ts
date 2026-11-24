@@ -60,6 +60,9 @@ export { MEMORY_CAP_BYTES };
 
 export const ROOT = resolve(import.meta.dir, '../..');
 
+/** The file names of the workbooks that a corpus run opens: plain and macro-enabled forms. */
+const WORKBOOK_FILE = /\.(xlsx|xltx|xlsm|xltm)$/i;
+
 /** The workbooks of one child. A new child for each batch keeps a leak to one batch. */
 export const BATCH_SIZE = 25;
 
@@ -163,10 +166,10 @@ export interface RunOptions {
 }
 
 /**
- * The `.xlsx` files under `dir`, sorted by their path inside it, with the ids `workbook1` to
- * `workbookN`. Hidden entries, owner files (`~$name.xlsx`), and symbolic links are left out.
- * The id depends only on the sorted position, as PPTX Editor names its corpus decks, so it holds
- * no file name.
+ * The workbook files (`.xlsx`, `.xltx`, `.xlsm`, `.xltm`) under `dir`, sorted by their path inside
+ * it, with the ids `workbook1` to `workbookN`. Hidden entries, owner files (`~$name.xlsx`), and
+ * symbolic links are left out. The id depends only on the sorted position, as PPTX Editor names its
+ * corpus decks, so it holds no file name.
  */
 export function listWorkbooks(dir: string): CorpusJob[] {
   const found: string[] = [];
@@ -184,7 +187,7 @@ export function listWorkbooks(dir: string): CorpusJob[] {
       if (entry.name.startsWith('.') || entry.name.startsWith('~$')) continue;
       const path = join(folder, entry.name);
       if (entry.isDirectory()) walk(path);
-      else if (entry.isFile() && entry.name.toLowerCase().endsWith('.xlsx')) found.push(path);
+      else if (entry.isFile() && WORKBOOK_FILE.test(entry.name)) found.push(path);
     }
   };
   walk(dir);

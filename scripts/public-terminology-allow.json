@@ -18,8 +18,80 @@
       "line": "const MACRO_TYPE = 'application/vnd.ms-excel.macrosheet+xml';"
     },
     {
+      "file": "examples/vite/src/file-kinds.ts",
+      "line": "type: 'application/vnd.ms-excel.sheet.macroEnabled.12',"
+    },
+    {
+      "file": "examples/vite/src/file-kinds.ts",
+      "line": "type: 'application/vnd.ms-excel.template.macroEnabled.12',"
+    },
+    {
+      "file": "packages/core/src/editor/__tests__/macro-enabled.test.ts",
+      "line": "const MACRO_WORKBOOK = 'application/vnd.ms-excel.sheet.macroEnabled.main+xml';"
+    },
+    {
+      "file": "packages/core/src/editor/__tests__/macro-enabled.test.ts",
+      "line": "const MACRO_TEMPLATE = 'application/vnd.ms-excel.template.macroEnabled.main+xml';"
+    },
+    {
+      "file": "packages/core/src/editor/__tests__/macro-enabled.test.ts",
+      "line": "const ADDIN = 'application/vnd.ms-excel.addin.macroEnabled.main+xml';"
+    },
+    {
+      "file": "packages/core/src/editor/__tests__/macro-enabled.test.ts",
+      "line": "'<Default Extension=\"bin\" ContentType=\"application/vnd.ms-office.vbaProject\"/></Types>'"
+    },
+    {
+      "file": "packages/core/src/store/package/main-part-type.ts",
+      "line": "const MACRO_WORKBOOK = 'application/vnd.ms-excel.sheet.macroEnabled.main+xml';"
+    },
+    {
+      "file": "packages/core/src/store/package/main-part-type.ts",
+      "line": "const MACRO_TEMPLATE = 'application/vnd.ms-excel.template.macroEnabled.main+xml';"
+    },
+    {
+      "file": "packages/react/src/menu/Menu.tsx",
+      "line": "'application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.ms-excel.template.macroEnabled.12';"
+    },
+    {
+      "file": "packages/vue/src/menu/Menu.tsx",
+      "line": "'application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.ms-excel.template.macroEnabled.12';"
+    },
+    {
+      "file": "scripts/fidelity/census.ts",
+      "line": "'application/vnd.ms-excel.sheet.macroEnabled.main+xml',"
+    },
+    {
+      "file": "scripts/fidelity/census.ts",
+      "line": "'application/vnd.ms-excel.template.macroEnabled.main+xml',"
+    },
+    {
+      "file": "scripts/fidelity/census.ts",
+      "line": "'application/vnd.ms-office.vbaProject',"
+    },
+    {
       "file": "packages/core/licenses/HarfBuzz-USE-MIT.txt",
       "line": "Copyright (c) Microsoft Corporation."
+    },
+    {
+      "file": "packages/editor-api/src/__tests__/macro-enabled.test.ts",
+      "line": "const MACRO_WORKBOOK = 'application/vnd.ms-excel.sheet.macroEnabled.main+xml';"
+    },
+    {
+      "file": "packages/editor-api/src/__tests__/macro-enabled.test.ts",
+      "line": "'<Default Extension=\"bin\" ContentType=\"application/vnd.ms-office.vbaProject\"/></Types>'"
+    },
+    {
+      "file": "packages/core/src/editor/__tests__/macro-enabled.test.ts",
+      "line": "'<Override PartName=\"/xl/macrosheets/sheet1.xml\" ContentType=\"application/vnd.ms-excel.macrosheet+xml\"/></Types>'"
+    },
+    {
+      "file": "scripts/fidelity/census.ts",
+      "line": "'application/vnd.ms-excel.macrosheet+xml',"
+    },
+    {
+      "file": "scripts/fidelity/census.ts",
+      "line": "'application/vnd.ms-excel.intlmacrosheet+xml',"
     }
   ]
 }

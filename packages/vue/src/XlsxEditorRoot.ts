@@ -136,8 +136,9 @@ export interface XlsxEditorRef {
   load(bytes: Uint8Array | ArrayBuffer): Promise<EditorSnapshot | null>;
   /**
    * The workbook as bytes of the opened package's kind (`snapshot().workbookKind`: a workbook or a
-   * template), with every edit, or `null` when none is open. An open cell edit is committed first;
-   * when the editor cannot store it, `save` returns `null` and shows the reason.
+   * template, macro-enabled when `snapshot().macroEnabled` is true), with every edit, or `null`
+   * when none is open. An open cell edit is committed first; when the editor cannot store it,
+   * `save` returns `null` and shows the reason.
    */
   save(): Uint8Array<ArrayBuffer> | null;
   /**

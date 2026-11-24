@@ -33,6 +33,7 @@ import {
 import { canonicalFingerprint, bytesFingerprint } from '../package-write/serialize.ts';
 import { attr, children, elements } from './query.ts';
 import { CONTENT_TYPE, NS, REL } from './namespaces.ts';
+import { isWorkbookType, WORKBOOK_TYPES } from './main-part-type.ts';
 
 /** One part of the package. */
 export type PackagePart =
@@ -81,13 +82,8 @@ export type PackageResult =
 export const CONTENT_TYPES_PART = '/[Content_Types].xml';
 const decoder = new TextDecoder('utf-8', { fatal: false });
 
-/** The main-part content types that ECMA-376 defines for a workbook. Others are refused. */
-const WORKBOOK_TYPES = new Set([CONTENT_TYPE.workbook, CONTENT_TYPE.template].map(asciiFold));
-
 /** Content types the engine models. A part that does not parse refuses the workbook. */
-const REQUIRED_TYPES = new Set(
-  [CONTENT_TYPE.workbook, CONTENT_TYPE.template, CONTENT_TYPE.worksheet].map(asciiFold)
-);
+const REQUIRED_TYPES = new Set([...WORKBOOK_TYPES, asciiFold(CONTENT_TYPE.worksheet)]);
 
 /** Content types the engine models but can do without. A part that does not parse stays bytes. */
 const OPTIONAL_TYPES = new Set(
@@ -243,7 +239,7 @@ export function* readXlsxSteps(
   const main = mainWorkbookPart(pkg);
   if (!main) return { ok: false, error: { reason: 'not-a-workbook', detail: 'no main part' } };
   const mainType = contentTypeOf(pkg, main);
-  if (!mainType || !WORKBOOK_TYPES.has(asciiFold(mainType.trim())))
+  if (!isWorkbookType(mainType))
     return {
       ok: false,
       error: { reason: 'not-a-workbook', detail: mainType ?? 'no content type' },

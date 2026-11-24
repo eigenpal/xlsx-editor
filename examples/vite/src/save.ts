@@ -5,6 +5,7 @@
 
 import { displayName } from '@xlsx-editor.dev/core/editor';
 import { downloadBlob } from './download.ts';
+import { KIND_EXTENSION } from './file-kinds.ts';
 
 /** The browser's file save picker, where it exists. */
 export type SavePicker = (options: {
@@ -49,7 +50,7 @@ export interface SaveOutcome {
  * end that an earlier save added, then `-edited` and `ext`.
  */
 export const savedName = (name: string, ext: string): string =>
-  `${name.replace(/\.(xlsx|xltx)$/i, '').replace(/-edited$/i, '') || 'workbook'}-edited${ext}`;
+  `${name.replace(KIND_EXTENSION, '').replace(/-edited$/i, '') || 'workbook'}-edited${ext}`;
 
 /**
  * The suggested file name of a save. A name that the user gave the workbook in the top bar

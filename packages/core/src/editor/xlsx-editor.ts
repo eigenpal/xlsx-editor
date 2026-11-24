@@ -63,14 +63,13 @@ import {
   selectionRef,
   sheetOpening,
   sheetState,
-  workbookState,
-  NO_WORKBOOK_STATE,
   accessibleLabels,
   type EditorFailure,
   type EditorMode,
   type EditorSnapshot,
   type XlsxEditorOptions,
 } from './editor-model.ts';
+import { NO_WORKBOOK_STATE, workbookState } from './workbook-state.ts';
 
 export type { XlsxEditorInstance } from './editor-instance.ts';
 import type { Opened } from './opened-workbook.ts';

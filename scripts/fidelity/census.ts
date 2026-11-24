@@ -133,9 +133,9 @@ const OPC = 'application/vnd.openxmlformats-package.';
 
 /**
  * The content types that the census names: the ones that ECMA-376 defines for the parts of a
- * workbook (Part 1, clauses 11 to 15, and Part 2), `application/xml`, `application/octet-stream`,
- * and common images. A list, not a pattern, because the author of a package can put any words
- * after a known prefix.
+ * workbook (Part 1, clauses 11 to 15, and Part 2), the macro-enabled main parts and macro part,
+ * `application/xml`, `application/octet-stream`, and common images. A list, not a pattern, because
+ * the author of a package can put any words after a known prefix.
  */
 const KNOWN_CONTENT_TYPES: ReadonlyMap<string, string> = new Map(
   [
@@ -190,6 +190,12 @@ const KNOWN_CONTENT_TYPES: ReadonlyMap<string, string> = new Map(
       'digital-signature-xmlsignature+xml',
       'digital-signature-certificate',
     ].map((sub) => OPC + sub),
+    // The macro-enabled main parts and their macro part, which ECMA-376 does not list.
+    'application/vnd.ms-excel.sheet.macroEnabled.main+xml',
+    'application/vnd.ms-excel.template.macroEnabled.main+xml',
+    'application/vnd.ms-office.vbaProject',
+    'application/vnd.ms-excel.macrosheet+xml',
+    'application/vnd.ms-excel.intlmacrosheet+xml',
     'application/xml',
     'application/octet-stream',
     ...['png', 'jpeg', 'gif', 'bmp', 'tiff', 'x-emf', 'x-wmf', 'svg+xml'].map(

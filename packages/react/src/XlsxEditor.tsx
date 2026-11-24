@@ -30,13 +30,13 @@ export interface XlsxEditorProps extends Omit<XlsxEditorRootProps, 'children'> {
   readonly style?: CSSProperties;
   /**
    * Receives the workbook as bytes of the opened package's kind (`snapshot().workbookKind`: a
-   * workbook or a template) when the toolbar's save control is pressed, or when the user presses
-   * Control or Command and S in the editor, also with the save control hidden. Without it, the
-   * save control is disabled with the engine's reason, and the browser keeps the shortcut. A
-   * refused save calls nothing: the snapshot holds the refusal with `command: 'save'`. The bytes
-   * arrive after the press, because a save runs in short tasks. `saved.stillOpen` is false when
-   * another open, `close()`, or `destroy()` ended the workbook during the save, and
-   * `saved.revision` is the revision of the bytes.
+   * workbook or a template, macro-enabled when `snapshot().macroEnabled` is true) when the
+   * toolbar's save control is pressed, or when the user presses Control or Command and S in the
+   * editor, also with the save control hidden. Without it, the save control is disabled with the
+   * engine's reason, and the browser keeps the shortcut. A refused save calls nothing: the snapshot
+   * holds the refusal with `command: 'save'`. The bytes arrive after the press, because a save runs
+   * in short tasks. `saved.stillOpen` is false when another open, `close()`, or `destroy()` ended
+   * the workbook during the save, and `saved.revision` is the revision of the bytes.
    */
   readonly onSave?: (bytes: Uint8Array<ArrayBuffer>, saved: SavedWorkbook) => void;
   /**

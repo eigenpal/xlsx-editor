@@ -92,6 +92,7 @@ describe('the save of the demo', () => {
     expect(savedName('book.xlsx', '.xlsx')).toBe('book-edited.xlsx');
     expect(savedName('book-edited.xlsx', '.xlsx')).toBe('book-edited.xlsx');
     expect(savedName('tmpl.xltx', '.xltx')).toBe('tmpl-edited.xltx');
+    expect(savedName('macros-edited.xlsm', '.xlsm')).toBe('macros-edited.xlsm');
     expect(savedName('', '.xlsx')).toBe('workbook-edited.xlsx');
   });
 

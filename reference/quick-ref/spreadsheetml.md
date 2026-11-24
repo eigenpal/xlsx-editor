@@ -26,7 +26,7 @@ Each rule names its source. "Schema" means `sml.xsd`. "Part 1, 18.x" means a cla
 
 Part names are not fixed. Always follow the relationships, never a path pattern.
 
-The main part content type is `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml`, and `application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml` for a template. A macro-enabled workbook uses another main-part content type that ECMA-376 does not define. Treat any other main-part content type as unsupported, and refuse to edit rather than guess.
+The main part content type is `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml`, and `application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml` for a template. A macro-enabled workbook or template uses another main-part content type that ECMA-376 does not define, with the same `x:workbook` root; the engine opens both and keeps the macro part as inert bytes. Treat any other main-part content type, such as an add-in, as unsupported, and refuse to edit rather than guess.
 
 The main namespace is `http://schemas.openxmlformats.org/spreadsheetml/2006/main`. Files often declare extension namespaces with `mc:Ignorable` and carry extension data in `x:extLst`. Preserve both unchanged.
 

@@ -28,6 +28,7 @@ import { NUMBER_FORMAT_FEATURES } from './support-matrix-number-format.ts';
 import { STRUCTURE_FEATURES } from './support-matrix-structure.ts';
 import { MERGE_FEATURES } from './support-matrix-merge.ts';
 import { FORMULA_SAVE_FEATURES } from './support-matrix-formula-save.ts';
+import { MACRO_ENABLED_FEATURES } from './support-matrix-macro-enabled.ts';
 import { LIMIT_FEATURES } from './support-matrix-limits.ts';
 import { TOOLBAR_FEATURES } from './support-matrix-toolbar.ts';
 import { REFUSAL_FEATURES } from './support-matrix-refusals.ts';
@@ -918,6 +919,7 @@ export const supportFeatures: readonly SupportFeature[] = [
       ],
     },
   },
+  ...MACRO_ENABLED_FEATURES,
   {
     id: 'save.namespace-declarations',
     name: 'Prefixes that Markup Compatibility attributes name',
@@ -966,7 +968,7 @@ export const supportFeatures: readonly SupportFeature[] = [
     category: 'save',
     status: 'unsupported',
     notes:
-      'The engine never loads or runs them (`x:externalLink`, `x:connections`, and `vbaProject.bin`). A save keeps their parts byte for byte, and writes their relationship parts in a normalized form. A macro-enabled workbook package does not open.',
+      'The engine never loads or runs them (`x:externalLink`, `x:connections`, and `vbaProject.bin`). A save keeps their parts byte for byte, and writes their relationship parts in a normalized form. A macro-enabled workbook opens, and its macro part stays inert (`save.macro-enabled`).',
     evidence: {
       tests: [
         `${CORE}/store/__tests__/package-read.test.ts`,

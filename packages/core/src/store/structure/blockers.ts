@@ -16,7 +16,8 @@
 //   attributes name the edited sheet (`Sheet1!`, `'My sheet'!`), because it can refer to it.
 //   So does a child of `x:sheetData` or of a row that is not a typed row or cell (a row or a
 //   cell inside `mc:AlternateContent`), because the edit rewrites typed cells only.
-// - The workbook: chart and pivot parts (they can refer to any sheet), a sheet part that is not
+// - The workbook: macros first (a macro project or a macro sheet, `macroBlocker`), then chart
+//   and pivot parts (they can refer to any sheet), a sheet part that is not
 //   a worksheet, a relationship of the workbook or of the package to a part outside an
 //   allowlist (`WORKBOOK_RELS`, `PACKAGE_RELS`), for example connections, volatile
 //   dependencies, or revisions, and a workbook element outside an allowlist that names the
@@ -31,6 +32,7 @@
 //   sheet. Such a part refuses the edit when its text or attributes name it. A table on the
 //   edited sheet refuses it through the relationship rule of that sheet.
 
+import { asciiFold } from '@eigenpal/ooxml-core';
 import type { Element, XmlPart } from '../package/tree.ts';
 import {
   contentTypeOf,
@@ -121,6 +123,19 @@ const WORKBOOK_RELS = new Set<string>([
   'http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml',
   'http://schemas.openxmlformats.org/officeDocument/2006/relationships/sheetMetadata',
 ]);
+
+/**
+ * The relationship from a macro-enabled workbook to its macro part. ECMA-376 does not define it.
+ * The macro code can name any sheet or cell, and the editor never reads or rewrites it, so the
+ * part refuses every edit that moves or renames a reference, with the subject kind `macros`.
+ */
+const MACRO_REL = 'http://schemas.microsoft.com/office/2006/relationships/vbaproject';
+/** The relationship types of a macro sheet, folded: the sheet and its international form. */
+const MACRO_SHEET_RELS: ReadonlySet<string> = new Set(
+  ['xlmacrosheet', 'xlintlmacrosheet'].map(
+    (t) => `http://schemas.microsoft.com/office/2006/relationships/${t}`
+  )
+);
 
 /**
  * Package relationships (ECMA-376 Part 2) whose targets hold no cell reference: the properties
@@ -557,6 +572,35 @@ export function workbookBlocker(
 }
 
 /**
+ * The refusal of an edit in a workbook that holds macros, with `reason`, or undefined. Macro code
+ * can name any cell or sheet, and can read a sheet by its position; the editor never rewrites it.
+ * A workbook holds macros when it has a workbook relationship of the macro project type, or a
+ * macro sheet: a sheet whose relationship has a macro sheet type, or whose part has a content
+ * type of the `macrosheet` family. The schema defines `CT_Macrosheet` (sml.xsd), but no part
+ * clause defines its content type or these relationship types, so they are matched by name.
+ * ECMA-376 Part 2, 6.5.3.4 compares relationship types with case; the match here folds ASCII
+ * case on purpose, so it refuses more, never less.
+ */
+export function macroBlocker(
+  pkg: XlsxPackage,
+  index: WorkbookIndex,
+  reason: string
+): OpRejection | undefined {
+  const rels = relationshipsOf(pkg, index.mainPart);
+  const rel = rels.find((r) => asciiFold(r.type) === MACRO_REL);
+  if (rel) return blocked(rel.target ?? rel.type, reason, { kind: 'macros' });
+  const sheetRels = new Set(
+    rels.filter((r) => MACRO_SHEET_RELS.has(asciiFold(r.type))).map((r) => r.id)
+  );
+  const sheet = index.sheets.find(
+    (s) =>
+      (s.relId !== undefined && sheetRels.has(s.relId)) ||
+      (s.partName && asciiFold(contentTypeOf(pkg, s.partName) ?? '').includes('macrosheet'))
+  );
+  return sheet ? blocked(sheet.name, reason, { kind: 'macros' }) : undefined;
+}
+
+/**
  * The first part that refuses every edit that moves or renames a reference, whatever it names:
  * a chart or pivot part, a sheet that is not a worksheet, or a relationship outside the
  * allowlists. Undefined when there is none.
@@ -565,6 +609,13 @@ export function workbookPartBlocker(
   pkg: XlsxPackage,
   index: WorkbookIndex
 ): OpRejection | undefined {
+  // Macros come first, so the reason names them whatever else the workbook holds.
+  const macros = macroBlocker(
+    pkg,
+    index,
+    'the macros of the workbook can refer to the cells and sheets that the edit changes, and the editor does not change them'
+  );
+  if (macros) return macros;
   // A chartsheet is named by its sheet name, as its tab shows it; another part by its name.
   const sheetNames = new Map<string, string>();
   for (const sheet of index.sheets) if (sheet.partName) sheetNames.set(sheet.partName, sheet.name);

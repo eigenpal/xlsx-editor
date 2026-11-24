@@ -4,7 +4,7 @@ This guide describes the toolbar of `@xlsx-editor.dev/react` and the keyboard of
 
 ## Toolbar
 
-`XlsxEditor` shows a toolbar over the grid. To get the workbook when the user selects **Save** in the toolbar, pass `onSave`. It receives the workbook as bytes of the kind that was opened: `snapshot().workbookKind` is `workbook` or `template`, so you can choose the file extension. With `onSave`, Control or Command and S in the editor also saves, also when you hide the save control. Without `onSave`, the save control is disabled, and the browser keeps the shortcut:
+`XlsxEditor` shows a toolbar over the grid. To get the workbook when the user selects **Save** in the toolbar, pass `onSave`. It receives the workbook as bytes of the kind that was opened: `snapshot().workbookKind` is `workbook` or `template`, and `snapshot().macroEnabled` tells you if it is macro-enabled, so you can choose the file extension. With `onSave`, Control or Command and S in the editor also saves, also when you hide the save control. Without `onSave`, the save control is disabled, and the browser keeps the shortcut:
 
 <!-- sample: guide-on-save -->
 
@@ -242,8 +242,9 @@ The toolbar has no state of its own. Each control reads its state from `toolbarC
 - `mergeOverlap`: the selection overlaps a merged range, so a merge waits for an unmerge.
 - `noMergedRange`: the selection has no merged range to unmerge.
 - `lastSheet`: the sheet is the last visible sheet, so `sheetCommandState()` disables Delete.
-- `notWorksheet`: the sheet is not a worksheet, such as a chartsheet or a macro sheet, or its part is missing. `sheetCommandState()` disables Rename, Delete, and both moves of it, and its tab shows the reason.
-- `sheetEditBlocked`: content in the workbook can refer to any sheet. That is a chart, a pivot table, or a sheet that is not a worksheet. It is also a workbook or package relationship outside the allowlist, such as data connections. `sheetCommandState()` then disables Rename and Delete of every sheet, and each worksheet tab shows the reason. The snapshot holds the refusal in `sheetEditRefusal`.
+- `notWorksheet`: the sheet is not a worksheet, such as a chartsheet or a macro sheet, or its part is missing. `sheetCommandState()` disables Rename, Delete, and both moves of it, and its tab shows the reason. In a workbook that holds macros, the moves report `sheetOrderBlocked` first.
+- `sheetEditBlocked`: content in the workbook can refer to any sheet. That is a chart, a pivot table, or a sheet that is not a worksheet. It is also a workbook or package relationship outside the allowlist, such as data connections or macros. `sheetCommandState()` then disables Rename and Delete of every sheet, and each worksheet tab shows the reason. The snapshot holds the refusal in `sheetEditRefusal`.
+- `sheetOrderBlocked`: the workbook holds macros, which can read a sheet by its position. `sheetCommandState()` then also disables Add and the moves.
 - `locked`: the sheet is protected, and a locked cell in the selection holds content, so Clear contents and Clear all would change it.
 - The keys that start with `decimals`: no selected cell can take a decimal step. The key names the cause, such as `decimalsDate`. The engine picks the key for the selection, so you show `disabledReason` and never map a cause to a key.
 - `cellAlternateContent`: a cell of the selection holds a value and also holds data in a form that the editor cannot update (`selectionContentBlocked`), so Clear contents and Clear all are disabled.

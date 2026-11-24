@@ -14,9 +14,10 @@ export const REFUSAL_FEATURES: readonly SupportFeature[] = [
     category: 'refusals',
     status: 'supported',
     notes:
-      'Insert and delete are refused when preserved content can refer to the moved cells. That content is a chart, a pivot table, or a sheet that is not a worksheet, anywhere in the workbook. On the sheet, it is any element or related part outside a fixed allowlist. Examples are conditional formatting, data validation, a table, a filter, and comments. It is also a table or query table on another sheet that names the sheet. It is also a workbook part outside a fixed allowlist, such as data connections. A formula or a defined name inside `mc:AlternateContent` that the edit would change refuses it too. The refusal names the content in words, such as "conditional formatting on sheet Data", and keeps the part path in its detail for logs. Other editing stays available.',
+      'Insert and delete are refused when preserved content can refer to the moved cells. That content is a chart, a pivot table, or a sheet that is not a worksheet, anywhere in the workbook. On the sheet, it is any element or related part outside a fixed allowlist. Examples are conditional formatting, data validation, a table, a filter, and comments. It is also a table or query table on another sheet that names the sheet. It is also a workbook part outside a fixed allowlist, such as data connections or macros. A formula or a defined name inside `mc:AlternateContent` that the edit would change refuses it too. The refusal names the content in words, such as "conditional formatting on sheet Data", and keeps the part path in its detail for logs. Other editing stays available.',
     evidence: {
       tests: [
+        `${CORE}/editor/__tests__/macro-enabled.test.ts`,
         `${CORE}/store/__tests__/structure-refusals.test.ts`,
         `${CORE}/store/__tests__/structure-cases.test.ts`,
         `${CORE}/store/__tests__/structure-wrapped.test.ts`,

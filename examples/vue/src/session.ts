@@ -22,7 +22,6 @@
 import type {
   EditorSnapshot,
   SavedWorkbook,
-  WorkbookKind,
   XlsxEditorInstance,
 } from '@xlsx-editor.dev/core/editor';
 import {
@@ -31,6 +30,7 @@ import {
   withHeadingsSteps,
   type HeadingFlags,
 } from '../../vite/src/headings.ts';
+import { FILE_KINDS, fileKindOf } from '../../vite/src/file-kinds.ts';
 import { readForOpen, whyNotOpen } from '../../vite/src/open-check.ts';
 import { SAMPLE } from '../../vite/src/sample.ts';
 import { saveFileName, saveRepeatGuard } from '../../vite/src/save.ts';
@@ -39,18 +39,6 @@ import { renamedTo, shownName, titleOf } from '../../vite/src/workbook-names.ts'
 
 /** The largest file that the demo reads into memory: 64 MiB, as in the React demo. */
 export const MAX_FILE_BYTES = 64 * 1024 * 1024;
-
-/** The extension and the media type of each package kind, as the React demo names them. */
-const KIND_FILE: Readonly<Record<WorkbookKind, { ext: string; type: string }>> = {
-  workbook: {
-    ext: '.xlsx',
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  },
-  template: {
-    ext: '.xltx',
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.template',
-  },
-};
 
 const NO_WORKBOOK = 'Could not save: no workbook is open.';
 const SAVE_REPLACED = 'Nothing was saved: another workbook opened during the save.';
@@ -372,7 +360,8 @@ export class DemoSession {
       return;
     }
     const at = this.loads;
-    const kind = this.editor?.snapshot().workbookKind ?? 'workbook';
+    const snap = this.editor?.snapshot();
+    const kind = (snap ? fileKindOf(snap) : null) ?? 'workbook';
     // The file keeps its own heading flags: the headings option changes only the view.
     const restored = this.state.headings
       ? await runInTasks(withHeadingsSteps(bytes, false, this.flags))
@@ -388,7 +377,7 @@ export class DemoSession {
       this.say(SAVE_REPLACED);
       return;
     }
-    const file = KIND_FILE[kind ?? 'workbook'];
+    const file = FILE_KINDS[kind];
     const blob = new Blob([new Uint8Array(restored)], { type: file.type });
     // Each save starts a download at once, so a repeat of the same revision, as a double click
     // gives, is dropped (`saveRepeatGuard`, as the React demo's `downloadOnce`). A reload starts

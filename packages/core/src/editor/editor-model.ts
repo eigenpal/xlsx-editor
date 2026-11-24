@@ -8,8 +8,6 @@ import {
   attr,
   child,
   children,
-  contentTypeOf,
-  CONTENT_TYPE,
   formatCellRef,
   parseCellRef,
   sheetIndex,
@@ -18,14 +16,12 @@ import {
   inheritedFormat,
   xmlPartOf,
   structureBlocker,
-  workbookPartBlocker,
   isIsoDate,
   MAX_FORMAT_NEW_CELLS,
   formatRangeOverflow,
   clearFormatsOverflow,
   type RangeBox,
   readSheetProtection,
-  readWorkbookProtection,
   styleLists,
   cellLocked,
   lockedCellIn,
@@ -46,7 +42,6 @@ import {
   EN_US,
   sheetHasHiddenRules,
   sheetStale,
-  workbookTheme,
   type NumberLocale,
   type ResolvedCellFormat,
 } from '../cascade/index.ts';
@@ -60,7 +55,6 @@ import {
   type EditorTranslate,
 } from './cell-input.ts';
 import { cellContent } from './cell-content.ts';
-import { partsPastLimit } from './parts-past-limit.ts';
 import { isWholeSheet } from '../automation/index.ts';
 import { builtinOrCode } from './number-format-commands.ts';
 import {
@@ -340,11 +334,12 @@ export interface EditorSnapshot {
    */
   readonly workbookProtection: WorkbookProtection | null;
   /**
-   * Why a rename or a delete of any sheet is refused, whatever the sheet, or null: a chart, a
-   * pivot table, or a sheet that is not a worksheet in the workbook, or a workbook or package
-   * relationship outside the allowlist (`structure-blocked`). The
-   * sheet menu disables Rename and Delete with it (`sheetCommandState`). A rename or a delete
-   * that this does not refuse can still be refused by its own sheet.
+   * Why a rename or a delete of any sheet is refused, whatever the sheet, or null: macros, a
+   * chart, a pivot table, or a sheet that is not a worksheet in the workbook, or a workbook or
+   * package relationship outside the allowlist (`structure-blocked`). The sheet menu disables
+   * Rename and Delete with it (`sheetCommandState`). When its `about` kind is `macros`, Add and
+   * the moves are disabled too. A rename or a delete that this does not refuse can still be
+   * refused by its own sheet.
    */
   readonly sheetEditRefusal: EditRefusal | null;
   /** `edit`, or `view` when every edit command is refused (`setMode`). */
@@ -367,9 +362,15 @@ export interface EditorSnapshot {
   /**
    * The kind of the open package by its main part: `workbook` (`.xlsx`) or `template`
    * (`.xltx`), or null with no workbook open. `save()` keeps the kind, so a host names the saved
-   * file with the matching extension.
+   * file with the matching extension (`.xlsm` and `.xltm` when `macroEnabled`).
    */
   readonly workbookKind: WorkbookKind | null;
+  /**
+   * Whether the open package is a macro-enabled workbook (`.xlsm`) or template (`.xltm`); false
+   * with no workbook open. No macro runs: `save()` keeps the macro part as bytes, and the content
+   * type. Name the saved file with the macro-enabled extension, or it does not open cleanly.
+   */
+  readonly macroEnabled: boolean;
   /**
    * The parts of the open workbook that passed an XML part limit and stay as bytes, by part
    * name, or an empty list. The list keeps its identity while it does not change. Chrome shows
@@ -413,48 +414,6 @@ export interface PartPastLimit {
   readonly kind: 'styles' | 'theme' | 'drawing' | 'relationships' | 'other';
   /** The limit that the part passed. */
   readonly limit: 'xml.maxBytes' | 'xml.maxElements' | 'xml.maxDepth';
-}
-
-/** The part of a snapshot that the whole workbook gives. */
-export type WorkbookState = Pick<
-  EditorSnapshot,
-  'workbookKind' | 'workbookProtection' | 'sheetEditRefusal' | 'partsPastLimit' | 'themeColors'
->;
-
-/** The workbook state with no workbook open. */
-export const NO_WORKBOOK_STATE: WorkbookState = Object.freeze({
-  workbookKind: null,
-  workbookProtection: null,
-  sheetEditRefusal: null,
-  partsPastLimit: [],
-  themeColors: [],
-});
-
-const sheetEditRefusals = new WeakMap<XlsxPackage, EditRefusal | null>();
-
-/**
- * The snapshot state of the workbook: its kind, its protection, and the refusal of a rename or
- * a delete of any sheet (`workbookPartBlocker`), read once for each package.
- */
-export function workbookState(pkg: XlsxPackage, index: WorkbookIndex): WorkbookState {
-  let refusal = sheetEditRefusals.get(pkg);
-  if (refusal === undefined) {
-    const rejection = workbookPartBlocker(pkg, index);
-    sheetEditRefusals.set(pkg, (refusal = rejection ? refusalOf(rejection) : null));
-  }
-  return {
-    workbookKind: workbookKindOf(pkg, index),
-    workbookProtection: readWorkbookProtection(pkg, index),
-    sheetEditRefusal: refusal,
-    partsPastLimit: partsPastLimit(pkg),
-    // The theme part is cached by its root, so the list keeps its identity.
-    themeColors: workbookTheme(pkg, index).palette,
-  };
-}
-
-/** The kind of a package's main part. */
-export function workbookKindOf(pkg: XlsxPackage, index: WorkbookIndex): WorkbookKind {
-  return contentTypeOf(pkg, index.mainPart) === CONTENT_TYPE.template ? 'template' : 'workbook';
 }
 
 /**
@@ -559,6 +518,7 @@ export const EMPTY_SNAPSHOT: EditorSnapshot = Object.freeze({
   modeRequests: 0,
   revision: 0,
   workbookKind: null,
+  macroEnabled: false,
   themeColors: [],
   partsPastLimit: [],
 });

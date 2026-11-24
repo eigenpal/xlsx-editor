@@ -84,6 +84,7 @@ import {
   sheetBlocker,
   sheetMentions,
   workbookMentionBlocker,
+  macroBlocker,
   workbookPartBlocker,
   type SheetMentions,
 } from './blockers.ts';
@@ -499,12 +500,18 @@ function namedPartKeys(pkg: XlsxPackage, types: XmlPart, mainPart: string): Set<
   return out;
 }
 
+/** Why a sheet add or move is refused in a workbook that holds macros. */
+const ORDER_REASON =
+  'the macros of the workbook can read a sheet by its position, and the editor does not change them';
+
 function addSheet(pkg: XlsxPackage, name: string, at: number): OpResult {
   const c = context(pkg);
   if (isRefusal(c)) return { ok: false, rejection: c };
   const { index, main, sheets } = c;
   if (!Number.isInteger(at) || at < 0 || at > sheets.length)
     return refuse('bad-position', `position ${at} is outside the sheet list`);
+  const macros = macroBlocker(pkg, index, ORDER_REASON);
+  if (macros) return { ok: false, rejection: macros };
   const problem = sheetNameProblem(name, index);
   if (problem) return { ok: false, rejection: problem };
   const relsName = equivalentPartName(pkg, relsPartName(main.partName));
@@ -820,6 +827,8 @@ function moveSheet(pkg: XlsxPackage, sheet: string, to: number): OpResult {
   const from = entry.index;
   // A move to the same place changes nothing: no revision and no undo step.
   if (to === from) return { ok: true, pkg, inverse: [], value: false, formula: false };
+  const macros = macroBlocker(pkg, index, ORDER_REASON);
+  if (macros) return { ok: false, rejection: macros };
   // Content that the op does not read refuses any sheet range: its span is not known.
   const long = longSheetNameBlocker(index);
   if (long) return { ok: false, rejection: long };

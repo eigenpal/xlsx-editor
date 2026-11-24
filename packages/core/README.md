@@ -78,7 +78,7 @@ const result = editor.enterValue('42');
 if (!result.ok) console.log(result.refusal.code);
 ```
 
-To save the result and release the editor, call `save()` and `destroy()`. `save()` returns bytes of the opened kind: `snapshot().workbookKind` is `workbook` or `template`.
+To save the result and release the editor, call `save()` and `destroy()`. `save()` returns bytes of the opened kind: `snapshot().workbookKind` is `workbook` or `template`, and `snapshot().macroEnabled` is true for a macro-enabled workbook (`.xlsm`) or template (`.xltm`).
 
 ```ts
 const saved = editor.save();

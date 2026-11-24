@@ -14,8 +14,10 @@ A rename changes each formula, defined name (`x:definedName`), and hyperlink (`x
 
 - The workbook holds a chart, a pivot table, or a sheet that is not a worksheet, such as a chartsheet.
 - A table, conditional formatting, data validation, a drawing, or a control names the sheet.
-- The workbook relates to a part that can refer to cells, such as data connections or revisions.
+- The workbook relates to a part that can refer to cells, such as data connections, revisions, or macros.
 - For a delete: the sheet has a related part other than hyperlinks and printer settings, such as comments. A custom workbook view that shows the sheet also refuses a delete.
+
+In a workbook that holds macros, `addSheet()` and `moveSheet()` are refused too, with the reason `structure-blocked` and the `about` kind `macros`, because macro code can read a sheet by its position. The sheet tabs disable Add and the moves with the reason `sheetOrderBlocked`.
 
 A `moveSheet()` or a `deleteSheet()` of a sheet that is not a worksheet, such as a chartsheet, is refused with the reason `structure-blocked`. The `about` kind of that refusal is `not-worksheet`, and its message says that the editor can move or delete only a worksheet. View mode, an open input method composition, and the workbook protection refuse such a command first, with their own reasons.
 

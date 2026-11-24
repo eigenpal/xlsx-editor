@@ -306,7 +306,7 @@ Then run the check with `XLSX_FIDELITY_ACCEPT_CLIPPED` set to the fixture name, 
 
 ### Corpus checks
 
-The corpus checks run over a private folder of workbooks on your machine. They do not run in CI, and the repository holds no corpus. Name the folder with `--dir <folder>` or the `XLSX_CORPUS_DIR` environment variable. The checks take the `.xlsx` files of the folder and its subfolders, and skip hidden entries, links, and owner files such as `~$name.xlsx`. If you set both, `--dir` wins. No folder is assumed. To try a check, give it the fixtures: `--dir fixtures`.
+The corpus checks run over a private folder of workbooks on your machine. They do not run in CI, and the repository holds no corpus. Name the folder with `--dir <folder>` or the `XLSX_CORPUS_DIR` environment variable. The checks take the `.xlsx`, `.xltx`, `.xlsm`, and `.xltm` files of the folder and its subfolders, and skip hidden entries, links, and owner files such as `~$name.xlsx`. If you set both, `--dir` wins. No folder is assumed. To try a check, give it the fixtures: `--dir fixtures`.
 
 | Command | Use |
 | --- | --- |

@@ -354,7 +354,9 @@ export interface XlsxEditorInstance {
    * (`addSheet`, `renameSheet`, `deleteSheet`, `moveSheet`) is refused with `locked`, and the
    * lock rule is `workbook`. Refused with `structure-blocked`, with the defined name as the
    * subject, when the add changes the position of the sheet that the local scope of a defined
-   * name inside `mc:AlternateContent` names.
+   * name inside `mc:AlternateContent` names. Also refused with `structure-blocked`, with the
+   * `about` kind `macros`, when the workbook holds macros: macro code can read a sheet by its
+   * position.
    */
   addSheet(name?: string): EditResult;
   /**
@@ -423,6 +425,8 @@ export interface XlsxEditorInstance {
    * - `bad-position` when `to` is outside the sheet list.
    * - `view-mode` in view mode.
    * - `locked`, with the `workbook` rule, as `addSheet` states.
+   * - `structure-blocked`, with the `about` kind `macros`, when the workbook holds macros, as
+   *   `addSheet` states.
    */
   moveSheet(index: number, to: number): EditResult;
   /**
@@ -598,9 +602,10 @@ export interface XlsxEditorInstance {
   redo(): EditResult;
   /**
    * The workbook as bytes of the opened package's kind (`snapshot().workbookKind`: a workbook or a
-   * template), with every edit, or `null` when none is open. An open cell editor is committed
-   * first; when the store refuses that commit, `save` returns `null` and the snapshot holds the
-   * refusal. While an input method composes, it is refused with `composing`.
+   * template, macro-enabled when `snapshot().macroEnabled` is true), with every edit, or `null`
+   * when none is open. An open cell editor is committed first; when the store refuses that commit,
+   * `save` returns `null` and the snapshot holds the refusal. While an input method composes, it is
+   * refused with `composing`.
    */
   save(): Uint8Array<ArrayBuffer> | null;
   /**

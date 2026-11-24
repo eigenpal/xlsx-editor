@@ -52,22 +52,22 @@ import {
   menuShortcutText,
   menuStep,
   menuTypeahead,
+  editorRowsSlice,
+  submenuRowSlots,
+  focusMenuPanelEdge,
+  followPressedTrigger,
+  menuPanelRows,
+  menuRowLabels,
   type ChromeMenuEntry,
   type ChromeMenuId,
   type ChromeSlotId,
   type MenuRowPartName,
 } from '@xlsx-editor.dev/core/editor';
-import { useTranslation, useXlsxEditor } from '../context.ts';
-import { ChromeIcon, translateKey, useToolbarSlot } from '../toolbar/slot.tsx';
+import { useEditorState, useTranslation, useTranslator, useXlsxEditor } from '../context.ts';
+import { ChromeIcon, toolbarHostKey, translateKey, useToolbarSlot } from '../toolbar/slot.tsx';
 import { useNumberFormatDialogOpener } from '../toolbar/NumberFormatDialog.tsx';
 import { vnodeFlag, visibleNodes, warnToolbarProblems } from '../toolbar/host-parts.tsx';
 import { ICON_MORE } from '../toolbar/icons.ts';
-
-/** The rows of a panel: the menu items, checkbox items, and submenu triggers. */
-export const PANEL_ROWS =
-  ':scope > [role^="menuitem"], :scope > [role="none"] > [role^="menuitem"], ' +
-  ':scope > [role="group"] > [role^="menuitem"], ' +
-  ':scope > [role="group"] > [role="none"] > [role^="menuitem"]';
 
 /** The id of the "More" menu, which holds the menus that do not fit. Never a host menu id. */
 export const MORE_MENU_ID = MENU_MORE_ID;
@@ -193,11 +193,7 @@ function rowButton(props: {
           {props.shortcut}
         </span>
       ) : null}
-      {props.reason ? (
-        <span id={reasonId} hidden>
-          {props.reason}
-        </span>
-      ) : null}
+      {hiddenReason(reasonId, props.reason)}
     </button>
   );
 }
@@ -470,6 +466,13 @@ export const XlsxEditorMenuSeparator = defineComponent({
   },
 });
 
+/** A disabled reason as a row's hidden accessible description. */
+const hiddenReason = (id: string, reason: string | null | undefined) =>
+  reason ? h('span', { id, hidden: true }, reason) : null;
+
+/** Whether a node of a panel is a separator, which no submenu state counts. */
+const isSeparatorRow = (node: VNode): boolean => node.type === XlsxEditorMenuSeparator;
+
 const SUBMENU_CARET = ['M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z'];
 
 const xlsxEditorMenuSubmenuProps = {
@@ -503,6 +506,12 @@ export const XlsxEditorMenuSubmenu = defineComponent({
     const panelId = useId();
     const trigger = shallowRef<HTMLButtonElement | null>(null);
     const focusEdge: { current: 'first' | 'last' | null } = { current: null };
+    const reasonId = useId();
+    // The rows come from the children, which only a render reads: the render reads the state of
+    // their slots from the snapshot (`editorRowsSlice`), as `useRowsState` does.
+    const snapshot = useEditorState((s) => s);
+    const host = inject(toolbarHostKey, shallowRef({}));
+    const translate = useTranslator();
     const close = (): void => {
       open.value = false;
       trigger.value?.focus();
@@ -510,11 +519,16 @@ export const XlsxEditorMenuSubmenu = defineComponent({
     return () => {
       const label = props.label ?? (props.labelKey ? translateKey(t, props.labelKey) : '');
       const openKey = bar?.rtl.value ? 'ArrowLeft' : 'ArrowRight';
+      const children = slots.default?.();
+      const ids = submenuRowSlots(visibleNodes(children), slotRowOf, isSeparatorRow);
+      const rows = editorRowsSlice(snapshot.value, ids, host.value, translate.value);
+      const reason = rows.disabledReason;
+      const show = (to: boolean) => (open.value = to && rows.enabled);
       return (
         <div
           role="none"
           class={['xlsx-menu-sub', props.className]}
-          onMouseenter={() => (open.value = true)}
+          onMouseenter={() => show(true)}
           onMouseleave={() => (open.value = false)}
         >
           <button
@@ -526,13 +540,20 @@ export const XlsxEditorMenuSubmenu = defineComponent({
             aria-expanded={open.value}
             aria-controls={open.value ? panelId : undefined}
             class="xlsx-menu-row"
-            onClick={() => (open.value = !open.value)}
+            {...(reason ? { 'aria-disabled': true, 'data-disabled': '' } : {})}
+            {...(reason
+              ? {
+                  'aria-describedby': reasonId,
+                  title: t('toolbar.disabledTitle', { label, reason }),
+                }
+              : {})}
+            onClick={() => show(!open.value)}
             onKeydown={(e: KeyboardEvent) => {
               if (e.key === openKey || e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 e.stopPropagation();
                 focusEdge.current = 'first';
-                open.value = true;
+                show(true);
               }
             }}
           >
@@ -541,6 +562,7 @@ export const XlsxEditorMenuSubmenu = defineComponent({
             </span>
             <span class="xlsx-menu-label">{label}</span>
             <ChromeIcon paths={SUBMENU_CARET} className="xlsx-menu-caret" />
+            {hiddenReason(reasonId, reason)}
           </button>
           {/* Mounted while closed, and hidden, so its rows keep their state between opens. */}
           <MenuPanel
@@ -551,7 +573,7 @@ export const XlsxEditorMenuSubmenu = defineComponent({
             focusEdge={focusEdge}
             onClose={close}
           >
-            {{ default: () => slots.default?.() }}
+            {{ default: () => children }}
           </MenuPanel>
         </div>
       );
@@ -630,18 +652,6 @@ export function panelRows(
 // ---------------------------------------------------------------------------------------------
 // Panels and menus
 
-/** The rows that a panel moves through. */
-function rowsOf(panel: HTMLElement): HTMLElement[] {
-  return [...panel.querySelectorAll<HTMLElement>(PANEL_ROWS)];
-}
-
-/** Focus the first or the last row of a panel. */
-export function focusPanelEdge(panel: HTMLElement | null, edge: 'first' | 'last'): void {
-  if (!panel) return;
-  const rows = rowsOf(panel);
-  (edge === 'first' ? rows[0] : rows.at(-1))?.focus();
-}
-
 /** One panel: `role="menu"` with the keys of the WAI-ARIA menu pattern. */
 export const MenuPanel = defineComponent({
   name: 'XlsxMenuPanel',
@@ -674,12 +684,12 @@ export const MenuPanel = defineComponent({
         const edge = props.focusEdge?.current;
         if (edge) {
           props.focusEdge!.current = null;
-          focusPanelEdge(node, edge);
+          focusMenuPanelEdge(node, edge);
         }
         const request = bar?.focusRequest.current;
         if (request && request.id === props.menuId) {
           bar!.focusRequest.current = null;
-          focusPanelEdge(node, request.edge);
+          focusMenuPanelEdge(node, request.edge);
         }
       },
       { immediate: true, flush: 'post' }
@@ -701,7 +711,7 @@ export const MenuPanel = defineComponent({
     const onKeydown = (e: KeyboardEvent): void => {
       const el = panel.value;
       if (!el) return;
-      const rows = rowsOf(el);
+      const rows = menuPanelRows(el);
       const active = el.ownerDocument.activeElement as HTMLElement | null;
       const at = active ? rows.indexOf(active) : -1;
       const action = menuPanelKey(e, {
@@ -721,11 +731,10 @@ export const MenuPanel = defineComponent({
           rows[menuStep(rows.length, at, action.by)]?.focus();
           break;
         case 'edge':
-          focusPanelEdge(el, action.edge);
+          focusMenuPanelEdge(el, action.edge);
           break;
         case 'typeahead': {
-          const labels = rows.map((r) => r.querySelector('.xlsx-menu-label')?.textContent ?? '');
-          const next = menuTypeahead(labels, at, action.char);
+          const next = menuTypeahead(menuRowLabels(rows), at, action.char);
           if (next >= 0) rows[next]?.focus();
           break;
         }
@@ -848,7 +857,10 @@ export const BarMenu = defineComponent({
             {...(props.iconOnly ? { 'aria-label': props.text, title: props.text } : {})}
             {...(open ? { 'data-open': '' } : {})}
             onMousedown={guardToolbarMousedown}
-            onClick={() => bar?.open(open ? null : props.id)}
+            onClick={(e: MouseEvent) => {
+              followPressedTrigger(e.currentTarget as HTMLElement);
+              bar?.open(open ? null : props.id);
+            }}
             onMouseenter={() => {
               if (bar && bar.openMenu.value !== null && bar.openMenu.value !== props.id)
                 bar.open(props.id);

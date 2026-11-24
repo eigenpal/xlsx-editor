@@ -543,7 +543,13 @@ describe('XlsxEditor.Toolbar', () => {
 
   test('a structural command that design D4 refuses is disabled with its reason', async () => {
     const { view } = await open(workbook(CF));
-    fireEvent.click(view.getByRole('button', { name: 'Insert and delete' }));
+    // Every row of the group menu is refused: its button is disabled with its first row's reason.
+    const menu = view.getByRole('button', { name: 'Insert and delete' });
+    expect(menu.getAttribute('aria-disabled')).toBe('true');
+    expect(menu.title).toContain('conditional formatting on sheet');
+    expect(menu.title).not.toContain('/xl/');
+    // The row of the Edit menu gives its own reason.
+    fireEvent.click(view.getByRole('menuitem', { name: 'Edit' }));
     await nextTick();
     const item = view.getByRole('menuitem', { name: /Delete rows/ });
     expect(item.getAttribute('aria-disabled')).toBe('true');

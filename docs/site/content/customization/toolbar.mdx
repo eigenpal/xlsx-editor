@@ -88,7 +88,7 @@ With `asChild`, your single child element renders the control. It receives the c
 
 `FontFamily`, `FontSize`, `NumberFormat`, and `MoreNumberFormats` are value controls: a list or a dialog opener. They take `hidden`, `className`, and `overflowContent` only.
 
-`FontColor` and `FillColor` are split buttons, as in the DOCX and PPTX editors. The main half applies the last color that it applied, which the bar under its glyph shows. The caret opens the color picker: **Automatic** (or **No fill**), the workbook theme colors with five rows of tints and shades, the standard colors, and a custom hex color. They take `hidden`, `className`, `overflowContent`, and `icon`. The `icon` replaces the glyph above the bar, and the bar keeps its color.
+`FontColor` and `FillColor` are split buttons, as in the DOCX and PPTX editors. The main half applies the last color that it applied, which the bar under its glyph shows. The caret opens the color picker: **Automatic** (or **No fill**), the workbook theme colors with five rows of tints and shades, the standard colors, and a custom hex color. The hex field takes six digits with or without `#`, so a pasted `#00FF00` applies whole, and it sets `aria-invalid` while its text is not a color. They take `hidden`, `className`, `overflowContent`, and `icon`. The `icon` replaces the glyph above the bar, and the bar keeps its color.
 
 ## Choose the toolbar arrangement
 
@@ -128,7 +128,7 @@ Replace one built-in control with `Toolbar.Slot`. Your content keeps the control
 | `onSave` on `Toolbar` | Decides where saved bytes go. |
 | `overflow={false}` on `Toolbar` | Wraps controls instead of moving them to **More**. |
 
-`Toolbar.Slot` takes `icon`, `asChild`, and `className` too, with the same effect as on a named part. In a group that shows as one menu, such as `cells` or `clear`, a replaced or changed slot shows after the menu button, and the menu keeps the other slots.
+`Toolbar.Slot` takes `icon`, `asChild`, and `className` too, with the same effect as on a named part. In a group that shows as one menu, such as `cells` or `clear`, a replaced or changed slot shows after the menu button, and the menu keeps the other slots. The menu button is disabled, with the reason of its first slot, when every slot of its menu is disabled, for example in view mode.
 
 With `preset={false}`, the toolbar renders only its children, in your order. Named parts, slots, groups, actions, and separators can stand in any order. A named part or a `Toolbar.Slot` with no children renders the built-in control of its slot.
 

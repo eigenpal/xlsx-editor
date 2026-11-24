@@ -1,11 +1,13 @@
 // The key table over a recording host: Shift with an arrow or Page key extends a band of whole
-// rows or columns as a band, so the structural keys still act on the extended band.
+// rows or columns as a band, so the structural keys still act on the extended band. Enter after
+// a run of Tab moves goes down to the column where the run started (`tab-return.ts`).
 
 import { describe, expect, test } from 'bun:test';
 import type { GridPoint, GridSelection } from '../../contracts/index.ts';
 import { handleGridKey, type GridKeyHost } from '../grid-keys.ts';
 import { extendTo, selectBand, selectCell } from '../selection.ts';
 import { selectionRef } from '../editor-model.ts';
+import { TabReturn } from '../tab-return.ts';
 
 function host(start: GridSelection) {
   const calls: string[] = [];
@@ -99,5 +101,48 @@ describe('Shift extends a band as a band', () => {
     const { h } = host(selectCell(0, { row: 1, col: 1 }, []));
     press(h, 'ArrowDown', { shiftKey: true });
     expect(selectionRef(h.selection)).toBe('B2:B3');
+  });
+});
+
+describe('the Tab return column', () => {
+  const at = (row: number, col: number) => selectCell(0, { row, col }, []);
+  const withRun = (start: GridSelection) => {
+    const made = host(start);
+    return { h: Object.assign(made.h, { tabReturn: new TabReturn() }) };
+  };
+
+  test('Enter after Tab moves goes down to the column where the run started', () => {
+    const { h } = withRun(at(24, 4));
+    press(h, 'Tab');
+    press(h, 'Tab');
+    expect(h.selection.active).toEqual({ row: 24, col: 6 });
+    press(h, 'Enter');
+    expect(h.selection.active).toEqual({ row: 25, col: 4 });
+    // The run ended: the next Enter goes straight down.
+    press(h, 'Tab');
+    press(h, 'ArrowDown');
+    press(h, 'Enter');
+    expect(h.selection.active).toEqual({ row: 27, col: 5 });
+  });
+
+  test('an arrow move or Shift+Enter ends the run', () => {
+    const { h } = withRun(at(10, 2));
+    press(h, 'Tab');
+    press(h, 'ArrowRight');
+    press(h, 'Enter');
+    expect(h.selection.active).toEqual({ row: 11, col: 4 });
+    press(h, 'Tab');
+    press(h, 'Enter', { shiftKey: true });
+    press(h, 'Enter');
+    expect(h.selection.active).toEqual({ row: 11, col: 5 });
+  });
+
+  test('Shift+Tab keeps the run column', () => {
+    const { h } = withRun(at(3, 3));
+    press(h, 'Tab');
+    press(h, 'Tab');
+    press(h, 'Tab', { shiftKey: true });
+    press(h, 'Enter');
+    expect(h.selection.active).toEqual({ row: 4, col: 3 });
   });
 });

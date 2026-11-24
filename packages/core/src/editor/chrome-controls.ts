@@ -282,8 +282,13 @@ export const CHROME_GROUPS = [
         paths: icon('add_column_left'),
         kind: 'command',
       },
-      { id: 'deleteRows', labelKey: 'cells.deleteRows', paths: null, kind: 'command' },
-      { id: 'deleteColumns', labelKey: 'cells.deleteColumns', paths: null, kind: 'command' },
+      { id: 'deleteRows', labelKey: 'cells.deleteRows', paths: icon('delete'), kind: 'command' },
+      {
+        id: 'deleteColumns',
+        labelKey: 'cells.deleteColumns',
+        paths: icon('delete'),
+        kind: 'command',
+      },
     ],
   },
   {
@@ -291,9 +296,9 @@ export const CHROME_GROUPS = [
     labelKey: 'formattingBar.groups.clear',
     menu: { paths: icon('delete_sweep') },
     controls: [
-      { id: 'contents', labelKey: 'clear.contents', paths: null, kind: 'command' },
+      { id: 'contents', labelKey: 'clear.contents', paths: icon('backspace'), kind: 'command' },
       { id: 'formats', labelKey: 'clear.formats', paths: icon('format_clear'), kind: 'command' },
-      { id: 'all', labelKey: 'clear.all', paths: null, kind: 'command' },
+      { id: 'all', labelKey: 'clear.all', paths: icon('ink_eraser'), kind: 'command' },
     ],
   },
   {

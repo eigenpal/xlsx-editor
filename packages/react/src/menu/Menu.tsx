@@ -8,7 +8,9 @@
 // `onSave`), and the shortcut that it shows on Save (Control or Command and S). When the menus do
 // not fit, the bar moves them, from the end, into one "More" menu, where each is a submenu. The
 // bar is one tab stop, as the WAI-ARIA menubar pattern asks. Its order and its menus come from
-// core's `arrangeMenuBar` (`menu-arrangement.ts`), as in PPTX Editor.
+// core's `arrangeMenuBar` (`menu-arrangement.ts`), as in PPTX Editor. A press keeps the keyboard
+// where it was; while a menu that a press opened is open, a navigation key from outside the bar
+// moves the keyboard into it (core's `listenForPointerPopupKeys`), and Escape gives it back.
 //
 // Differences from DOCX Editor:
 // - The menus of a workbook editor. There is no print, export, page setup, or help menu.
@@ -38,16 +40,21 @@ import {
 import {
   MENU_FIXED_ATTRIBUTE,
   arrangeMenuBar,
+  enterMenuPanel,
+  focusMenuPanelEdge,
   guardToolbarMousedown,
   hostWindowOf,
   isApplePlatform,
   isElementNode,
   listenForOutsidePress,
+  listenForPointerPopupKeys,
   listenForPopupEscape,
   listenForPopupFocusLeave,
   listenSaveKey,
   measureMenuBar,
+  menuPanelOf,
   menuRowInBarProblem,
+  menuStep,
   observeMenuBar,
   openPickedWorkbook,
   REACT_MENU_PART_NAMES,
@@ -282,33 +289,67 @@ function XlsxEditorMenuRoot({
   const openedInBar = useRef(false);
   const openNow = useRef<string | null>(null);
   openNow.current = openMenu;
+  // The control that held the keyboard when a key moved it from outside the bar into a menu
+  // opened by a pointer press: Escape gives the keyboard back to it, such as an open cell edit.
+  const enteredFrom = useRef<HTMLElement | null>(null);
   const closeAll = useCallback(
     (focus: 'trigger' | 'grid' | 'none' | 'origin') => {
       const was = openMenu;
+      const from = enteredFrom.current;
+      enteredFrom.current = null;
       setOpenMenu(null);
-      const toTrigger = focus === 'trigger' || (focus === 'origin' && openedInBar.current);
-      if (toTrigger && was) triggerOf(was)?.focus();
+      if (focus === 'trigger' && from?.isConnected) from.focus();
+      else if ((focus === 'trigger' || (focus === 'origin' && openedInBar.current)) && was)
+        triggerOf(was)?.focus();
       else if (focus === 'grid') editor?.focus();
     },
     [openMenu, triggerOf, editor]
   );
-  const open = useCallback((id: string | null, edge?: 'first' | 'last') => {
-    const el = bar.current;
-    if (id && openNow.current === null)
-      openedInBar.current = !!el && el.contains(el.ownerDocument.activeElement);
-    focusRequest.current = id && edge ? { id, edge } : null;
-    setOpenMenu(id);
-    if (id) setActiveMenu(id);
-  }, []);
+  const open = useCallback(
+    (id: string | null, edge?: 'first' | 'last') => {
+      const el = bar.current;
+      // The menu shows already, so no render follows: its row takes the focus now.
+      if (id && edge && id === openNow.current)
+        return focusMenuPanelEdge(menuPanelOf(triggerOf(id)), edge);
+      if (id && openNow.current === null)
+        openedInBar.current = !!el && el.contains(el.ownerDocument.activeElement);
+      focusRequest.current = id && edge ? { id, edge } : null;
+      setOpenMenu(id);
+      if (id) setActiveMenu(id);
+    },
+    [triggerOf]
+  );
 
+  // The bar's order and direction, for the keys that a menu opened by a pointer press takes.
+  const layout = useRef({ order: [] as readonly string[], rtl: false });
   // While a menu is open: a press outside the bar, an Escape from outside it (the grid keeps the
-  // keyboard after a pointer open), and focus that leaves it close the menu.
+  // keyboard after a pointer open), and focus that leaves it close the menu. A navigation key
+  // from outside the bar moves the keyboard into the open menu (`listenForPointerPopupKeys`).
   useEffect(() => {
     const el = bar.current;
-    if (openMenu === null || !el) return undefined;
+    if (openMenu === null || !el) {
+      enteredFrom.current = null;
+      return undefined;
+    }
     const contains = (node: Node) => el.contains(node);
     const close = () => setOpenMenu(null);
+    const enter = (entry: Parameters<typeof enterMenuPanel>[0]) => {
+      const panel = menuPanelOf(triggerOf(openMenu));
+      if (!panel) return null;
+      const active = el.ownerDocument.activeElement;
+      if (!enteredFrom.current && isElementNode(active))
+        enteredFrom.current = active as HTMLElement;
+      const { order, rtl } = layout.current;
+      return enterMenuPanel(entry, panel, {
+        rtl,
+        step: (by) => {
+          const next = order[menuStep(order.length, order.indexOf(openMenu), by)];
+          if (next) open(next, 'first');
+        },
+      });
+    };
     const stops = [
+      listenForPointerPopupKeys({ popup: el, contains, enter }),
       listenForOutsidePress({ popup: el, contains, close }),
       listenForPopupEscape({
         popup: el,
@@ -323,7 +364,7 @@ function XlsxEditorMenuRoot({
       listenForPopupFocusLeave({ popup: el, contains, close }),
     ];
     return () => stops.forEach((stop) => stop());
-  }, [openMenu]);
+  }, [openMenu, triggerOf, open]);
 
   // Control or Command and S runs File > Save, as the toolbar binds it: the shortcut text on
   // the row names a key that works. The first listener of the editor takes the key.
@@ -334,6 +375,7 @@ function XlsxEditorMenuRoot({
     return listenSaveKey(el, () => runToolbarCommand(editor, 'file.save', undefined, host));
   }, [editor, saves, host]);
 
+  layout.current = { order: orderKey ? orderKey.split('\n') : [], rtl };
   const state = useMemo<MenuBarState>(() => {
     const list = orderKey ? orderKey.split('\n') : [];
     return {

@@ -4,14 +4,15 @@
 // the toolbar reads a slot through this hook, so the bar, the menus, the overflow panel, and a
 // host's own control show the same answer, from the one source `toolbarCommandState`.
 
-import type { ReactNode } from 'react';
+import { useCallback, useContext, type ReactNode } from 'react';
 import {
   chromeControlForSlot,
+  editorRowsSlice,
   slotWords,
   type ChromeControl,
   type ChromeSlotId,
 } from '@xlsx-editor.dev/core/editor';
-import { useTranslation, useXlsxEditor } from '../context.ts';
+import { useEditorState, useTranslation, useXlsxEditor } from '../context.ts';
 import {
   ToolbarHostContext,
   translateKey,
@@ -51,6 +52,35 @@ export function useToolbarSlot(slot: ChromeSlotId): ToolbarSlot {
     control,
     focusGrid: () => editor?.focus(),
   };
+}
+
+/** The state of a control that opens rows: enabled, and the reason when disabled. */
+export interface RowsState {
+  readonly isEnabled: boolean;
+  readonly disabledReason: string | null;
+}
+
+const sameRows = (
+  a: ReturnType<typeof editorRowsSlice>,
+  b: ReturnType<typeof editorRowsSlice>
+): boolean => a.enabled === b.enabled && a.disabledReason === b.disabledReason;
+
+/**
+ * The state of a control that only opens the rows `slots`, such as a group menu or a submenu:
+ * disabled with the reason of its first row when every row is disabled (`toolbarRowsState`).
+ * `key` names the list, so a new array of the same slots reads no new state.
+ */
+export function useRowsState(slots: readonly ChromeSlotId[]): RowsState {
+  const host = useContext(ToolbarHostContext);
+  const { t } = useTranslation();
+  const key = slots.join('\n');
+  const select = useCallback(
+    (snapshot: Parameters<typeof editorRowsSlice>[0]) =>
+      editorRowsSlice(snapshot, key ? (key.split('\n') as ChromeSlotId[]) : [], host, t),
+    [key, host, t]
+  );
+  const slice = useEditorState(select, sameRows);
+  return { isEnabled: slice.enabled, disabledReason: slice.disabledReason };
 }
 
 /**

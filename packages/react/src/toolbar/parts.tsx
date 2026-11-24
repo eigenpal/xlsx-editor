@@ -18,7 +18,6 @@ import {
   useContext,
   useEffect,
   useId,
-  useLayoutEffect,
   useRef,
   useMemo,
   useState,
@@ -32,7 +31,6 @@ import {
   FONT_FAMILY_CHOICES,
   FONT_SIZE_CHOICES,
   NO_FILL,
-  focusPopupItem,
   guardToolbarMousedown,
   isHexColor,
   colorBarTone,
@@ -47,15 +45,20 @@ import {
   type ColorPick,
   numberFormatListView,
   parseFontSize,
-  placePopup,
   popupTriggerAction,
   type ChromeGroup,
   type ChromeSlotId,
   type EditorSnapshot,
 } from '@xlsx-editor.dev/core/editor';
 import { useEditorState, useTranslation } from '../context.ts';
-import { ChromeIcon, translateKey, useToolbarSlot, type ToolbarSlot } from './slot.tsx';
-import { useDropdownClose } from './useDropdownClose.ts';
+import {
+  ChromeIcon,
+  translateKey,
+  useRowsState,
+  useToolbarSlot,
+  type ToolbarSlot,
+} from './slot.tsx';
+import { popupTriggerKeys, usePopup, type Popup } from './popup.ts';
 import { useNumberFormatDialogOpener } from './NumberFormatDialog.tsx';
 import { ICON_CHECK, ICON_FIELD_CARET, ICON_MENU_CARET } from './icons.ts';
 import { renderAsChild } from './as-child.tsx';
@@ -168,78 +171,6 @@ export function ToolbarButton({
       {reason}
     </button>
   );
-}
-
-/** How a popup behaves. */
-export interface PopupOptions {
-  /** The popup renders in flow, inside the overflow panel: no placement. */
-  readonly inline?: boolean;
-  /** Close the popup: its slot is disabled. */
-  readonly closed?: boolean;
-  /** A popup can open inside this one (the overflow panel). */
-  readonly nested?: boolean;
-}
-
-/**
- * The state of one popup: open, its root, and how the keyboard moves focus in. `selector`
- * names the items that take focus: the selected item first, else the current item
- * (`aria-current`), else the first item.
- */
-export function usePopup(selector: string, options: PopupOptions = {}) {
-  const { inline = false, closed = false, nested = false } = options;
-  const [open, setOpen] = useState(false);
-  const root = useRef<HTMLDivElement>(null);
-  const focusOnOpen = useRef(false);
-  const id = useId();
-  useDropdownClose(open, setOpen, root, closed, nested);
-  // Placement: a popup that would run past the editor's right edge opens from its trigger's
-  // end, and is then held inside the editor's left edge. A popup that would run past the
-  // bottom of the window opens above its trigger when there is more room there (`placePopup`).
-  useLayoutEffect(() => {
-    if (open && root.current) placePopup(root.current, inline, selector);
-  }, [open, inline, selector]);
-  /**
-   * Focus the selected item, or else the current item (`aria-current`: an entry that names
-   * the value but is not picked), or the first.
-   */
-  const focusIn = () => focusPopupItem(root.current, selector);
-  useEffect(() => {
-    if (!open || !focusOnOpen.current) return;
-    focusOnOpen.current = false;
-    focusIn();
-  });
-  /** Open from the keyboard: focus the selected item, or the first. */
-  const openWithKeyboard = () => {
-    focusOnOpen.current = true;
-    setOpen(true);
-  };
-  return { open, setOpen, root, id, openWithKeyboard, focusIn };
-}
-
-/** The state of one popup, as `usePopup` returns it. */
-export type Popup = ReturnType<typeof usePopup>;
-
-/**
- * The keys of a popup trigger. Enter, Space, and Down open the popup with the keyboard in it.
- * On an open popup, Down moves the keyboard into it, and Enter or Space close it. A disabled
- * trigger opens nothing.
- */
-export function popupTriggerKeys(popup: Popup, enabled: boolean) {
-  return {
-    onKeyDown: (e: KeyboardEvent<HTMLElement>) => {
-      const action = popupTriggerAction(e.key, popup.open);
-      if (!action) return;
-      e.preventDefault();
-      if (!enabled) return;
-      if (action === 'open') popup.openWithKeyboard();
-      else if (action === 'focusIn') popup.focusIn();
-      else popup.setOpen(false);
-    },
-    // Space activates a button on key up in some browsers: the key down already acted.
-    onKeyUp: (e: KeyboardEvent<HTMLElement>) => {
-      if (e.key === ' ') e.preventDefault();
-    },
-  };
 }
 
 /** The trigger of a popup: a button that opens it with a press, Enter, Space, or Down. */
@@ -783,10 +714,10 @@ export function ColorPalette({
                 className="xlsx-toolbar-color-hex"
                 dir="ltr"
                 value={draft}
-                maxLength={6}
                 spellCheck={false}
                 autoComplete="off"
                 aria-label={t('colorPicker.hexColor')}
+                aria-invalid={draft !== '' && !custom}
                 onChange={(e) => setDraft(customHexDraft(e.target.value))}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && custom) {
@@ -852,8 +783,13 @@ function MenuItem({ slot, close }: { readonly slot: ChromeSlotId; readonly close
 /** A group that renders as one menu button (insert and delete, clear). */
 export function GroupMenu({ group }: { readonly group: ChromeGroup }) {
   const { t } = useTranslation();
-  const popup = usePopup('[role="menuitem"]');
+  const slots = group.controls.map((c) => `${group.id}.${c.id}` as ChromeSlotId);
+  // To open the menu is no command: it is disabled when every row is (`toolbarRowsState`).
+  const rows = useRowsState(slots);
+  const popup = usePopup('[role="menuitem"]', { closed: !rows.isEnabled });
+  const reasonId = useId();
   const name = translateKey(t, group.labelKey);
+  const reason = rows.disabledReason;
   return (
     <div ref={popup.root} className="xlsx-toolbar-dropdown">
       <button
@@ -864,13 +800,18 @@ export function GroupMenu({ group }: { readonly group: ChromeGroup }) {
         aria-expanded={popup.open}
         aria-controls={popup.open ? popup.id : undefined}
         aria-label={name}
-        title={name}
+        title={reason ? t('toolbar.disabledTitle', { label: name, reason }) : name}
+        {...(reason ? { 'aria-disabled': 'true' as const, 'data-disabled': '' } : {})}
+        {...(reason ? { 'aria-describedby': reasonId } : {})}
         onMouseDown={guardToolbarMousedown}
-        onClick={() => popup.setOpen(!popup.open)}
-        {...popupTriggerKeys(popup, true)}
+        onClick={() => {
+          if (rows.isEnabled) popup.setOpen(!popup.open);
+        }}
+        {...popupTriggerKeys(popup, rows.isEnabled)}
       >
         <ChromeIcon paths={group.menu?.paths ?? null} />
         <ChromeIcon paths={ICON_MENU_CARET} className="xlsx-toolbar-caret" />
+        <ReasonText id={reasonId} reason={reason} />
       </button>
       {popup.open ? (
         <div
@@ -881,12 +822,8 @@ export function GroupMenu({ group }: { readonly group: ChromeGroup }) {
           data-popup=""
           onKeyDown={(e) => movePopupFocus(e, '[role="menuitem"]')}
         >
-          {group.controls.map((c) => (
-            <MenuItem
-              key={c.id}
-              slot={`${group.id}.${c.id}` as ChromeSlotId}
-              close={() => popup.setOpen(false)}
-            />
+          {slots.map((slot) => (
+            <MenuItem key={slot} slot={slot} close={() => popup.setOpen(false)} />
           ))}
         </div>
       ) : null}

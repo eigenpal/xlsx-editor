@@ -395,11 +395,12 @@ Inside a toolbar, `file.save` hands the bytes to the toolbar's `onSave`, also in
 | Left arrow, Right arrow, Home, End | Move between the controls of the toolbar, your own controls too. The keys stop at the first and the last control. A key that your control handles and cancels does not move the focus. |
 | Enter, Space, or Down arrow on a list, a color caret, or a menu button | Open it, with the keyboard on the selected item or the first item |
 | Down arrow on an open list | Move the keyboard into it |
+| Arrow keys, Home, End, Enter, Space, or a character, while a list, a color picker, or a menu that a pointer press opened is open | Move the keyboard into it, also from the grid or an open cell edit, so the key never moves the active cell or types into it. A character goes to the typed size field of the font size list and to the hex field of the color picker. In another list or menu, it moves to the first item that starts with it |
 | Up arrow, Down arrow, Home, End | Move between the items of an open list or menu. In the color picker, Left arrow and Right arrow move by one swatch, Up arrow and Down arrow move by one row, and Up arrow from the first row reaches **Automatic** or **No fill**. |
 | Enter or Space on an item | Apply the item, and return the keyboard to the grid |
 | Escape | Close the list, and return the keyboard to its button |
 
-A disabled control keeps the keyboard: pressing it does nothing. A control of your own that cannot take the focus, such as a hidden input or a disabled control, is not a stop. If a control of your own moves the focus on when it gets the focus, for example to a field of its own or to a popup, the focus stays where the control moved it.
+A disabled control keeps the keyboard: pressing it does nothing. A menu button, such as **Insert and delete** or **Clear**, is disabled with the reason of its first item when every item of its menu is disabled. A control of your own that cannot take the focus, such as a hidden input or a disabled control, is not a stop. If a control of your own moves the focus on when it gets the focus, for example to a field of its own or to a popup, the focus stays where the control moved it.
 
 A field of your own in the toolbar keeps the keys that it needs:
 
@@ -422,6 +423,7 @@ To leave a field that keeps a key, press Tab.
 | Control or Command and Space | Select the whole columns of the selection |
 | Control or Command and an arrow key | Go to the edge of the data |
 | Tab, Enter, and Shift with them | Move right, down, left, or up |
+| Enter after one or more Tab or Shift+Tab moves | Move down to the column where the Tab moves started, also when each Tab committed an edit. Any other move ends the run |
 | Tab, Enter, and Shift with them, in a selection of more than one cell (a merged cell is one cell) | Move the active cell inside the selection, wrap at its edges, and keep the selection |
 | Shift+Tab in column A, or Tab in the last column | Move the focus out of the grid, to the previous or next control |
 | Escape, then Tab or Shift+Tab | Move the focus out of the grid from any cell, to the next or previous control. If Escape ends a pending copy or cut or cancels a cell edit, press Escape again. Any other key except a modifier key alone, a press anywhere on the page, or a focus change cancels the exit |

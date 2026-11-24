@@ -156,6 +156,7 @@ export {
   disabledReasonText,
   toolbarCommandState,
   toolbarCommandStates,
+  toolbarRowsState,
   type ChromeDisabledReason,
   type ChromeHint,
   type DisabledReasonKey,
@@ -209,12 +210,31 @@ export {
   type PopupEscapeOptions,
   type PopupFocusLeaveOptions,
 } from './popup-escape.ts';
+export {
+  MENU_PANEL_ROWS,
+  enterMenuPanel,
+  enterToolbarPopup,
+  focusMenuPanelEdge,
+  followPressedTrigger,
+  itemStartingWith,
+  menuPanelOf,
+  menuPanelRows,
+  menuRowLabels,
+  listenForPointerPopupKeys,
+  listenForToolbarPopupKeys,
+  popupEntryOf,
+  type PointerPopupKeysOptions,
+  type PopupEntry,
+  type PopupEntryKey,
+  type PopupEntryResult,
+} from './popup-keys.ts';
 export { ICON_PATHS as CHROME_ICON_PATHS } from './icon-paths.ts';
 export { relabelEditor } from './cell-editing.ts';
 export { scrollIntoNearestScroller } from './scroll-nearest.ts';
 // Adapter support: the framework-neutral parts of the React and Vue chrome. Not a stable API.
 export {
   editorCommandSlice,
+  editorRowsSlice,
   formulaSlice,
   gridSetupProblem,
   packageFailureText,
@@ -364,6 +384,7 @@ export {
   menuPartName,
   measureMenuBar,
   menuStep,
+  submenuRowSlots,
   menusThatFit,
   observeMenuBar,
   menuTypeahead,

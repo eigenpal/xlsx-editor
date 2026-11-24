@@ -327,6 +327,26 @@ describe('the cell editor', () => {
     expect(viewer.snapshot().activeCell?.ref).toBe('C1');
   });
 
+  test('Enter after typed Tab moves goes down to the column where the Tab run started', async () => {
+    const { viewer, scroller, input } = await mount(sheet());
+    viewer.select({ row: 24, col: 4 });
+    for (const text of ['a', 'b']) {
+      key(scroller, text);
+      key(input, 'Tab');
+    }
+    key(scroller, 'c');
+    key(input, 'Enter');
+    expect(viewer.snapshot().activeCell?.ref).toBe('E26');
+    // An arrow commit ends the run: Enter then moves straight down.
+    key(scroller, 'd');
+    key(input, 'Tab');
+    key(scroller, 'e');
+    key(input, 'ArrowRight');
+    key(scroller, 'f');
+    key(input, 'Enter');
+    expect(viewer.snapshot().activeCell?.ref).toBe('G27');
+  });
+
   test('Enter and Tab after an edit move inside a multi-cell selection and keep it', async () => {
     const { viewer, scroller, input } = await mount(sheet());
     viewer.select({ row: 0, col: 0 }, { row: 1, col: 1 });

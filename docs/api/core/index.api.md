@@ -304,12 +304,12 @@ export const CHROME_GROUPS: readonly [{
     }, {
         readonly id: 'deleteRows';
         readonly labelKey: 'cells.deleteRows';
-        readonly paths: null;
+        readonly paths: readonly string[];
         readonly kind: 'command';
     }, {
         readonly id: 'deleteColumns';
         readonly labelKey: 'cells.deleteColumns';
-        readonly paths: null;
+        readonly paths: readonly string[];
         readonly kind: 'command';
     }];
 }, {
@@ -321,7 +321,7 @@ export const CHROME_GROUPS: readonly [{
     readonly controls: readonly [{
         readonly id: 'contents';
         readonly labelKey: 'clear.contents';
-        readonly paths: null;
+        readonly paths: readonly string[];
         readonly kind: 'command';
     }, {
         readonly id: 'formats';
@@ -331,7 +331,7 @@ export const CHROME_GROUPS: readonly [{
     }, {
         readonly id: 'all';
         readonly labelKey: 'clear.all';
-        readonly paths: null;
+        readonly paths: readonly string[];
         readonly kind: 'command';
     }];
 }, {
@@ -448,6 +448,9 @@ export const CHROME_ICON_PATHS: {
     readonly add_row_above: readonly ["M200-160h560v-240H200v240Zm640 80H120v-720h160v80h-80v240h560v-240h-80v-80h160v720ZM480-480Zm0 80v-80 80Zm0 0Zm-40-240v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"];
     readonly add_column_left: readonly ["M800-200v-560H560v560h240Zm-640 80v-160h80v80h240v-560H240v80h-80v-160h720v720H160Zm320-360Zm80 0h-80 80Zm0 0ZM160-360v-80H80v-80h80v-80h80v80h80v80h-80v80h-80Z"];
     readonly delete_sweep: readonly ["M600-240v-80h160v80H600Zm0-320v-80h280v80H600Zm0 160v-80h240v80H600ZM120-640H80v-80h160v-60h160v60h160v80h-40v360q0 33-23.5 56.5T440-200H200q-33 0-56.5-23.5T120-280v-360Zm80 0v360h240v-360H200Zm0 0v360-360Z"];
+    readonly delete: readonly ["M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"];
+    readonly backspace: readonly ["M360-200q-20 0-37.5-9T294-234L120-480l174-246q11-16 28.5-25t37.5-9h400q33 0 56.5 23.5T840-680v400q0 33-23.5 56.5T760-200H360Zm400-80v-400 400Zm-400 0h400v-400H360L218-480l142 200Zm96-40 104-104 104 104 56-56-104-104 104-104-56-56-104 104-104-104-56 56 104 104-104 104 56 56Z"];
+    readonly ink_eraser: readonly ["M690-240h190v80H610l80-80Zm-500 80-85-85q-23-23-23.5-57t22.5-58l440-456q23-24 56.5-24t56.5 23l199 199q23 23 23 57t-23 57L520-160H190Zm296-80 314-322-198-198-442 456 64 64h262Zm-6-240Z"];
     readonly format_clear: readonly ["m528-546-93-93-121-121h486v120H568l-40 94ZM792-56 460-388l-80 188H249l119-280L56-792l56-56 736 736-56 56Z"];
     readonly file_download: readonly ["M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"];
     readonly '123': readonly ["M220-360v-180h-60v-60h120v240h-60Zm140 0v-100q0-17 11.5-28.5T400-500h80v-40H360v-60h140q17 0 28.5 11.5T540-560v60q0 17-11.5 28.5T500-460h-80v40h120v60H360Zm240 0v-60h120v-40h-80v-40h80v-40H600v-60h140q17 0 28.5 11.5T780-560v160q0 17-11.5 28.5T740-360H600Z"];
@@ -858,6 +861,12 @@ export function editorInstanceScope(from: Element | null): Element | null;
 // @public
 export type EditorMode = 'edit' | 'view';
 
+// @internal
+export function editorRowsSlice(snapshot: EditorSnapshot, slots: readonly ChromeSlotId[], host: ToolbarHost, t: EditorTranslate): {
+    readonly enabled: boolean;
+    readonly disabledReason: string | null;
+};
+
 // @public
 export interface EditorSheet {
     readonly index: number;
@@ -967,6 +976,15 @@ export const EMPTY_SNAPSHOT: EditorSnapshot;
 export function emptySnapshotOf(mode: EditorMode): EditorSnapshot;
 
 // @internal
+export function enterMenuPanel(entry: PopupEntry, panel: HTMLElement, options: {
+    readonly rtl: boolean;
+    readonly step: (by: -1 | 1) => void;
+}): PopupEntryResult;
+
+// @internal
+export function enterToolbarPopup(entry: PopupEntry, items: readonly HTMLElement[], field: HTMLElement | null, focusIn: () => void): PopupEntryResult;
+
+// @internal
 export interface FieldBoxPress {
     // (undocumented)
     readonly button: number;
@@ -1000,6 +1018,9 @@ export function focusAfterRelease(from: Node, focus: () => void): void;
 export function focusColorSwatch(grid: HTMLElement | null): void;
 
 // @internal
+export function focusMenuPanelEdge(panel: HTMLElement | null, edge: 'first' | 'last'): void;
+
+// @internal
 export interface FocusMoveKey {
     // (undocumented)
     readonly currentTarget: EventTarget | null;
@@ -1017,6 +1038,9 @@ export function focusPopupItem(root: HTMLElement | null, selector: string): void
 
 // @internal
 export function followModeProp(editor: Pick<XlsxEditorInstance, 'subscribe' | 'snapshot' | 'setMode'>, onWaits: (waits: boolean) => void): ModeProp;
+
+// @internal
+export function followPressedTrigger(trigger: HTMLElement): void;
 
 // @public
 export const FONT_FAMILY_CHOICES: readonly string[];
@@ -1225,16 +1249,25 @@ export function isRightToLeft(el: Element): boolean;
 export function isToolbarButtonSlot(slot: string): boolean;
 
 // @internal
+export function itemStartingWith(labels: readonly string[], char: string): number;
+
+// @internal
 export function keepGridFocus(e: Pick<ChromePress, 'target' | 'preventDefault'>): void;
 
 // @internal
 export function listenForOutsidePress(options: OutsidePressOptions): () => void;
 
 // @internal
+export function listenForPointerPopupKeys(options: PointerPopupKeysOptions): () => void;
+
+// @internal
 export function listenForPopupEscape(options: PopupEscapeOptions): () => void;
 
 // @internal
 export function listenForPopupFocusLeave(options: PopupFocusLeaveOptions): () => void;
+
+// @internal
+export function listenForToolbarPopupKeys(root: HTMLElement, selector: string, focusIn: () => void, nested?: boolean): () => void;
 
 // @internal
 export function listenSaveKey(el: HTMLElement, save: () => void): () => void;
@@ -1348,6 +1381,9 @@ export const MENU_NAMED_PARTS: {
 export const MENU_PANEL_MARGIN = 8;
 
 // @internal
+export const MENU_PANEL_ROWS: string;
+
+// @internal
 export function menuBarArrow(key: string, rtl: boolean): -1 | 0 | 1;
 
 // @internal
@@ -1455,6 +1491,9 @@ export function menuPanelKey(e: {
 }): MenuPanelKey;
 
 // @internal
+export function menuPanelOf(trigger: HTMLElement | null): HTMLElement | null;
+
+// @internal
 export interface MenuPanelPlacement {
     // (undocumented)
     readonly left: number;
@@ -1478,6 +1517,9 @@ export function menuPanelPlacement(input: {
 }): MenuPanelPlacement;
 
 // @internal
+export function menuPanelRows(panel: HTMLElement): HTMLElement[];
+
+// @internal
 export function menuPartName(id: string): string;
 
 // @internal
@@ -1491,6 +1533,9 @@ export function menuRowInBarProblem(slotId: string, names: MenuPartNames): strin
 
 // @internal
 export function menuRowKeepsFocus(slot: ChromeSlotId): boolean;
+
+// @internal
+export function menuRowLabels(rows: readonly HTMLElement[]): string[];
 
 // @public
 export type MenuRowPartName = keyof typeof MENU_NAMED_PARTS;
@@ -1756,8 +1801,49 @@ export function placeMenuPanel(panel: HTMLElement, options: {
 // @internal
 export function placePopup(root: HTMLElement, inline: boolean, selector: string): void;
 
+// @internal
+export interface PointerPopupKeysOptions {
+    readonly chromeRoot?: () => Element | null | undefined;
+    readonly contains: (node: Node) => boolean;
+    readonly enter: (entry: PopupEntry, event: KeyboardEvent) => PopupEntryResult;
+    readonly popup: HTMLElement;
+}
+
 // @public
 export const pointsToPixels: (points: number) => number;
+
+// @internal
+export type PopupEntry = {
+    readonly kind: 'first';
+    readonly key: string;
+} | {
+    readonly kind: 'last';
+    readonly key: string;
+} | {
+    readonly kind: 'side';
+    readonly key: 'ArrowLeft' | 'ArrowRight';
+} | {
+    readonly kind: 'char';
+    readonly key: string;
+};
+
+// @internal
+export interface PopupEntryKey {
+    // (undocumented)
+    readonly altKey: boolean;
+    // (undocumented)
+    readonly ctrlKey: boolean;
+    // (undocumented)
+    readonly key: string;
+    // (undocumented)
+    readonly metaKey: boolean;
+}
+
+// @internal
+export function popupEntryOf(e: PopupEntryKey): PopupEntry | null;
+
+// @internal
+export type PopupEntryResult = 'done' | 'type' | null;
 
 // @internal
 export interface PopupEscapeOptions {
@@ -2042,6 +2128,12 @@ export type StructureSubjectKind = (typeof STRUCTURE_SUBJECT_KINDS)[number];
 export function subjectText(about: RefusalSubject, t: EditorTranslate): string;
 
 // @internal
+export function submenuRowSlots<T>(rows: readonly T[], slotRow: (row: T) => {
+    readonly slotId: string;
+    readonly hidden?: boolean;
+} | null, isSeparator: (row: T) => boolean): ChromeSlotId[];
+
+// @internal
 export function subscribeSystemDark(listener: () => void): () => void;
 
 // @public
@@ -2234,6 +2326,12 @@ export interface ToolbarPartNames {
     // (undocumented)
     readonly slot: string;
 }
+
+// @internal
+export function toolbarRowsState(snapshot: EditorSnapshot, ids: readonly ChromeSlotId[], host?: ToolbarHost): {
+    readonly enabled: boolean;
+    readonly disabledReason: ChromeDisabledReason | null;
+};
 
 // @internal
 export function toolbarSlotAdvice(id: string, group?: string): string;

@@ -658,6 +658,8 @@ describe(':preset="false"', () => {
       'cells.deleteRows',
     ]);
     expect(slot(bar, 'font.bold')!.classList.contains('host-bold')).toBe(true);
-    expect(slot(bar, 'cells.deleteRows')!.textContent).toBe('Delete rows');
+    // A slot with a registry icon shows the icon, and its label is the accessible name.
+    expect(slot(bar, 'cells.deleteRows')!.querySelector('svg')).not.toBeNull();
+    expect(slot(bar, 'cells.deleteRows')!.getAttribute('aria-label')).toBe('Delete rows');
   });
 });

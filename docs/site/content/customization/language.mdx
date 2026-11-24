@@ -1,16 +1,14 @@
 ---
 title: 'Language'
-description: 'Translate the interface of the XLSX editor with a partial catalog, and read the translator in your own controls.'
+description: 'Translate the XLSX editor interface, override labels in one region or one part, mirror the chrome for a right-to-left language, and translate your own controls.'
 category: 'Customization'
 ---
 
-The `locale` prop sets the strings of the chrome: the labels, the tooltips, the messages, and the accessible names that a screen reader hears. `@xlsx-editor.dev/i18n` ships only the English catalog. A catalog that you pass can be partial: a missing or `null` entry falls back to English.
-
-`locale` changes only the interface strings. The separators and format codes of the shown values come from `numberLocale`, as [Number locale](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#number-locale) describes. The cells show the text of the workbook.
+The `locale` prop of the root sets the strings of the chrome: the labels, the tooltips, the messages, and the accessible names that a screen reader hears. Wrap a region in `LocaleProvider`, or pass `t` to one part, to override its labels. Interface language never translates the text of the cells.
 
 ## Pass a catalog
 
-The following editor shows German labels for two controls, and English for the rest. `_lang` is the BCP 47 tag of the catalog, which the plural rules of the messages use.
+This editor shows German labels for two controls and English for the rest. `@xlsx-editor.dev/i18n` ships only the English catalog. A catalog that you pass can be partial: a missing or `null` entry falls back to the catalog above it, which is an outer `LocaleProvider` or English. `_lang` is the BCP 47 tag of the catalog, which the plural rules of the messages use.
 
 <FrameworkTabs>
 <Framework value="react">
@@ -24,9 +22,7 @@ const german: Translations = {
 };
 
 export function Workbook({ bytes }: { bytes: Uint8Array }) {
-  return (
-    <XlsxEditor document={bytes} locale={german} style={{ height: 600 }} />
-  );
+  return <XlsxEditor document={bytes} locale={german} style={{ height: 600 }} />;
 }
 ```
 
@@ -53,11 +49,177 @@ const german: Translations = {
 </Framework>
 </FrameworkTabs>
 
-`Translations` follows the shape of the English catalog, `packages/i18n/en.json`, so TypeScript checks each key.
+`Translations` follows the shape of the English catalog, `packages/i18n/en.json`, so TypeScript checks each key. A change of `locale` relabels the editor and keeps the open workbook, the selection, and the undo history.
+
+## Override labels in one region
+
+This nested provider changes two toolbar labels. The other parts and the other labels inherit the root's `locale`.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+import { LocaleProvider, XlsxEditor, type Translations } from '@xlsx-editor.dev/react';
+
+const labels: Translations = {
+  formattingBar: { bold: 'Bold text', italic: 'Italic text' },
+};
+
+export function ReportToolbar() {
+  return (
+    <LocaleProvider i18n={labels}>
+      <XlsxEditor.Toolbar preset={false}>
+        <XlsxEditor.Toolbar.Bold />
+        <XlsxEditor.Toolbar.Italic />
+      </XlsxEditor.Toolbar>
+    </LocaleProvider>
+  );
+}
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<script setup lang="ts">
+import { LocaleProvider, XlsxEditorToolbar, type Translations } from '@xlsx-editor.dev/vue';
+
+const labels: Translations = {
+  formattingBar: { bold: 'Bold text', italic: 'Italic text' },
+};
+</script>
+
+<template>
+  <LocaleProvider :i18n="labels">
+    <XlsxEditorToolbar :preset="false">
+      <XlsxEditorToolbar.Bold />
+      <XlsxEditorToolbar.Italic />
+    </XlsxEditorToolbar>
+  </LocaleProvider>
+</template>
+```
+
+</Framework>
+</FrameworkTabs>
+
+Put `LocaleProvider` inside `XlsxEditor.Root` (`XlsxEditorRoot` in Vue) for a region of the editor. Put it around the root to set the catalog of your whole app: the root's `locale` then merges onto it, and your own controls outside the root read it with `useTranslation()`.
+
+## Override labels in one part
+
+The toolbar, the formula bar, the sheet tabs, the zoom control, and the status message each take a `t` prop. `t` receives a catalog key and the values of its placeholders, and returns the text. The toolbar's `t` also reaches its parts, its **More** panel, and its number format dialog.
+
+`useChromeTranslate(overrides)` builds a `t` from the nearest catalog, with your overrides first. It returns a `ChromeTranslate`, which always returns a string, so you can also call it for the labels of your own controls. An override is a message, as in the catalog: the part fills its `{name}` placeholders and picks its `{count, plural, ...}` branch.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+import { XlsxEditor, useChromeDir, useChromeTranslate } from '@xlsx-editor.dev/react';
+
+// Module level, so the map keeps its identity across renders.
+const ZOOM_LABELS = new Map([
+  ['zoom.zoomIn', 'Larger'],
+  ['zoom.resetAt', 'Zoom {level}. Press to show 100%.'],
+]);
+
+export function Footer() {
+  const t = useChromeTranslate(ZOOM_LABELS);
+  // Your own footer follows the chrome direction, as the packaged footer does.
+  return (
+    <div className="xlsx-footer" dir={useChromeDir()}>
+      <XlsxEditor.SheetTabs />
+      <XlsxEditor.ZoomControl t={t} />
+    </div>
+  );
+}
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<script setup lang="ts">
+import { SheetTabs, ZoomControl, useChromeDir, useChromeTranslate } from '@xlsx-editor.dev/vue';
+
+const t = useChromeTranslate(
+  new Map([
+    ['zoom.zoomIn', 'Larger'],
+    ['zoom.resetAt', 'Zoom {level}. Press to show 100%.'],
+  ])
+);
+// Your own footer follows the chrome direction, as the packaged footer does.
+const dir = useChromeDir();
+</script>
+
+<template>
+  <div class="xlsx-footer" :dir="dir">
+    <SheetTabs />
+    <ZoomControl :t="t" />
+  </div>
+</template>
+```
+
+</Framework>
+</FrameworkTabs>
+
+You can also pass a function of your own. The `t` prop has the type `ChromePartTranslate`, which can return `undefined`. A key that the function leaves unresolved, by a result that is not a string, reads the inherited catalog, so a raw key never shows.
+
+## Choose the language setting
+
+| Setting | Scope |
+| --- | --- |
+| Root `locale` | Catalog of the editor. It merges onto an outer `LocaleProvider`, else onto English. |
+| `LocaleProvider` `i18n` | Catalog of a region, or of your whole app around the root. |
+| `LocaleProvider` `dir` | Writing direction of the chrome in a region. |
+| `t` on a part | Label resolver of the toolbar, the formula bar, the sheet tabs, the zoom control, or the status message. |
+| Root `numberLocale` | Separators and built-in format codes of the shown values. See [Number locale](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#number-locale). |
+
+## Mirror the chrome for a right-to-left language
+
+A catalog with `_dir: 'rtl'`, or with a right-to-left `_lang` such as `ar` or `he`, mirrors the chrome: the toolbar, the formula bar, the sheet tabs, the zoom control, the status message, the number format dialog, and the footer of the packaged editor. Each part sets `dir` on its own element, so the grid keeps its layout. The arrow keys follow the reading direction: in a right-to-left bar, the Left Arrow key moves to the next control, swatch, or tab. The sheet tab menu opens from the right edge, and its **Move left** and **Move right** items name the side that the sheet moves to. The undo and redo icons mirror.
+
+The grid keeps a left-to-right layout, also on a right-to-left host page. The cell editor in the grid and the cell reference and cell content fields of the formula bar set their direction from the first strong character of their text (`dir="auto"`). A text, a formula, or a reference whose first letter is of a right-to-left script reads right to left. One whose first letter is of another script reads left to right.
+
+`LocaleProvider` takes `dir` to decide the direction of a region. `'ltr'` keeps a left-to-right chrome on a right-to-left host page. Without a decided direction, the chrome inherits the direction of the host page. `useChromeDir()` returns the decided direction, or `undefined`, for your own controls:
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+import { useChromeDir } from '@xlsx-editor.dev/react';
+
+export function HostBar({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="host-bar" dir={useChromeDir()}>
+      {children}
+    </div>
+  );
+}
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<script setup lang="ts">
+import { useChromeDir } from '@xlsx-editor.dev/vue';
+
+const dir = useChromeDir();
+</script>
+
+<template>
+  <div class="host-bar" :dir="dir">
+    <slot />
+  </div>
+</template>
+```
+
+</Framework>
+</FrameworkTabs>
 
 ## Translate your own controls
 
-Inside the root, `useTranslation()` gives `t`, the translator of the root's `locale`. To put a control inside the root, see [Build your own layout](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/README.md#build-your-own-layout). Use it for the labels of controls that you add, so they follow the same catalog. `t` takes a catalog key and the values of its placeholders:
+Inside the root, `useTranslation()` gives `t`, the translator of the nearest catalog, with `catalogue`, the merged catalog, `lang`, its BCP 47 tag, and `dir`, the direction of its strings, as in DOCX Editor. Use it for the labels of controls that you add, so they follow the same catalog. `t` takes a catalog key and the values of its placeholders:
 
 <FrameworkTabs>
 <Framework value="react">
@@ -90,14 +252,28 @@ const { t } = useTranslation();
 </Framework>
 </FrameworkTabs>
 
+To build a translator outside the editor, use `createT` and `formatMessage` of [@xlsx-editor.dev/i18n](/docs/i18n).
+
 ## Limits
 
+- Missing and `null` values inherit from the outer provider. The top-level fallback is English.
 - Keep the nested key structure and the placeholder names of the English catalog in a partial catalog. Set `_lang` for the plural rules of the language.
-- `t` returns the key itself for a key that the catalog does not hold.
-- A `locale` change relabels the editor and keeps the open workbook.
+- `t` returns the key itself for a key that no catalog holds.
+- Keep a part's `t` and the overrides map of `useChromeTranslate` stable: a new function renders the part again, and a new toolbar `t` measures the bar again.
+- A `LocaleProvider` with `i18n` inside a part with `t` starts from the catalog, not from that `t`.
 - `locale` does not change the number formats or the text of the cells.
+- The live region of the editor reads the root `locale`. A screen reader announces a refused edit, a copy, and a sheet command in that text, also where a part's `t` relabels the shown text. To change both, put the override in the root `locale`.
+- The grid paints a text in a right-to-left script with the alignment and the order of a left-to-right text, so the text can move when the cell editor opens or closes.
 
-## Next steps
+## Differences from DOCX Editor
 
-- [@xlsx-editor.dev/i18n](/docs/i18n): build a translator outside the editor, and add a locale to the package.
-- [Customization](/docs/customization): the toolbar, the color mode, the fonts, and the number locale.
+- The root's catalog prop is `locale`, and DOCX Editor's is `i18n`. `LocaleProvider` keeps the DOCX Editor name, `i18n`.
+- The `t` prop of each part takes the values of the placeholders, because the messages here take values. DOCX Editor's toolbar `t` takes only the key.
+- The `t` prop has its own type, `ChromePartTranslate`, which can return `undefined` for a key that the part reads from its inherited catalog. DOCX Editor's parts take `ChromeTranslate`, which `useChromeTranslate` returns here too.
+- An override of `useChromeTranslate` is a message with placeholders and plural branches. In DOCX Editor, it is a fixed string.
+
+## See also
+
+- [@xlsx-editor.dev/i18n](/docs/i18n): build a translator outside the editor, and the direction helpers.
+- [Toolbar](/docs/customization/toolbar)
+- [Hooks](/docs/react/hooks) and [Composables](/docs/vue/composables)

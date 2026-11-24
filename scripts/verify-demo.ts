@@ -50,6 +50,10 @@
 // - On a page of its own, in hosts that size the editor by its content, the editor width stays
 //   within the window, and the status strip keeps its width and its text in a host flex row
 //   (`verify-demo-content-sized.ts`).
+// - On a page of its own with `dir="rtl"` on the root element, a horizontal wheel scrolls the
+//   grid and the headings follow, and a jump to AZ1 from the name box shows AZ. With a
+//   right-to-left catalog (`?lang=ar`), the number format list and the tab menu open at the
+//   right edge of their trigger (`verify-demo-rtl.ts`).
 // - On a new page with no file save picker, the header's Save downloads one file whose bytes
 //   hold the edit and every sheet. A phone-wide bar shows Save and names each control, the page
 //   does not scroll sideways, and the text of a notice and of an error starts at the padding of
@@ -103,6 +107,7 @@ import { checkPaint, verifyClipboard, verifyFocusCopy } from './verify-demo-engi
 import { verifyClipboardMark } from './verify-demo-clipboard-mark.ts';
 import { verifyContentSizedHosts } from './verify-demo-content-sized.ts';
 import { verifyEmbedding } from './verify-demo-embedding.ts';
+import { verifyRightToLeftHost } from './verify-demo-rtl.ts';
 import { verifyEditableHost } from './verify-demo-host.ts';
 import {
   alertNote,
@@ -366,6 +371,9 @@ async function runEngine(engine: Engine, url: string): Promise<EngineResult> {
       await step('embedding', () => verifyEmbedding(browser, url, watch, adopt, SAMPLE_SHEET));
       await step('content-sized host', () =>
         verifyContentSizedHosts(browser, url, watch, adopt, SAMPLE_SHEET)
+      );
+      await step('right-to-left host', () =>
+        verifyRightToLeftHost(browser, url, watch, adopt, SAMPLE_SHEET)
       );
       await step('save with no picker', () =>
         verifyDownloadSave(browser, url, watch, adopt, {

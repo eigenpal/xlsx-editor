@@ -30,6 +30,7 @@ import {
 import type { readXlsx } from '@xlsx-editor.dev/core/store';
 import { AdapterSwitcher, SHOW_ADAPTER_SWITCHER } from './AdapterSwitcher.tsx';
 import { BrandLogo } from './BrandLogo.tsx';
+import { chromeLocale } from './chrome-locale.ts';
 import { useBusyStatus } from './busy-status.ts';
 import { FONTS_FAILED, FONTS_NEXT_STEP, fontsMissingNotice } from './font-messages.ts';
 import { Icon } from './icons.tsx';
@@ -153,6 +154,8 @@ export function App() {
   // The shell's light or dark theme, as in the family demos: `?theme=`, else the theme picked
   // before, else light. A pick is kept for the next visit.
   const [theme, setThemeState] = useState<Theme>(() => initialTheme(window.location.search));
+  // The chrome catalog from `?lang=`, such as `?lang=ar` for a right-to-left chrome. Read once.
+  const [locale] = useState(() => chromeLocale(window.location.search));
   const setTheme = (next: Theme) => {
     setThemeState(next);
     rememberTheme(next);
@@ -788,6 +791,7 @@ export function App() {
       mode={viewOnly ? 'view' : 'edit'}
       colorMode={theme}
       onChange={onChange}
+      {...(locale ? { locale } : {})}
     >
       {/* The page has its own landmarks, such as the top bar's banner, so the viewport renders
           no region of its own. */}

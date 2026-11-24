@@ -153,13 +153,18 @@
   "@xlsx-editor.dev/vue": {
     "index": [
       "XlsxEditor",
+      "formulaBarProps",
+      "localeProviderProps",
+      "sheetTabsProps",
+      "statusMessageProps",
       "xlsxEditorContentProps",
       "xlsxEditorProps",
       "xlsxEditorRootProps",
       "xlsxEditorToolbarGroupProps",
       "xlsxEditorToolbarProps",
       "xlsxEditorToolbarSlotProps",
-      "xlsxEditorViewportProps"
+      "xlsxEditorViewportProps",
+      "zoomControlProps"
     ]
   },
   "@xlsx-editor.dev/editor-api": {

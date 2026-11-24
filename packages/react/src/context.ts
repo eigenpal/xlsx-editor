@@ -40,14 +40,54 @@ export function translatorFor(locale: Translations | undefined): TFunction {
 /** The translator published by `XlsxEditor.Root` (English by default). @public */
 export const TranslationContext = createContext<TFunction>(translatorFor(undefined));
 
+/** The catalog of one provider, merged onto the one above it. Internal. */
+export interface CatalogScope {
+  readonly strings: LocaleStrings;
+  /** The BCP 47 tag of the plural rules. */
+  readonly lang: string;
+  /** The direction of the strings: the decided chrome direction, else the catalog's. */
+  readonly dir: 'ltr' | 'rtl';
+  /** The direction a provider decided for the chrome; `undefined` keeps the host page's. */
+  readonly chromeDir: 'ltr' | 'rtl' | undefined;
+  /** The translator of `strings`. */
+  readonly t: TFunction;
+}
+
+const ENGLISH: CatalogScope = {
+  strings: en,
+  lang: 'en',
+  dir: 'ltr',
+  chromeDir: undefined,
+  t: translatorFor(undefined),
+};
+
+/** The catalog of the nearest provider: `XlsxEditor.Root` or `LocaleProvider`. Internal. */
+export const CatalogContext = createContext(ENGLISH);
+
 /** The editor, or null before it mounts. @public */
 export function useXlsxEditor(): XlsxEditorInstance | null {
   return useContext(XlsxEditorContext);
 }
 
-/** The translator of the enclosing root. @public */
-export function useTranslation(): { readonly t: TFunction } {
-  return { t: useContext(TranslationContext) };
+/**
+ * The translator of the nearest provider, as DOCX Editor's `useTranslation`: `t` (the nearest
+ * part's `t` first, else the nearest catalog), the merged `catalogue` of the nearest provider
+ * (`XlsxEditor.Root` or `LocaleProvider`), its BCP 47 tag `lang` (`_lang`, `en` by default), and
+ * `dir`, the direction of the strings. `dir` is `'ltr'` when the chrome inherits a right-to-left
+ * host page; `useChromeDir()` returns `undefined` then. @public
+ */
+export function useTranslation(): {
+  readonly t: TFunction;
+  readonly catalogue: LocaleStrings;
+  readonly lang: string;
+  readonly dir: 'ltr' | 'rtl';
+} {
+  const t = useContext(TranslationContext);
+  const scope = useContext(CatalogContext);
+  return useMemo(
+    () => ({ t, catalogue: scope.strings, lang: scope.lang, dir: scope.dir }),
+    [t, scope]
+  );
 }
 
 /**

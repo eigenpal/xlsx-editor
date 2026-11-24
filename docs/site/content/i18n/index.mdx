@@ -35,6 +35,14 @@ t('zoom.zoomOut'); // "Zoom out": the German catalog has no entry
 t('zoom.resetAt', { level: '150%' });
 ```
 
+`formatMessage` formats one message that is not in a catalog, with the same rules:
+
+```ts
+import { formatMessage } from '@xlsx-editor.dev/i18n';
+
+formatMessage('{count, plural, one {# sheet} other {# sheets}}', { count: 2 }); // "2 sheets"
+```
+
 `@xlsx-editor.dev/i18n/en` is the English catalog as its own entry. For a translator inside the editor, use `useTranslation()`, as [Language](/docs/customization/language#translate-your-own-controls) shows.
 
 ## Exports
@@ -45,13 +53,17 @@ t('zoom.resetAt', { level: '150%' });
 | `locales` | Each catalog that the package ships, by its code |
 | `LocaleCode` | The code of each catalog that the package ships |
 | `Translations` | A partial catalog, the type of the `locale` prop. An alias of `PartialLocaleStrings` |
-| `PartialLocaleStrings` | A partial catalog with its optional `_lang` tag |
+| `PartialLocaleStrings` | A partial catalog with its optional `_lang` tag and `_dir` direction |
 | `DeepPartial` | Makes each nested key of a type optional |
 | `LocaleStrings` | The shape of a full catalog |
 | `TranslationKey` | Each key of the catalog in dot notation, such as `'zoom.zoomIn'` |
 | `TFunction` | A translator: a key and the values of its placeholders give a string |
 | `createT` | Builds a translator from a full catalog and a language tag |
 | `deepMerge` | Fills a partial catalog with the entries of a full catalog |
+| `formatMessage` | Fills the placeholders and the plural branches of one message, as `t()` does |
+| `localeDirection` | The writing direction of a BCP 47 tag, `'ltr'` or `'rtl'` |
+| `catalogDirection` | The writing direction of a catalog: its `_dir`, else the direction of its `_lang` |
+| `chromeDirection` | The direction that a provider decides for the chrome, as the adapters decide it |
 
 Each refusal message of the editor is one key that holds the whole message. The editor fills in its placeholders, and never joins keys or cuts translated text, so translate each message as one unit.
 

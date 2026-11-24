@@ -3,9 +3,10 @@
 // `FormulaBar.tsx`). Each part reads its slice of the editor snapshot
 // (`useEditorState`), so it renders only when that slice changes, and calls the editor; none
 // holds state of its own. Chrome `mousedown` keeps the keyboard on the grid
-// (AGENTS.md "Conventions", focus stealing).
+// (AGENTS.md "Conventions", focus stealing). Each part takes DOCX Editor's `t` prop and sets the
+// chrome direction on its element (`locale.tsx`).
 
-import { useContext } from 'react';
+import { useContext, type ReactElement } from 'react';
 import {
   MAX_ZOOM,
   MIN_ZOOM,
@@ -14,6 +15,7 @@ import {
   statusSlice,
   statusView,
   zoomSlice,
+  type ChromePartTranslate,
 } from '@xlsx-editor.dev/core/editor';
 import {
   ModeWaitsContext,
@@ -23,10 +25,31 @@ import {
   useXlsxEditor,
 } from './context.ts';
 import { ZoomInIcon, ZoomOutIcon } from './icons.tsx';
+import { useChromeDir, withChromeTranslate } from './locale.tsx';
 
-/** Zoom out, the zoom level (press to reset to 100%), and zoom in. @public */
-export function ZoomControl() {
+/** Props for `XlsxEditor.ZoomControl`. @public */
+export interface ZoomControlProps {
+  /**
+   * The label resolver of the control: a key and the values of its placeholders, as DOCX
+   * Editor's `t` prop. A key that it leaves unresolved reads the root's `locale`. Keep it stable,
+   * for example from `useChromeTranslate(overrides)`.
+   */
+  readonly t?: ChromePartTranslate;
+}
+
+/** Props for `XlsxEditor.StatusMessage`. @public */
+export interface StatusMessageProps {
+  /**
+   * The label resolver of the messages: a key and the values of its placeholders, as DOCX
+   * Editor's `t` prop. A key that it leaves unresolved reads the root's `locale`. Keep it stable,
+   * for example from `useChromeTranslate(overrides)`.
+   */
+  readonly t?: ChromePartTranslate;
+}
+
+function ZoomControlPart() {
   const { t } = useTranslation();
+  const dir = useChromeDir();
   const editor = useXlsxEditor();
   const snap = useEditorState(zoomSlice, sameSlice);
   if (snap.status !== 'ready') return null;
@@ -38,6 +61,7 @@ export function ZoomControl() {
   return (
     <div
       className="xlsx-zoom"
+      dir={dir}
       role="group"
       aria-label={t('zoom.zoomLevel')}
       onMouseDown={keepGridFocus}
@@ -77,6 +101,12 @@ export function ZoomControl() {
   );
 }
 
+/** Zoom out, the zoom level (press to reset to 100%), and zoom in. @public */
+export const ZoomControl: (props: ZoomControlProps) => ReactElement = withChromeTranslate(
+  ZoomControlPart,
+  'ZoomControl'
+);
+
 /**
  * One notice of the status strip: a live status node whose text is the full text while `on`.
  * `short` shows the brief text in its place, visually only: the full text stays in the node,
@@ -103,14 +133,9 @@ function Notice(props: { on: boolean; short: boolean; text: string; brief: strin
   );
 }
 
-/**
- * The state of the editor when it shows no grid, the reason the last edit was refused, the
- * stale-results notice, and the notice for conditional formatting that the grid can leave out
- * (`conditionalHidden`). The engine's live region announces the refusal, so the refusal here
- * has no live role: it is shown, not announced twice. @public
- */
-export function StatusMessage() {
+function StatusMessagePart() {
   const { t } = useTranslation();
+  const dir = useChromeDir();
   const snap = useEditorState(statusSlice, sameSlice);
   const modeWaits = useContext(ModeWaitsContext);
   useLayoutPart('statusMessages');
@@ -125,7 +150,7 @@ export function StatusMessage() {
   const view = statusView(snap, modeWaits, t);
   if (view.kind === 'strip')
     return (
-      <div className="xlsx-status-strip">
+      <div className="xlsx-status-strip" dir={dir}>
         {view.refusal ? <div className="xlsx-refusal">{view.refusal}</div> : null}
         {view.notices.map((n) => (
           <Notice key={n.id} on={n.on} short={n.short} text={n.text} brief={n.brief} />
@@ -134,7 +159,7 @@ export function StatusMessage() {
     );
   // Without a grid, the live region announced each refusal already, so it is plain text.
   return (
-    <div className="xlsx-message">
+    <div className="xlsx-message" dir={dir}>
       <div role={view.role}>{view.text}</div>
       {view.refusals.map((text) => (
         <div key={text} className="xlsx-message-refusal">
@@ -144,3 +169,14 @@ export function StatusMessage() {
     </div>
   );
 }
+
+/**
+ * The state of the editor when it shows no grid, the reason the last edit was refused, the
+ * stale-results notice, and the notice for conditional formatting that the grid can leave out
+ * (`conditionalHidden`). The engine's live region announces the refusal, so the refusal here
+ * has no live role: it is shown, not announced twice. @public
+ */
+export const StatusMessage: (props: StatusMessageProps) => ReactElement = withChromeTranslate(
+  StatusMessagePart,
+  'StatusMessage'
+);

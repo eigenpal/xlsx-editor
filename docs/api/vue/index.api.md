@@ -11,7 +11,9 @@ import { ChromeDisabledReason } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroup } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroupId } from '@xlsx-editor.dev/core/editor';
 import { ChromeHint } from '@xlsx-editor.dev/core/editor';
+import { ChromePartTranslate } from '@xlsx-editor.dev/core/editor';
 import { ChromeSlotId } from '@xlsx-editor.dev/core/editor';
+import { ChromeTranslate } from '@xlsx-editor.dev/core/editor';
 import { CLIPBOARD_TYPE } from '@xlsx-editor.dev/core/editor';
 import { ClipboardContent } from '@xlsx-editor.dev/core/editor';
 import { ColorMode } from '@xlsx-editor.dev/core/editor';
@@ -42,6 +44,7 @@ import { GridPoint } from '@xlsx-editor.dev/core/editor';
 import { GridRange } from '@xlsx-editor.dev/core/editor';
 import { GridSelection } from '@xlsx-editor.dev/core/editor';
 import { InjectionKey } from 'vue';
+import { LocaleStrings } from '@xlsx-editor.dev/i18n';
 import { MAX_COLUMN_WIDTH } from '@xlsx-editor.dev/core/editor';
 import { MAX_CONTENT_FIELD_CHARS } from '@xlsx-editor.dev/core/editor';
 import { MAX_GO_TO_LENGTH } from '@xlsx-editor.dev/core/editor';
@@ -115,7 +118,11 @@ export { ChromeGroupId }
 
 export { ChromeHint }
 
+export { ChromePartTranslate }
+
 export { ChromeSlotId }
+
+export { ChromeTranslate }
 
 export { CLIPBOARD_TYPE }
 
@@ -164,13 +171,75 @@ export { FieldKeys }
 export { FontSource }
 
 // @public
-export const FormulaBar: vue.DefineComponent<{}, () => vue_jsx_runtime.JSX.Element | null, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<{}> & Readonly<{}>, {}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+export const FormulaBar: vue.DefineComponent<vue.ExtractPropTypes<{
+    readonly t: {
+        readonly type: PropType<ChromePartTranslate>;
+        readonly default: undefined;
+    };
+}>, () => vue_jsx_runtime.JSX.Element | null, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly t: {
+        readonly type: PropType<ChromePartTranslate>;
+        readonly default: undefined;
+    };
+}>> & Readonly<{}>, {
+    readonly t: ChromePartTranslate;
+}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+
+// @public
+export type FormulaBarProps = ExtractPublicPropTypes<typeof formulaBarProps>;
+
+// @public (undocumented)
+const formulaBarProps: {
+    readonly t: {
+        readonly type: PropType<ChromePartTranslate>;
+        readonly default: undefined;
+    };
+};
 
 export { GridPoint }
 
 export { GridRange }
 
 export { GridSelection }
+
+// @public
+export const LocaleProvider: vue.DefineComponent<vue.ExtractPropTypes<{
+    readonly i18n: {
+        readonly type: PropType<Translations>;
+        readonly default: undefined;
+    };
+    readonly dir: {
+        readonly type: PropType<'ltr' | 'rtl'>;
+        readonly default: undefined;
+    };
+}>, () => VNodeChild, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly i18n: {
+        readonly type: PropType<Translations>;
+        readonly default: undefined;
+    };
+    readonly dir: {
+        readonly type: PropType<'ltr' | 'rtl'>;
+        readonly default: undefined;
+    };
+}>> & Readonly<{}>, {
+    readonly i18n: _xlsx_editor_dev_i18n.PartialLocaleStrings;
+    readonly dir: "ltr" | "rtl";
+}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+
+// @public
+export type LocaleProviderProps = ExtractPublicPropTypes<typeof localeProviderProps>;
+
+// @public (undocumented)
+const localeProviderProps: {
+    readonly i18n: {
+        readonly type: PropType<Translations>;
+        readonly default: undefined;
+    };
+    readonly dir: {
+        readonly type: PropType<'ltr' | 'rtl'>;
+        readonly default: undefined;
+    };
+};
 
 export { MAX_COLUMN_WIDTH }
 
@@ -257,10 +326,56 @@ export { sheetCommandState }
 export { SheetProtection }
 
 // @public
-export const SheetTabs: vue.DefineComponent<{}, () => vue_jsx_runtime.JSX.Element | null, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<{}> & Readonly<{}>, {}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+export const SheetTabs: vue.DefineComponent<vue.ExtractPropTypes<{
+    readonly t: {
+        readonly type: PropType<ChromePartTranslate>;
+        readonly default: undefined;
+    };
+}>, () => vue_jsx_runtime.JSX.Element | null, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly t: {
+        readonly type: PropType<ChromePartTranslate>;
+        readonly default: undefined;
+    };
+}>> & Readonly<{}>, {
+    readonly t: ChromePartTranslate;
+}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
 
 // @public
-export const StatusMessage: vue.DefineComponent<{}, () => vue_jsx_runtime.JSX.Element, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<{}> & Readonly<{}>, {}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+export type SheetTabsProps = ExtractPublicPropTypes<typeof sheetTabsProps>;
+
+// @public (undocumented)
+const sheetTabsProps: {
+    readonly t: {
+        readonly type: PropType<ChromePartTranslate>;
+        readonly default: undefined;
+    };
+};
+
+// @public
+export const StatusMessage: vue.DefineComponent<vue.ExtractPropTypes<{
+    readonly t: {
+        readonly type: PropType<ChromePartTranslate>;
+        readonly default: undefined;
+    };
+}>, () => vue_jsx_runtime.JSX.Element, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly t: {
+        readonly type: PropType<ChromePartTranslate>;
+        readonly default: undefined;
+    };
+}>> & Readonly<{}>, {
+    readonly t: ChromePartTranslate;
+}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+
+// @public
+export type StatusMessageProps = ExtractPublicPropTypes<typeof statusMessageProps>;
+
+// @public (undocumented)
+const statusMessageProps: {
+    readonly t: {
+        readonly type: PropType<ChromePartTranslate>;
+        readonly default: undefined;
+    };
+};
 
 // @public
 export const ToolbarAction: vue.DefineComponent<vue.ExtractPropTypes<{
@@ -435,6 +550,18 @@ export function translatorFor(locale: Translations | undefined): TFunction;
 export { trapTabWithin }
 
 // @public
+export function useChromeDir(): UseChromeDirReturn;
+
+// @public
+export type UseChromeDirReturn = ComputedRef<'ltr' | 'rtl' | undefined>;
+
+// @public
+export function useChromeTranslate(overrides?: MaybeRefOrGetter<ReadonlyMap<string, string> | undefined>): UseChromeTranslateReturn;
+
+// @public
+export type UseChromeTranslateReturn = ComputedRef<ChromeTranslate>;
+
+// @public
 export function useEditorColorMode(): UseEditorColorModeReturn;
 
 // @public
@@ -484,6 +611,9 @@ export function useTranslation(): UseTranslationReturn;
 
 // @public
 export interface UseTranslationReturn {
+    readonly catalogue: Readonly<ShallowRef<LocaleStrings>>;
+    readonly dir: 'ltr' | 'rtl';
+    readonly lang: string;
     readonly t: TFunction;
 }
 
@@ -955,6 +1085,10 @@ const xlsxEditorToolbarProps: {
         readonly type: StringConstructor;
         readonly default: undefined;
     };
+    readonly t: {
+        readonly type: PropType<ChromePartTranslate>;
+        readonly default: undefined;
+    };
     readonly hidden: {
         readonly type: PropType<readonly ChromeSlotId[]>;
         readonly default: undefined;
@@ -1111,6 +1245,29 @@ const xlsxEditorViewportProps: {
 export const xlsxTranslationKey: InjectionKey<ShallowRef<TFunction>>;
 
 // @public
-export const ZoomControl: vue.DefineComponent<{}, () => vue_jsx_runtime.JSX.Element | null, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<{}> & Readonly<{}>, {}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+export const ZoomControl: vue.DefineComponent<vue.ExtractPropTypes<{
+    readonly t: {
+        readonly type: PropType<ChromePartTranslate>;
+        readonly default: undefined;
+    };
+}>, () => vue_jsx_runtime.JSX.Element | null, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly t: {
+        readonly type: PropType<ChromePartTranslate>;
+        readonly default: undefined;
+    };
+}>> & Readonly<{}>, {
+    readonly t: ChromePartTranslate;
+}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+
+// @public
+export type ZoomControlProps = ExtractPublicPropTypes<typeof zoomControlProps>;
+
+// @public (undocumented)
+const zoomControlProps: {
+    readonly t: {
+        readonly type: PropType<ChromePartTranslate>;
+        readonly default: undefined;
+    };
+};
 
 ```

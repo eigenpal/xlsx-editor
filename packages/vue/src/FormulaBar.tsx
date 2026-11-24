@@ -24,6 +24,7 @@ import {
   shallowRef,
   useId,
   watch,
+  type ExtractPublicPropTypes,
   type PropType,
 } from 'vue';
 import {
@@ -43,8 +44,22 @@ import {
   stepFieldHistory,
   type EditorSnapshot,
   type XlsxEditorInstance,
+  type ChromePartTranslate,
 } from '@xlsx-editor.dev/core/editor';
 import { useEditorState, useTranslation, useXlsxEditor } from './context.ts';
+import { usePartTranslation } from './locale.ts';
+
+const formulaBarProps = {
+  /**
+   * The label resolver of the bar: a key and the values of its placeholders, as DOCX Editor's
+   * `t` prop. A key that it leaves unresolved reads the root's `locale`. Keep it stable, for
+   * example from `useChromeTranslate(overrides)`.
+   */
+  t: { type: Function as PropType<ChromePartTranslate>, default: undefined },
+} as const;
+
+/** Props for `FormulaBar`, the twin of React's `FormulaBarProps`. @public */
+export type FormulaBarProps = ExtractPublicPropTypes<typeof formulaBarProps>;
 
 const refusalOf = (s: EditorSnapshot) => ({ refusal: s.refusal, numberLocale: s.numberLocale });
 
@@ -54,8 +69,9 @@ const refusalOf = (s: EditorSnapshot) => ({ refusal: s.refusal, numberLocale: s.
  */
 export const FormulaBar = defineComponent({
   name: 'FormulaBar',
-  setup() {
-    const { t } = useTranslation();
+  props: formulaBarProps,
+  setup(props) {
+    const { t, dir } = usePartTranslation('FormulaBar', () => props.t);
     const editor = useXlsxEditor();
     const snap = useEditorState(formulaSlice, sameSlice);
     let composing = false;
@@ -170,7 +186,7 @@ export const FormulaBar = defineComponent({
       const reason = invalid && refusal ? refusalText(refusal, t, s.numberLocale) : '';
       const showLine = (e: Event): void => showCaretLine(e.currentTarget as HTMLTextAreaElement);
       return (
-        <div class="xlsx-formula-bar" onMousedown={keepGridFocus}>
+        <div class="xlsx-formula-bar" dir={dir.value} onMousedown={keepGridFocus}>
           <NameBox reference={s.ref ?? ''} focusContent={nameBoxFocus} />
           <div
             class="xlsx-cell-content-box"
@@ -178,6 +194,9 @@ export const FormulaBar = defineComponent({
             onMousedown={(e: MouseEvent) => pressFieldBox(field, e)}
           >
             <textarea
+              // The text sets its own direction, as in the cell: a formula reads left to right in a
+              // right-to-left chrome, and a text keeps the direction of its script.
+              dir="auto"
               ref={bindField}
               class="xlsx-cell-content"
               name="xlsx-cell-content"
@@ -309,6 +328,9 @@ const NameBox = defineComponent({
       return [
         <input
           class="xlsx-name-box"
+          // The text sets its own direction: a reference reads left to right in a right-to-left
+          // chrome, and a defined name keeps the direction of its script.
+          dir="auto"
           name="xlsx-name-box"
           type="text"
           spellcheck={false}

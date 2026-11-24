@@ -1,7 +1,9 @@
 // After pptx-editor/packages/vue/test/parity-shape.ts at d4502552 (EigenPal). Differences: the
-// probes mount the XLSX Editor parts (the editor, its root, viewport, content, toolbar, and the
-// toolbar's slot, group, action, and separator parts), and the value probes check the paired props that show in a
-// part alone (`label` of the viewport, `hidden` and `preset` of the toolbar, and the props of the
+// probes mount the XLSX Editor parts (the editor, its root, viewport, content, toolbar, the
+// toolbar's slot, group, action, and separator parts, the formula bar, the sheet tabs, the zoom
+// control, the status message, and `LocaleProvider`), and the value probes check the paired props
+// that show in a part alone (`label` of the viewport, `hidden`, `preset`, and `t` of the toolbar,
+// `t` of the status message, and the props of the
 // slot and group parts that render without a bar). The
 // probe helpers and the shape that `check:parity-contract` reads are the same.
 //
@@ -121,8 +123,29 @@ export async function vueAdapterShape(contract?: ParityContract): Promise<VueAda
             s.querySelector('[role="toolbar"]') !== null &&
             s.querySelector('[data-group]') === null,
         },
+        t: {
+          props: { t: (key: string) => (key === 'formattingBar.label' ? 'Probe bar' : undefined) },
+          shows: (s) => s.querySelector('[role="toolbar"][aria-label="Probe bar"]') !== null,
+        },
       },
     },
+    // The formula bar, the sheet tabs, and the zoom control render nothing before a workbook
+    // opens: their `t` is checked by the adapter tests (`locale.test.ts`).
+    FormulaBar: { component: vue.FormulaBar, wrap: inViewport },
+    SheetTabs: { component: vue.SheetTabs, wrap: inViewport },
+    ZoomControl: { component: vue.ZoomControl, wrap: inViewport },
+    StatusMessage: {
+      component: vue.StatusMessage,
+      wrap: inViewport,
+      values: {
+        t: {
+          props: { t: (key: string) => (key === 'status.empty' ? 'Probe status' : undefined) },
+          shows: (s) => (s.textContent ?? '').includes('Probe status'),
+        },
+      },
+    },
+    // The provider renders only its default slot; its strings are checked by `locale.test.ts`.
+    LocaleProvider: { component: vue.LocaleProvider, wrap: inViewport },
     // A slot alone renders its built-in control, so the control needs the editor's context.
     XlsxEditorToolbarSlot: {
       component: vue.XlsxEditorToolbarSlot,

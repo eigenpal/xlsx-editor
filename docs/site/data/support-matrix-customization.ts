@@ -1,7 +1,7 @@
 /**
  * The rows of the support matrix for the customization of the chrome by host code: the theme
- * scope and the editor events. `support-matrix.ts` lists them in its order; the rules of that
- * file hold here.
+ * scope, the editor events, and the language of the chrome. `support-matrix.ts` lists them in
+ * its order; the rules of that file hold here.
  */
 
 import type { SupportFeature } from './support-matrix.ts';
@@ -34,6 +34,23 @@ export const CUSTOMIZATION_FEATURES: readonly SupportFeature[] = [
         `${CORE}/editor/__tests__/editor-events.test.ts`,
         'packages/react/src/__tests__/editor-event.test.tsx',
         'packages/vue/test/editor-event.test.ts',
+      ],
+    },
+  },
+  {
+    id: 'viewer.chrome-language',
+    name: 'Chrome language, label overrides, and right-to-left chrome',
+    category: 'viewer',
+    status: 'supported',
+    notes:
+      'The root `locale` prop takes a partial catalog. A missing or `null` entry falls back to the catalog of an outer `LocaleProvider`, then to English. A change keeps the open workbook. `LocaleProvider` overrides the labels of a region, or sets the catalog of the app around the root. The toolbar, the formula bar, the sheet tabs, the zoom control, and the status message each take a `t` prop. A `t` receives a key and the values of its placeholders. The toolbar `t` also reaches its number format dialog. `useChromeTranslate(overrides)` builds such a `t`, and fills the placeholders and plural branches of an override. A right-to-left catalog or the `dir` of `LocaleProvider` mirrors the chrome parts and their arrow keys. It also mirrors the toolbar popups and the sheet tab menu. The grid keeps a left-to-right layout, also on a right-to-left host page. The cell editor and the formula bar fields set their direction from their text.',
+    docsLink: '/docs/customization/language',
+    evidence: {
+      tests: [
+        `${CORE}/editor/__tests__/chrome-translate.test.ts`,
+        'packages/i18n/src/direction.test.ts',
+        'packages/react/src/__tests__/chrome-translate.test.tsx',
+        'packages/vue/test/chrome-translate.test.ts',
       ],
     },
   },

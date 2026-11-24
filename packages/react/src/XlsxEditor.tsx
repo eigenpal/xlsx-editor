@@ -16,6 +16,7 @@ import { FormulaBar } from './FormulaBar.tsx';
 import { SheetTabs } from './SheetTabs.tsx';
 import { useEditorState } from './context.ts';
 import { XlsxEditorToolbar } from './toolbar/Toolbar.tsx';
+import { useChromeDir } from './locale.tsx';
 
 /** Props for `XlsxEditor`: the root's props and the viewport's class. @public */
 export interface XlsxEditorProps extends Omit<XlsxEditorRootProps, 'children'> {
@@ -59,6 +60,7 @@ function Body({
 }: Pick<XlsxEditorProps, 'onSave' | 'onSaveStart' | 'opening'>) {
   // The status alone: the body renders again only when it changes, not on each key of an edit.
   const status = useEditorState(statusOf);
+  const dir = useChromeDir();
   return (
     <>
       <XlsxEditorToolbar
@@ -69,7 +71,7 @@ function Body({
       <FormulaBar />
       <StatusMessage />
       <XlsxEditorContent className={status === 'ready' ? undefined : 'xlsx-canvas-idle'} />
-      <div className="xlsx-footer">
+      <div className="xlsx-footer" dir={dir}>
         <SheetTabs />
         <ZoomControl />
       </div>

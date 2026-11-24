@@ -190,7 +190,7 @@ describe('XlsxEditor', () => {
     );
     // Notices that show side by side have a separator, also with an empty notice between them.
     expect(css).toMatch(
-      /\n\.xlsx-notice:not\(:empty\) ~ \.xlsx-notice:not\(:empty\) \{[^}]*border-left:/
+      /\n\.xlsx-notice:not\(:empty\) ~ \.xlsx-notice:not\(:empty\) \{[^}]*border-inline-start:/
     );
     // A notice that shows alone wraps instead of being cut.
     expect(css).toMatch(/\n\.xlsx-notice:not\(\[data-short\]\) \{[^}]*white-space: normal;/);

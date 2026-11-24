@@ -214,6 +214,14 @@ export {
   type StatusNotice,
   type StatusView,
 } from './chrome-status.ts';
+export { inlineStep, isRightToLeft, markChromeDirection } from './chrome-direction.ts';
+export {
+  chromeTranslator,
+  partTranslator,
+  warnPartTranslateError,
+  type ChromePartTranslate,
+  type ChromeTranslate,
+} from './chrome-translate.ts';
 export {
   cycleRegion,
   guardToolbarMousedown,

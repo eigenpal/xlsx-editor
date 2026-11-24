@@ -13,6 +13,7 @@
 import { defineComponent, onBeforeUnmount, onMounted, shallowRef, type PropType } from 'vue';
 import { isDialogBackdropPoint, trapTabWithin } from '@xlsx-editor.dev/core/editor';
 import { useChromeDark } from './color-mode.ts';
+import { useChromeDir } from './locale.ts';
 
 /** An open modal dialog. Mount it to open it; unmount it to close it. */
 export const DialogFrame = defineComponent({
@@ -37,6 +38,7 @@ export const DialogFrame = defineComponent({
     let pressedOutside = false;
     const ownScope = shallowRef(false);
     const dark = useChromeDark();
+    const dir = useChromeDir();
     let opener: HTMLElement | null = null;
     onMounted(() => {
       const panel = panelRef.value;
@@ -71,6 +73,7 @@ export const DialogFrame = defineComponent({
         aria-modal="true"
         aria-label={props.label}
         data-xlsx-dialog={props.kind}
+        dir={dir.value}
         class={
           ownScope.value ? `xlsx-dialog xlsx-editor${dark.value ? ' dark' : ''}` : 'xlsx-dialog'
         }

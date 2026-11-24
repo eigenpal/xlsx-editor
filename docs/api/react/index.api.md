@@ -10,7 +10,9 @@ import { ChromeDisabledReason } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroup } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroupId } from '@xlsx-editor.dev/core/editor';
 import { ChromeHint } from '@xlsx-editor.dev/core/editor';
+import { ChromePartTranslate } from '@xlsx-editor.dev/core/editor';
 import { ChromeSlotId } from '@xlsx-editor.dev/core/editor';
+import { ChromeTranslate } from '@xlsx-editor.dev/core/editor';
 import { CLIPBOARD_TYPE } from '@xlsx-editor.dev/core/editor';
 import { ClipboardContent } from '@xlsx-editor.dev/core/editor';
 import { ColorMode } from '@xlsx-editor.dev/core/editor';
@@ -39,6 +41,7 @@ import { ForwardRefExoticComponent } from 'react';
 import { GridPoint } from '@xlsx-editor.dev/core/editor';
 import { GridRange } from '@xlsx-editor.dev/core/editor';
 import { GridSelection } from '@xlsx-editor.dev/core/editor';
+import { LocaleStrings } from '@xlsx-editor.dev/i18n';
 import { MAX_COLUMN_WIDTH } from '@xlsx-editor.dev/core/editor';
 import { MAX_CONTENT_FIELD_CHARS } from '@xlsx-editor.dev/core/editor';
 import { MAX_GO_TO_LENGTH } from '@xlsx-editor.dev/core/editor';
@@ -107,7 +110,11 @@ export { ChromeGroupId }
 
 export { ChromeHint }
 
+export { ChromePartTranslate }
+
 export { ChromeSlotId }
+
+export { ChromeTranslate }
 
 export { CLIPBOARD_TYPE }
 
@@ -166,13 +173,28 @@ export { FieldKeys }
 export { FontSource }
 
 // @public
-export function FormulaBar(): react.JSX.Element | null;
+export const FormulaBar: (props: FormulaBarProps) => ReactElement;
+
+// @public
+export interface FormulaBarProps {
+    readonly t?: ChromePartTranslate;
+}
 
 export { GridPoint }
 
 export { GridRange }
 
 export { GridSelection }
+
+// @public
+export function LocaleProvider(input: LocaleProviderProps): ReactElement;
+
+// @public
+export interface LocaleProviderProps {
+    readonly children?: ReactNode;
+    readonly dir?: 'ltr' | 'rtl';
+    readonly i18n?: Translations;
+}
 
 export { MAX_COLUMN_WIDTH }
 
@@ -259,10 +281,20 @@ export { sheetCommandState }
 export { SheetProtection }
 
 // @public
-export function SheetTabs(): react.JSX.Element | null;
+export const SheetTabs: (props: SheetTabsProps) => ReactElement;
 
 // @public
-export function StatusMessage(): react.JSX.Element;
+export interface SheetTabsProps {
+    readonly t?: ChromePartTranslate;
+}
+
+// @public
+export const StatusMessage: (props: StatusMessageProps) => ReactElement;
+
+// @public
+export interface StatusMessageProps {
+    readonly t?: ChromePartTranslate;
+}
 
 // @public
 export function ToolbarAction(props: ToolbarActionProps): react.JSX.Element;
@@ -361,6 +393,12 @@ export function translatorFor(locale: Translations | undefined): TFunction;
 export { trapTabWithin }
 
 // @public
+export function useChromeDir(): 'ltr' | 'rtl' | undefined;
+
+// @public
+export function useChromeTranslate(overrides?: ReadonlyMap<string, string>): ChromeTranslate;
+
+// @public
 export function useEditorColorMode(): UseEditorColorModeReturn;
 
 // @public
@@ -386,6 +424,9 @@ export function useScopeClassName(): '' | 'xlsx-editor ' | 'xlsx-editor dark ';
 // @public
 export function useTranslation(): {
     readonly t: TFunction;
+    readonly catalogue: LocaleStrings;
+    readonly lang: string;
+    readonly dir: 'ltr' | 'rtl';
 };
 
 // @public
@@ -515,6 +556,7 @@ export interface XlsxEditorToolbarProps {
     readonly opening?: boolean;
     readonly overflow?: boolean;
     readonly preset?: boolean;
+    readonly t?: ChromePartTranslate;
 }
 
 // @public
@@ -544,6 +586,11 @@ export interface XlsxEditorViewportProps {
 }
 
 // @public
-export function ZoomControl(): react.JSX.Element | null;
+export const ZoomControl: (props: ZoomControlProps) => ReactElement;
+
+// @public
+export interface ZoomControlProps {
+    readonly t?: ChromePartTranslate;
+}
 
 ```

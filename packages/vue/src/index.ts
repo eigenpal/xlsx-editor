@@ -69,9 +69,22 @@ export type {
   XlsxEditorToolbarGroupProps,
   XlsxEditorToolbarSlotProps,
 } from './toolbar/host-parts.tsx';
-export { StatusMessage, ZoomControl } from './chrome.tsx';
-export { FormulaBar } from './FormulaBar.tsx';
-export { SheetTabs } from './SheetTabs.tsx';
+export {
+  StatusMessage,
+  type StatusMessageProps,
+  ZoomControl,
+  type ZoomControlProps,
+} from './chrome.tsx';
+export { FormulaBar, type FormulaBarProps } from './FormulaBar.tsx';
+export { SheetTabs, type SheetTabsProps } from './SheetTabs.tsx';
+export {
+  LocaleProvider,
+  type LocaleProviderProps,
+  useChromeDir,
+  type UseChromeDirReturn,
+  useChromeTranslate,
+  type UseChromeTranslateReturn,
+} from './locale.ts';
 export type { XlsxEditorToolbarNamespace, XlsxEditorToolbarProps } from './toolbar/Toolbar.tsx';
 export {
   ToolbarAction,
@@ -149,7 +162,9 @@ export type {
   ChromeGroup,
   ChromeGroupId,
   ChromeHint,
+  ChromePartTranslate,
   ChromeSlotId,
+  ChromeTranslate,
   ClipboardContent,
   CopyResult,
   DecimalSteps,

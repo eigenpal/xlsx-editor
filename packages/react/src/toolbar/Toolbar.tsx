@@ -14,9 +14,10 @@
 // `priority` and `pinned` are after the same files at ad686574 (`named-parts.tsx`,
 // `action.tsx`, and `toolbarCollapse` in core).
 // Differences: slots can also be hidden with one `hidden` list of slot ids; the bar collapses
-// whole groups, not one control at a time; there is no per-toolbar `t` (the labels come from
-// the root's `locale`, whose catalog interpolates values, which DOCX Editor's
-// `(key) => string` cannot); a group can render as one menu
+// whole groups, not one control at a time; the `t` prop is DOCX Editor's root resolver shape,
+// `(key, params) => string`, not the toolbar's `(key) => string`, because the catalog here
+// fills values into its messages, and a key that `t` leaves unresolved reads the root's
+// `locale` (`withChromeTranslate`); a group can render as one menu
 // (`ChromeGroup.menu`), and the content of a `Toolbar.Slot` for one of its slots shows after the
 // menu button; the arrow keys move between the controls of the bar
 // as the toolbar pattern of WAI-ARIA describes, while Tab still reaches each control, as in
@@ -46,6 +47,7 @@ import {
   listenSaveKey,
   measureToolbar,
   moveBarFocus,
+  markChromeDirection,
   observeToolbar,
   toolbarGroupHeading,
   type ArrangedToolbarGroup,
@@ -55,11 +57,13 @@ import {
   type SavedWorkbook,
   type ToolbarArrangement,
   type ToolbarHost,
+  type ChromePartTranslate,
 } from '@xlsx-editor.dev/core/editor';
 import { ToolbarAction, ToolbarSeparator } from './action.tsx';
 import { TOOLBAR_PARTS, type ToolbarNamedParts } from './named-parts.tsx';
 import type { TFunction } from '@xlsx-editor.dev/i18n';
 import { useEditorState, useTranslation, useXlsxEditor } from '../context.ts';
+import { useChromeDir, withChromeTranslate } from '../locale.tsx';
 import { ChromeIcon, ToolbarHostContext, translateKey } from './slot.tsx';
 import { GroupMenu, popupTriggerKeys, usePopup, type PartLayout } from './parts.tsx';
 import { ICON_MORE } from './icons.ts';
@@ -126,6 +130,13 @@ export interface XlsxEditorToolbarProps {
   readonly children?: ReactNode;
   /** Appended after the `xlsx-toolbar` class. */
   readonly className?: string;
+  /**
+   * The label resolver of the toolbar, its parts, its "More" panel, and its number format
+   * dialog: a key and the values of its placeholders, as DOCX Editor's `t` prop. A key that it
+   * leaves unresolved reads the root's `locale`. Keep it stable, for example from
+   * `useChromeTranslate(overrides)`: a new function measures the bar again.
+   */
+  readonly t?: ChromePartTranslate;
   /**
    * Slot ids to leave out, such as `['file.save']`. A group whose slots are all hidden is left
    * out with its separator. The order of the list does not matter.
@@ -317,8 +328,9 @@ function XlsxEditorToolbarRoot({
   hidden,
   preset = true,
   children,
-}: XlsxEditorToolbarProps) {
+}: Omit<XlsxEditorToolbarProps, 't'>) {
   const { t } = useTranslation();
+  const dir = useChromeDir();
   // The value of `opening` at the latest render. A press reads it here, so a press and the state
   // of each control agree. A change of the prop gives a new host, so each control reads its
   // state again.
@@ -395,6 +407,9 @@ function XlsxEditorToolbarRoot({
   // The ids of the groups in the "More" panel, in bar order (`toolbarCollapse`).
   const [collapsed, setCollapsed] = useState<readonly string[]>(NONE);
 
+  // Mark the bar's computed direction for the mirrored icons (`markChromeDirection`).
+  useLayoutEffect(() => markChromeDirection(bar.current), [dir]);
+
   // A new locale or a new set of groups changes the widths: measure every group again.
   useLayoutEffect(() => {
     widths.current.clear();
@@ -456,6 +471,7 @@ function XlsxEditorToolbarRoot({
         <div
           ref={bar}
           role="toolbar"
+          dir={dir}
           aria-label={t('formattingBar.label')}
           className={`xlsx-toolbar${className ? ` ${className}` : ''}`}
           {...(measuring ? { 'data-overflow': '' } : {})}
@@ -507,7 +523,7 @@ export interface XlsxEditorToolbarNamespace extends ToolbarNamedParts {
  * @public
  */
 export const XlsxEditorToolbar: XlsxEditorToolbarNamespace = Object.assign(
-  XlsxEditorToolbarRoot,
+  withChromeTranslate<XlsxEditorToolbarProps>(XlsxEditorToolbarRoot, 'XlsxEditorToolbar'),
   TOOLBAR_PARTS,
   {
     Slot: XlsxEditorToolbarSlot,

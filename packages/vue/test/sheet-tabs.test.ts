@@ -345,7 +345,8 @@ describe('SheetTabs in view mode', () => {
     const tab = view.getAllByRole('tab')[0]!;
     fireEvent.contextMenu(tab, { clientX: 10 });
     await nextTick();
-    const rows = view.getAllByRole('menuitem');
+    // The sheet menu's rows, not the menu bar's triggers.
+    const rows = view.getAllByRole('menuitem').filter((m) => !m.closest('[role="menubar"]'));
     expect(rows.map((r) => r.textContent)).toEqual(['Rename', 'Delete', 'Move left', 'Move right']);
     for (const r of rows) {
       expect(r.getAttribute('aria-disabled')).toBe('true');
@@ -411,7 +412,8 @@ describe('SheetTabs on a workbook that locks its structure', () => {
     expect(why?.textContent).toBe(REASON);
     fireEvent.contextMenu(tab, { clientX: 10 });
     await nextTick();
-    const rows = view.getAllByRole('menuitem');
+    // The sheet menu's rows, not the menu bar's triggers.
+    const rows = view.getAllByRole('menuitem').filter((m) => !m.closest('[role="menubar"]'));
     for (const r of rows) {
       expect(r.getAttribute('aria-disabled')).toBe('true');
       expect(r.getAttribute('title')).toBe(`${r.textContent}: ${REASON}`);

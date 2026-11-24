@@ -58,7 +58,8 @@ export type ToolbarSlotPartComponent = (props: ToolbarSlotPartProps) => ReactEle
 
 /**
  * Every named toolbar part, attached to `XlsxEditor.Toolbar` as statics: one for each slot of
- * `CHROME_GROUPS`. Button parts take `ToolbarPartProps`, value parts `ToolbarSlotPartProps`, as
+ * the preset toolbar (`defaultChromeGroups()`). The slots that only the menu bar shows have menu
+ * row parts instead. Button parts take `ToolbarPartProps`, value parts `ToolbarSlotPartProps`, as
  * in DOCX Editor. @public
  */
 export interface ToolbarNamedParts {

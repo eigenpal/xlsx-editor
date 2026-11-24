@@ -30,13 +30,36 @@
 // cannot block it.
 
 import { CLIPBOARD_TYPE, type CopyResult, type PasteData } from './clipboard.ts';
-import type { EditResult } from './cell-input.ts';
+import type { EditRefusal, EditResult } from './cell-input.ts';
 
 /** What the clipboard events call on the editor. */
 export interface ClipboardEventHost {
   copy(): CopyResult;
   cut(): CopyResult;
   paste(data: PasteData): EditResult;
+}
+
+/** The count of `copy` and `cut` events that each grid handled, for the menu bar's commands. */
+const gridHandled = new WeakMap<Element, number>();
+/** The refusal of the last `copy` or `cut` event that each grid handled, or null when it wrote. */
+const gridRefusals = new WeakMap<Element, EditRefusal | null>();
+
+/**
+ * How many `copy` and `cut` events the grid element has handled: written, or refused with the
+ * refusal of the copy. A command that fires the event (the menu bar's Copy and Cut) reads it
+ * before and after, so it knows that the grid took the event, whatever a host listener did to
+ * its propagation, and runs no second copy that would show the refusal again. @internal
+ */
+export function gridClipboardHandled(grid: Element): number {
+  return gridHandled.get(grid) ?? 0;
+}
+
+/**
+ * The refusal of the last `copy` or `cut` event that the grid element handled, or null when it
+ * wrote the clipboard, so the menu bar's command returns the same result as the copy. @internal
+ */
+export function gridClipboardRefusal(grid: Element): EditRefusal | null {
+  return gridRefusals.get(grid) ?? null;
 }
 
 /** The `copy`, `cut`, and `paste` listeners of a grid element. */
@@ -61,6 +84,8 @@ export function clipboardHandlers(
     if (!ours(event) || !data) return;
     event.preventDefault();
     const r = run();
+    gridHandled.set(grid, gridClipboardHandled(grid) + 1);
+    gridRefusals.set(grid, r.ok ? null : r.refusal);
     if (!r.ok) return;
     data.setData('text/plain', r.content.text);
     data.setData(CLIPBOARD_TYPE, r.content.token);

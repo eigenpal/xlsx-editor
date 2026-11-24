@@ -29,6 +29,23 @@ export interface ActiveCellFormat {
 }
 
 // @internal
+export interface ArrangedBarMenu<S extends MenuBarSpec> {
+    // (undocumented)
+    readonly id: string;
+    readonly registry: ChromeMenu | undefined;
+    readonly spec: S | undefined;
+    // (undocumented)
+    readonly title: string;
+}
+
+// @internal
+export interface ArrangedMenuRows<C> {
+    readonly entries: ChromeMenuEntry[];
+    readonly extras: C[];
+    readonly overrides: Map<string, C | null>;
+}
+
+// @internal
 export interface ArrangedToolbarGroup {
     readonly chrome: ChromeGroup | null;
     // (undocumented)
@@ -38,6 +55,12 @@ export interface ArrangedToolbarGroup {
     readonly pinned: boolean;
     readonly priority?: number | undefined;
 }
+
+// @internal
+export function arrangeMenuBar<S extends MenuBarSpec>(specs: ReadonlyMap<string, S>, preset: boolean, t: (key: string) => string, onProblem?: (message: string) => void): ArrangedBarMenu<S>[];
+
+// @internal
+export function arrangeMenuRows<C>(entries: readonly ChromeMenuEntry[], children: readonly C[], slotOf: (child: C) => MenuSlotRowSpec | null, onUnmatchedHidden?: (slotId: string) => void): ArrangedMenuRows<C>;
 
 // @internal
 export function arrangeToolbar(input: {
@@ -312,10 +335,91 @@ export const CHROME_GROUPS: readonly [{
     readonly id: 'file';
     readonly labelKey: 'formattingBar.groups.file';
     readonly controls: readonly [{
+        readonly id: 'open';
+        readonly labelKey: 'menu.open';
+        readonly paths: readonly string[];
+        readonly kind: 'open';
+        readonly defaultToolbar: false;
+    }, {
         readonly id: 'save';
         readonly labelKey: 'toolbar.save';
         readonly paths: readonly string[];
         readonly kind: 'save';
+    }];
+}, {
+    readonly id: 'edit';
+    readonly labelKey: 'formattingBar.groups.edit';
+    readonly contextual: true;
+    readonly controls: readonly [{
+        readonly id: 'cut';
+        readonly labelKey: 'menu.cut';
+        readonly paths: readonly string[];
+        readonly kind: 'command';
+    }, {
+        readonly id: 'copy';
+        readonly labelKey: 'menu.copy';
+        readonly paths: readonly string[];
+        readonly kind: 'command';
+    }, {
+        readonly id: 'paste';
+        readonly labelKey: 'menu.paste';
+        readonly paths: readonly string[];
+        readonly kind: 'command';
+    }, {
+        readonly id: 'selectAll';
+        readonly labelKey: 'menu.selectAll';
+        readonly paths: null;
+        readonly kind: 'command';
+    }];
+}, {
+    readonly id: 'view';
+    readonly labelKey: 'formattingBar.groups.view';
+    readonly contextual: true;
+    readonly controls: readonly [{
+        readonly id: 'zoomIn';
+        readonly labelKey: 'zoom.zoomIn';
+        readonly paths: null;
+        readonly kind: 'command';
+    }, {
+        readonly id: 'zoomOut';
+        readonly labelKey: 'zoom.zoomOut';
+        readonly paths: null;
+        readonly kind: 'command';
+    }, {
+        readonly id: 'zoomReset';
+        readonly labelKey: 'menu.zoomReset';
+        readonly paths: null;
+        readonly kind: 'command';
+    }];
+}, {
+    readonly id: 'sheet';
+    readonly labelKey: 'formattingBar.groups.sheet';
+    readonly contextual: true;
+    readonly controls: readonly [{
+        readonly id: 'add';
+        readonly labelKey: 'menu.addSheet';
+        readonly paths: readonly string[];
+        readonly kind: 'command';
+    }];
+}, {
+    readonly id: 'merge';
+    readonly labelKey: 'formattingBar.groups.merge';
+    readonly contextual: true;
+    readonly controls: readonly [{
+        readonly id: 'merge';
+        readonly labelKey: 'merge.merge';
+        readonly paths: null;
+        readonly kind: 'command';
+    }, {
+        readonly id: 'mergeCenter';
+        readonly labelKey: 'merge.mergeCenter';
+        readonly paths: null;
+        readonly kind: 'command';
+    }, {
+        readonly id: 'unmerge';
+        readonly labelKey: 'merge.unmerge';
+        readonly paths: null;
+        readonly kind: 'command';
     }];
 }];
 
@@ -350,13 +454,23 @@ export const CHROME_ICON_PATHS: {
     readonly decimal_increase: readonly ["m720-80-56-56 63-64H480v-80h247l-63-64 56-56 160 160L720-80ZM80-440v-120h120v120H80Zm300 0q-58 0-99-41t-41-99v-160q0-58 41-99t99-41q58 0 99 41t41 99v160q0 58-41 99t-99 41Zm360 0q-58 0-99-41t-41-99v-160q0-58 41-99t99-41q58 0 99 41t41 99v160q0 58-41 99t-99 41Zm-360-80q25 0 42.5-17.5T440-580v-160q0-25-17.5-42.5T380-800q-25 0-42.5 17.5T320-740v160q0 25 17.5 42.5T380-520Zm360 0q25 0 42.5-17.5T800-580v-160q0-25-17.5-42.5T740-800q-25 0-42.5 17.5T680-740v160q0 25 17.5 42.5T740-520Z"];
     readonly decimal_decrease: readonly ["M640-80 480-240l160-160 56 56-63 64h247v80H633l63 64-56 56ZM80-440v-120h120v120H80Zm300 0q-58 0-99-41t-41-99v-160q0-58 41-99t99-41q58 0 99 41t41 99v160q0 58-41 99t-99 41Zm0-80q25 0 42.5-17.5T440-580v-160q0-25-17.5-42.5T380-800q-25 0-42.5 17.5T320-740v160q0 25 17.5 42.5T380-520Z"];
     readonly more_horiz: readonly ["M240-400q-33 0-56.5-23.5T160-480q0-33 23.5-56.5T240-560q33 0 56.5 23.5T320-480q0 33-23.5 56.5T240-400Zm240 0q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm240 0q-33 0-56.5-23.5T640-480q0-33 23.5-56.5T720-560q33 0 56.5 23.5T800-480q0 33-23.5 56.5T720-400Z"];
+    readonly folder_open: readonly ["M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640H447l-80-80H160v480l96-320h684L837-217q-8 26-29.5 41.5T760-160H160Zm84-80h516l72-240H316l-72 240Zm0 0 72-240-72 240Zm-84-400v-80 80Z"];
+    readonly content_cut: readonly ["M760-120 480-400l-94 94q8 15 11 32t3 34q0 66-47 113T240-80q-66 0-113-47T80-240q0-66 47-113t113-47q17 0 34 3t32 11l94-94-94-94q-15 8-32 11t-34 3q-66 0-113-47T80-720q0-66 47-113t113-47q66 0 113 47t47 113q0 17-3 34t-11 32l494 494v40H760ZM600-520l-80-80 240-240h120v40L600-520ZM240-640q33 0 56.5-23.5T320-720q0-33-23.5-56.5T240-800q-33 0-56.5 23.5T160-720q0 33 23.5 56.5T240-640Zm240 180q8 0 14-6t6-14q0-8-6-14t-14-6q-8 0-14 6t-6 14q0 8 6 14t14 6ZM240-160q33 0 56.5-23.5T320-240q0-33-23.5-56.5T240-320q-33 0-56.5 23.5T160-240q0 33 23.5 56.5T240-160Z"];
+    readonly content_copy: readonly ["M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"];
+    readonly content_paste: readonly ["M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h167q11-35 43-57.5t70-22.5q40 0 71.5 22.5T594-840h166q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560h-80v120H280v-120h-80v560Zm280-560q17 0 28.5-11.5T520-800q0-17-11.5-28.5T480-840q-17 0-28.5 11.5T440-800q0 17 11.5 28.5T480-760Z"];
+    readonly chevron_right: readonly ["M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"];
+    readonly add: readonly ["M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"];
 };
+
+// @public
+export const CHROME_MENUS: readonly ChromeMenu[];
 
 // @public
 export const CHROME_SLOT_IDS: readonly ChromeSlotId[];
 
 // @public
 export interface ChromeControl<Id extends string = string> {
+    readonly defaultToolbar?: false;
     readonly id: Id;
     // (undocumented)
     readonly kind: ChromeControlKind;
@@ -370,7 +484,7 @@ export interface ChromeControl<Id extends string = string> {
 export function chromeControlForSlot(slot: string): ChromeControl | null;
 
 // @public
-export type ChromeControlKind = 'command' | 'value' | 'save';
+export type ChromeControlKind = 'command' | 'value' | 'save' | 'open';
 
 // @public
 export type ChromeControlShape = 'icon' | 'dropdown' | 'color' | 'dialog';
@@ -386,6 +500,7 @@ export interface ChromeDisabledReason {
 
 // @public
 export interface ChromeGroup<Id extends string = string, ControlId extends string = string> {
+    readonly contextual?: true;
     // (undocumented)
     readonly controls: readonly ChromeControl<ControlId>[];
     readonly id: Id;
@@ -402,6 +517,59 @@ export type ChromeGroupId = (typeof CHROME_GROUPS)[number]['id'];
 export interface ChromeHint {
     // (undocumented)
     readonly key: ToolbarHintKey;
+}
+
+// @public
+export interface ChromeMenu {
+    // (undocumented)
+    readonly entries: readonly ChromeMenuEntry[];
+    // (undocumented)
+    readonly id: ChromeMenuId;
+    // (undocumented)
+    readonly labelKey: string;
+}
+
+// @public
+export type ChromeMenuEntry = ChromeMenuItemEntry | ChromeMenuSubmenuEntry | ChromeMenuSeparatorEntry;
+
+// @public
+export type ChromeMenuId = 'file' | 'edit' | 'view' | 'insert' | 'format';
+
+// @public
+export interface ChromeMenuItemEntry {
+    // (undocumented)
+    readonly kind: 'item';
+    readonly labelKey?: string;
+    readonly shortcut?: string;
+    // (undocumented)
+    readonly slot: ChromeSlotId;
+}
+
+// @internal
+export function chromeMenuRowKey(entry: Pick<ChromeMenuItemEntry, 'slot'>): string;
+
+// @public
+export interface ChromeMenuSeparatorEntry {
+    // (undocumented)
+    readonly kind: 'separator';
+}
+
+// @internal
+export function chromeMenuShortcut(slot: ChromeSlotId): string | undefined;
+
+// @public
+export function chromeMenuSlots(): readonly ChromeSlotId[];
+
+// @public
+export interface ChromeMenuSubmenuEntry {
+    // (undocumented)
+    readonly items: readonly ChromeMenuEntry[];
+    // (undocumented)
+    readonly kind: 'submenu';
+    // (undocumented)
+    readonly labelKey: string;
+    // (undocumented)
+    readonly paths: readonly string[] | null;
 }
 
 // @public
@@ -536,7 +704,10 @@ export interface DecimalSteps {
 }
 
 // @public
-export const DISABLED_REASON_KEYS: readonly ['disabledReason.editorNotReady', 'disabledReason.loading', 'disabledReason.notWired', 'disabledReason.nothingToUndo', 'disabledReason.nothingToRedo', 'disabledReason.editPending', 'disabledReason.rangeTooLarge', 'disabledReason.clearTooLarge', 'disabledReason.structureBlocked', 'disabledReason.structureBlockedUnnamed', 'disabledReason.structureUnavailable', 'disabledReason.wholeSheet', 'disabledReason.noSave', 'disabledReason.viewMode', 'disabledReason.locked', 'disabledReason.cellAlternateContent', 'disabledReason.cellAlternateContentClearAll', 'disabledReason.formulaRange', 'disabledReason.formulaRangeClearAll', 'disabledReason.formulaCell', 'disabledReason.formulaCellClearAll', 'disabledReason.formulaUnreadable', 'disabledReason.formulaUnreadableClearAll', 'disabledReason.formatLocked', 'disabledReason.stylesUnread', 'disabledReason.stylesUnreadProtected', 'disabledReason.structureLocked', 'disabledReason.workbookLocked', 'disabledReason.lastSheet', 'disabledReason.notWorksheet', 'disabledReason.sheetEditBlocked', 'disabledReason.composing', 'disabledReason.decimalsNoNumberSelection', 'disabledReason.decimalsNoNumber', 'disabledReason.decimalsNoShownPlaces', 'disabledReason.decimalsGeneralSection', 'disabledReason.decimalsGeneralSectionSelection', 'disabledReason.decimalsDate', 'disabledReason.decimalsDateSelection', 'disabledReason.decimalsText', 'disabledReason.decimalsTextSelection', 'disabledReason.decimalsFraction', 'disabledReason.decimalsFractionSelection', 'disabledReason.decimalsNoDecimals', 'disabledReason.decimalsNoDecimalsSelection', 'disabledReason.decimalsNoDecimalsCellSelection', 'disabledReason.decimalsMaxDecimals', 'disabledReason.decimalsMaxDecimalsSelection', 'disabledReason.decimalsMaxDecimalsCellSelection', 'disabledReason.decimalsTooLong', 'disabledReason.decimalsTooLongSelection', 'disabledReason.decimalsUnreadable', 'disabledReason.decimalsUnreadableSelection', 'disabledReason.decimalsNoCode', 'disabledReason.decimalsNoCodeSelection', 'disabledReason.decimalsMissingCode', 'disabledReason.decimalsMissingCodeSelection', 'disabledReason.decimalsTooLarge', 'disabledReason.mergeLocked', 'disabledReason.mergeOneCell', 'disabledReason.mergeOverlap', 'disabledReason.noMergedRange'];
+export function defaultChromeGroups(): readonly ChromeGroup[];
+
+// @public
+export const DISABLED_REASON_KEYS: readonly ['disabledReason.editorNotReady', 'disabledReason.loading', 'disabledReason.notWired', 'disabledReason.nothingToUndo', 'disabledReason.nothingToRedo', 'disabledReason.editPending', 'disabledReason.rangeTooLarge', 'disabledReason.clearTooLarge', 'disabledReason.structureBlocked', 'disabledReason.structureBlockedUnnamed', 'disabledReason.structureUnavailable', 'disabledReason.wholeSheet', 'disabledReason.noSave', 'disabledReason.viewMode', 'disabledReason.locked', 'disabledReason.cellAlternateContent', 'disabledReason.cellAlternateContentClearAll', 'disabledReason.formulaRange', 'disabledReason.formulaRangeClearAll', 'disabledReason.formulaCell', 'disabledReason.formulaCellClearAll', 'disabledReason.formulaUnreadable', 'disabledReason.formulaUnreadableClearAll', 'disabledReason.formatLocked', 'disabledReason.stylesUnread', 'disabledReason.stylesUnreadProtected', 'disabledReason.structureLocked', 'disabledReason.workbookLocked', 'disabledReason.lastSheet', 'disabledReason.notWorksheet', 'disabledReason.sheetEditBlocked', 'disabledReason.composing', 'disabledReason.decimalsNoNumberSelection', 'disabledReason.decimalsNoNumber', 'disabledReason.decimalsNoShownPlaces', 'disabledReason.decimalsGeneralSection', 'disabledReason.decimalsGeneralSectionSelection', 'disabledReason.decimalsDate', 'disabledReason.decimalsDateSelection', 'disabledReason.decimalsText', 'disabledReason.decimalsTextSelection', 'disabledReason.decimalsFraction', 'disabledReason.decimalsFractionSelection', 'disabledReason.decimalsNoDecimals', 'disabledReason.decimalsNoDecimalsSelection', 'disabledReason.decimalsNoDecimalsCellSelection', 'disabledReason.decimalsMaxDecimals', 'disabledReason.decimalsMaxDecimalsSelection', 'disabledReason.decimalsMaxDecimalsCellSelection', 'disabledReason.decimalsTooLong', 'disabledReason.decimalsTooLongSelection', 'disabledReason.decimalsUnreadable', 'disabledReason.decimalsUnreadableSelection', 'disabledReason.decimalsNoCode', 'disabledReason.decimalsNoCodeSelection', 'disabledReason.decimalsMissingCode', 'disabledReason.decimalsMissingCodeSelection', 'disabledReason.decimalsTooLarge', 'disabledReason.mergeLocked', 'disabledReason.mergeOneCell', 'disabledReason.mergeOverlap', 'disabledReason.mergeDropsValues', 'disabledReason.noMergedRange', 'disabledReason.noOpen', 'disabledReason.noClipboard', 'disabledReason.zoomMax', 'disabledReason.zoomMin', 'disabledReason.zoomActual'];
 
 // @public
 export type DisabledReasonKey = (typeof DISABLED_REASON_KEYS)[number];
@@ -554,13 +725,16 @@ export interface DocumentChange {
 }
 
 // @public
-export const EDIT_REFUSAL_CODES: readonly ['unknown-sheet', 'bad-reference', 'bad-value', 'text-too-long', 'bad-size', 'merge-one-cell', 'merge-overlap', 'merge-drops-values', 'bad-position', 'invalid-sheet', 'shared-formula', 'unreadable-formula', 'formula-syntax', 'r1c1-formula', 'unsupported-function', 'unknown-formula-reference', 'invalid-character', 'unsupported-package', 'cell-alternate-content', 'bad-format', 'unreadable-number-format', 'range-too-large', 'clear-too-large', 'decimals-too-large', 'decimals-unchanged', 'style-limit', 'invalid-part', 'locked', 'structure-blocked', 'sheet-range-blocked', 'grid-full', 'stale-revision', 'save-failed', 'sheet-name-invalid', 'sheet-name-too-long', 'sheet-name-taken', 'sheet-name-ambiguous', 'last-sheet', 'nothing-to-undo', 'nothing-to-redo', 'not-editable', 'whole-sheet', 'merged-range', 'paste-html', 'copy-too-large', 'copy-conditional-limit', 'copy-array-formula', 'copy-unreadable-formula', 'copy-wrapped-formula', 'paste-unreadable-formula', 'paste-name-scope', 'cut-wrapped-value', 'cut-expired', 'copy-expired', 'paste-reference-outside', 'too-many-rows', 'resize-anchor', 'view-mode', 'composing', 'edit-pending', 'edit-dropped', 'loading', 'go-to-reference', 'go-to-name', 'go-to-sheet'];
+export const EDIT_REFUSAL_CODES: readonly ['unknown-sheet', 'bad-reference', 'bad-value', 'text-too-long', 'bad-size', 'merge-one-cell', 'merge-overlap', 'merge-drops-values', 'bad-position', 'invalid-sheet', 'shared-formula', 'unreadable-formula', 'formula-syntax', 'r1c1-formula', 'unsupported-function', 'unknown-formula-reference', 'invalid-character', 'unsupported-package', 'cell-alternate-content', 'bad-format', 'unreadable-number-format', 'range-too-large', 'clear-too-large', 'decimals-too-large', 'decimals-unchanged', 'style-limit', 'invalid-part', 'locked', 'structure-blocked', 'sheet-range-blocked', 'grid-full', 'stale-revision', 'save-failed', 'open-failed', 'sheet-name-invalid', 'sheet-name-too-long', 'sheet-name-taken', 'sheet-name-ambiguous', 'last-sheet', 'nothing-to-undo', 'nothing-to-redo', 'not-editable', 'whole-sheet', 'merged-range', 'paste-html', 'clipboard-read', 'copy-too-large', 'copy-conditional-limit', 'copy-array-formula', 'copy-unreadable-formula', 'copy-wrapped-formula', 'paste-unreadable-formula', 'paste-name-scope', 'cut-wrapped-value', 'cut-expired', 'copy-expired', 'paste-reference-outside', 'too-many-rows', 'resize-anchor', 'view-mode', 'composing', 'edit-pending', 'edit-dropped', 'loading', 'go-to-reference', 'go-to-name', 'go-to-sheet'];
 
 // @public
 export type EditMove = 'down' | 'up' | 'right' | 'left';
 
 // @public
 export function editMoveOf(keys: FieldKeys): EditMove | null;
+
+// @internal
+export function editorClipboardReader(editor: XlsxEditorInstance | null | undefined): (() => Promise<PasteData>) | undefined;
 
 // @internal
 export interface EditorCommandSlice {
@@ -589,7 +763,7 @@ export interface EditorEvents {
 
 // @public
 export interface EditorFailure {
-    readonly code: 'package' | 'fonts' | 'no-worksheet';
+    readonly code: 'package' | 'read' | 'fonts' | 'no-worksheet';
     readonly detail?: string;
     readonly limit?: 'zip.maxEntries' | 'zip.maxTotalBytes' | 'zip.maxRatio' | 'xml.maxBytes' | 'xml.maxElements' | 'xml.maxDepth' | 'workbook.maxSheetNameLength';
     readonly part?: string;
@@ -930,6 +1104,12 @@ export function inlineStep(key: string, el: Element): -1 | 0 | 1;
 export function insertFieldText(el: HTMLTextAreaElement, text: string): boolean;
 
 // @internal
+export function isApplePlatform(nav: {
+    readonly platform?: string;
+    readonly userAgent?: string;
+} | undefined): boolean;
+
+// @internal
 export function isDialogBackdropPoint(dialog: Element, event: {
     readonly target: EventTarget | null;
     readonly clientX: number;
@@ -1011,7 +1191,239 @@ export const MAX_ROWS = 1048576;
 export const MAX_ZOOM = 4;
 
 // @internal
+export function measureMenuBar(el: HTMLElement, ids: readonly string[], widths: Map<string, number>): number;
+
+// @internal
 export function measureToolbar(el: HTMLElement, groups: readonly ToolbarFitGroup[], widths: Map<string, number>): readonly string[];
+
+// @internal
+export const MENU_FIXED_ATTRIBUTE = "data-menu-fixed";
+
+// @internal
+export const MENU_KEY_WORD_KEYS: {
+    readonly ctrl: 'menu.keys.ctrl';
+    readonly shift: 'menu.keys.shift';
+    readonly alt: 'menu.keys.alt';
+};
+
+// @internal
+export const MENU_MORE_ID = "xlsx-menu-more";
+
+// @public
+export const MENU_NAMED_PARTS: {
+    readonly Open: MenuNamedRow;
+    readonly Save: MenuNamedRow;
+    readonly Undo: MenuNamedRow;
+    readonly Redo: MenuNamedRow;
+    readonly Cut: MenuNamedRow;
+    readonly Copy: MenuNamedRow;
+    readonly Paste: MenuNamedRow;
+    readonly SelectAll: MenuNamedRow;
+    readonly ClearContents: MenuNamedRow;
+    readonly ClearFormatting: MenuNamedRow;
+    readonly ClearAll: MenuNamedRow;
+    readonly DeleteRows: MenuNamedRow;
+    readonly DeleteColumns: MenuNamedRow;
+    readonly ZoomIn: MenuNamedRow;
+    readonly ZoomOut: MenuNamedRow;
+    readonly ZoomReset: MenuNamedRow;
+    readonly InsertRows: MenuNamedRow;
+    readonly InsertColumns: MenuNamedRow;
+    readonly InsertSheet: MenuNamedRow;
+    readonly Bold: MenuNamedRow;
+    readonly Italic: MenuNamedRow;
+    readonly Underline: MenuNamedRow;
+    readonly AlignLeft: MenuNamedRow;
+    readonly AlignCenter: MenuNamedRow;
+    readonly AlignRight: MenuNamedRow;
+    readonly AlignTop: MenuNamedRow;
+    readonly AlignMiddle: MenuNamedRow;
+    readonly AlignBottom: MenuNamedRow;
+    readonly WrapText: MenuNamedRow;
+    readonly MergeCells: MenuNamedRow;
+    readonly MergeAndCenter: MenuNamedRow;
+    readonly UnmergeCells: MenuNamedRow;
+    readonly BordersOutline: MenuNamedRow;
+    readonly BordersAll: MenuNamedRow;
+    readonly BordersNone: MenuNamedRow;
+    readonly NumberFormat: MenuNamedRow;
+    readonly IncreaseDecimals: MenuNamedRow;
+    readonly DecreaseDecimals: MenuNamedRow;
+};
+
+// @internal
+export const MENU_PANEL_MARGIN = 8;
+
+// @internal
+export function menuBarArrow(key: string, rtl: boolean): -1 | 0 | 1;
+
+// @internal
+export interface MenuBarSpec {
+    // (undocumented)
+    readonly after?: string | undefined;
+    // (undocumented)
+    readonly hidden?: boolean | undefined;
+    // (undocumented)
+    readonly id: string;
+    // (undocumented)
+    readonly label?: string | undefined;
+    // (undocumented)
+    readonly labelKey?: string | undefined;
+}
+
+// @internal
+export type MenuBarTriggerKey = {
+    readonly kind: 'step';
+    readonly by: -1 | 1;
+} | {
+    readonly kind: 'open';
+    readonly edge: 'first' | 'last';
+} | {
+    readonly kind: 'edge';
+    readonly edge: 'first' | 'last';
+} | null;
+
+// @internal
+export function menuBarTriggerKey(key: string, rtl: boolean): MenuBarTriggerKey;
+
+// @internal
+export interface MenuBox {
+    // (undocumented)
+    readonly bottom: number;
+    // (undocumented)
+    readonly left: number;
+    // (undocumented)
+    readonly right: number;
+    // (undocumented)
+    readonly top: number;
+}
+
+// @internal
+export function menuHiddenRowProblem(slotId: string, menu: string, names: MenuPartNames): string;
+
+// @internal
+export interface MenuKeyWords {
+    // (undocumented)
+    readonly alt: string;
+    // (undocumented)
+    readonly ctrl: string;
+    // (undocumented)
+    readonly shift: string;
+}
+
+// @internal
+export function menuKeyWords(t: (key: string) => string): MenuKeyWords;
+
+// @public
+export interface MenuNamedRow {
+    // (undocumented)
+    readonly slot: ChromeSlotId;
+}
+
+// @internal
+export type MenuPanelKey = {
+    readonly kind: 'step';
+    readonly by: -1 | 1;
+} | {
+    readonly kind: 'edge';
+    readonly edge: 'first' | 'last';
+}
+/** Open the submenu of the focused row. */
+| {
+    readonly kind: 'openSubmenu';
+}
+/** Close this panel: a submenu goes back to its row, a bar menu to its trigger. */
+| {
+    readonly kind: 'close';
+}
+/** Move to the next or the previous menu of the bar (from a top panel only). */
+| {
+    readonly kind: 'bar';
+    readonly by: -1 | 1;
+}
+/** Leave the bar: Tab closes every panel. */
+| {
+    readonly kind: 'leave';
+} | {
+    readonly kind: 'typeahead';
+    readonly char: string;
+} | null;
+
+// @internal
+export function menuPanelKey(e: {
+    readonly key: string;
+    readonly altKey?: boolean;
+    readonly ctrlKey?: boolean;
+    readonly metaKey?: boolean;
+}, options: {
+    readonly rtl: boolean;
+    readonly submenu: boolean;
+    readonly onSubmenuRow: boolean;
+}): MenuPanelKey;
+
+// @internal
+export interface MenuPanelPlacement {
+    // (undocumented)
+    readonly left: number;
+    readonly maxHeight: number;
+    readonly side: 'start' | 'end' | 'clamped';
+    // (undocumented)
+    readonly top: number;
+}
+
+// @internal
+export function menuPanelPlacement(input: {
+    readonly submenu: boolean;
+    readonly rtl: boolean;
+    readonly prefer?: 'start' | 'end';
+    readonly anchor: MenuBox;
+    readonly width: number;
+    readonly height: number;
+    readonly viewportWidth: number;
+    readonly viewportHeight: number;
+    readonly margin?: number;
+}): MenuPanelPlacement;
+
+// @internal
+export function menuPartName(id: string): string;
+
+// @internal
+export interface MenuPartNames {
+    // (undocumented)
+    readonly menu: string;
+}
+
+// @internal
+export function menuRowInBarProblem(slotId: string, names: MenuPartNames): string;
+
+// @internal
+export function menuRowKeepsFocus(slot: ChromeSlotId): boolean;
+
+// @public
+export type MenuRowPartName = keyof typeof MENU_NAMED_PARTS;
+
+// @internal
+export function menuRowRole(slot: ChromeSlotId, toggles: boolean): 'menuitem' | 'menuitemcheckbox' | 'menuitemradio';
+
+// @internal
+export function menuShortcutText(chord: string, apple: boolean, words: MenuKeyWords): string;
+
+// @internal
+export interface MenuSlotRowSpec {
+    // (undocumented)
+    readonly hidden?: boolean | undefined;
+    // (undocumented)
+    readonly slotId: string;
+}
+
+// @internal
+export function menuStep(count: number, from: number, by: -1 | 1): number;
+
+// @internal
+export function menusThatFit(widths: readonly number[], width: number, gap?: number): number;
+
+// @internal
+export function menuTypeahead(labels: readonly string[], from: number, char: string): number;
 
 // @public
 export type MergeCommand = 'merge' | 'mergeCenter' | 'unmerge';
@@ -1053,6 +1465,9 @@ export function movePopupFocus(e: FocusMoveKey, selector: string, grid?: boolean
 
 // @public
 export const NO_FILL = "none";
+
+// @internal
+export function notInToolbar(id: string): string;
 
 // @public
 export const NUMBER_FORMAT_CODE_PROBLEM_KEYS: readonly ['numberFormat.problem.empty', 'numberFormat.problem.tooLong', 'numberFormat.problem.invalidCharacter', 'numberFormat.problem.unreadable'];
@@ -1162,7 +1577,13 @@ export interface NumberLocale {
 }
 
 // @internal
+export function observeMenuBar(el: HTMLElement, measure: () => void): () => void;
+
+// @internal
 export function observeToolbar(el: HTMLElement, measure: () => void): () => void;
+
+// @internal
+export function openPickedWorkbook(editor: XlsxEditorInstance, file: Blob | Uint8Array): Promise<EditorSnapshot>;
 
 // @internal
 export function openSheetMenu(el: HTMLElement, bar: HTMLElement | null, left: number, opening: SheetMenuOpening, editor: Pick<XlsxEditorInstance, 'focus'> | null): () => void;
@@ -1228,6 +1649,12 @@ export type PatchVertical = (typeof PATCH_VERTICAL)[number];
 export const pixelsToPoints: (pixels: number) => number;
 
 // @internal
+export function placeMenuPanel(panel: HTMLElement, options: {
+    readonly submenu: boolean;
+    readonly prefer?: 'start' | 'end';
+}): () => void;
+
+// @internal
 export function placePopup(root: HTMLElement, inline: boolean, selector: string): void;
 
 // @public
@@ -1258,6 +1685,9 @@ export function pressFieldBox(el: HTMLTextAreaElement | null, e: FieldBoxPress):
 
 // @public
 export function previewNumberFormat(editor: XlsxEditorInstance, code: string): NumberFormatPreview;
+
+// @internal
+export const REACT_MENU_PART_NAMES: MenuPartNames;
 
 // @public
 export type RefusalSubject = StructureSubject;
@@ -1465,7 +1895,7 @@ export interface StatusNotice {
 // @internal
 export const statusSlice: (s: EditorSnapshot) => {
     status: "empty" | "failed" | "loading" | "ready";
-    failure: "fonts" | "no-worksheet" | "package" | undefined;
+    failure: "fonts" | "no-worksheet" | "package" | "read" | undefined;
     failureLimit: "workbook.maxSheetNameLength" | "xml.maxBytes" | "xml.maxDepth" | "xml.maxElements" | "zip.maxEntries" | "zip.maxRatio" | "zip.maxTotalBytes" | undefined;
     failurePart: string | undefined;
     partsPastLimit: readonly PartPastLimit[];
@@ -1529,6 +1959,9 @@ export interface SubstituteFontFailure {
 export function substituteFontFailure(failures: readonly SubstituteFontFailure[]): EditorFailure | null;
 
 // @internal
+export function systemClipboardReader(node: Node | null | undefined): (() => Promise<PasteData>) | undefined;
+
+// @internal
 export function systemPrefersDark(): boolean;
 
 // @internal
@@ -1547,6 +1980,9 @@ export const tabsSlice: (s: EditorSnapshot) => {
     workbookProtection: WorkbookProtection | null;
     sheetEditRefusal: EditRefusal | null;
 };
+
+// @internal
+export function tidySeparators(entries: readonly ChromeMenuEntry[]): ChromeMenuEntry[];
 
 // @internal
 export const TOOLBAR_COLLAPSE_ORDER: readonly string[];
@@ -1672,7 +2108,9 @@ export type ToolbarHintKey = (typeof TOOLBAR_HINT_KEYS)[number];
 
 // @public
 export interface ToolbarHost {
+    readonly open?: () => void;
     readonly opening?: () => boolean;
+    readonly readClipboard?: () => Promise<PasteData>;
     readonly save?: (bytes: Uint8Array<ArrayBuffer>, saved: SavedWorkbook) => void;
     readonly saveStart?: (saving: Promise<SavedWorkbook | null>) => void;
 }
@@ -1696,6 +2134,9 @@ export interface ToolbarPartNames {
 }
 
 // @internal
+export function toolbarSlotAdvice(id: string, group?: string): string;
+
+// @internal
 export interface ToolbarSlotRequest {
     readonly asChild?: boolean | undefined;
     readonly asChildElement?: boolean | undefined;
@@ -1709,6 +2150,9 @@ export interface ToolbarSlotRequest {
 
 // @public
 export function trapTabWithin(panel: HTMLElement, event: KeyboardEvent): boolean;
+
+// @internal
+export const VUE_MENU_PART_NAMES: MenuPartNames;
 
 // @internal
 export function warnPartTranslateError(part: string, warned: Set<string>, warn: (message: string) => void): (key: string, error: unknown) => void;
@@ -1768,6 +2212,7 @@ export interface XlsxEditorInstance {
     save(): Uint8Array<ArrayBuffer> | null;
     saveInTasks(): Promise<SavedWorkbook | null>;
     select(anchor: GridPoint, focus?: GridPoint): boolean;
+    selectAll(): void;
     selectReference(reference: string): EditResult;
     setActiveSheet(index: number): boolean;
     setColumnWidth(first: number, last: number, width: number): EditResult;

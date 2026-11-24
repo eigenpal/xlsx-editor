@@ -17,6 +17,7 @@ import { StatusMessage, ZoomControl } from './chrome.tsx';
 import { FormulaBar } from './FormulaBar.tsx';
 import { SheetTabs } from './SheetTabs.tsx';
 import { XlsxEditorToolbar } from './toolbar/Toolbar.tsx';
+import { XlsxEditorMenu } from './menu/Menu.tsx';
 
 /**
  * The type of `XlsxEditor`: the composed editor, and its parts as statics for a custom layout.
@@ -31,6 +32,7 @@ export interface XlsxEditorNamespace extends ForwardRefExoticComponent<
   readonly Viewport: typeof XlsxEditorViewport;
   readonly Content: typeof XlsxEditorContent;
   readonly Toolbar: typeof XlsxEditorToolbar;
+  readonly Menu: typeof XlsxEditorMenu;
   readonly FormulaBar: typeof FormulaBar;
   readonly SheetTabs: typeof SheetTabs;
   readonly ZoomControl: typeof ZoomControl;
@@ -43,6 +45,7 @@ export const XlsxEditor: XlsxEditorNamespace = Object.assign(XlsxEditorDefault, 
   Viewport: XlsxEditorViewport,
   Content: XlsxEditorContent,
   Toolbar: XlsxEditorToolbar,
+  Menu: XlsxEditorMenu,
   FormulaBar,
   SheetTabs,
   ZoomControl,
@@ -92,6 +95,33 @@ export {
   useChromeTranslate,
 } from './locale.tsx';
 export type { XlsxEditorToolbarNamespace, XlsxEditorToolbarProps } from './toolbar/Toolbar.tsx';
+export {
+  XlsxEditorMenu,
+  type XlsxEditorMenuNamespace,
+  type XlsxEditorMenuProps,
+} from './menu/Menu.tsx';
+export {
+  XlsxEditorMenuEntry,
+  XlsxEditorMenuGroup,
+  XlsxEditorMenuItem,
+  XlsxEditorMenuMenu,
+  XlsxEditorMenuRow,
+  XlsxEditorMenuSeparator,
+  XlsxEditorMenuSubmenu,
+} from './menu/parts.tsx';
+export type {
+  XlsxEditorMenuEntryProps,
+  XlsxEditorMenuGroupProps,
+  XlsxEditorMenuItemProps,
+  XlsxEditorMenuMenuProps,
+  XlsxEditorMenuNamedRow,
+  XlsxEditorMenuNamedRowProps,
+  XlsxEditorMenuPart,
+  XlsxEditorMenuPartProps,
+  XlsxEditorMenuRowProps,
+  XlsxEditorMenuSeparatorProps,
+  XlsxEditorMenuSubmenuProps,
+} from './menu/parts.tsx';
 export type {
   XlsxEditorContentProps,
   XlsxEditorFonts,
@@ -150,6 +180,11 @@ export type {
   ChromeGroup,
   ChromeGroupId,
   ChromeHint,
+  ChromeMenuEntry,
+  ChromeMenuId,
+  ChromeMenuItemEntry,
+  ChromeMenuSeparatorEntry,
+  ChromeMenuSubmenuEntry,
   ChromePartTranslate,
   ChromeSlotId,
   ChromeTranslate,

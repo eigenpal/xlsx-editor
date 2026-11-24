@@ -137,6 +137,7 @@ const enJson: {
         failed: {
             package: string;
             fonts: string;
+            read: string;
             noWorksheet: string;
             tooLarge: string;
             tooLargePart: string;
@@ -200,6 +201,7 @@ const enJson: {
             "grid-full": string;
             "stale-revision": string;
             "save-failed": string;
+            "open-failed": string;
             "sheet-name-invalid": string;
             "sheet-name-too-long": string;
             "sheet-name-taken": string;
@@ -211,6 +213,7 @@ const enJson: {
             "whole-sheet": string;
             "merged-range": string;
             "paste-html": string;
+            "clipboard-read": string;
             "copy-too-large": string;
             "copy-conditional-limit": string;
             "copy-array-formula": string;
@@ -391,6 +394,10 @@ const enJson: {
             cells: string;
             clear: string;
             file: string;
+            edit: string;
+            view: string;
+            sheet: string;
+            merge: string;
         };
         undo: string;
         redo: string;
@@ -497,6 +504,32 @@ const enJson: {
         disabledTitle: string;
         hintTitle: string;
     };
+    menu: {
+        label: string;
+        file: string;
+        edit: string;
+        view: string;
+        insert: string;
+        format: string;
+        more: string;
+        open: string;
+        cut: string;
+        copy: string;
+        paste: string;
+        selectAll: string;
+        zoomReset: string;
+        addSheet: string;
+        keys: {
+            ctrl: string;
+            shift: string;
+            alt: string;
+        };
+    };
+    merge: {
+        merge: string;
+        mergeCenter: string;
+        unmerge: string;
+    };
     structureSubject: {
         cell: string;
         "wrapped-formula": string;
@@ -588,7 +621,13 @@ const enJson: {
         mergeLocked: string;
         mergeOneCell: string;
         mergeOverlap: string;
+        mergeDropsValues: string;
         noMergedRange: string;
+        noOpen: string;
+        noClipboard: string;
+        zoomMax: string;
+        zoomMin: string;
+        zoomActual: string;
     };
 };
 

@@ -11,6 +11,11 @@ import { ChromeDisabledReason } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroup } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroupId } from '@xlsx-editor.dev/core/editor';
 import { ChromeHint } from '@xlsx-editor.dev/core/editor';
+import { ChromeMenuEntry } from '@xlsx-editor.dev/core/editor';
+import { ChromeMenuId } from '@xlsx-editor.dev/core/editor';
+import { ChromeMenuItemEntry } from '@xlsx-editor.dev/core/editor';
+import { ChromeMenuSeparatorEntry } from '@xlsx-editor.dev/core/editor';
+import { ChromeMenuSubmenuEntry } from '@xlsx-editor.dev/core/editor';
 import { ChromePartTranslate } from '@xlsx-editor.dev/core/editor';
 import { ChromeSlotId } from '@xlsx-editor.dev/core/editor';
 import { ChromeTranslate } from '@xlsx-editor.dev/core/editor';
@@ -117,6 +122,16 @@ export { ChromeGroup }
 export { ChromeGroupId }
 
 export { ChromeHint }
+
+export { ChromeMenuEntry }
+
+export { ChromeMenuId }
+
+export { ChromeMenuItemEntry }
+
+export { ChromeMenuSeparatorEntry }
+
+export { ChromeMenuSubmenuEntry }
 
 export { ChromePartTranslate }
 
@@ -665,6 +680,10 @@ const XlsxEditor$1: vue.DefineComponent<vue.ExtractPropTypes<{
         readonly type: BooleanConstructor;
         readonly default: undefined;
     };
+    readonly menu: {
+        readonly type: PropType<boolean | XlsxEditorMenuProps>;
+        readonly default: undefined;
+    };
 }>, () => vue.VNode<vue.RendererNode, vue.RendererElement, {
     [key: string]: any;
 }>, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {
@@ -702,6 +721,10 @@ const XlsxEditor$1: vue.DefineComponent<vue.ExtractPropTypes<{
         readonly type: BooleanConstructor;
         readonly default: undefined;
     };
+    readonly menu: {
+        readonly type: PropType<boolean | XlsxEditorMenuProps>;
+        readonly default: undefined;
+    };
 }>> & Readonly<{
     onChange?: ((_snapshot: EditorSnapshot) => any) | undefined;
     onFontError?: ((_failure: EditorFailure) => any) | undefined;
@@ -716,6 +739,7 @@ const XlsxEditor$1: vue.DefineComponent<vue.ExtractPropTypes<{
     readonly locale: _xlsx_editor_dev_i18n.PartialLocaleStrings;
     readonly colorMode: ColorMode;
     readonly opening: boolean;
+    readonly menu: boolean | XlsxEditorMenuProps;
 }, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
 
 // @public
@@ -758,11 +782,712 @@ export { XlsxEditorInstance }
 export const xlsxEditorKey: InjectionKey<ShallowRef<XlsxEditorInstance | null>>;
 
 // @public
+export const XlsxEditorMenu: XlsxEditorMenuNamespace;
+
+// @public
+export const XlsxEditorMenuEntry: DefineComponent<vue.ExtractPropTypes<{
+    readonly entry: {
+        readonly type: PropType<ChromeMenuEntry>;
+        readonly required: true;
+    };
+}>, () => VNode<vue.RendererNode, vue.RendererElement, {
+    [key: string]: any;
+}>[], {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly entry: {
+        readonly type: PropType<ChromeMenuEntry>;
+        readonly required: true;
+    };
+}>> & Readonly<{}>, {}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+
+// @public
+export type XlsxEditorMenuEntryProps = ExtractPublicPropTypes<typeof xlsxEditorMenuEntryProps>;
+
+// @public (undocumented)
+const xlsxEditorMenuEntryProps: {
+    readonly entry: {
+        readonly type: PropType<ChromeMenuEntry>;
+        readonly required: true;
+    };
+};
+
+// @public
+export const XlsxEditorMenuGroup: DefineComponent<vue.ExtractPropTypes<{
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly labelKey: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly hidden: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+}>, () => vue_jsx_runtime.JSX.Element | null, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly labelKey: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly hidden: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+}>> & Readonly<{}>, {
+    readonly label: string;
+    readonly labelKey: string;
+    readonly className: string;
+    readonly hidden: boolean;
+}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+
+// @public
+export type XlsxEditorMenuGroupProps = ExtractPublicPropTypes<typeof xlsxEditorMenuGroupProps>;
+
+// @public (undocumented)
+const xlsxEditorMenuGroupProps: {
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly labelKey: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly hidden: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+};
+
+// @public
+export const XlsxEditorMenuItem: DefineComponent<vue.ExtractPropTypes<{
+    readonly slotId: {
+        readonly type: PropType<ChromeSlotId>;
+        readonly required: true;
+    };
+    readonly labelKey: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly shortcut: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly hidden: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+}>, () => VNode<vue.RendererNode, vue.RendererElement, {
+    [key: string]: any;
+}> | null, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly slotId: {
+        readonly type: PropType<ChromeSlotId>;
+        readonly required: true;
+    };
+    readonly labelKey: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly shortcut: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly hidden: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+}>> & Readonly<{}>, {
+    readonly labelKey: string;
+    readonly label: string;
+    readonly shortcut: string;
+    readonly className: string;
+    readonly hidden: boolean;
+}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+
+// @public
+export type XlsxEditorMenuItemProps = ExtractPublicPropTypes<typeof xlsxEditorMenuItemProps>;
+
+// @public (undocumented)
+const xlsxEditorMenuItemProps: {
+    readonly slotId: {
+        readonly type: PropType<ChromeSlotId>;
+        readonly required: true;
+    };
+    readonly labelKey: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly shortcut: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly hidden: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+};
+
+// @public
+export const XlsxEditorMenuMenu: DefineComponent<vue.ExtractPropTypes<{
+    readonly id: {
+        readonly type: PropType<ChromeMenuId | (string & {})>;
+        readonly required: true;
+    };
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly labelKey: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly hidden: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly preset: {
+        readonly type: BooleanConstructor;
+        readonly default: true;
+    };
+    readonly after: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>, () => vue_jsx_runtime.JSX.Element | null, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly id: {
+        readonly type: PropType<ChromeMenuId | (string & {})>;
+        readonly required: true;
+    };
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly labelKey: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly hidden: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly preset: {
+        readonly type: BooleanConstructor;
+        readonly default: true;
+    };
+    readonly after: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>> & Readonly<{}>, {
+    readonly label: string;
+    readonly labelKey: string;
+    readonly className: string;
+    readonly hidden: boolean;
+    readonly preset: boolean;
+    readonly after: string;
+}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+
+// @public
+export type XlsxEditorMenuMenuProps = ExtractPublicPropTypes<typeof xlsxEditorMenuMenuProps>;
+
+// @public (undocumented)
+const xlsxEditorMenuMenuProps: {
+    readonly id: {
+        readonly type: PropType<ChromeMenuId | (string & {})>;
+        readonly required: true;
+    };
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly labelKey: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly hidden: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly preset: {
+        readonly type: BooleanConstructor;
+        readonly default: true;
+    };
+    readonly after: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+};
+
+// @public
+export type XlsxEditorMenuNamedRow = DefineComponent<XlsxEditorMenuNamedRowProps>;
+
+// @public
+export type XlsxEditorMenuNamedRowProps = ExtractPublicPropTypes<typeof xlsxEditorMenuNamedRowProps>;
+
+// @public (undocumented)
+const xlsxEditorMenuNamedRowProps: {
+    readonly labelKey: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly shortcut: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly hidden: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+};
+
+// @public
+export interface XlsxEditorMenuNamespace {
+    (props: XlsxEditorMenuProps & AllowedComponentProps): VNode;
+    // (undocumented)
+    readonly AlignBottom: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly AlignCenter: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly AlignLeft: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly AlignMiddle: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly AlignRight: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly AlignTop: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Bold: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly BordersAll: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly BordersNone: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly BordersOutline: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ClearAll: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ClearContents: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ClearFormatting: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Copy: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Cut: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly DecreaseDecimals: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly DeleteColumns: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly DeleteRows: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Edit: XlsxEditorMenuPart;
+    readonly Entry: typeof XlsxEditorMenuEntry;
+    // (undocumented)
+    readonly File: XlsxEditorMenuPart;
+    // (undocumented)
+    readonly Format: XlsxEditorMenuPart;
+    readonly Group: typeof XlsxEditorMenuGroup;
+    // (undocumented)
+    readonly IncreaseDecimals: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Insert: XlsxEditorMenuPart;
+    // (undocumented)
+    readonly InsertColumns: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly InsertRows: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly InsertSheet: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Italic: XlsxEditorMenuNamedRow;
+    readonly Item: typeof XlsxEditorMenuItem;
+    readonly Menu: typeof XlsxEditorMenuMenu;
+    // (undocumented)
+    readonly MergeAndCenter: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly MergeCells: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly NumberFormat: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Open: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Paste: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Redo: XlsxEditorMenuNamedRow;
+    readonly Row: typeof XlsxEditorMenuRow;
+    // (undocumented)
+    readonly Save: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly SelectAll: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Separator: typeof XlsxEditorMenuSeparator;
+    // (undocumented)
+    readonly Submenu: typeof XlsxEditorMenuSubmenu;
+    // (undocumented)
+    readonly Underline: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Undo: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly UnmergeCells: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly View: XlsxEditorMenuPart;
+    // (undocumented)
+    readonly WrapText: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ZoomIn: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ZoomOut: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ZoomReset: XlsxEditorMenuNamedRow;
+}
+
+// @public
+export type XlsxEditorMenuPart = DefineComponent<XlsxEditorMenuPartProps>;
+
+// @public
+export type XlsxEditorMenuPartProps = ExtractPublicPropTypes<typeof xlsxEditorMenuPartProps>;
+
+// @public (undocumented)
+const xlsxEditorMenuPartProps: {
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly labelKey: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly hidden: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly preset: {
+        readonly type: BooleanConstructor;
+        readonly default: true;
+    };
+    readonly after: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+};
+
+// @public
+export type XlsxEditorMenuProps = ExtractPublicPropTypes<typeof xlsxEditorMenuProps>;
+
+// @public (undocumented)
+const xlsxEditorMenuProps: {
+    readonly onSave: {
+        readonly type: PropType<(bytes: Uint8Array<ArrayBuffer>, saved: SavedWorkbook) => void>;
+        readonly default: undefined;
+    };
+    readonly onSaveStart: {
+        readonly type: PropType<(saving: Promise<SavedWorkbook | null>) => void>;
+        readonly default: undefined;
+    };
+    readonly onOpen: {
+        readonly type: PropType<() => void>;
+        readonly default: undefined;
+    };
+    readonly onOpenFile: {
+        readonly type: PropType<(file: File) => void>;
+        readonly default: undefined;
+    };
+    readonly opening: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly overflow: {
+        readonly type: BooleanConstructor;
+        readonly default: true;
+    };
+    readonly preset: {
+        readonly type: BooleanConstructor;
+        readonly default: true;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+};
+
+// @public
+export const XlsxEditorMenuRow: DefineComponent<vue.ExtractPropTypes<{
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly shortcut: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly disabled: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly disabledReason: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly active: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly selected: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly onSelect: {
+        readonly type: PropType<() => void>;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>, () => vue_jsx_runtime.JSX.Element, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly shortcut: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly disabled: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly disabledReason: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly active: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly selected: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly onSelect: {
+        readonly type: PropType<() => void>;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>> & Readonly<{}>, {
+    readonly label: string;
+    readonly shortcut: string;
+    readonly disabled: boolean;
+    readonly disabledReason: string;
+    readonly active: boolean;
+    readonly selected: boolean;
+    readonly onSelect: () => void;
+    readonly className: string;
+}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+
+// @public
+export type XlsxEditorMenuRowProps = ExtractPublicPropTypes<typeof xlsxEditorMenuRowProps>;
+
+// @public (undocumented)
+const xlsxEditorMenuRowProps: {
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly shortcut: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly disabled: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly disabledReason: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly active: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly selected: {
+        readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly onSelect: {
+        readonly type: PropType<() => void>;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+};
+
+// @public
+export const XlsxEditorMenuSeparator: DefineComponent<vue.ExtractPropTypes<{
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>, () => vue_jsx_runtime.JSX.Element, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>> & Readonly<{}>, {
+    readonly className: string;
+}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+
+// @public
+export type XlsxEditorMenuSeparatorProps = ExtractPublicPropTypes<typeof xlsxEditorMenuSeparatorProps>;
+
+// @public (undocumented)
+const xlsxEditorMenuSeparatorProps: {
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+};
+
+// @public
+export const XlsxEditorMenuSubmenu: DefineComponent<vue.ExtractPropTypes<{
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly labelKey: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly paths: {
+        readonly type: PropType<readonly string[] | null>;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>, () => vue_jsx_runtime.JSX.Element, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly labelKey: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly paths: {
+        readonly type: PropType<readonly string[] | null>;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>> & Readonly<{}>, {
+    readonly label: string;
+    readonly labelKey: string;
+    readonly paths: readonly string[] | null;
+    readonly className: string;
+}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+
+// @public
+export type XlsxEditorMenuSubmenuProps = ExtractPublicPropTypes<typeof xlsxEditorMenuSubmenuProps>;
+
+// @public (undocumented)
+const xlsxEditorMenuSubmenuProps: {
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly labelKey: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly paths: {
+        readonly type: PropType<readonly string[] | null>;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+};
+
+// @public
 export type XlsxEditorNamespace = typeof XlsxEditor$1 & {
     readonly Root: typeof XlsxEditorRoot;
     readonly Viewport: typeof XlsxEditorViewport;
     readonly Content: typeof XlsxEditorContent;
     readonly Toolbar: typeof XlsxEditorToolbar;
+    readonly Menu: typeof XlsxEditorMenu;
     readonly FormulaBar: typeof FormulaBar;
     readonly SheetTabs: typeof SheetTabs;
     readonly ZoomControl: typeof ZoomControl;
@@ -800,6 +1525,10 @@ const xlsxEditorProps: {
     };
     readonly opening: {
         readonly type: BooleanConstructor;
+        readonly default: undefined;
+    };
+    readonly menu: {
+        readonly type: PropType<boolean | XlsxEditorMenuProps>;
         readonly default: undefined;
     };
 };
@@ -996,7 +1725,7 @@ export const XlsxEditorToolbarGroup: vue.DefineComponent<vue.ExtractPropTypes<{
 }>> & Readonly<{}>, {
     readonly label: string;
     readonly labelKey: string;
-    readonly after: "alignment" | "borders" | "cells" | "clear" | "file" | "fill" | "font" | "history" | "number" | (string & {});
+    readonly after: "alignment" | "borders" | "cells" | "clear" | "edit" | "file" | "fill" | "font" | "history" | "merge" | "number" | "sheet" | "view" | (string & {});
     readonly priority: number;
     readonly pinned: boolean;
     readonly hidden: boolean;

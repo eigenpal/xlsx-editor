@@ -21,7 +21,7 @@ import { EditorFonts, type FontMeasurer } from './editor-fonts.ts';
 import type { FontReport } from './substitute-fonts.ts';
 import { hostTimers, hostWindowOf, registerEditorHost, type HostTimers } from './host-realm.ts';
 import { buildSurface, clearSurface, type StageBox, type SurfaceElements } from './grid-surface.ts';
-import { scrollToShow, viewStateOf } from './view-map.ts';
+import { scrollViewToShow, viewStateOf } from './view-map.ts';
 import { bindSurface, layoutWindow, openingView, paintWindow } from './surface-render.ts';
 import type { SheetView } from './surface-render.ts';
 import { shownGeneralOf } from './decimal-selection.ts';
@@ -45,7 +45,7 @@ import {
 import type { CellEditMode, EditMove, EditTextOptions } from './cell-editor.ts';
 import { goTo } from './go-to.ts';
 import { saveInSlices } from './editor-save.ts';
-import { readForLoad } from './load-steps.ts';
+import { readError, readWorkbookForLoad, registerPickedLoad } from './load-steps.ts';
 import { CellEditing, registerEditing, type EditTarget } from './cell-editing.ts';
 import { LiveAnnouncer } from './live-announcer.ts';
 import { commitMove } from './grid-keys.ts';
@@ -63,14 +63,12 @@ import {
   cellFont,
   clampZoom,
   zoomStepFrom,
-  openingSheet,
   selectionRef,
   sheetOpening,
   sheetState,
   workbookState,
   NO_WORKBOOK_STATE,
   accessibleLabels,
-  editorSheets,
   type EditorFailure,
   type EditorMode,
   type EditorSnapshot,
@@ -111,6 +109,7 @@ class Editor implements XlsxEditorInstance {
     },
   });
   private loadToken = 0;
+  private settled: Partial<EditorSnapshot> | null = null; // The state before the running load.
   private resize: ResizeObserver | null = null;
   private offPictures: (() => void) | null = null;
   private readonly pointer: GridPointer;
@@ -178,6 +177,7 @@ class Editor implements XlsxEditorInstance {
       conditionalCut: this.conditionalCut,
     });
     registerEditing(this, this.edits);
+    registerPickedLoad(this, (bytes) => this.loadBytes(bytes, true));
     this.pointer = new GridPointer({
       painted: () => {
         const o = this.opened;
@@ -224,7 +224,7 @@ class Editor implements XlsxEditorInstance {
     return this.opened?.views.get(this.active);
   }
 
-  private publish(patch: Partial<EditorSnapshot> = {}): void {
+  private publish(patch: Partial<EditorSnapshot> = {}, restore = false): void {
     const o = this.opened;
     const view = this.view();
     const entry = o?.index.sheets[this.active];
@@ -255,7 +255,7 @@ class Editor implements XlsxEditorInstance {
       numberLocale: this.numberLocale,
       ...patch,
     };
-    this.events.notify();
+    this.events.notify(restore);
   }
 
   // ------------------------------------------------------------------ open
@@ -288,33 +288,40 @@ class Editor implements XlsxEditorInstance {
     this.schedule();
   }
 
-  async load(source: Uint8Array | ArrayBuffer): Promise<EditorSnapshot> {
+  load(source: Uint8Array | ArrayBuffer): Promise<EditorSnapshot> {
+    return this.loadBytes(source, false);
+  }
+
+  /**
+   * With `keep` (`openPickedWorkbook`), a file that does not open keeps the open workbook and its
+   * open edit as they were before the load. A `source` promise is the read of a picked file. */
+  private async loadBytes(source: Uint8Array | ArrayBuffer | Promise<Uint8Array>, keep: boolean) {
     const token = (this.loadToken += 1);
+    const { status, failure } = this.state;
+    if (status !== 'loading') this.settled = { status, failure };
+    const kept = keep && this.opened ? this.settled : null;
     // A new workbook drops the open edit at once, and the old announcement goes.
     this.live.clear();
-    this.edits.drop();
+    if (!kept) this.edits.drop();
     this.publish({ status: 'loading', failure: null });
+    const bytes = source instanceof Promise ? await source.catch(readError) : source;
     try {
       await this.fonts.ensure();
     } catch (cause) {
-      if (token === this.loadToken) this.failLoad({ code: 'fonts', detail: String(cause) });
+      if (token === this.loadToken) this.failLoad({ code: 'fonts', detail: String(cause) }, kept);
       return this.state;
     }
     if (token !== this.loadToken || this.destroyed) return this.state;
     const wanted = () => token === this.loadToken && !this.destroyed;
-    const read = await readForLoad(workbookBytes(source), this.host, wanted);
+    const given = 'error' in bytes ? bytes : workbookBytes(bytes);
+    const read = await readWorkbookForLoad(given, this.host, wanted);
     if (!read) return this.state;
-    if (!read.ok) {
-      this.failLoad(read.failure);
+    if (!read.ok || (kept && read.first < 0)) {
+      this.failLoad(read.ok ? { code: 'no-worksheet' } : read.failure, kept);
       return this.state;
     }
-    const index = workbookIndex(read.pkg);
-    if (!index) {
-      this.failLoad({ code: 'package', detail: 'no workbook part' });
-      return this.state;
-    }
-    const sheets = editorSheets(index);
-    const first = openingSheet(sheets, index.activeTab);
+    const { index, sheets, first } = read;
+    if (kept) this.edits.drop();
     this.edits.settleLoad();
     this.release();
     const win = this.host ? hostWindowOf(this.host) : undefined;
@@ -347,9 +354,16 @@ class Editor implements XlsxEditorInstance {
 
   /**
    * A load that fails closes the previous workbook: the grid, the tabs, and the snapshot show
-   * no workbook, so nothing shows that the editor would refuse to edit or save.
+   * no workbook, so nothing shows that the editor would refuse to edit or save. With `kept`, the
+   * open workbook stays in that state, with its open edit, and the refusal `open-failed` shows.
    */
-  private failLoad(failure: EditorFailure): void {
+  private failLoad(failure: EditorFailure, kept: Partial<EditorSnapshot> | null = null) {
+    if (kept) {
+      this.publish(kept, true);
+      this.schedule();
+      this.edits.refuseOpen();
+      return;
+    }
     this.edits.settleLoad();
     this.release();
     this.active = -1;
@@ -761,6 +775,7 @@ class Editor implements XlsxEditorInstance {
 
   detach(): void {
     this.pointer.cancelResize();
+    if (this.state.status === 'loading') this.edits.drop(); // No commit while a load runs.
     this.edits.detach();
     this.timers.cancelAnimationFrame(this.frame);
     this.frame = null;
@@ -858,23 +873,11 @@ class Editor implements XlsxEditorInstance {
 
   /** Scroll so a cell shows. */
   private reveal(cell: GridPoint): void {
-    const view = this.view();
-    const layout = this.layout;
-    const box = this.box;
+    const [view, layout, box] = [this.view(), this.layout, this.box];
     // An edit that just committed dropped the layout: the next render reveals the cell.
     if (view && (!layout || !box)) this.pendingReveal = cell;
     if (!view || !layout || !box) return;
-    const next = scrollToShow(
-      viewStateOf(
-        layout,
-        view,
-        (box.width - box.headWidth) / box.scale,
-        (box.height - box.headHeight) / box.scale
-      ),
-      cell
-    );
-    view.scrollX = next.x;
-    view.scrollY = next.y;
+    scrollViewToShow(layout, view, box, cell);
     // The extent grows to the cell first, so the jump is not cut short (`extentReaching`).
     if (!this.els) return this.scroll.restore();
     this.scroll.size(extentReaching(layout, this.facts(), view.focus, cell, box), this.els.extent);

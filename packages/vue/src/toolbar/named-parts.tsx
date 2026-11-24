@@ -59,7 +59,8 @@ export type ToolbarSlotPartComponent = DefineComponent<ToolbarSlotPartProps>;
 
 /**
  * Every named toolbar part, attached to `XlsxEditorToolbar` as statics: one for each slot of
- * `CHROME_GROUPS`. The twin of React's `ToolbarNamedParts`. @public
+ * the preset toolbar (`defaultChromeGroups()`). The slots that only the menu bar shows have menu
+ * row parts instead. The twin of React's `ToolbarNamedParts`. @public
  */
 export interface ToolbarNamedParts {
   /** `history.undo`. */

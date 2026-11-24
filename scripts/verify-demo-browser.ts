@@ -32,6 +32,19 @@ export const HEADLESS_SKIPS: Readonly<Partial<Record<Engine, Readonly<Record<str
   firefox: { 'cut and paste': PLAIN_PASTE_CAUSE },
 };
 
+/** The cause of a skip of the menu bar's clipboard step. */
+export const CLIPBOARD_READ_CAUSE =
+  'the test browser grants a page no clipboard read permission, which Edit > Paste needs';
+
+/**
+ * The steps that an engine does not run, with or without a browser window, each with its
+ * cause. They print and count as `HEADLESS_SKIPS` do. Remove an entry when its cause is fixed.
+ */
+export const ENGINE_SKIPS: Readonly<Partial<Record<Engine, Readonly<Record<string, string>>>>> = {
+  firefox: { 'menu bar clipboard': CLIPBOARD_READ_CAUSE },
+  webkit: { 'menu bar clipboard': CLIPBOARD_READ_CAUSE },
+};
+
 /** How long one step can run. A step that passes it fails, and its engine stops. */
 export const STEP_LIMIT_MS = 180_000;
 /** How long the page can take to give its alerts after a step. */
@@ -59,8 +72,10 @@ export async function withTimeLimit<T>(work: Promise<T>, ms: number, what: strin
 /** The result of one engine: whether every step that ran passed, and what it did not prove. */
 export interface EngineResult {
   readonly passed: boolean;
-  /** The steps that `HEADLESS_SKIPS` skipped. */
+  /** The steps that `HEADLESS_SKIPS` and `ENGINE_SKIPS` skipped. */
   readonly skipped: number;
+  /** The causes of the steps that skipped in this run, each once, in the order they skipped. */
+  readonly skipIssues: readonly string[];
   /** Why the engine did not run every step, for the summary. */
   readonly stopped?: string;
   /** The first step that failed: fix it first, because later failures can follow from it. */
@@ -77,13 +92,19 @@ export const skipLine = (engine: Engine, name: string, issue: string): string =>
  */
 export function skipCounter(engine: Engine, log: (line: string) => void = console.log) {
   let count = 0;
+  const issues = new Set<string>();
   return {
     skip(name: string, issue: string): void {
       log(skipLine(engine, name, issue));
       count += 1;
+      issues.add(issue);
     },
     get count(): number {
       return count;
+    },
+    /** The causes of the skips so far, each once. */
+    get issues(): readonly string[] {
+      return [...issues];
     },
   };
 }
@@ -124,7 +145,7 @@ export const CI_SKIP_REASON =
 const skipFailsRun = (result: EngineResult, ci: boolean): boolean => ci && result.skipped > 0;
 
 /**
- * The summary of an engine. It names the issue of each skip, so no skip stays hidden. When the
+ * The summary of an engine. It names the issue of each skip of the run, so no skip stays hidden. When the
  * skips fail the run, the engine does not read as passed, and a second line gives the reason.
  */
 export function engineSummary(
@@ -132,8 +153,9 @@ export function engineSummary(
   result: EngineResult,
   ci = Boolean(process.env.CI)
 ): string {
-  const issues = [...new Set(Object.values(HEADLESS_SKIPS[engine] ?? {}))].join(', ');
-  const skips = result.skipped ? ` (${issues})` : '';
+  // Only the causes of the steps that skipped in this run.
+  const issues = result.skipIssues.join(', ');
+  const skips = result.skipped && issues ? ` (${issues})` : '';
   const stopped = result.stopped ? `, ${result.stopped}` : '';
   const first = result.firstFailed ? `, first failed step "${result.firstFailed}"` : '';
   const skipFails = skipFailsRun(result, ci);
@@ -163,7 +185,7 @@ export async function runEngines(
     } catch (cause) {
       const stopped = `did not finish: ${problemOf(cause)}`;
       console.log(`${engine}: FAILED, ${stopped}`);
-      results.push([engine, { passed: false, skipped: 0, stopped }]);
+      results.push([engine, { passed: false, skipped: 0, skipIssues: [], stopped }]);
     }
   }
   return results;
@@ -171,6 +193,8 @@ export async function runEngines(
 
 /** The issue of the step `name` for `engine` in a run with no window, or `undefined`. */
 export function skipIssue(engine: Engine, name: string, headed = HEADED): string | undefined {
+  const always = Object.hasOwn(ENGINE_SKIPS, engine) ? ENGINE_SKIPS[engine] : undefined;
+  if (always && Object.hasOwn(always, name)) return always[name];
   if (headed) return undefined;
   const steps = Object.hasOwn(HEADLESS_SKIPS, engine) ? HEADLESS_SKIPS[engine] : undefined;
   return steps && Object.hasOwn(steps, name) ? steps[name] : undefined;
@@ -198,7 +222,9 @@ export function launchRemedy(engine: Engine, problem: string): string {
 
 /** The steps that `HEADLESS_SKIPS` lists for `engine` and that `steps` of a full run does not name. */
 export const unknownSkips = (engine: Engine, steps: ReadonlySet<string>): string[] =>
-  Object.keys(HEADLESS_SKIPS[engine] ?? {}).filter((name) => !steps.has(name));
+  [...Object.keys(HEADLESS_SKIPS[engine] ?? {}), ...Object.keys(ENGINE_SKIPS[engine] ?? {})].filter(
+    (name) => !steps.has(name)
+  );
 
 /**
  * The options of the command line: `--browser <engine>`, once for each engine to run, and

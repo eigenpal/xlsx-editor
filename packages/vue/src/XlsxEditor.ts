@@ -1,5 +1,5 @@
-// The composed editor: the toolbar, the formula bar, the grid, and a footer with the sheet tabs
-// and the zoom. The Vue twin of the React adapter's `XlsxEditor.tsx`, after PPTX Editor's Vue
+// The composed editor: the menu bar, the toolbar, the formula bar, the grid, and a footer with
+// the sheet tabs and the zoom. The Vue twin of the React adapter's `XlsxEditor.tsx`, after PPTX Editor's Vue
 // sugar (pptx-editor/packages/vue/src/index.ts at d4502552).
 //
 // Differences from React: the callbacks are emits (`save` and `saveStart` too, as DOCX Editor's
@@ -38,6 +38,7 @@ import { FormulaBar } from './FormulaBar.tsx';
 import { SheetTabs } from './SheetTabs.tsx';
 import { hasListener, useEditorState } from './context.ts';
 import { XlsxEditorToolbar } from './toolbar/Toolbar.tsx';
+import { XlsxEditorMenu, type XlsxEditorMenuProps } from './menu/Menu.tsx';
 import type { Translations } from '@xlsx-editor.dev/i18n';
 import { useChromeDir } from './locale.ts';
 
@@ -63,6 +64,20 @@ const xlsxEditorProps = {
    * `opening` prop of `XlsxEditorToolbar`.
    */
   opening: { type: Boolean, default: undefined },
+  /**
+   * The menu bar above the toolbar: `true` (the default) shows it, `false` leaves it out, and an
+   * object shows it with those props, which win over the ones that the editor passes (`onSave`,
+   * `onSaveStart`, and `opening`).
+   *
+   * The default File > Open replaces the open workbook with the picked file and does not ask
+   * first, also when the workbook has unsaved edits. To ask first, pass your own `onOpen` in the
+   * object; `snapshot().revision` tells you whether the workbook changed since your last save.
+   * To remove the row, set `menu` to `false` and compose the menu bar with a hidden `Open` row.
+   */
+  menu: {
+    type: [Boolean, Object] as PropType<boolean | XlsxEditorMenuProps>,
+    default: undefined,
+  },
 } as const;
 
 /**
@@ -87,12 +102,24 @@ const Body = defineComponent({
       default: undefined,
     },
     opening: { type: Boolean, default: undefined },
+    menu: {
+      type: [Boolean, Object] as PropType<boolean | XlsxEditorMenuProps>,
+      default: undefined,
+    },
   },
   setup(props) {
     // The status alone: the body renders again only when it changes, not on each key of an edit.
     const status = useEditorState(statusOf);
     const dir = useChromeDir();
     return () => [
+      props.menu !== false
+        ? h(XlsxEditorMenu, {
+            ...(props.onSave ? { onSave: props.onSave } : {}),
+            ...(props.onSaveStart ? { onSaveStart: props.onSaveStart } : {}),
+            ...(props.opening === undefined ? {} : { opening: props.opening }),
+            ...(typeof props.menu === 'object' ? props.menu : {}),
+          })
+        : null,
       h(XlsxEditorToolbar, {
         ...(props.onSave ? { onSave: props.onSave } : {}),
         ...(props.onSaveStart ? { onSaveStart: props.onSaveStart } : {}),
@@ -171,6 +198,7 @@ export const XlsxEditor = defineComponent({
                 ...(hasListener(listeners, 'save', false) ? { onSave } : {}),
                 ...(hasListener(listeners, 'saveStart') ? { onSaveStart } : {}),
                 ...(props.opening === undefined ? {} : { opening: props.opening }),
+                ...(props.menu === undefined ? {} : { menu: props.menu }),
               })
             ),
         }

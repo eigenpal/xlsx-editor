@@ -6,8 +6,8 @@
 // structural event, which a DOM event and a React synthetic event both satisfy. Adapter
 // support, not a stable API.
 //
-// F6 and Shift+F6 visit, in this order: the toolbar, the formula bar (its name box first), the
-// grid, and the footer (the sheet tabs and the zoom control). A region that the host's layout
+// F6 and Shift+F6 visit, in this order: the menu bar (its tab stop), the toolbar, the formula
+// bar (its name box first), the grid, and the footer (the sheet tabs and the zoom control). A region that the host's layout
 // does not render is skipped. The grid takes the focus through the editor, so its own focus
 // rules apply. F6 in the formula bar with an open cell edit commits the edit first, as F6 in the
 // cell editor does; a refused commit keeps the keyboard in the bar.
@@ -68,6 +68,7 @@ export interface RegionKey {
 
 /** The regions that F6 visits, in order. */
 const REGIONS = [
+  '[role="menubar"]',
   '[role="toolbar"]',
   '.xlsx-formula-bar',
   '.xlsx-scroller',
@@ -78,6 +79,8 @@ const REGIONS = [
 function entryOf(region: Element): HTMLElement | null {
   return (
     region.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]') ??
+    // The menu bar's one tab stop.
+    region.querySelector<HTMLElement>('[role="menuitem"][tabindex="0"]') ??
     region.querySelector<HTMLElement>('button, select, input, textarea, [tabindex="0"]')
   );
 }

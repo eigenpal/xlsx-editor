@@ -25,11 +25,12 @@ import { ICON_PATHS } from './icon-paths.ts';
 /**
  * How a control reaches the engine, never whether it is enabled. `command`: a press runs one
  * fixed command. `value`: a press needs a picked value (a font, a size, a color, a number
- * format). `save`: the host receives the workbook bytes.
+ * format). `save`: the host receives the workbook bytes. `open`: the host opens a workbook
+ * (`ToolbarHost.open`).
  *
  * @public
  */
-export type ChromeControlKind = 'command' | 'value' | 'save';
+export type ChromeControlKind = 'command' | 'value' | 'save' | 'open';
 
 /**
  * How a control renders: an icon button, a dropdown list of values, a color palette, or a
@@ -60,6 +61,11 @@ export interface ChromeControl<Id extends string = string> {
   readonly kind: ChromeControlKind;
   /** The control shows a pressed state (`aria-pressed`). */
   readonly toggle?: true;
+  /**
+   * `false` keeps this public slot composable but leaves it out of the preset toolbar, as DOCX
+   * Editor's flag of the same name. The menu bar places it.
+   */
+  readonly defaultToolbar?: false;
 }
 
 /**
@@ -78,6 +84,11 @@ export interface ChromeGroup<Id extends string = string, ControlId extends strin
    * as the menu's items. The slots stay public: a host can place each one alone.
    */
   readonly menu?: { readonly paths: readonly string[] };
+  /**
+   * The group is not part of the preset toolbar, as DOCX Editor's flag of the same name. Its
+   * slots stay public: the menu bar places them, and a host can place each one alone.
+   */
+  readonly contextual?: true;
   readonly controls: readonly ChromeControl<ControlId>[];
 }
 
@@ -289,7 +300,51 @@ export const CHROME_GROUPS = [
     id: 'file',
     labelKey: 'formattingBar.groups.file',
     controls: [
+      {
+        id: 'open',
+        labelKey: 'menu.open',
+        paths: icon('folder_open'),
+        kind: 'open',
+        defaultToolbar: false,
+      },
       { id: 'save', labelKey: 'toolbar.save', paths: icon('file_download'), kind: 'save' },
+    ],
+  },
+  {
+    id: 'edit',
+    labelKey: 'formattingBar.groups.edit',
+    contextual: true,
+    controls: [
+      { id: 'cut', labelKey: 'menu.cut', paths: icon('content_cut'), kind: 'command' },
+      { id: 'copy', labelKey: 'menu.copy', paths: icon('content_copy'), kind: 'command' },
+      { id: 'paste', labelKey: 'menu.paste', paths: icon('content_paste'), kind: 'command' },
+      { id: 'selectAll', labelKey: 'menu.selectAll', paths: null, kind: 'command' },
+    ],
+  },
+  {
+    id: 'view',
+    labelKey: 'formattingBar.groups.view',
+    contextual: true,
+    controls: [
+      { id: 'zoomIn', labelKey: 'zoom.zoomIn', paths: null, kind: 'command' },
+      { id: 'zoomOut', labelKey: 'zoom.zoomOut', paths: null, kind: 'command' },
+      { id: 'zoomReset', labelKey: 'menu.zoomReset', paths: null, kind: 'command' },
+    ],
+  },
+  {
+    id: 'sheet',
+    labelKey: 'formattingBar.groups.sheet',
+    contextual: true,
+    controls: [{ id: 'add', labelKey: 'menu.addSheet', paths: icon('add'), kind: 'command' }],
+  },
+  {
+    id: 'merge',
+    labelKey: 'formattingBar.groups.merge',
+    contextual: true,
+    controls: [
+      { id: 'merge', labelKey: 'merge.merge', paths: null, kind: 'command' },
+      { id: 'mergeCenter', labelKey: 'merge.mergeCenter', paths: null, kind: 'command' },
+      { id: 'unmerge', labelKey: 'merge.unmerge', paths: null, kind: 'command' },
     ],
   },
 ] as const satisfies readonly ChromeGroup[];
@@ -341,6 +396,23 @@ export function chromeSlotId(
 export const CHROME_SLOT_IDS: readonly ChromeSlotId[] = (
   CHROME_GROUPS as readonly ChromeGroup[]
 ).flatMap((g) => g.controls.map((c) => chromeSlotId(g, c)));
+
+/**
+ * The groups of the preset toolbar, in bar order: the groups of `CHROME_GROUPS` without the
+ * `contextual` ones, each without its `defaultToolbar: false` controls. After DOCX Editor's
+ * function of the same name.
+ *
+ * @public
+ */
+export function defaultChromeGroups(): readonly ChromeGroup[] {
+  return (CHROME_GROUPS as readonly ChromeGroup[])
+    .filter((g) => !g.contextual)
+    .map((g) =>
+      g.controls.some((c) => c.defaultToolbar === false)
+        ? { ...g, controls: g.controls.filter((c) => c.defaultToolbar !== false) }
+        : g
+    );
+}
 
 /** The registry control of a slot, or null for an id that the registry does not hold. @public */
 export function chromeControlForSlot(slot: string): ChromeControl | null {

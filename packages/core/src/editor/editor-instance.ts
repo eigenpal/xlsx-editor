@@ -112,6 +112,11 @@ export interface XlsxEditorInstance {
    * While an input method composes, it is refused with `composing`.
    */
   select(anchor: GridPoint, focus?: GridPoint): boolean;
+  /**
+   * Select the whole shown sheet, as Control or Command and A in the grid does. An open cell edit
+   * is committed first; when the store refuses that commit, the selection stays.
+   */
+  selectAll(): void;
   /** Give the keyboard to the grid. */
   focus(): void;
   /**

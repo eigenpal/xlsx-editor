@@ -103,7 +103,13 @@ import {
 } from '../packages/core/src/store/index.ts';
 import { SAMPLE_BOLD_EDIT } from './sample-workbook/edits.ts';
 import { SHEET_GUIDE } from './sample-workbook/showcase-sheets.ts';
-import { checkPaint, verifyClipboard, verifyFocusCopy } from './verify-demo-engine.ts';
+import {
+  checkPaint,
+  verifyClipboard,
+  verifyFocusCopy,
+  verifyMenuBold,
+  verifyMenuClipboard,
+} from './verify-demo-engine.ts';
 import { verifyClipboardMark } from './verify-demo-clipboard-mark.ts';
 import { verifyContentSizedHosts } from './verify-demo-content-sized.ts';
 import { verifyEmbedding } from './verify-demo-embedding.ts';
@@ -269,7 +275,12 @@ async function runEngine(engine: Engine, url: string): Promise<EngineResult> {
   } catch (cause) {
     console.log(`launch: FAILED, ${launchProblem(cause)}`);
     console.log(`  ${launchRemedy(engine, launchProblem(cause))}`);
-    return { passed: false, skipped: 0, stopped: 'did not run: the browser did not launch' };
+    return {
+      passed: false,
+      skipped: 0,
+      skipIssues: [],
+      stopped: 'did not run: the browser did not launch',
+    };
   }
   const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
   await page.addInitScript(stubSavePicker);
@@ -367,6 +378,8 @@ async function runEngine(engine: Engine, url: string): Promise<EngineResult> {
       await step('cut and paste', () => verifyClipboard(page, 'cut'));
       await step('clipboard outline', () => verifyClipboardMark(page));
       await step('copy after the focus', () => verifyFocusCopy(page));
+      await step('menu bar clipboard', () => verifyMenuClipboard(page));
+      await step('menu bar bold', () => verifyMenuBold(page));
       await step('editable host content', () => verifyEditableHost(page));
       await step('embedding', () => verifyEmbedding(browser, url, watch, adopt, SAMPLE_SHEET));
       await step('content-sized host', () =>
@@ -396,6 +409,7 @@ async function runEngine(engine: Engine, url: string): Promise<EngineResult> {
   return {
     passed: !anyFailed,
     skipped: skips.count,
+    skipIssues: skips.issues,
     ...(firstFailed ? { firstFailed } : {}),
     ...stopReason(lostAt, lostWhy),
   };

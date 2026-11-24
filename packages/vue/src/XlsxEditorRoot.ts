@@ -315,7 +315,7 @@ export type XlsxEditorViewportProps = ExtractPublicPropTypes<typeof xlsxEditorVi
  * The editor's styling scope and landmark region: carries the `.xlsx-editor` class, and `dark`
  * with it when the root's `colorMode` resolves to dark. It also carries `xlsx-editor-viewport`,
  * which keeps its width from following its content. F6 and Shift+F6 inside it move the
- * keyboard among the toolbar, the formula bar, the grid, and the footer. @public
+ * keyboard among the menu bar, the toolbar, the formula bar, the grid, and the footer. @public
  */
 export const XlsxEditorViewport = defineComponent({
   name: 'XlsxEditorViewport',
@@ -336,8 +336,8 @@ export const XlsxEditorViewport = defineComponent({
           ...(props.label === false
             ? {}
             : { role: 'region', 'aria-label': props.label ?? t('viewport.ariaLabel') }),
-          // F6 and Shift+F6 move the keyboard among the toolbar, the formula bar, the grid, and
-          // the footer.
+          // F6 and Shift+F6 move the keyboard among the menu bar, the toolbar, the formula bar,
+          // the grid, and the footer.
           onKeydown: (e: KeyboardEvent) =>
             void cycleRegion(e, e.currentTarget as HTMLElement, editor.value),
         },

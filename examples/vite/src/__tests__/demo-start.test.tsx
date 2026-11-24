@@ -30,7 +30,7 @@ describe('the demo at start', () => {
     for (const [name] of SHEET_GUIDE) await demo.tab(name);
   });
 
-  test('F6 and Shift+F6 move the focus among the top bar, the toolbar, the grid, and the footer', async () => {
+  test('F6 and Shift+F6 move the focus among the top bar, the menu bar, the toolbar, the grid, and the footer', async () => {
     const demo = await mountDemo();
     const inGrid = () => {
       const at = document.activeElement;
@@ -42,7 +42,9 @@ describe('the demo at start', () => {
     for (const [shift, where, check] of [
       [false, 'the footer', focusIn('.xlsx-footer')],
       [false, 'Open a file', inOpen],
+      [false, 'the menu bar', focusIn('[role="menubar"]')],
       [false, 'the toolbar', focusIn('[role="toolbar"]')],
+      [true, 'the menu bar', focusIn('[role="menubar"]')],
       [true, 'Open a file', inOpen],
       [true, 'the footer', focusIn('.xlsx-footer')],
       [true, 'the grid', inGrid],

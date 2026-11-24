@@ -27,6 +27,8 @@ import type { XlsxEditorInstance } from './xlsx-editor.ts';
 import { editingOf } from './cell-editing.ts';
 import { sharedSaveOf } from './editor-save.ts';
 import { numberFormatCodeProblem } from './number-format-code.ts';
+import { MENU_ONLY_SLOTS, menuSlotState, runMenuSlot } from './menu-commands.ts';
+import type { PasteData } from './clipboard.ts';
 import {
   FIRST_CUSTOM_NUMFMT_ID,
   styleLists,
@@ -140,7 +142,13 @@ export const DISABLED_REASON_KEYS = [
   'disabledReason.mergeLocked',
   'disabledReason.mergeOneCell',
   'disabledReason.mergeOverlap',
+  'disabledReason.mergeDropsValues',
   'disabledReason.noMergedRange',
+  'disabledReason.noOpen',
+  'disabledReason.noClipboard',
+  'disabledReason.zoomMax',
+  'disabledReason.zoomMin',
+  'disabledReason.zoomActual',
 ] as const;
 
 /**
@@ -230,6 +238,16 @@ export interface ToolbarHost {
    * open. The command state and each run read it at their call.
    */
   readonly opening?: () => boolean;
+  /**
+   * Opens another workbook for `file.open`: for example a file picker that passes the bytes to
+   * `load`. Without it, `file.open` is disabled. The engine never fetches a workbook.
+   */
+  readonly open?: () => void;
+  /**
+   * Reads the text of the system clipboard for `edit.paste`. Without it, `edit.paste` is
+   * disabled. The menu bar gives one when the host window has a clipboard that a page can read.
+   */
+  readonly readClipboard?: () => Promise<PasteData>;
 }
 
 /**
@@ -444,6 +462,7 @@ export function toolbarCommandState(
 ): ToolbarCommandState {
   const control = chromeControlForSlot(id);
   if (!control) return disabled(id, { key: 'disabledReason.notWired' });
+  if (MENU_ONLY_SLOTS.has(id)) return menuSlotState(snapshot, id, host);
   if (snapshot.status === 'loading') return disabled(id, { key: 'disabledReason.loading' });
   if (snapshot.status !== 'ready' || !snapshot.selection)
     return disabled(id, { key: 'disabledReason.editorNotReady' });
@@ -743,6 +762,8 @@ function runSlot(
 ): EditResult {
   const control = chromeControlForSlot(id);
   if (!control) return refused('not-editable', `no chrome slot ${id}`);
+  const menu = runMenuSlot(editor, id, host);
+  if (menu) return menu;
   if (control.kind === 'value') {
     // A kept pick still closes an open edit with no change, as every other slot does.
     if (id === 'number.format' && value !== undefined && pickKeeps(editor, value))

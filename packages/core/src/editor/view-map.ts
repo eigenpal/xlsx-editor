@@ -31,6 +31,31 @@ export function viewStateOf(
   return { geometry, frozen, scrollX: view.scrollX, scrollY: view.scrollY, width, height };
 }
 
+/**
+ * Scroll `view` so that `cell` shows in a stage of `box` (CSS pixels, `scale` for each point),
+ * with the headings outside the grid area.
+ */
+export function scrollViewToShow(
+  layout: { readonly geometry: SheetGeometry; readonly frozen: FrozenPanes },
+  view: { scrollX: number; scrollY: number },
+  box: {
+    readonly scale: number;
+    readonly width: number;
+    readonly height: number;
+    readonly headWidth: number;
+    readonly headHeight: number;
+  },
+  cell: GridPoint
+): void {
+  const width = (box.width - box.headWidth) / box.scale;
+  const next = scrollToShow(
+    viewStateOf(layout, view, width, (box.height - box.headHeight) / box.scale),
+    cell
+  );
+  view.scrollX = next.x;
+  view.scrollY = next.y;
+}
+
 /** The index at `offset` of the window on one axis. */
 function indexAt(axis: AxisIndex, frozen: number, scroll: number, offset: number): number {
   const frozenSize = axis.offsetOf(frozen);

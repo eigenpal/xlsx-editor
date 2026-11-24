@@ -21,10 +21,11 @@ import {
   observeToolbar,
   toolbarCollapse,
 } from '../toolbar-layout.ts';
-import { CHROME_GROUPS, CHROME_SLOT_IDS } from '../chrome-controls.ts';
+import { chromeSlotId, defaultChromeGroups } from '../chrome-controls.ts';
 import { TOOLBAR_NAMED_PARTS, isToolbarButtonSlot } from '../toolbar-named-parts.ts';
 
-const BUILT_IN = CHROME_GROUPS.map((g) => g.id);
+// The preset bar: the menu bar's contextual groups and controls are not in it.
+const BUILT_IN = defaultChromeGroups().map((g) => g.id);
 const ids = (a: ToolbarArrangement) => a.groups.map((g) => g.id);
 const controls = (a: ToolbarArrangement, id: string) =>
   a.groups.find((g) => g.id === id)?.chrome?.controls.map((c) => c.id);
@@ -262,6 +263,31 @@ describe('arrangeToolbar', () => {
           'Use a ChromeSlotId, such as "font.bold".'
       )
     );
+  });
+
+  test('a slot that only the menu bar shows is named as such, not as an unknown id', () => {
+    const a = arrangeToolbar({
+      slots: [
+        { slotId: 'edit.copy', hidden: false, content: true },
+        { slotId: 'view.zoomIn', hidden: false, content: false },
+      ],
+    });
+    expect(a.outside).toEqual(['edit.copy']);
+    const advice =
+      'Place it in a host XlsxEditor.Toolbar.Group, where it renders its control (Paste reads the ' +
+      'clipboard there, and Open stays disabled), or use a slot of the preset toolbar, such as ' +
+      '"font.bold".';
+    expect(a.problems).toEqual([
+      '"edit.copy" is a slot that only the menu bar shows, not a toolbar slot, so the content of ' +
+        `its XlsxEditor.Toolbar.Slot is appended after the groups. ${advice}`,
+      '"view.zoomIn" is a slot that only the menu bar shows, not a toolbar slot, so its ' +
+        `XlsxEditor.Toolbar.Slot changes nothing. ${advice}`,
+    ]);
+    const vue = arrangeToolbar({
+      slots: [{ slotId: 'edit.copy', hidden: false, content: false }],
+      names: { slot: 'XlsxEditorToolbar.Slot', group: 'XlsxEditorToolbar.Group' },
+    });
+    expect(vue.problems[0]).toContain('Place it in a host XlsxEditorToolbar.Group, where');
   });
 
   test('slot content in a hidden group is left out, with a problem', () => {
@@ -717,8 +743,10 @@ describe('arrangeToolbar with changed controls', () => {
 
 describe('TOOLBAR_NAMED_PARTS', () => {
   test('names each toolbar slot exactly once, with PascalCase names', () => {
-    const slots = Object.values(TOOLBAR_NAMED_PARTS);
-    expect([...slots].sort()).toEqual([...CHROME_SLOT_IDS].sort());
+    const slots: string[] = Object.values(TOOLBAR_NAMED_PARTS);
+    // The slots of the preset toolbar: the slots that only the menu bar shows have menu row names.
+    const preset = defaultChromeGroups().flatMap((g) => g.controls.map((c) => chromeSlotId(g, c)));
+    expect([...slots].sort()).toEqual([...preset].sort());
     expect(new Set(slots).size).toBe(slots.length);
     for (const name of Object.keys(TOOLBAR_NAMED_PARTS)) expect(name).toMatch(/^[A-Z][A-Za-z]+$/);
   });

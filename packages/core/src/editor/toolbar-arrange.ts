@@ -26,11 +26,14 @@
 // - The problems are returned as sentences that name the parts as the adapter names them
 //   (`ToolbarPartNames`, after pptx-editor/packages/core/src/editor/dev-warnings.ts at 929ca860
 //   (EigenPal)), and each adapter prints them in development, once.
+// - The preset bar holds the groups of `defaultChromeGroups`: a `contextual` group and a
+//   `defaultToolbar: false` control are for the menu bar, as in DOCX Editor, and their slots
+//   are no toolbar slots here.
 
 import {
-  CHROME_GROUPS,
   CHROME_SLOT_IDS,
   chromeSlotId,
+  defaultChromeGroups,
   type ChromeGroup,
   type ChromeSlotId,
 } from './chrome-controls.ts';
@@ -315,7 +318,7 @@ export function toolbarGroupHeading(
   group: Pick<ArrangedToolbarGroup, 'id' | 'label' | 'labelKey'>,
   translate: (key: string) => string
 ): string {
-  const builtIn = (CHROME_GROUPS as readonly ChromeGroup[]).find((g) => g.id === group.id);
+  const builtIn = PRESET_GROUPS.find((g) => g.id === group.id);
   if (builtIn) return translate(builtIn.labelKey);
   if (group.label !== undefined) return group.label;
   return group.labelKey !== undefined ? translate(group.labelKey) : group.id;
@@ -327,11 +330,38 @@ function priorityOf(request: ToolbarGroupRequest | undefined): number | undefine
   return priority === undefined || Number.isNaN(priority) ? undefined : priority;
 }
 
-const BUILT_IN_IDS: readonly string[] = (CHROME_GROUPS as readonly ChromeGroup[]).map((g) => g.id);
-const SLOT_IDS: ReadonlySet<string> = new Set(CHROME_SLOT_IDS);
+const PRESET_GROUPS: readonly ChromeGroup[] = defaultChromeGroups();
+const BUILT_IN_IDS: readonly string[] = PRESET_GROUPS.map((g) => g.id);
+const SLOT_IDS: ReadonlySet<string> = new Set(
+  PRESET_GROUPS.flatMap((g) => g.controls.map((c) => chromeSlotId(g, c)))
+);
+/** Every `ChromeSlotId`, with the slots that only the menu bar shows. */
+const REGISTRY_SLOT_IDS: ReadonlySet<string> = new Set<string>(CHROME_SLOT_IDS);
 
 /**
- * Arrange the preset bar: the groups of `CHROME_GROUPS` in registry order, with the slots of
+ * Why a slot request that names no preset toolbar slot changes no control of the bar: the id is
+ * a slot that only the menu bar shows, or no `ChromeSlotId`. The adapters' slot parts use the
+ * same words. @internal
+ */
+export function notInToolbar(id: string): string {
+  return REGISTRY_SLOT_IDS.has(id)
+    ? `"${id}" is a slot that only the menu bar shows, not a toolbar slot`
+    : `"${id}" is not a toolbar slot id`;
+}
+/**
+ * The advice after `notInToolbar`. `group` is the adapter's name of the group part, such as
+ * `XlsxEditor.Toolbar.Group` or `XlsxEditorToolbar.Group`. @internal
+ */
+export function toolbarSlotAdvice(id: string, group: string = REACT_PART_NAMES.group): string {
+  return REGISTRY_SLOT_IDS.has(id)
+    ? `Place it in a host ${group}, where it renders its control (Paste reads the ` +
+        'clipboard there, and Open stays disabled), or use a slot of the preset toolbar, such ' +
+        'as "font.bold".'
+    : 'Use a ChromeSlotId, such as "font.bold".';
+}
+
+/**
+ * Arrange the preset bar: the groups of `defaultChromeGroups` in registry order, with the slots of
  * `hidden` and of a hidden `Toolbar.Slot` left out, and the `Toolbar.Group` requests applied.
  * The last request for a slot or a group wins; a group keeps the place of its last request. A
  * built-in group with `hidden` is left out with its separator, and so is a built-in group with
@@ -359,14 +389,13 @@ export function arrangeToolbar(input: {
       if (slot.content && !slot.hidden) {
         outside.push(slot.slotId);
         problems.push(
-          `"${slot.slotId}" is not a toolbar slot id, so the content of its ` +
-            `${names.slot} is appended after the groups. Use a ChromeSlotId, such as ` +
-            `"font.bold".`
+          `${notInToolbar(slot.slotId)}, so the content of its ${names.slot} is appended ` +
+            `after the groups. ${toolbarSlotAdvice(slot.slotId, names.group)}`
         );
       } else
         problems.push(
-          `"${slot.slotId}" is not a toolbar slot id, so its ${names.slot} changes nothing. ` +
-            `Use a ChromeSlotId, such as "font.bold".`
+          `${notInToolbar(slot.slotId)}, so its ${names.slot} changes nothing. ` +
+            toolbarSlotAdvice(slot.slotId, names.group)
         );
     } else if (slot.hidden) leave.add(slot.slotId);
     else if (slot.content && listed.has(slot.slotId))
@@ -415,7 +444,7 @@ export function arrangeToolbar(input: {
     requests.set(group.id, group);
   }
   const byId = new Map<string, ArrangedToolbarGroup>();
-  for (const g of CHROME_GROUPS as readonly ChromeGroup[]) {
+  for (const g of PRESET_GROUPS) {
     const request = requests.get(g.id);
     if (request) {
       for (const setting of ['label', 'labelKey', 'after'] as const)

@@ -43,7 +43,7 @@ To leave out the history group and the save control:
 <XlsxEditor.Toolbar hidden={['history.undo', 'history.redo', 'file.save']} />
 ```
 
-The toolbar shows the groups of `CHROME_GROUPS` in this order. Each slot id is the group id and the control id:
+The toolbar shows the groups of `defaultChromeGroups()` in this order: the groups of `CHROME_GROUPS` without the groups and controls that only the menu bar shows (`file.open`, `edit.*`, `view.*`, `sheet.add`, and `merge.*`). Each slot id is the group id and the control id:
 
 | Group | Slot ids |
 | --- | --- |
@@ -337,7 +337,7 @@ A `Toolbar.Slot` with no children in a host group places a second copy of a buil
 
 In a development build, the toolbar prints a warning once for each part that cannot do what it says. A build is a development build when `import.meta.env.DEV` is `true`, or, where that flag is absent, when `process.env.NODE_ENV` is not `production`. A bundle that sets neither prints no warning. Each warning starts with `[xlsx-editor]`. The toolbar warns about these parts:
 
-- A `Toolbar.Slot` whose `slotId` is not a slot of `CHROME_GROUPS`. In the preset bar, its children show in the block of other children.
+- A `Toolbar.Slot` whose `slotId` is not a slot of the preset toolbar, also a slot that only the menu bar shows. In the preset bar, its children show in the block of other children.
 - A `Toolbar.Slot` with children whose slot the `hidden` list names.
 - A `Toolbar.Slot` with children whose group is hidden.
 - A `label`, `labelKey`, or `after` on a built-in group.
@@ -456,7 +456,7 @@ To leave a field that keeps a key, press Tab.
 | Enter, in the name box | Select the typed reference, and return the keyboard to the grid |
 | Escape, in the name box | Drop the typed reference, and return the keyboard to the grid |
 | Control or Command and Z, Control or Command and Shift and Z, or Control or Command and Y, in the formula bar or the name box | Undo or redo, with no cell edit open and no typed reference. Otherwise the keys undo or redo the typing in the field |
-| F6, Shift+F6 | Move the keyboard to the next or previous region: the toolbar, the formula bar, the grid, and the footer with the sheet tabs and the zoom control. In the formula bar, an open cell edit commits first. The formula bar region starts at the name box |
+| F6, Shift+F6 | Move the keyboard to the next or previous region: the menu bar, the toolbar, the formula bar, the grid, and the footer with the sheet tabs and the zoom control. In the formula bar, an open cell edit commits first. The formula bar region starts at the name box |
 
 A press on a cell selects it, and a drag selects the cells that it covers. With Shift, a press or a drag extends the selection from its anchor to the pressed cell, and a press on a row or column heading extends it to whole rows or columns. The active cell stays when the new selection holds it; otherwise the anchor becomes the active cell.
 

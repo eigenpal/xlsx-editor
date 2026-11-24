@@ -163,10 +163,11 @@ describe('XlsxEditor', () => {
     expect(grid.previousElementSibling).toBe(strip);
   });
 
-  test('F6 and Shift+F6 move the keyboard among the toolbar, the formula bar, the grid, and the footer', async () => {
+  test('F6 and Shift+F6 move the keyboard among the menu bar, the toolbar, the formula bar, the grid, and the footer', async () => {
     const { view } = await open();
     const nameBox = view.getByLabelText('Cell reference');
     const grid = view.container.querySelector('.xlsx-scroller') as HTMLElement;
+    const menuBar = view.getByRole('menubar');
     const toolbar = view.getByRole('toolbar');
     const footer = view.container.querySelector('.xlsx-footer') as HTMLElement;
     grid.focus();
@@ -176,6 +177,8 @@ describe('XlsxEditor', () => {
     expect(footer.contains(document.activeElement)).toBe(true);
     // The footer takes the keyboard on the selected sheet tab.
     expect(document.activeElement?.getAttribute('aria-selected')).toBe('true');
+    f6();
+    expect(menuBar.contains(document.activeElement)).toBe(true);
     f6();
     expect(toolbar.contains(document.activeElement)).toBe(true);
     // The formula bar takes the keyboard on the name box.
@@ -187,6 +190,8 @@ describe('XlsxEditor', () => {
     expect(document.activeElement).toBe(nameBox);
     f6(true);
     expect(toolbar.contains(document.activeElement)).toBe(true);
+    f6(true);
+    expect(menuBar.contains(document.activeElement)).toBe(true);
     f6(true);
     expect(footer.contains(document.activeElement)).toBe(true);
   });

@@ -300,6 +300,28 @@ body,
   align-items: baseline;
   min-width: 60px;
 }
+/* The editor's menu bar in the top bar, after the name, as the family demos place theirs. It
+ * holds its five menus, gives up room on a narrow window, and then moves the menus that do not
+ * fit into its "More menus" menu. Its width must not follow its content: the bar measures that
+ * width to decide how many menus fit. */
+.demo-menubar.xlsx-menubar {
+  flex: 0 1 18rem;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  margin-inline-start: 2px;
+  background: none;
+}
+/* An open menu panel stands in the top bar: the bar goes above the toolbar card while it is
+ * open, so the card does not cover the panel. */
+.demo-topbar:has(.xlsx-menu-panel) {
+  z-index: 70;
+}
+.demo-menubar .xlsx-menu-trigger {
+  padding: 0 8px;
+  color: var(--demo-ink-2);
+  font-weight: 500;
+}
 /* The name of the open workbook in the place of the deck name, with its type. */
 .demo-file__name {
   flex: 0 1 auto;

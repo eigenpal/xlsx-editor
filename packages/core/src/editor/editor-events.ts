@@ -61,7 +61,8 @@ export interface DocumentChange {
   /**
    * `'load'` when a load settles (the workbook opened or the open failed), and `'close'` when
    * the workbook closes. Absent for an edit, an undo, and a redo. Do not start external
-   * processing, such as a save to a server, for a change with a `source`.
+   * processing, such as a save to a server, for a change with a `source`. A file picked in the
+   * menu bar's File > Open that does not open keeps the workbook and fires no change.
    */
   readonly source?: 'load' | 'close';
   /**
@@ -121,6 +122,11 @@ function sameSelection(a: GridSelection | null, b: GridSelection | null): boolea
   );
 }
 
+// The snapshots that put back the state from before a load that did not replace it: a picked file
+// that did not open (`openPickedWorkbook`). The workbook did not change, so such a snapshot fires
+// no `change` and no `openFailure`.
+const restored = new WeakSet<EditorSnapshot>();
+
 /** The source of a load or a close that settled between `prev` and `next`, or undefined. */
 function settled(prev: EditorSnapshot, next: EditorSnapshot): 'load' | 'close' | undefined {
   // The start of a load is no change: the workbook changes when the load settles.
@@ -136,6 +142,7 @@ interface EventSource {
 
 /** Whether the event `event` happened between snapshots `prev` and `next`. */
 function happened(event: keyof EditorEvents, prev: EditorSnapshot, next: EditorSnapshot): boolean {
+  if ((event === 'change' || event === 'openFailure') && restored.has(next)) return false;
   switch (event) {
     case 'change':
       return prev.revision !== next.revision || settled(prev, next) !== undefined;
@@ -222,8 +229,12 @@ export class EditorListeners {
       this.#known()
     );
 
-  /** Call every listener. */
-  notify(): void {
+  /**
+   * Call every listener. `restore`: the snapshot puts back the state from before a load that
+   * did not replace the workbook, so it fires no `change` and no `openFailure`.
+   */
+  notify(restore = false): void {
+    if (restore) restored.add(this.#editor.snapshot());
     runListeners(this.#listeners);
   }
 

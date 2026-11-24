@@ -43,8 +43,10 @@ import {
   CHROME_GROUPS,
   chromeSlotId,
   isToolbarButtonSlot,
+  notInToolbar,
   toolbarAsChildProblem,
   toolbarGroupHeading,
+  toolbarSlotAdvice,
   type ChromeControl,
   type ChromeGroup,
   type ChromeGroupId,
@@ -235,7 +237,10 @@ export const XlsxEditorToolbarSlot = defineComponent({
       const content = asChild ? [] : visibleNodes(children);
       if (content.length > 0) return content;
       const found = groupOfSlot(props.slotId);
-      if (!found) warnToolbarProblems([unknownSlotProblem(props.slotId, 'XlsxEditorToolbar.Slot')]);
+      if (!found)
+        warnToolbarProblems([
+          unknownSlotProblem(props.slotId, 'XlsxEditorToolbar.Slot', 'XlsxEditorToolbar.Group'),
+        ]);
       const hostClass = typeof attrs.class === 'string' ? attrs.class : undefined;
       const className = [props.className, hostClass].filter(Boolean).join(' ') || undefined;
       const override = found ? slotOverrideOf({ ...props, className }, children) : null;
@@ -522,11 +527,13 @@ export function readToolbarChildren(children: unknown): ToolbarChildren {
   return { slots, groups, appended, slotRequests, groupRequests };
 }
 
-/** The problem of a `Toolbar.Slot` outside the preset whose id names no slot. */
-export function unknownSlotProblem(slotId: string, part: string): string {
+/**
+ * The problem of a `Toolbar.Slot` outside the preset whose id names no slot. A slot that only the
+ * menu bar shows is named as such, in the words of the preset toolbar (`notInToolbar`).
+ */
+export function unknownSlotProblem(slotId: string, part: string, group: string): string {
   return (
-    `"${slotId}" is not a toolbar slot id, so its ${part} renders nothing. Use a ChromeSlotId, ` +
-    `such as "font.bold".`
+    `${notInToolbar(slotId)}, so its ${part} renders nothing. ` + toolbarSlotAdvice(slotId, group)
   );
 }
 

@@ -106,11 +106,12 @@ export type EditorMode = 'edit' | 'view';
  */
 export interface EditorFailure {
   /**
-   * `package`: the file is not a workbook the engine reads; `fonts`: the text shaper or the fonts did not load;
+   * `package`: the file is not a workbook the engine reads; `read`: the browser could not read
+   * the picked file (the packaged File > Open); `fonts`: the text shaper or the fonts did not load;
    * `no-worksheet`: the workbook opened, but no sheet is a visible worksheet that the editor can
    * show (every sheet is hidden, a chartsheet, or a missing part).
    */
-  readonly code: 'package' | 'fonts' | 'no-worksheet';
+  readonly code: 'package' | 'read' | 'fonts' | 'no-worksheet';
   /** The engine's reason, for logs: never shown as user text. */
   readonly detail?: string;
   /**

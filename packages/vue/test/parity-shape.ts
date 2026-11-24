@@ -1,10 +1,11 @@
 // After pptx-editor/packages/vue/test/parity-shape.ts at d4502552 (EigenPal). Differences: the
 // probes mount the XLSX Editor parts (the editor, its root, viewport, content, toolbar, the
 // toolbar's slot, group, action, and separator parts, the formula bar, the sheet tabs, the zoom
-// control, the status message, and `LocaleProvider`), and the value probes check the paired props
-// that show in a part alone (`label` of the viewport, `hidden`, `preset`, and `t` of the toolbar,
-// `t` of the status message, and the props of the
-// slot and group parts that render without a bar). The
+// control, the status message, `LocaleProvider`, and the menu bar and its parts), and the value
+// probes check the paired props that show in a part alone (`label` of the viewport, `hidden`,
+// `preset`, and `t` of the toolbar, `t` of the status message, and the props of the slot and
+// group parts that render without a bar). A menu of the bar renders in a bar whose state holds it
+// open (`OpenBar`), so its panel slot renders. The
 // probe helpers and the shape that `check:parity-contract` reads are the same.
 //
 // The Vue adapter's runtime shape for the parity check: each paired component's declared props
@@ -73,12 +74,35 @@ function probedSlots(contract: ParityContract | undefined, name: string): string
  */
 export async function vueAdapterShape(contract?: ParityContract): Promise<VueAdapterShape> {
   if (!GlobalRegistrator.isRegistered) GlobalRegistrator.register();
-  const { createApp, h, nextTick } = await import('vue');
+  const { computed, createApp, defineComponent, h, nextTick, provide, shallowRef } =
+    await import('vue');
   const vue = await import('../src/index.ts');
+  const menuParts = await import('../src/menu/parts.tsx');
 
   type Wrap = (node: ReturnType<typeof h>) => ReturnType<typeof h>;
   const inRoot: Wrap = (node) => h(vue.XlsxEditorRoot, null, () => [node]);
   const inViewport: Wrap = (node) => inRoot(h(vue.XlsxEditorViewport, null, () => [node]));
+  // A menu of the bar renders its panel only while open: a bar with the probe menu open.
+  const PROBE_MENU = 'xlsx-parity-menu';
+  const OpenBar = defineComponent({
+    setup(_props, { slots }) {
+      const order = computed(() => [PROBE_MENU]);
+      provide(menuParts.menuBarKey, {
+        openMenu: shallowRef<string | null>(PROBE_MENU),
+        open: () => undefined,
+        focusRequest: { current: null },
+        activeMenu: computed(() => PROBE_MENU),
+        setActiveMenu: () => undefined,
+        order,
+        rtl: shallowRef(false),
+        apple: shallowRef(false),
+        closeAll: () => undefined,
+        triggerOf: () => null,
+      });
+      return () => slots.default?.();
+    },
+  });
+  const inOpenBar: Wrap = (node) => inViewport(h(OpenBar, null, () => [node]));
 
   const probes: Record<
     string,
@@ -165,6 +189,76 @@ export async function vueAdapterShape(contract?: ParityContract): Promise<VueAda
           shows: (s) => s.querySelector('[data-slot="font.bold"] #xlsx-parity-icon') !== null,
         },
       },
+    },
+    XlsxEditorMenu: {
+      component: vue.XlsxEditorMenu,
+      wrap: inViewport,
+      values: {
+        preset: {
+          props: { preset: false },
+          shows: (s) =>
+            s.querySelector('[role="menubar"]') !== null && s.querySelector('[data-menu]') === null,
+        },
+      },
+    },
+    XlsxEditorMenuMenu: {
+      component: vue.XlsxEditorMenuMenu,
+      props: { id: PROBE_MENU, label: 'Probe' },
+      wrap: inOpenBar,
+      values: {
+        label: {
+          props: { label: 'Probe label' },
+          shows: (s) => s.querySelector('[role="menu"][aria-label="Probe label"]') !== null,
+        },
+        hidden: {
+          props: { hidden: true },
+          shows: (s) => s.querySelector('[data-menu]') === null,
+        },
+      },
+    },
+    XlsxEditorMenuItem: {
+      component: vue.XlsxEditorMenuItem,
+      props: { slotId: 'font.bold' },
+      wrap: inViewport,
+      values: {
+        slotId: {
+          props: { slotId: 'font.italic' },
+          shows: (s) => s.querySelector('[data-slot="font.italic"]') !== null,
+        },
+        hidden: {
+          props: { hidden: true },
+          shows: (s) => s.querySelector('[data-slot]') === null,
+        },
+      },
+    },
+    XlsxEditorMenuRow: {
+      component: vue.XlsxEditorMenuRow,
+      values: {
+        disabled: {
+          props: { label: 'Probe', disabled: true },
+          shows: (s) => s.querySelector('[aria-disabled="true"]') !== null,
+        },
+      },
+    },
+    XlsxEditorMenuGroup: {
+      component: vue.XlsxEditorMenuGroup,
+      values: {
+        label: {
+          props: { label: 'Probe group' },
+          shows: (s) => s.querySelector('[role="group"][aria-label="Probe group"]') !== null,
+        },
+      },
+    },
+    XlsxEditorMenuSeparator: { component: vue.XlsxEditorMenuSeparator },
+    XlsxEditorMenuSubmenu: {
+      component: vue.XlsxEditorMenuSubmenu,
+      props: { label: 'Probe' },
+      wrap: inViewport,
+    },
+    XlsxEditorMenuEntry: {
+      component: vue.XlsxEditorMenuEntry,
+      props: { entry: { kind: 'item', slot: 'font.bold' } },
+      wrap: inViewport,
     },
     XlsxEditorToolbarGroup: {
       component: vue.XlsxEditorToolbarGroup,

@@ -1,7 +1,7 @@
 /** @jsxImportSource react */
 // The editing toolbar: the chrome registry as one row of controls. After
 // docx-editor/packages/react/src/editor/toolbar/DocxEditorToolbar.tsx at a0825f1f (EigenPal):
-// the default arrangement is derived from `CHROME_GROUPS`, never listed by hand, so a slot
+// the default arrangement is derived from `defaultChromeGroups()`, never listed by hand, so a slot
 // added to the registry appears here without an edit; the bar measures itself and moves the
 // groups that do not fit, from the end, into a "More" panel of full-width rows; and the bar's
 // own `mousedown` keeps the keyboard on the grid; and a group whose slots are all hidden is
@@ -56,6 +56,7 @@ import {
   type EditorSnapshot,
   type SavedWorkbook,
   type ToolbarArrangement,
+  editorClipboardReader,
   type ToolbarHost,
   type ChromePartTranslate,
 } from '@xlsx-editor.dev/core/editor';
@@ -118,7 +119,8 @@ export interface XlsxEditorToolbarProps {
   /**
    * `false` renders only the children, in their order, with no measure and no "More" panel. An
    * `XlsxEditor.Toolbar.Slot` there renders the built-in control of its slot, or its children.
-   * The default is `true`: the groups of `CHROME_GROUPS`, changed by the children.
+   * The default is `true`: the groups of `defaultChromeGroups()` (the toolbar groups of
+   * `CHROME_GROUPS`, without the menu bar's), changed by the children.
    */
   readonly preset?: boolean;
   /**
@@ -331,19 +333,23 @@ function XlsxEditorToolbarRoot({
 }: Omit<XlsxEditorToolbarProps, 't'>) {
   const { t } = useTranslation();
   const dir = useChromeDir();
+  const editor = useXlsxEditor();
   // The value of `opening` at the latest render. A press reads it here, so a press and the state
   // of each control agree. A change of the prop gives a new host, so each control reads its
   // state again.
   const openingNow = useRef(opening ?? false);
   openingNow.current = opening ?? false;
-  const host = useMemo<ToolbarHost>(
-    () => ({
+  // A slot of the menu bar in a toolbar group reads the same host: Paste reads the clipboard of
+  // the editor's window. Open needs the menu bar's `onOpen`, so in a toolbar it is disabled.
+  const host = useMemo<ToolbarHost>(() => {
+    const read = editorClipboardReader(editor);
+    return {
       ...(onSave ? { save: onSave } : {}),
       ...(onSaveStart ? { saveStart: onSaveStart } : {}),
       ...(opening === undefined ? {} : { opening: () => openingNow.current }),
-    }),
-    [onSave, onSaveStart, opening]
-  );
+      ...(read ? { readClipboard: read } : {}),
+    };
+  }, [onSave, onSaveStart, opening, editor]);
   // The children are new elements on each render, and a list written inline is a new array:
   // key the arrangement by the content of the requests, so the groups keep their identity.
   const parts = preset ? readToolbarChildren(children) : NO_PARTS;
@@ -377,7 +383,6 @@ function XlsxEditorToolbarRoot({
   // Only the preset bar measures: `preset={false}` is the host's own markup.
   const measuring = preset && overflow;
   const bar = useRef<HTMLDivElement>(null);
-  const editor = useXlsxEditor();
   // When the open ends, the refusal of a save during the open no longer applies: forget it, also
   // when the open ends early. A later refusal of another command stays.
   const wasOpening = useRef(false);

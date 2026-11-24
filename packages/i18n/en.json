@@ -96,6 +96,7 @@
     "failed": {
       "package": "This file is not a workbook that the editor can open.",
       "fonts": "The fonts that show the workbook did not load.",
+      "read": "The browser could not read the file. Pick the file again.",
       "noWorksheet": "This workbook has no worksheet to show.",
       "tooLarge": "This file is too large or too complex to open here. It passes the limit of {limit}.",
       "tooLargePart": "This file is too large or too complex to open here. The part {part} passes the limit of {limit}.",
@@ -159,6 +160,7 @@
       "grid-full": "The edit was not applied: {subject} would move past the last row or column of the sheet.",
       "stale-revision": "The edit was not applied: the workbook changed while the edit was prepared. Try the edit again.",
       "save-failed": "The workbook was not saved: the editor could not build the saved workbook. Your edits stay on this page.",
+      "open-failed": "The file was not opened: the editor cannot open it as a workbook. The open workbook and its edits stay on this page.",
       "sheet-name-invalid": "The sheet name was not applied. Use 1 to 31 characters. Do not use [ ] : * ? / \\ or a control character such as a tab or a line break. Do not use a character that a workbook cannot store, or an escape sequence such as _x0041_. Do not start or end the name with an apostrophe.",
       "sheet-name-too-long": "The edit was not applied: a sheet name is too long. Rename the sheet {subject} to 31 characters or fewer, then try again.",
       "sheet-name-taken": "The sheet name was not applied: another sheet, possibly a hidden one, has the name {subject}.",
@@ -170,6 +172,7 @@
       "whole-sheet": "The rows or columns were not inserted or deleted: the whole sheet is selected. Select whole rows, whole columns, or a range of cells.",
       "merged-range": "The cells were not copied or pasted: the range meets a merged range. Select a range with no merged cells, then try again.",
       "paste-html": "The paste was not applied: the clipboard holds only formatted content. Copy the content as plain text, then paste again.",
+      "clipboard-read": "The paste was not applied: the browser did not let the page read the clipboard. Press Control or Command and V in the grid.",
       "copy-too-large": "The range was not copied: it has too many cells. Copy at most {limit} cells, such as one whole row.",
       "copy-conditional-limit": "The range was not copied: it has more conditional formatting than one copy can check. Copy a smaller range, then try again.",
       "copy-array-formula": "The range was not copied: it meets the array formula or data table at {subject}. Copy a range without cells of that range.",
@@ -349,7 +352,11 @@
       "number": "Number format",
       "cells": "Insert and delete",
       "clear": "Clear",
-      "file": "File"
+      "file": "File",
+      "edit": "Edit",
+      "view": "View",
+      "sheet": "Sheet",
+      "merge": "Merge"
     },
     "undo": "Undo",
     "redo": "Redo",
@@ -456,6 +463,32 @@
     "disabledTitle": "{label}: {reason}",
     "hintTitle": "{label}\n{hint}"
   },
+  "menu": {
+    "label": "Menu bar",
+    "file": "File",
+    "edit": "Edit",
+    "view": "View",
+    "insert": "Insert",
+    "format": "Format",
+    "more": "More menus",
+    "open": "Open…",
+    "cut": "Cut",
+    "copy": "Copy",
+    "paste": "Paste",
+    "selectAll": "Select all",
+    "zoomReset": "Zoom to 100%",
+    "addSheet": "Insert sheet",
+    "keys": {
+      "ctrl": "Ctrl",
+      "shift": "Shift",
+      "alt": "Alt"
+    }
+  },
+  "merge": {
+    "merge": "Merge cells",
+    "mergeCenter": "Merge and center",
+    "unmerge": "Unmerge cells"
+  },
   "structureSubject": {
     "cell": "the formula in {name}",
     "wrapped-formula": "the formula in {name}",
@@ -547,6 +580,12 @@
     "mergeLocked": "The sheet is protected, and cells cannot be merged or unmerged.",
     "mergeOneCell": "Select two or more cells to merge.",
     "mergeOverlap": "The selection overlaps a merged range. Unmerge it first, or select another range.",
-    "noMergedRange": "The selection has no merged cells."
+    "mergeDropsValues": "Cells other than the top-left cell hold values, such as {cell}. A merge keeps only the value of the top-left cell, so clear those cells first.",
+    "noMergedRange": "The selection has no merged cells.",
+    "noOpen": "The page offers no way to open a workbook here.",
+    "noClipboard": "The browser does not let the page read the clipboard. Press Control or Command and V in the grid.",
+    "zoomMax": "The zoom is at its largest.",
+    "zoomMin": "The zoom is at its smallest.",
+    "zoomActual": "The zoom is 100%."
   }
 }

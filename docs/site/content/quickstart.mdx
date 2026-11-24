@@ -142,7 +142,7 @@ If the editor cannot store an edit, it keeps your text and shows the reason in t
 
 ## Handle a workbook that does not open
 
-If a workbook does not open, the editor shows the reason. To read the reason in code, read the snapshot of each change: `onChange` in React, the `change` event in Vue. When the open fails, its `status` is `failed`, and `failure.code` is `package`, `fonts`, or `no-worksheet`. `failure.detail` gives the reason of the engine for your logs. Do not show the detail to users.
+If a workbook does not open, the editor shows the reason. To read the reason in code, read the snapshot of each change: `onChange` in React, the `change` event in Vue. When the open fails, its `status` is `failed`, and `failure.code` is `package`, `read`, `fonts`, or `no-worksheet`. The code `read` means that the browser could not read a file that the user picked in File > Open. `failure.detail` gives the reason of the engine for your logs. Do not show the detail to users.
 
 The editor opens a workbook (`.xlsx`) or a template (`.xltx`) in the Transitional form of ECMA-376. Another package fails with the code `package`: for example, a macro-enabled workbook, or a workbook in the Strict form.
 

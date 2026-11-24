@@ -3,6 +3,7 @@ import {
   CI_SKIP_REASON,
   DEFAULT_ENGINE,
   engineSummary,
+  CLIPBOARD_READ_CAUSE,
   HEADLESS_SKIPS,
   launchProblem,
   launchRemedy,
@@ -31,17 +32,17 @@ describe('the skip report', () => {
     );
   });
 
-  test('the summary names the issue of a skip', () => {
-    expect(engineSummary('firefox', { passed: true, skipped: 1 }, false)).toBe(
+  test('the summary names the issue of a skip, and only the issues of this run', () => {
+    expect(engineSummary('firefox', { passed: true, skipped: 1, skipIssues: [issue] }, false)).toBe(
       `firefox: passed, 1 skipped (${issue})`
     );
   });
 
   test('the summary names no issue when nothing was skipped', () => {
-    expect(engineSummary('firefox', { passed: true, skipped: 0 })).toBe(
+    expect(engineSummary('firefox', { passed: true, skipped: 0, skipIssues: [] })).toBe(
       'firefox: passed, 0 skipped'
     );
-    expect(engineSummary('webkit', { passed: false, skipped: 0 })).toBe(
+    expect(engineSummary('webkit', { passed: false, skipped: 0, skipIssues: [] })).toBe(
       'webkit: FAILED, 0 skipped'
     );
   });
@@ -53,22 +54,25 @@ describe('the count of skips', () => {
     const skips = skipCounter('firefox', (line) => lines.push(line));
     skips.skip('cut and paste', PLAIN_PASTE_CAUSE);
     skips.skip('copy and paste', PLAIN_PASTE_CAUSE);
-    expect(lines.filter((line) => line.includes(': SKIPPED in firefox, '))).toHaveLength(2);
-    expect(engineSummary('firefox', { passed: true, skipped: skips.count }, false)).toBe(
-      `firefox: passed, 2 skipped (${PLAIN_PASTE_CAUSE})`
+    skips.skip('menu bar clipboard', CLIPBOARD_READ_CAUSE);
+    expect(lines.filter((line) => line.includes(': SKIPPED in firefox, '))).toHaveLength(3);
+    const result = { passed: true, skipped: skips.count, skipIssues: skips.issues };
+    expect(engineSummary('firefox', result, false)).toBe(
+      `firefox: passed, 3 skipped (${PLAIN_PASTE_CAUSE}, ${CLIPBOARD_READ_CAUSE})`
     );
   });
 });
 
 describe('the result of a run', () => {
-  const skipped = [['firefox', { passed: true, skipped: 2 }]] as const;
+  const skipped = [['firefox', { passed: true, skipped: 2, skipIssues: [] }]] as const;
 
   test('a skip fails a run in CI', () => {
     expect(runPasses(skipped, true)).toBe(false);
   });
 
   test('a skip that fails a run in CI gives the reason on its own line, and no pass', () => {
-    const summary = engineSummary('firefox', { passed: true, skipped: 2 }, true);
+    const result = { passed: true, skipped: 2, skipIssues: [PLAIN_PASTE_CAUSE] };
+    const summary = engineSummary('firefox', result, true);
     expect(summary.split('\n')).toEqual([
       `firefox: FAILED, 2 skipped (${PLAIN_PASTE_CAUSE})`,
       `firefox: FAILED, ${CI_SKIP_REASON}`,
@@ -85,11 +89,11 @@ describe('the result of a run', () => {
   });
 
   test('a run in CI with no skip passes', () => {
-    expect(runPasses([['webkit', { passed: true, skipped: 0 }]], true)).toBe(true);
+    expect(runPasses([['webkit', { passed: true, skipped: 0, skipIssues: [] }]], true)).toBe(true);
   });
 
   test('the summary names the first failed step', () => {
-    const result = { passed: false, skipped: 0, firstFailed: 'cut and paste' };
+    const result = { passed: false, skipped: 0, skipIssues: [], firstFailed: 'cut and paste' };
     expect(engineSummary('webkit', result)).toBe(
       'webkit: FAILED, 0 skipped, first failed step "cut and paste"'
     );
@@ -99,9 +103,9 @@ describe('the result of a run', () => {
 describe('the stop reason', () => {
   test('a sample that does not open gives its reason in the summary', () => {
     const reason = stopReason('sample open', 'the sample did not open');
-    expect(engineSummary('chromium', { passed: false, skipped: 0, ...reason })).toBe(
-      'chromium: FAILED, 0 skipped, stopped at "sample open": the sample did not open'
-    );
+    expect(
+      engineSummary('chromium', { passed: false, skipped: 0, skipIssues: [], ...reason })
+    ).toBe('chromium: FAILED, 0 skipped, stopped at "sample open": the sample did not open');
   });
 
   test('a run that reached every step gives no reason', () => {
@@ -188,7 +192,7 @@ describe('a run that loses a page or an engine', () => {
     const results = await runEngines(['chromium', 'firefox', 'webkit'], async (engine) => {
       ran.push(engine);
       if (engine === 'firefox') throw new Error('the browser went away');
-      return { passed: true, skipped: 0 };
+      return { passed: true, skipped: 0, skipIssues: [] };
     }).finally(() => {
       for (const spy of printed) spy.mockRestore();
     });
@@ -202,13 +206,13 @@ describe('a run that loses a page or an engine', () => {
 
   test('the summary names an engine that stopped or did not run', () => {
     const stopped = 'stopped at "keyboard regions": the page was lost';
-    expect(engineSummary('chromium', { passed: false, skipped: 0, stopped })).toBe(
+    expect(engineSummary('chromium', { passed: false, skipped: 0, skipIssues: [], stopped })).toBe(
       `chromium: FAILED, 0 skipped, ${stopped}`
     );
     const launch = 'did not run: the browser did not launch';
-    expect(engineSummary('webkit', { passed: false, skipped: 0, stopped: launch })).toBe(
-      `webkit: FAILED, 0 skipped, ${launch}`
-    );
+    expect(
+      engineSummary('webkit', { passed: false, skipped: 0, skipIssues: [], stopped: launch })
+    ).toBe(`webkit: FAILED, 0 skipped, ${launch}`);
   });
 });
 
@@ -243,8 +247,18 @@ describe('stepResult', () => {
 
 describe('unknownSkips', () => {
   test('names a listed step that the run does not have', () => {
-    expect(unknownSkips('firefox', new Set(['cut and paste']))).toEqual([]);
-    expect(unknownSkips('firefox', new Set(['copy and paste']))).toEqual(['cut and paste']);
+    const run = new Set(['cut and paste', 'menu bar clipboard']);
+    expect(unknownSkips('firefox', run)).toEqual([]);
+    expect(unknownSkips('firefox', new Set(['copy and paste']))).toEqual([
+      'cut and paste',
+      'menu bar clipboard',
+    ]);
+  });
+
+  test('an engine skip applies with and without a browser window', () => {
+    expect(skipIssue('firefox', 'menu bar clipboard', false)).toBe(CLIPBOARD_READ_CAUSE);
+    expect(skipIssue('firefox', 'menu bar clipboard', true)).toBe(CLIPBOARD_READ_CAUSE);
+    expect(skipIssue('chromium', 'menu bar clipboard', false)).toBeUndefined();
   });
 
   test('names nothing for an engine with no skip', () => {

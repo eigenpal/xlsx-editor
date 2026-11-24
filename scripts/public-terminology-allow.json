@@ -70,6 +70,10 @@
       "line": "'application/vnd.ms-office.vbaProject',"
     },
     {
+      "file": "scripts/fixtures/builder.ts",
+      "line": "const MACRO_WORKBOOK = 'application/vnd.ms-excel.sheet.macroEnabled.main+xml';"
+    },
+    {
       "file": "packages/core/licenses/HarfBuzz-USE-MIT.txt",
       "line": "Copyright (c) Microsoft Corporation."
     },

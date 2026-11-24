@@ -8,6 +8,7 @@ import { dirname, join } from 'node:path';
 import { Window } from 'happy-dom';
 import { strFromU8, unzipSync, zipSync } from 'fflate';
 import { buildXlsx, c, row } from '../../../../../scripts/fixtures/builder.ts';
+import { fixtureFile } from '../../../../../scripts/fixtures/catalog.ts';
 import {
   createXlsxEditor,
   EDIT_REFUSAL_CODES,
@@ -34,7 +35,7 @@ const FONTS: FontSource[] = [
 ];
 
 const fixture = (name: string) =>
-  new Uint8Array(readFileSync(`${import.meta.dir}/../../../../../fixtures/${name}.xlsx`));
+  new Uint8Array(readFileSync(`${import.meta.dir}/../../../../../fixtures/${fixtureFile(name)}`));
 
 let viewers: XlsxEditorInstance[] = [];
 afterEach(() => {

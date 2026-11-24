@@ -7,7 +7,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { buildXlsx } from './builder.ts';
-import { FIXTURES } from './catalog.ts';
+import { FIXTURES, fixtureFile } from './catalog.ts';
 
 const OUT = 'fixtures';
 if (
@@ -19,8 +19,15 @@ const check = process.argv.includes('--check');
 const stale: string[] = [];
 mkdirSync(OUT, { recursive: true });
 for (const fixture of FIXTURES) {
-  const bytes = buildXlsx(fixture.workbook());
-  const path = `${OUT}/${fixture.name}.xlsx`;
+  const workbook = fixture.workbook();
+  // The extension must agree with the content type of the main part. A desktop application
+  // expects the extension `.xlsm` for the macro-enabled content type.
+  if ((workbook.macroEnabled === true) !== (fixture.extension === 'xlsm'))
+    throw new Error(
+      `${fixture.name}: a macro-enabled workbook needs the extension xlsm, and only it may have it.`
+    );
+  const bytes = buildXlsx(workbook);
+  const path = `${OUT}/${fixtureFile(fixture.name)}`;
   if (check) {
     if (!existsSync(path) || Buffer.compare(readFileSync(path), Buffer.from(bytes)) !== 0)
       stale.push(path);

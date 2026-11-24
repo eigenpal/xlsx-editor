@@ -357,9 +357,10 @@ A saved workbook must open with no repair prompt, and schema validation cannot s
 
 A `verified` result means that the copy opens with no repair prompt, with its sheets and its edited cell. It does not mean that formula results are current: the edited copy keeps the cached results of formulas that depend on the edited cell.
 
-- `bun run save-check copies <dir>` writes the saved and edited copies to `<dir>`.
+- `bun run save-check copies <dir>` writes the saved and edited copies to `<dir>`, as `<name>.saved.xlsx` and `<name>.edited.xlsx`.
+- A fixture whose catalog entry has `extension: 'xlsm'` is a macro-enabled workbook. The fixture file and each copy of it have the extension `.xlsm`, for example `macro-enabled.saved.xlsm`. A desktop application expects the extension `.xlsm` for this content type. `fixtureFile` in `scripts/fixtures/catalog.ts` gives each file name.
 - `bun run save-check record <dir> <fixture> <saved-result> <edited-result>` records the result of opening the copies in `<dir>`. It refuses copies that differ from what the writer emits. A result is `verified`, `repair-prompt`, `does-not-open`, or `sheets-differ`.
-- `bun run save-check record-edit <dir> <row> <result>` records the result of opening `<dir>/<row>.xlsx`, the copy of the feature edit of a support matrix row. It refuses a copy that differs from what the recipe saves.
+- `bun run save-check record-edit <dir> <row> <result>` records the result of opening `<dir>/<row>.xlsx`, the copy of the feature edit of a support matrix row. The copy of a recipe on a macro-enabled fixture is `<dir>/<row>.xlsm`. It refuses a copy that differs from what the recipe saves.
 
 ### Feature edits
 
@@ -367,7 +368,7 @@ Each supported editing or save row of the support matrix proves its own round tr
 
 `fixtures/feature-edits.json` holds the save check record of each recipe's copy, in the form of `fixtures/save-check.json`. `bun run check:support-matrix` requires a current `verified` record for each supported editing or save row, other than `save.round-trip`, and the recipe's fixture must be one that the row cites. A row without one is `partial`, and the missing record is its shortfall.
 
-To add a recipe, add it under the id of its row, and run `bun test scripts/fidelity/feature-edits.test.ts`. `bun scripts/fidelity/feature-edits.ts --out <dir>` runs every recipe and writes one edited copy per row as `<row>.xlsx`, with the sheet count of each copy. Open the copy with the save check, and record it with `record-edit`. If you cannot run the save check, keep the row `partial`, say so in your pull request, and a maintainer runs it. A change that alters the bytes of a recorded copy makes its record stale, and the test fails until the new copy is recorded.
+To add a recipe, add it under the id of its row, and run `bun test scripts/fidelity/feature-edits.test.ts`. `bun scripts/fidelity/feature-edits.ts --out <dir>` runs every recipe and writes one edited copy per row as `<row>.xlsx` (`<row>.xlsm` on a macro-enabled fixture), with the sheet count of each copy. Open the copy with the save check, and record it with `record-edit`. If you cannot run the save check, keep the row `partial`, say so in your pull request, and a maintainer runs it. A change that alters the bytes of a recorded copy makes its record stale, and the test fails until the new copy is recorded.
 
 The demo's sample workbook has its own record, `scripts/sample-workbook/save-check.json`, with the same form. Its edited copy makes the Bold edit of the demo save tests (`examples/vite/src/__tests__/demo-save.test.tsx`) and one value edit. A change to the writer or to `scripts/fixtures/builder.ts` can make both the fixture records and the sample record stale, so check both.
 

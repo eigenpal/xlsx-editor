@@ -12,6 +12,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Window } from 'happy-dom';
+import { fixtureExtension, fixtureFile } from '../fixtures/catalog.ts';
 import { createXlsxEditor, runToolbarCommand } from '../../packages/core/src/editor/index.ts';
 import type {
   ChromeSlotId,
@@ -234,12 +235,16 @@ export function savedWorkbook(pkg: XlsxPackage): SavedWorkbook {
   };
 }
 
-/** The file name of the edited copy of a row, as `feature-edits.ts --out` writes it. */
-export const featureCopyName = (row: string): string => `${row}.xlsx`;
+/**
+ * The file name of the edited copy of a row, as `feature-edits.ts --out` writes it: `<row>.xlsx`,
+ * or `<row>.xlsm` when the recipe's fixture is macro-enabled (`fixtureFile`).
+ */
+export const featureCopyName = (row: string, fixture: string): string =>
+  `${row}.${fixtureExtension(fixture)}`;
 
 /** The fixture as committed. */
 export const fixtureBytes = (name: string): Uint8Array =>
-  new Uint8Array(readFileSync(join(FIXTURES_DIR, `${name}.xlsx`)));
+  new Uint8Array(readFileSync(join(FIXTURES_DIR, fixtureFile(name))));
 
 /** The happy-dom page of each mounted editor, closed by `dispose`. */
 const pages = new WeakMap<XlsxEditorInstance, Window>();

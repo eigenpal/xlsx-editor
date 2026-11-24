@@ -35,17 +35,18 @@ import {
   type XlsxPackage,
 } from '../../../../packages/core/src/store/index.ts';
 import { readZip, writeZip } from '../../../../packages/ooxml-core/src/zip.ts';
+import { fixtureFile } from '../../../../scripts/fixtures/catalog.ts';
 import { HEADINGS_FROM_FILE, HEADINGS_SHOWN, headingFlags } from '../headings.ts';
 
 const ROOT = join(import.meta.dir, '../../../..');
 export const FIXTURES_DIR = join(ROOT, 'fixtures');
 const SAMPLE_FILE = join(ROOT, 'examples/vite/public/sample.xlsx');
 
-/** The names of the committed fixtures, sorted. */
+/** The names of the committed fixtures, sorted: each `.xlsx` and `.xlsm` file (`fixtureFile`). */
 export const fixtureNames = (): string[] =>
   readdirSync(FIXTURES_DIR)
-    .filter((f) => f.endsWith('.xlsx'))
-    .map((f) => f.replace(/\.xlsx$/, ''))
+    .filter((f) => /\.xls[xm]$/.test(f))
+    .map((f) => f.replace(/\.xls[xm]$/, ''))
     .sort();
 
 mock.module('../workbooks.ts', () => ({ SAMPLE_URL: '/sample.xlsx' }));
@@ -58,7 +59,7 @@ setDefaultTimeout(90_000);
 
 /** The bytes of a committed fixture. */
 export const fixtureBytes = (name: string): Uint8Array<ArrayBuffer> =>
-  new Uint8Array(readFileSync(join(FIXTURES_DIR, `${name}.xlsx`)));
+  new Uint8Array(readFileSync(join(FIXTURES_DIR, fixtureFile(name))));
 
 /** The bytes of the committed sample workbook. */
 export const sampleBytes = (): Uint8Array<ArrayBuffer> => new Uint8Array(readFileSync(SAMPLE_FILE));
@@ -460,7 +461,7 @@ export class Demo {
 
   /** Picks the committed fixture `name` as a file, as a user opens a workbook. */
   pickFixture(name: string): void {
-    this.pickFile(`${name}.xlsx`, fixtureBytes(name));
+    this.pickFile(fixtureFile(name), fixtureBytes(name));
   }
 
   /** Picks the committed sample workbook as a file. */

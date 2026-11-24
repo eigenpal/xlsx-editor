@@ -7,6 +7,7 @@ import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { c, row } from '../../../../../scripts/fixtures/builder.ts';
+import { fixtureFile } from '../../../../../scripts/fixtures/catalog.ts';
 import { partOf, readXlsx, xmlPartOf, type XlsxPackage } from '../package/package.ts';
 import { attr, child } from '../package/query.ts';
 import { sheetByName, workbookIndex } from '../workbook/workbook-index.ts';
@@ -19,7 +20,7 @@ import { applyHistory } from './history-helpers.ts';
 const FIXTURES = join(import.meta.dir, '../../../../../fixtures');
 
 function openFixture(name: string): XlsxPackage {
-  const read = readXlsx(readFileSync(join(FIXTURES, `${name}.xlsx`)));
+  const read = readXlsx(readFileSync(join(FIXTURES, fixtureFile(name))));
   if (!read.ok) throw new Error(JSON.stringify(read.error));
   return read.pkg;
 }

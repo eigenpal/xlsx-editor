@@ -4,7 +4,7 @@
 import { describe, expect, test } from 'bun:test';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { FIXTURES } from '../fixtures/catalog.ts';
+import { FIXTURES, fixtureFile } from '../fixtures/catalog.ts';
 import { fixtureCopies, readRecords, recordProblems } from './records.ts';
 
 describe('save-verified records', () => {
@@ -18,9 +18,9 @@ describe('save-verified records', () => {
   });
 
   test('every workbook in fixtures/ is in the catalog', () => {
-    const names = new Set(FIXTURES.map((f) => `${f.name}.xlsx`));
+    const names = new Set(FIXTURES.map((f) => fixtureFile(f.name)));
     const files = readdirSync(join(import.meta.dir, '..', '..', 'fixtures')).filter((f) =>
-      f.endsWith('.xlsx')
+      /\.xls[xm]$/.test(f)
     );
     expect(files.filter((f) => !names.has(f))).toEqual([]);
   });

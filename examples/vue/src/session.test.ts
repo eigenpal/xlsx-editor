@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { EditorSnapshot, SavedWorkbook } from '@xlsx-editor.dev/core/editor';
 import { readXlsx } from '@xlsx-editor.dev/core/store';
+import { fixtureFile } from '../../../scripts/fixtures/catalog.ts';
 import { headingFlags } from '../../vite/src/headings.ts';
 import { DemoSession, MAX_FILE_BYTES, type PickedFile, type SessionEditor } from './session.ts';
 
@@ -15,7 +16,7 @@ const ROOT = join(import.meta.dir, '../../..');
 const sampleBytes = () =>
   new Uint8Array(readFileSync(join(ROOT, 'examples/vite/public/sample.xlsx')));
 const fixtureBytes = (name: string) =>
-  new Uint8Array(readFileSync(join(ROOT, `fixtures/${name}.xlsx`)));
+  new Uint8Array(readFileSync(join(ROOT, 'fixtures', fixtureFile(name))));
 
 /** The heading flags of every worksheet view of `bytes`, as text to compare. */
 const flagsOf = (bytes: Uint8Array) => JSON.stringify([...headingFlags(readXlsx(bytes))]);

@@ -5,7 +5,7 @@
 
 import { join } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
-import { FIXTURES } from '../fixtures/catalog.ts';
+import { FIXTURES, fixtureFile } from '../fixtures/catalog.ts';
 import { FEATURE_EDITS } from '../fidelity/feature-edits.ts';
 import { featureCopyName, runFeatureEdit } from '../fidelity/feature-edit-kit.ts';
 import { readFeatureRecords, writeFeatureRecords } from './feature-records.ts';
@@ -27,6 +27,7 @@ const USAGE = `usage:
   bun run save-check record-edit <dir> <row> <result>
       record the result of opening <dir>/<row>.xlsx, the copy of the feature edit of a support
       matrix row that \`bun scripts/fidelity/feature-edits.ts --out <dir>\` writes
+  a copy of a macro-enabled fixture has the extension .xlsm in place of .xlsx
   a result is one of: ${RESULTS.join(', ')}`;
 
 function fail(message: string): never {
@@ -50,7 +51,7 @@ if (command === 'copies' && args.length === 1) {
   // The record names the bytes that were opened, and those must be the bytes the recipe saves now.
   const run = await runFeatureEdit(recipe);
   if (run.problems.length > 0) fail(`${row}: the recipe fails: ${run.problems.join('; ')}`);
-  const copy = join(dir, featureCopyName(row));
+  const copy = join(dir, featureCopyName(row, recipe.fixture));
   if (!existsSync(copy))
     fail(
       `${copy} does not exist: write the copies first (bun scripts/fidelity/feature-edits.ts --out ${dir})`
@@ -70,8 +71,8 @@ if (command === 'copies' && args.length === 1) {
   // The record names the bytes that were opened, and those must be the bytes the writer emits now.
   const current = fixtureCopies(fixture);
   const opened = {
-    saved: new Uint8Array(readFileSync(join(dir, `${name}.saved.xlsx`))),
-    edited: new Uint8Array(readFileSync(join(dir, `${name}.edited.xlsx`))),
+    saved: new Uint8Array(readFileSync(join(dir, fixtureFile(name, '.saved')))),
+    edited: new Uint8Array(readFileSync(join(dir, fixtureFile(name, '.edited')))),
   };
   for (const kind of ['saved', 'edited'] as const)
     if (sha256(opened[kind]) !== sha256(current[kind]))

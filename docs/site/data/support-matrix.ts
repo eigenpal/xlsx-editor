@@ -128,6 +128,7 @@ const EVERY_FIXTURE = [
   'fills-patterns',
   'cell-styles',
   'conditional-rules',
+  'macro-enabled',
 ] as const;
 const FORMAT_EDIT_TESTS = [
   `${CORE}/store/__tests__/format-ops.test.ts`,

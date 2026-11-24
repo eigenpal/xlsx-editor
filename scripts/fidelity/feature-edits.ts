@@ -5,7 +5,7 @@
 //
 // `bun test scripts/fidelity/feature-edits.test.ts` runs every recipe, and `bun
 // scripts/fidelity/feature-edits.ts --out <dir>` runs them and writes one edited copy per row,
-// `<row>.xlsx`. A maintainer opens each copy, and
+// `<row>.xlsx` (`<row>.xlsm` on a macro-enabled fixture). A maintainer opens each copy, and
 // `fixtures/feature-edits.json` records the result (CONTRIBUTING.md, "Save check").
 //
 // Same form as pptx-editor/scripts/fidelity/feature-edits.ts at 30dc48ea (EigenPal). Differences:
@@ -16,6 +16,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
+import { contentTypeOf, workbookIndex } from '../../packages/core/src/store/index.ts';
+import { isMacroEnabledType } from '../../packages/core/src/store/package/main-part-type.ts';
 import {
   all,
   featureCopyName,
@@ -378,6 +380,22 @@ export const FEATURE_EDITS: Readonly<Record<string, FeatureEdit>> = {
       ),
     parts: [WORKBOOK, /^\/xl\/worksheets\/sheet2\.xml$/, /^\/xl\/drawings\/drawing1\.xml$/],
   },
+  'save.macro-enabled': {
+    fixture: 'macro-enabled',
+    // A value edit in a macro-enabled workbook. The save keeps the macro-enabled content type in
+    // the `Override` element of the main part (ECMA-376 Part 2, 7.2.3.2.5, `CT_Override`). The
+    // main part keeps the root element of the Workbook Part (Part 1, 12.3.23).
+    edit: (t) => t.run(t.editor.enterValue('95', point('C3'))),
+    check: (d) =>
+      all(
+        has(d.cellXml('Budget', 'C3'), '<v>95</v>'),
+        isMacroEnabledType(contentTypeOf(d.pkg, workbookIndex(d.pkg)?.mainPart ?? ''))
+          ? undefined
+          : 'the main part is not macro-enabled'
+      ),
+    // The workbook has a formula, so the save asks for a full calculation on load (design D3).
+    parts: [WORKBOOK],
+  },
   'save.calc-chain': {
     fixture: 'formulas',
     edit: (t) => t.run(t.editor.enterValue('=A1+1', point('C1'))),
@@ -418,7 +436,7 @@ if (import.meta.main) {
       `${row}: ${run.problems.length > 0 ? `FAIL ${run.problems.join('; ')}` : `ok, sheets: ${run.sheetCount}`}`
     );
     if (values.out && run.problems.length === 0)
-      writeFileSync(join(values.out, featureCopyName(row)), run.bytes);
+      writeFileSync(join(values.out, featureCopyName(row, recipe.fixture)), run.bytes);
   }
   process.exitCode = failed ? 1 : 0;
 }

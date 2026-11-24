@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { Window } from 'happy-dom';
 import { unzipSync, zipSync } from 'fflate';
 import { buildXlsx, c, row } from '../../../../../scripts/fixtures/builder.ts';
-import { FIXTURES } from '../../../../../scripts/fixtures/catalog.ts';
+import { FIXTURES, fixtureFile } from '../../../../../scripts/fixtures/catalog.ts';
 import { readXlsx, workbookIndex, type XlsxPackage } from '../../store/index.ts';
 import {
   layoutSheet,
@@ -39,7 +39,9 @@ const open = (bytes: Uint8Array): XlsxPackage => {
   return r.pkg;
 };
 const fixture = (name: string) =>
-  open(new Uint8Array(readFileSync(`${import.meta.dir}/../../../../../fixtures/${name}.xlsx`)));
+  open(
+    new Uint8Array(readFileSync(`${import.meta.dir}/../../../../../fixtures/${fixtureFile(name)}`))
+  );
 
 const VIEW = { width: 540, height: 720, scrollX: 0, scrollY: 0 };
 const layout = (pkg: XlsxPackage, sheet: string): SheetLayout => {

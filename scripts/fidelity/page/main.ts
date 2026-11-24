@@ -79,12 +79,13 @@ async function fontSources(mode: string): Promise<FontSource[]> {
   return [...sources];
 }
 
-async function render(fixture: string, locale: NumberLocale, fonts: string): Promise<PageResult> {
+/** Render the fixture whose file name (`fixtureFile`, `scripts/fixtures/catalog.ts`) is `file`. */
+async function render(file: string, locale: NumberLocale, fonts: string): Promise<PageResult> {
   await initializeHarfBuzz();
   const sources = await fontSources(fonts);
   if (sources.length === 0) return { ok: false, problem: 'no font loaded' };
   const measurer = createHarfBuzzMeasurer(sources);
-  const bytes = new Uint8Array(await (await fetch(`/fixtures/${fixture}.xlsx`)).arrayBuffer());
+  const bytes = new Uint8Array(await (await fetch(`/fixtures/${file}`)).arrayBuffer());
   const read = readXlsx(bytes);
   if (!read.ok) return { ok: false, problem: read.error.reason };
   const index = workbookIndex(read.pkg);
@@ -179,7 +180,7 @@ function harnessEndPrint(): number {
 
 declare global {
   interface Window {
-    harnessRender: (fixture: string, locale: NumberLocale, fonts: string) => Promise<PageResult>;
+    harnessRender: (file: string, locale: NumberLocale, fonts: string) => Promise<PageResult>;
     harnessPrint: () => boolean;
     harnessEndPrint: () => number;
   }

@@ -48,6 +48,7 @@ import {
   runAllFeatureEdits,
 } from './save-check/feature-records.ts';
 import { FEATURE_EDITS } from './fidelity/feature-edits.ts';
+import { featureCopyName } from './fidelity/feature-edit-kit.ts';
 
 // The matrix names the fidelity checks without importing the harness; keep the two equal.
 type Same<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
@@ -106,9 +107,9 @@ export function normalizePath(path: string): string | undefined {
 const ROUND_TRIP_ROW = 'save.round-trip';
 
 const SAVE_REMEDY = 'run the save check again and record it (`bun run save-check record`)';
-/** How to record the copy of the feature edit of `row`. */
-const featureSaveRemedy = (row: string) =>
-  `write the copy (\`bun scripts/fidelity/feature-edits.ts --out <dir>\`), open \`<dir>/${row}.xlsx\`, and record it (\`bun run save-check record-edit <dir> ${row} <result>\`); if you cannot run the save check, say so in your pull request, and a maintainer runs it`;
+/** How to record the copy of the feature edit of `row`, whose recipe edits `fixture`. */
+const featureSaveRemedy = (row: string, fixture: string) =>
+  `write the copy (\`bun scripts/fidelity/feature-edits.ts --out <dir>\`), open \`<dir>/${featureCopyName(row, fixture)}\`, and record it (\`bun run save-check record-edit <dir> ${row} <result>\`); if you cannot run the save check, say so in your pull request, and a maintainer runs it`;
 const RECIPE_REMEDY =
   'fix the edit or its recipe (`bun test scripts/fidelity/feature-edits.test.ts`)';
 const REFERENCE_REMEDY =
@@ -195,7 +196,7 @@ export function supportMatrixProblems(
       if (!unrecorded)
         for (const problem of problems)
           at(
-            `the feature edit is not save-verified: ${problem}: ${problem.startsWith('the recipe fails') ? RECIPE_REMEDY : featureSaveRemedy(row.id)}`
+            `the feature edit is not save-verified: ${problem}: ${problem.startsWith('the recipe fails') ? RECIPE_REMEDY : featureSaveRemedy(row.id, editFixture)}`
           );
       ownEditVerified = problems.length === 0 && cites.has(editFixture);
     }
@@ -205,7 +206,7 @@ export function supportMatrixProblems(
       at(
         editFixture === undefined
           ? 'a supported editing or save row has no edit of its own: add a recipe to `FEATURE_EDITS` (`scripts/fidelity/feature-edits.ts`) on a fixture that the row cites, or mark the row partial'
-          : `a supported editing or save row has no save-verified edit of its own: ${featureSaveRemedy(row.id)}; until then, mark the row partial`
+          : `a supported editing or save row has no save-verified edit of its own: ${featureSaveRemedy(row.id, editFixture)}; until then, mark the row partial`
       );
 
     // Fidelity results (design D8).

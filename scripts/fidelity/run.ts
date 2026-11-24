@@ -60,7 +60,7 @@ import { join } from 'node:path';
 import { chromium, type Browser, type Page } from '@playwright/test';
 import { PNG } from 'pngjs';
 import { createServer, type Plugin } from 'vite';
-import { FIXTURES } from '../fixtures/catalog.ts';
+import { FIXTURES, fixtureFile } from '../fixtures/catalog.ts';
 import {
   checkPoppler,
   chromiumPid,
@@ -192,10 +192,10 @@ const harnessFiles: Plugin = {
   configureServer(server) {
     server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
       const url = req.url ?? '';
-      const fixture = /^\/fixtures\/([a-z0-9-]+)\.xlsx$/.exec(url);
-      if (fixture && FIXTURES.some((f) => f.name === fixture[1])) {
+      const fixture = /^\/fixtures\/([a-z0-9-]+\.xls[xm])$/.exec(url);
+      if (fixture && FIXTURES.some((f) => fixtureFile(f.name) === fixture[1])) {
         res.setHeader('content-type', 'application/octet-stream');
-        res.end(readFileSync(join(FIXTURE_DIR, `${fixture[1]}.xlsx`)));
+        res.end(readFileSync(join(FIXTURE_DIR, fixture[1]!)));
         return;
       }
       if (url === '/__harness/fonts.json') {
@@ -391,7 +391,7 @@ async function measureWith(
         if (problems.length) {
           return { name, status: 'error', error: problems.join('; ') };
         }
-        const xlsx = new Uint8Array(readFileSync(join(FIXTURE_DIR, `${name}.xlsx`)));
+        const xlsx = new Uint8Array(readFileSync(join(FIXTURE_DIR, fixtureFile(name))));
         served = env === 'reference' ? referenceFaces(fontDirs, workbookFamilies(xlsx)) : [];
         allFaces.push(...served);
         const dir = join(REPORT_DIR, name);
@@ -404,7 +404,7 @@ async function measureWith(
         await page.waitForFunction(() => typeof window.harnessRender === 'function');
         const locale = manifest.references[name]!.locale;
         const report = await page.evaluate(([n, l, f]) => window.harnessRender(n, l, f), [
-          name,
+          fixtureFile(name),
           locale,
           env,
         ] as const);

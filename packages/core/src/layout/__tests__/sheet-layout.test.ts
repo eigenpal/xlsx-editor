@@ -16,6 +16,7 @@ import { PRINT_PROFILE, SCREEN_PROFILE } from '../metrics.ts';
 import type { TextMeasurer } from '../text/measurer.ts';
 import { substituteMeasurer } from './test-fonts.ts';
 import { referenceLocale } from '../../../../../scripts/fidelity/references.ts';
+import { fixtureFile } from '../../../../../scripts/fixtures/catalog.ts';
 
 let measurer: TextMeasurer;
 beforeAll(async () => {
@@ -28,7 +29,9 @@ const open = (bytes: Uint8Array): XlsxPackage => {
   return r.pkg;
 };
 const fixture = (name: string) =>
-  open(new Uint8Array(readFileSync(`${import.meta.dir}/../../../../../fixtures/${name}.xlsx`)));
+  open(
+    new Uint8Array(readFileSync(`${import.meta.dir}/../../../../../fixtures/${fixtureFile(name)}`))
+  );
 
 const VIEW = { width: 540, height: 720, scrollX: 0, scrollY: 0 };
 

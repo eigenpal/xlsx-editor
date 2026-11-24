@@ -6,7 +6,7 @@ import {
   row,
   type FixtureWorkbook,
 } from '../../../../../scripts/fixtures/builder.ts';
-import { FIXTURES, fixtureEditOps } from '../../../../../scripts/fixtures/catalog.ts';
+import { FIXTURES, fixtureEditOps, fixtureFile } from '../../../../../scripts/fixtures/catalog.ts';
 import { packageFingerprints, readXlsx, xmlPartOf, type XlsxPackage } from '../package/package.ts';
 import { writeXlsx } from '../package-write/write.ts';
 import { attr, child, textOf } from '../package/query.ts';
@@ -126,7 +126,7 @@ describe('WorkbookDocumentStore.transact', () => {
 
   test('after an undo, a save keeps added text in a table that the workbook had, and drops a table that the edit created', () => {
     const fixture = (name: string) => {
-      const read = readXlsx(new Uint8Array(readFileSync(`${FIXTURE_DIR}/${name}.xlsx`)));
+      const read = readXlsx(new Uint8Array(readFileSync(`${FIXTURE_DIR}/${fixtureFile(name)}`)));
       if (!read.ok) throw new Error(name);
       return read.pkg;
     };
@@ -515,7 +515,9 @@ describe('save rules and fidelity oracles', () => {
 
   for (const fixture of FIXTURES) {
     test(`${fixture.name}: open and save keep the fingerprint and the digest`, () => {
-      const read = readXlsx(new Uint8Array(readFileSync(`${FIXTURE_DIR}/${fixture.name}.xlsx`)));
+      const read = readXlsx(
+        new Uint8Array(readFileSync(`${FIXTURE_DIR}/${fixtureFile(fixture.name)}`))
+      );
       if (!read.ok) throw new Error('read');
       const oracles = workbookOracles(read.pkg);
       expect(oracles.changedParts).toEqual([]);
@@ -523,7 +525,9 @@ describe('save rules and fidelity oracles', () => {
     });
 
     test(`${fixture.name}: the edited copy keeps its generic content and its oracles`, () => {
-      const read = readXlsx(new Uint8Array(readFileSync(`${FIXTURE_DIR}/${fixture.name}.xlsx`)));
+      const read = readXlsx(
+        new Uint8Array(readFileSync(`${FIXTURE_DIR}/${fixtureFile(fixture.name)}`))
+      );
       if (!read.ok) throw new Error('read');
       const store = new WorkbookDocumentStore(read.pkg);
       const { sheet } = fixture.edits[0]!;

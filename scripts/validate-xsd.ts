@@ -54,7 +54,7 @@ import {
   type WorkbookOp,
   type XlsxPackage,
 } from '../packages/core/src/store/index.ts';
-import { FIXTURES, fixtureEditOps } from './fixtures/catalog.ts';
+import { FIXTURES, fixtureEditOps, fixtureFile } from './fixtures/catalog.ts';
 import {
   checkFresh,
   checkOut,
@@ -296,7 +296,7 @@ function validateFixtures(): boolean {
   let structuralSessions = 0;
   try {
     for (const fixture of FIXTURES) {
-      const read = readXlsx(new Uint8Array(readFileSync(`fixtures/${fixture.name}.xlsx`)));
+      const read = readXlsx(new Uint8Array(readFileSync(`fixtures/${fixtureFile(fixture.name)}`)));
       if (!read.ok) {
         console.error(`${fixture.name}: does not open (${read.error.reason})`);
         failures += 1;

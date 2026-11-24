@@ -95,7 +95,32 @@ export interface Fixture {
   readonly workbook: () => FixtureWorkbook;
   /** The edits of the edited copy, applied as one transaction through the store ops. */
   readonly edits: readonly FixtureEdit[];
+  /**
+   * The file extension of the fixture and of its copies. Absent: `xlsx`. Set `xlsm` for a
+   * workbook whose main part has the macro-enabled content type (`FixtureWorkbook.macroEnabled`).
+   * A desktop application expects the extension `.xlsm` for this content type.
+   * `scripts/fixtures/build.ts` refuses an extension that does not agree with the workbook.
+   */
+  readonly extension?: 'xlsm';
 }
+
+/** The file extensions of the fixtures. */
+export type FixtureExtension = 'xlsx' | 'xlsm';
+
+/**
+ * The file extension of the fixture `name`. A name that the catalog does not have gets `xlsx`, so
+ * a message about a missing fixture can name a file.
+ */
+export const fixtureExtension = (name: string): FixtureExtension =>
+  FIXTURES.find((f) => f.name === name)?.extension ?? 'xlsx';
+
+/**
+ * The file name of the fixture `name`, or of one of its copies: `<name><copy>.<extension>`. For
+ * example: `basic-values.xlsx`, `macro-enabled.xlsm`, and `macro-enabled.saved.xlsm` (the copy
+ * `.saved`). Each script and test that names a fixture file or a copy uses this name.
+ */
+export const fixtureFile = (name: string, copy = ''): string =>
+  `${name}${copy}.${fixtureExtension(name)}`;
 
 /**
  * The store ops of a fixture's edits. A clipboard edit reads its source from `pkg` after the
@@ -516,6 +541,28 @@ export const FIXTURES: readonly Fixture[] = [
       { sheet: 'Styles', ref: styleRef('alignment omit apply absent'), format: { wrapText: true } },
       { sheet: 'Styles', ref: 'C1', value: 'edited' },
     ],
+  },
+  {
+    name: 'macro-enabled',
+    purpose:
+      'A macro-enabled workbook with no macro part. Its main part has the macro-enabled content type (scripts/fixtures/builder.ts, `macroEnabled`). The save keeps that content type. A script cannot make a valid macro part, so the unit tests of packages/core cover a workbook with one.',
+    extension: 'xlsm',
+    workbook: () => ({
+      macroEnabled: true,
+      sheets: [
+        {
+          name: 'Budget',
+          cols: '<cols><col min="1" max="1" width="14" customWidth="1"/></cols>',
+          rows: [
+            row(1, [c('A1', 'Region'), c('B1', 'Amount')]),
+            row(2, [c('A2', 'North'), c('B2', 120)]),
+            row(3, [c('A3', 'South'), c('B3', 80)]),
+            row(4, [c('A4', 'Total'), c('B4', 200, { f: 'SUM(B2:B3)' })]),
+          ].join(''),
+        },
+      ],
+    }),
+    edits: [{ sheet: 'Budget', ref: 'C1', value: 'edited' }],
   },
 ];
 

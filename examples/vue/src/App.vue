@@ -63,8 +63,6 @@ const editor = useTemplateRef<XlsxEditorRef>('editor');
 const openInput = useTemplateRef<HTMLInputElement>('openInput');
 // The workbook name field in the top bar, which File > Rename workbook focuses.
 const nameField = useTemplateRef<HTMLInputElement>('nameField');
-// The status of the editor, so the grid shows idle until a workbook is ready.
-const status = shallowRef<EditorSnapshot['status']>('empty');
 // The file kind of the open workbook, for the extension that Save writes.
 const kind = shallowRef<FileKind | null>(null);
 const viewOnly = shallowRef(false);
@@ -130,9 +128,8 @@ function startRename() {
   nameField.value?.select();
 }
 
-/** Keeps the status and the file kind of the editor. */
+/** Keeps the file kind of the editor. */
 function onChange(s: EditorSnapshot) {
-  status.value = s.status;
   kind.value = fileKindOf(s);
 }
 
@@ -276,7 +273,7 @@ void session.openSample(async () => {
           <div class="demo-canvas">
             <FormulaBar />
             <StatusMessage />
-            <XlsxEditorContent :class-name="status === 'ready' ? undefined : 'xlsx-canvas-idle'" />
+            <XlsxEditorContent />
             <div class="xlsx-footer">
               <SheetTabs />
               <ZoomControl />

@@ -46,6 +46,7 @@ import {
   LayoutPartsContext,
   TranslationContext,
   XlsxEditorContext,
+  useEditorState,
   useLayoutPart,
   useTranslation,
   useXlsxEditor,
@@ -393,9 +394,17 @@ export interface XlsxEditorContentProps {
   readonly className?: string;
 }
 
-/** The grid: attaches the editor's surface in a layout effect. @public */
+/** Whether the editor shows a workbook, so the grid has something to show. */
+const showsWorkbook = (snapshot: EditorSnapshot): boolean => snapshot.status === 'ready';
+
+/**
+ * The grid: attaches the editor's surface in a layout effect. While no workbook is ready (empty,
+ * loading, or failed), the grid is hidden, so a custom layout shows only `StatusMessage` in that
+ * state, as the composed editor does. @public
+ */
 export function XlsxEditorContent({ className }: XlsxEditorContentProps) {
   const editor = useXlsxEditor();
+  const ready = useEditorState(showsWorkbook);
   useLayoutPart('grids');
   const host = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -410,5 +419,6 @@ export function XlsxEditorContent({ className }: XlsxEditorContentProps) {
     if (!editor || !element || !isDevelopment()) return undefined;
     return watchGridSetup(element, 'XlsxEditor.Content', '@xlsx-editor.dev/react/styles.css');
   }, [editor]);
-  return <div ref={host} className={`xlsx-canvas${className ? ` ${className}` : ''}`} />;
+  const classes = ['xlsx-canvas', ready ? null : 'xlsx-canvas-idle', className];
+  return <div ref={host} className={classes.filter(Boolean).join(' ')} />;
 }

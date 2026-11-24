@@ -121,6 +121,21 @@ describe('the width of a column', () => {
     expect([...widths.keys()].sort()).toEqual([0, 5]);
   });
 
+  test('counts a number with wrapText or justify, which shows on one line', () => {
+    const pkg = open(
+      row(1, [
+        c('A1', 1234567.891, { s: WRAP }),
+        c('B1', 1234567.891, { s: JUSTIFY }),
+        c('C1', 1234567.891),
+      ])
+    );
+    const widths = columns(pkg);
+    // The same width as the number in a cell with no alignment.
+    expect(widths.get(2)).toBeGreaterThan(0);
+    expect(widths.get(0)).toBe(widths.get(2)!);
+    expect(widths.get(1)).toBe(widths.get(2)!);
+  });
+
   test('leaves out cells that show no text, justified text, and text centered across cells', () => {
     const long = 'a text that is much wider than the default column';
     const pkg = open(

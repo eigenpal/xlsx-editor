@@ -55,6 +55,26 @@ export function entryOps(
 }
 
 /**
+ * The op that turns on `@wrapText` of the cell `ref` (`x:alignment`, `CT_CellAlignment`,
+ * ECMA-376 Part 1, 18.8.1) for text that the cell editor commits with a line break (Alt+Enter),
+ * so the cell shows each line. Undefined when the value is not text with a line break, when the
+ * cell format of the cell already wraps (`wraps`), or when the protection of the sheet does not
+ * allow formatting cells: then the value is written alone.
+ */
+export function lineBreakWrapOp(
+  pkg: XlsxPackage,
+  sheet: string,
+  ref: string,
+  entry: TypedEntry,
+  wraps: boolean
+): WorkbookOp | undefined {
+  const v = entry.value;
+  if (wraps || v.type !== 'string' || !/[\n\r]/.test(v.value)) return undefined;
+  const op: WorkbookOp = { op: 'applyFormat', sheet, ref, patch: { wrapText: true } };
+  return protectionRefusal(pkg, op) ? undefined : op;
+}
+
+/**
  * Whether the format ops of typed entries apply. When they do not, the caller writes the values
  * with no formats instead of refusing the entry. A cell format list or the number format list
  * holds at most `MAX_STYLE_RECORDS` records. The ops format `cells` cells, and each cell adds at

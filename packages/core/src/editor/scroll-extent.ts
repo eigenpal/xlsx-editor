@@ -21,6 +21,13 @@ export interface SurfaceExtent {
 /**
  * The extent for a layout. `facts` holds the last row and column with content (0-based, -1 for
  * none), and `focus` the moving corner of the selection.
+ *
+ * A container scrolls `extent - client` CSS pixels, and the view scrolls `total - window`. At
+ * step 1 the two are equal. With a larger step, only the part past the window is in steps, so
+ * the largest offset of the container maps to the end of the sheet: the extent is the client
+ * size plus `(total - window) / step`. An extent of `head + total / step` would stop the
+ * container about one window short of the last row, so a jump to the last row of the sheet
+ * would be cut back to a scroll that does not show it.
  */
 export function surfaceExtent(
   layout: SheetLayout,
@@ -35,9 +42,11 @@ export function surfaceExtent(
     x: Math.max(1, totalW / MAX_EXTENT_PX),
     y: Math.max(1, totalH / MAX_EXTENT_PX),
   };
+  const axis = (total: number, head: number, client: number, step: number) =>
+    step === 1 ? head + total : client + Math.max(0, total - (client - head)) / step;
   return {
-    width: box.headWidth + totalW / factor.x,
-    height: box.headHeight + totalH / factor.y,
+    width: axis(totalW, box.headWidth, box.width, factor.x),
+    height: axis(totalH, box.headHeight, box.height, factor.y),
     factor,
   };
 }

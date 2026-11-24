@@ -215,7 +215,17 @@ interface Measured {
   readonly styles: readonly TextStyle[];
 }
 
-function measureRuns(input: CellTextInput, ctx: TextContext, scale: number): Measured {
+/**
+ * Measure the runs of a cell. A line break (LF or CR) takes no width. With `breakAsSpace`, a
+ * run of line breaks between two other characters takes the width of one space of the font of
+ * its first break, so the words around it stay apart; the painter draws no glyph for it.
+ */
+function measureRuns(
+  input: CellTextInput,
+  ctx: TextContext,
+  scale: number,
+  breakAsSpace = false
+): Measured {
   let text = '';
   for (const run of input.runs) text += run.text;
   const widths = new Float64Array(text.length);
@@ -248,7 +258,7 @@ function measureRuns(input: CellTextInput, ctx: TextContext, scale: number): Mea
     for (let i = 0; i < run.text.length; i += 1) {
       const c = run.text.charCodeAt(i);
       const a = advances[i]!;
-      widths[at + i] = c === 10 || c === 13 || a === 0 ? 0 : Math.round(a * fp.sizePx);
+      widths[at + i] = isBreak(c) || a === 0 ? 0 : Math.round(a * fp.sizePx);
       runOf[at + i] = Math.min(r, 0xffff);
     }
     for (const pad of run.pads ?? [])
@@ -256,7 +266,29 @@ function measureRuns(input: CellTextInput, ctx: TextContext, scale: number): Mea
         widths[at + pad.index] = padWidth(ctx.measurer, fp, pad.char);
     at += run.text.length;
   });
+  if (breakAsSpace) spaceBreaks(text, widths, runOf, fonts, ctx.measurer);
   return { text, widths, runOf, fonts, pitches, styles };
+}
+
+/**
+ * Give each run of line breaks between two other characters the width of one space of the font
+ * of its first break. Breaks at the start or the end of the text keep no width.
+ */
+function spaceBreaks(
+  text: string,
+  widths: Float64Array,
+  runOf: Uint16Array,
+  fonts: readonly FontPixels[],
+  measurer: TextMeasurer
+): void {
+  for (let i = 0; i < text.length; i += 1) {
+    if (!isBreak(text.charCodeAt(i))) continue;
+    let j = i;
+    while (j < text.length && isBreak(text.charCodeAt(j))) j += 1;
+    const font = fonts[runOf[i]!];
+    if (i > 0 && j < text.length && font) widths[i] = padWidth(measurer, font, ' ');
+    i = j;
+  }
 }
 
 const isSpace = (c: number) => c === 32 || c === 9 || c === 0x3000;
@@ -427,7 +459,17 @@ export function layoutCellText(input: CellTextInput, ctx: TextContext): CellText
       : a.textRotation > 90 && a.textRotation <= 180
         ? -(a.textRotation - 90)
         : 0;
-  const wrap = !angle && !stacked && (a.wrapText || h === 'justify' || h === 'distributed');
+  // Only text breaks into lines: a number shows on one line, and a number that does not fit
+  // shows its fitted form or the `#` fill (`fitNumber`). The `@wrapText` of `CT_CellAlignment`
+  // wraps "the text in a cell" (ECMA-376 Part 1, 18.8.1).
+  const wrap =
+    !angle &&
+    !stacked &&
+    input.kind !== 'number' &&
+    (a.wrapText || h === 'justify' || h === 'distributed');
+  // A line break in text that does not wrap shows as a space (approximation "Text layout
+  // without a measurement"). Stacked text breaks its lines at it.
+  const breakAsSpace = !wrap && !stacked;
 
   const { left: leftIndent, right: rightIndent } = indentSides(a, h, ctx.maxDigitWidth);
   // The margin follows the font of the first run: 2 pixels for Carlito 11, 1 for Carlito 8 and
@@ -438,7 +480,7 @@ export function layoutCellText(input: CellTextInput, ctx: TextContext): CellText
     const r = boxRight - pad;
     return { l, r, left: l + leftIndent, right: r - rightIndent };
   };
-  let m = measureRuns(input, ctx, 1);
+  let m = measureRuns(input, ctx, 1, breakAsSpace);
   let area = areaOf(m.fonts);
   if (a.shrinkToFit && !wrap && !angle && !stacked) {
     let total = 0;
@@ -449,7 +491,7 @@ export function layoutCellText(input: CellTextInput, ctx: TextContext): CellText
       // The size rounds down to whole points: 11 points shrink to 6, not 6.46 (text-layout.pdf).
       const size = input.runs[0]?.font.sizePt ?? 11;
       const scale = Math.max(1, Math.floor(size * (room / total))) / size;
-      m = measureRuns(input, ctx, scale);
+      m = measureRuns(input, ctx, scale, breakAsSpace);
       area = areaOf(m.fonts);
     }
   }
@@ -463,7 +505,8 @@ export function layoutCellText(input: CellTextInput, ctx: TextContext): CellText
       m = measureRuns(
         { ...input, runs: Array.from({ length: copies }, () => input.runs).flat() },
         ctx,
-        1
+        1,
+        breakAsSpace
       );
   }
 

@@ -331,3 +331,27 @@ describe('conditional formatting through edits and formulas', () => {
     expect(cells.filter((cell) => cell.row === 0 && cell.col === 0)).toEqual([]);
   });
 });
+
+describe('wrapText on a number', () => {
+  test('a General number fits its cell on one line, and a formatted one fills with #', () => {
+    const { after } = edited(
+      {
+        sheets: [
+          {
+            name: 'S',
+            cols: '<cols><col min="1" max="2" width="8" customWidth="1"/></cols>',
+            rows: row(1, [c('A1', 1234567.891), c('B1', 1234567.891)]),
+          },
+        ],
+      },
+      fmt('A1:B1', { wrapText: true }),
+      fmt('B1', { numberFormat: { code: '#,##0.000' } })
+    );
+    const a1 = textAt(after, 0, 0)!.text;
+    expect(a1.lines.length).toBe(1);
+    expect(a1.lines[0]!.spans.map((s) => s.text).join('')).toBe('1234568');
+    const b1 = textAt(after, 0, 1)!.text;
+    expect(b1.lines.length).toBe(1);
+    expect(b1.lines[0]!.spans.map((s) => s.text).join('')).toMatch(/^#+$/);
+  });
+});

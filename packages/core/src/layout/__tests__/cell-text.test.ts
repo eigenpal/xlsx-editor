@@ -153,3 +153,56 @@ describe('fitNumber', () => {
     expect(fitNumber(1234.5, '1,234.50', false, '.', 48, width)).toBe('1,234.50');
   });
 });
+
+describe('only text wraps', () => {
+  test('a number with wrapText shows on one line', () => {
+    const n = lay(
+      '1234567.891',
+      { wrapText: true },
+      { kind: 'number', box: { x: 0, y: 0, width: 30, height: 42 } }
+    );
+    expect(n.lines.length).toBe(1);
+    expect(n.lines[0]!.spans.map((s) => s.text).join('')).toBe('1234567.891');
+    // The same characters as text break into lines.
+    const t = lay(
+      '1234567.891',
+      { wrapText: true },
+      { box: { x: 0, y: 0, width: 30, height: 42 } }
+    );
+    expect(t.lines.length).toBeGreaterThan(1);
+  });
+
+  test('a number with justify or distributed alignment shows on one line', () => {
+    const box = { x: 0, y: 0, width: 30, height: 42 };
+    for (const horizontal of ['justify', 'distributed'] as const)
+      expect(lay('1 234 567', { horizontal }, { kind: 'number', box }).lines.length).toBe(1);
+  });
+});
+
+describe('a line break in text that does not wrap', () => {
+  const words = (t: ReturnType<typeof lay>) => t.lines[0]!.spans.flatMap((s) => s.positions);
+
+  test('keeps the words apart by the width of a space', () => {
+    const joined = lay('cellAcellB');
+    const broken = lay('cellA\ncellB');
+    const spaced = lay('cellA cellB');
+    expect(broken.lines.length).toBe(1);
+    // No glyph for the line break; the second word starts where it starts after a space.
+    expect(broken.lines[0]!.spans.map((s) => s.text).join('')).toBe('cellAcellB');
+    expect(broken.lines[0]!.width).toBe(spaced.lines[0]!.width);
+    expect(broken.lines[0]!.width).toBeGreaterThan(joined.lines[0]!.width);
+    expect(words(broken)[5]).toBe(words(spaced)[6]);
+  });
+
+  test('takes one space for CR LF and for a run of breaks, and none at the ends', () => {
+    const spaced = lay('a b').lines[0]!.width;
+    expect(lay('a\r\nb').lines[0]!.width).toBe(spaced);
+    expect(lay('a\n\n\nb').lines[0]!.width).toBe(spaced);
+    expect(lay('a\rb').lines[0]!.width).toBe(spaced);
+    expect(lay('\na\n').lines[0]!.width).toBe(lay('a').lines[0]!.width);
+  });
+
+  test('still starts a line in wrapped text', () => {
+    expect(lay('cellA\ncellB', { wrapText: true }).lines.length).toBe(2);
+  });
+});

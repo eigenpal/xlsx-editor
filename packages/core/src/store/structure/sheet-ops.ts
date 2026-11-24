@@ -13,7 +13,8 @@
 //   `mc:AlternateContent` that the op would change refuses the op (`wrapped-formulas.ts`), in a
 //   rename, a delete, or a move.
 // - `deleteSheet` removes the part, its relationship part, its workbook relationship, its
-//   override, its `x:sheet`, and printer settings that no other part relates to. Each
+//   override, its `x:sheet`, and the printer settings, the Drawings part with its relationship
+//   part, and the images that no other part relates to. Each
 //   reference to it becomes `#REF!`. A defined name scoped to it goes, and the other
 //   `@localSheetId` values move down.
 // - `moveSheet` moves the `x:sheet` element.
@@ -29,7 +30,8 @@
 // op does not rewrite names the sheet (the blockers of design D4, `blockers.ts`), when a move
 // changes the sheets that a sheet range of a formula or defined name spans, or a delete removes an
 // end of one (`sheet-range-blocked`), when the sheet to delete has a relationship other than a
-// hyperlink or its own printer settings, when a custom workbook view shows the sheet to delete, and
+// hyperlink, its own printer settings, images, or a Drawings part that holds only pictures and
+// shapes, when a custom workbook view shows the sheet to delete, and
 // when a delete would leave no visible sheet (`last-sheet`).
 //
 // Undo: the inverse is one `restoreParts` op of every part that the op changed, added, or
@@ -232,7 +234,7 @@ function mentionBlocker(
   needles: SheetMentions,
   skip?: string
 ): OpRejection | undefined {
-  const wb = workbookMentionBlocker(pkg, index, needles);
+  const wb = workbookMentionBlocker(pkg, index, needles, skip);
   if (wb) return wb;
   for (const sheet of index.sheets) {
     if (sheet.kind !== 'worksheet' || sheet.partName === skip) continue;
@@ -630,13 +632,43 @@ function renameSheet(pkg: XlsxPackage, sheet: string, name: string): OpResult {
 const PRINTER_SETTINGS =
   'http://schemas.openxmlformats.org/officeDocument/2006/relationships/printerSettings';
 
-/** Whether a part other than `owner` relates to the part `target`. */
-function sharedPart(pkg: XlsxPackage, target: string, owner: string): boolean {
+/** Whether a part other than the `owners` relates to the part `target`. */
+function sharedPart(pkg: XlsxPackage, target: string, owners: ReadonlySet<string>): boolean {
   for (const name of pkg.parts.keys()) {
-    if (name === owner || name.endsWith('.rels')) continue;
+    if (owners.has(name) || name.endsWith('.rels')) continue;
     if (relationshipsOf(pkg, name).some((r) => r.target === target)) return true;
   }
   return false;
+}
+
+/** The relationship types of a drawing part whose targets go with the drawing, or stay. */
+const DRAWING_PART_RELS = new Set<string>([REL.image, REL.hyperlink]);
+
+/**
+ * The parts that go with the Drawings part `drawing` of a deleted sheet `sheetPart`: the drawing
+ * and the Image parts that only the sheet and the drawing relate to. A Drawings part is the
+ * target of an explicit relationship from a worksheet (ECMA-376 Part 1, 12.3.8; root `xdr:wsDr`,
+ * 20.5.2.35), and an Image part is the target of an explicit relationship (15.2.14), so neither
+ * may stay without its source. A drawing that another part relates to stays. Undefined when the
+ * drawing relates to a part that is not an image or a hyperlink, such as a chart, because such a
+ * part can hold content that the editor cannot remove.
+ */
+function drawingRemovals(
+  pkg: XlsxPackage,
+  drawing: string,
+  sheetPart: string
+): string[] | undefined {
+  if (sharedPart(pkg, drawing, new Set([sheetPart]))) return [];
+  const owners = new Set([sheetPart, drawing]);
+  const out = [drawing];
+  for (const rel of relationshipsOf(pkg, drawing)) {
+    if (rel.external) continue;
+    if (!DRAWING_PART_RELS.has(rel.type)) return undefined;
+    const t = rel.target;
+    if (rel.type === REL.image && t && pkg.parts.has(t) && !sharedPart(pkg, t, owners))
+      if (!out.includes(t)) out.push(t);
+  }
+  return out;
 }
 
 /** The visible sheet nearest to position `at` of a sheet list, or 0. */
@@ -706,14 +738,23 @@ function deleteSheet(pkg: XlsxPackage, sheet: string): OpResult {
           { kind: 'workbook-content' }
         ),
       };
-  // Printer settings that only this sheet uses go with it, and shared ones stay. Any other
-  // related part refuses.
+  // Printer settings, drawings, and images that only this sheet uses go with it, and shared
+  // ones stay. Any other related part refuses.
   const removed: string[] = [];
+  const add = (name: string) => {
+    if (!removed.includes(name)) removed.push(name);
+  };
   for (const rel of relationshipsOf(pkg, partName)) {
     if (rel.type === REL.hyperlink) continue;
-    if (rel.type === PRINTER_SETTINGS) {
-      const t = rel.target;
-      if (t && pkg.parts.has(t) && !sharedPart(pkg, t, partName)) removed.push(t);
+    const t = rel.target;
+    if (rel.type === PRINTER_SETTINGS || rel.type === REL.image) {
+      if (t && pkg.parts.has(t) && !sharedPart(pkg, t, new Set([partName]))) add(t);
+      continue;
+    }
+    const drawn = rel.type === REL.drawing && t && pkg.parts.has(t);
+    const parts = drawn ? drawingRemovals(pkg, t, partName) : undefined;
+    if (parts) {
+      parts.forEach(add);
       continue;
     }
     return {
@@ -739,10 +780,11 @@ function deleteSheet(pkg: XlsxPackage, sheet: string): OpResult {
   if (isRefusal(wb)) return { ok: false, rejection: wb };
   const changes = new Map<string, PackagePart | null>([[wb.partName, xml(wb)]]);
   for (const part of rewritten.values()) changes.set(part.partName, xml(part));
-  changes.set(partName, null);
-  for (const name of removed) changes.set(name, null);
-  const sheetRels = equivalentPartName(pkg, relsPartName(partName));
-  if (sheetRels) changes.set(sheetRels, null);
+  for (const name of [partName, ...removed]) {
+    changes.set(name, null);
+    const ownRels = equivalentPartName(pkg, relsPartName(name));
+    if (ownRels) changes.set(ownRels, null);
+  }
   // The workbook relationship of the sheet, and its content type override.
   const relsName = equivalentPartName(pkg, relsPartName(main.partName));
   const rels = xmlPartOf(pkg, relsName);

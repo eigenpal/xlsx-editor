@@ -5,7 +5,8 @@
   "workspaces": [
     "packages/*",
     "examples/vite",
-    "examples/vue"
+    "examples/vue",
+    "examples/chat"
   ],
   "type": "module",
   "scripts": {
@@ -74,11 +75,13 @@
     "i18n:unused": "node scripts/check-i18n-unused.mjs --list",
     "demo": "bun run --filter ./examples/vite dev",
     "dev:vue": "bun run --filter ./examples/vue dev",
+    "dev:chat": "bun run --filter ./examples/chat dev",
     "build:demos": "bun run build:demo:react && bun run build:demo:vue && bun run build:demo:assemble",
     "build:demo:react": "cd examples/vite && VITE_BASE_PATH=/react/ VITE_ENABLE_FRAMEWORK_SWITCHER=true vite build",
     "build:demo:vue": "cd examples/vue && VITE_BASE_PATH=/vue/ VITE_ENABLE_FRAMEWORK_SWITCHER=true vite build",
     "build:demo:assemble": "rm -rf examples/dist && mkdir -p examples/dist && cp -R examples/vite/dist examples/dist/react && cp -R examples/vue/dist examples/dist/vue",
     "test:e2e": "bun scripts/verify-demo.ts",
+    "test:e2e:chat": "bun scripts/verify-chat.ts",
     "test:hang:browser": "bun scripts/hang/run.ts",
     "bench:edit": "bun scripts/bench/edit-bench.ts",
     "bench:open:browser": "bun scripts/bench/browser-bench.ts open",

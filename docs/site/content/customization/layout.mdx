@@ -85,12 +85,24 @@ Place each chrome part anywhere inside `XlsxEditor.Viewport`, in any order, or o
 | Part | Requirement |
 | --- | --- |
 | `XlsxEditor.Viewport` | Bounded height. Without a height in `style` or `className`, the grid has a height of 0. Its width never follows its content, so give it a width from its container, such as a grid column. It accepts `className`, `style`, and `label`. |
-| `XlsxEditor.Content` | The grid. No application controls inside it. |
+| `XlsxEditor.Content` | The grid. No application controls inside it. While no workbook is ready (none open, a load, or a failed open), the grid is hidden, so `StatusMessage` shows alone. |
 | `XlsxEditor.StatusMessage` | Keep it in the layout. It is the only part that shows the reason for a refused edit. |
 | `XlsxEditor.Toolbar`, `.FormulaBar`, `.SheetTabs`, `.ZoomControl` | Optional chrome parts. The toolbar takes parts, as [Toolbar](/docs/customization/toolbar) describes. |
 | An element with the `xlsx-footer` class | The footer region that F6 visits. |
 
 To read the editor state in your own panel, place the panel inside `XlsxEditor.Root` and call `useEditorState` or `useEditorCommand`. In Vue, a composable runs only in a descendant of `XlsxEditorRoot`.
+
+## Fit a narrow panel
+
+In a panel about 500 pixels wide, such as a panel beside a chat, the toolbar moves whole groups into its **More** panel. The font family field is wide, so it pushes the whole font group out, and the groups after it. To keep size, bold, italic, underline, and font color in the bar, hide the `font.family` slot below a panel width that you measure, for example with a `ResizeObserver`. On a phone-wide panel, leave out `ZoomControl`, so the sheet tabs keep the footer. The chat example in [`examples/chat`](https://github.com/eigenpal/xlsx-editor/tree/main/examples/chat) does both in `src/WorkbookPanel.tsx`.
+
+```tsx
+<XlsxEditor.Toolbar hidden={narrow ? ['font.family'] : []} />
+<div className="xlsx-footer" dir={useChromeDir()}>
+  <XlsxEditor.SheetTabs />
+  {phone ? null : <XlsxEditor.ZoomControl />}
+</div>
+```
 
 ## Control zoom
 

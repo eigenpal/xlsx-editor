@@ -195,6 +195,11 @@ jobs:
       - name: Demo smoke check
         if: matrix.check == 'e2e'
         run: bun run test:e2e
+      # The happy path of the chat example (scripts/verify-chat.ts): the editor in a panel beside
+      # a chat, at half the window, a phone-wide window, and the keys between the two.
+      - name: Chat example check
+        if: matrix.check == 'e2e'
+        run: bun run test:e2e:chat
       - name: Upload demo screenshots
         if: failure() && matrix.check == 'e2e'
         uses: actions/upload-artifact@v7

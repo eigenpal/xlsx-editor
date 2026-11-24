@@ -150,11 +150,38 @@ export interface StageBox {
   readonly height: number;
 }
 
-/** Unique axis entries of the panes, by index, in viewport order. */
-function entries(panes: readonly PaneLayout[], pick: (p: PaneLayout) => readonly AxisEntry[]) {
-  const seen = new Map<number, AxisEntry>();
-  for (const p of panes) for (const e of pick(p)) if (!seen.has(e.index)) seen.set(e.index, e);
+/** An axis entry with the band of its pane on that axis, in viewport points. */
+interface HeadEntry extends AxisEntry {
+  readonly band: readonly [number, number];
+}
+
+/**
+ * Unique axis entries of the panes, by index, in viewport order, each with the band of its pane
+ * on that axis (`PaneLayout.clip`). A row that the scrolled pane shows in part starts above the
+ * pane, under the frozen rows; its heading is clipped to the band, as the pane clips its cells.
+ */
+function entries(panes: readonly PaneLayout[], axis: 'rows' | 'columns'): readonly HeadEntry[] {
+  const seen = new Map<number, HeadEntry>();
+  for (const p of panes) {
+    const band: [number, number] =
+      axis === 'rows' ? [p.clip.y, p.clip.y + p.clip.height] : [p.clip.x, p.clip.x + p.clip.width];
+    for (const e of p[axis]) if (!seen.has(e.index)) seen.set(e.index, { ...e, band });
+  }
   return [...seen.values()].sort((a, b) => a.start - b.start);
+}
+
+/**
+ * Clip a heading to the band of its pane: the part outside the band does not show, so a heading
+ * of the scrolled pane never paints over a heading of the frozen pane. `vertical` is true for a
+ * row heading. Sizes are in CSS pixels.
+ */
+function clipHead(el: HTMLElement, e: HeadEntry, scale: number, vertical: boolean): void {
+  const before = Math.max(0, e.band[0] - e.start) * scale;
+  const after = Math.max(0, e.start + e.size - e.band[1]) * scale;
+  if (before <= 0 && after <= 0) return;
+  el.style.clipPath = vertical
+    ? `inset(${px(before)} 0 ${px(after)} 0)`
+    : `inset(0 ${px(after)} 0 ${px(before)})`;
 }
 
 /** Draw the row and column headings of a layout, marking the selected ones. */
@@ -178,22 +205,24 @@ export function drawHeadings(
   const fontSize = px(Math.max(6, Math.min(24, box.headHeight * 0.55)));
   els.columnHeads.style.fontSize = fontSize;
   els.rowHeads.style.fontSize = fontSize;
-  const cols = entries(layout.panes, (p) => p.columns).map((e) => {
+  const cols = entries(layout.panes, 'columns').map((e) => {
     const el = div(doc, 'xlsx-head');
     el.textContent = columnLetters(e.index + 1);
     el.dataset.col = String(e.index);
     if (selected && e.index >= selected.start.col && e.index <= selected.end.col)
       el.classList.add('xlsx-head-selected');
     place(el, e.start * box.scale, 0, e.size * box.scale, box.headHeight);
+    clipHead(el, e, box.scale, false);
     return el;
   });
-  const rows = entries(layout.panes, (p) => p.rows).map((e) => {
+  const rows = entries(layout.panes, 'rows').map((e) => {
     const el = div(doc, 'xlsx-head');
     el.textContent = String(e.index + 1);
     el.dataset.row = String(e.index);
     if (selected && e.index >= selected.start.row && e.index <= selected.end.row)
       el.classList.add('xlsx-head-selected');
     place(el, 0, e.start * box.scale, box.headWidth, e.size * box.scale);
+    clipHead(el, e, box.scale, true);
     return el;
   });
   els.columnHeads.replaceChildren(...cols);

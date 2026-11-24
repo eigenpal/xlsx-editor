@@ -540,10 +540,12 @@ export const supportFeatures: readonly SupportFeature[] = [
     category: 'viewer',
     status: 'supported',
     notes:
-      'Frozen rows and columns (`x:pane/@state` set to `frozen` or `frozenSplit`, with `xSplit` and `ySplit`) stay in place while the rest of the sheet scrolls. A line marks the edge of each frozen band. An inserted or deleted row or column inside a frozen band grows or shrinks the band. A band that reaches 0 goes, with its pane.',
+      'Frozen rows and columns (`x:pane/@state` set to `frozen` or `frozenSplit`, with `xSplit` and `ySplit`) stay in place while the rest of the sheet scrolls. A line marks the edge of each frozen band. An inserted or deleted row or column inside a frozen band grows or shrinks the band. A band that reaches 0 goes, with its pane. A frozen sheet opens scrolled to `x:pane/@topLeftCell`, with the active cell of the selection of `x:pane/@activePane`.',
     evidence: {
       tests: [
         `${CORE}/layout/__tests__/panes.test.ts`,
+        `${CORE}/editor/__tests__/sheet-opening.test.ts`,
+        `${CORE}/editor/__tests__/frozen-opening-scroll.test.ts`,
         `${CORE}/output/__tests__/paint-sheet.test.ts`,
         `${CORE}/layout/__tests__/sheet-layout.test.ts`,
         `${CORE}/store/__tests__/structure-cases.test.ts`,

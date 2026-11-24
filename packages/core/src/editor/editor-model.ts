@@ -7,6 +7,7 @@ import type { GridPoint, GridSelection } from '../contracts/index.ts';
 import {
   attr,
   child,
+  children,
   contentTypeOf,
   CONTENT_TYPE,
   formatCellRef,
@@ -49,7 +50,7 @@ import {
   type NumberLocale,
   type ResolvedCellFormat,
 } from '../cascade/index.ts';
-import type { FontSource, TextMeasurer } from '../layout/index.ts';
+import { frozenPanes, type FontSource, type TextMeasurer } from '../layout/index.ts';
 import type { AccessibleGridLabels } from '../output/index.ts';
 import {
   readCellEntry,
@@ -609,25 +610,35 @@ export interface SheetOpening {
 }
 
 /**
- * The view of a sheet that the file states: the first `x:sheetView` (`CT_SheetView`, sml.xsd).
- * It reads `@zoomScale` (default 100), `@topLeftCell`, `@showRowColHeaders` (default true), and
- * `x:selection/@activeCell` (`CT_Selection`).
+ * The view of a sheet that the file states: the first `x:sheetView` (`CT_SheetView`, sml.xsd,
+ * ECMA-376 Part 1, 18.3.1.87). It reads `@zoomScale` (default 100), `@topLeftCell`,
+ * `@showRowColHeaders` (default true), and `x:selection/@activeCell` (`CT_Selection`, 18.3.1.78).
+ * With a frozen `x:pane` (`CT_Pane`, 18.3.1.66), the scroll comes from `x:pane/@topLeftCell`, the
+ * top-left visible cell of the bottom-right pane, and the active cell from the selection whose
+ * `@pane` is `x:pane/@activePane` (`ST_Pane`, 18.18.52; both default `topLeft`).
  */
 export function sheetOpening(pkg: XlsxPackage, partName: string | undefined): SheetOpening {
   const part = xmlPartOf(pkg, partName);
   const view = part ? child(child(part.root, 'x:sheetViews'), 'x:sheetView') : undefined;
   const zoomRaw = Number(attr(view, 'zoomScale') ?? '100');
   const zoom = Number.isFinite(zoomRaw) && zoomRaw >= 10 && zoomRaw <= 400 ? zoomRaw / 100 : 1;
-  const sel = child(view, 'x:selection');
-  const point = (raw: string | undefined): GridPoint => {
-    const a = raw ? parseCellRef(raw.split(':')[0]!) : null;
-    return a ? { row: a.row, col: a.col } : { row: 0, col: 0 };
-  };
+  const pane = child(view, 'x:pane');
+  // A pane that freezes no row or column, and a split pane, do not show: the editor shows the
+  // view's top-left cell and the selection of the top-left pane.
+  const band = part ? frozenPanes(part.root) : { rows: 0, cols: 0 };
+  const frozen = band.rows > 0 || band.cols > 0;
+  const shown = frozen ? (attr(pane, 'activePane') ?? 'topLeft') : 'topLeft';
+  const sels = children(view, 'x:selection');
+  const sel = sels.find((s) => (attr(s, 'pane') ?? 'topLeft') === shown) ?? sels[0];
+  const cell = (raw: string | undefined) => (raw ? parseCellRef(raw.split(':')[0]!) : null);
+  const point = (a: { row: number; col: number } | null): GridPoint =>
+    a ? { row: a.row, col: a.col } : { row: 0, col: 0 };
+  const paneTop = frozen ? cell(attr(pane, 'topLeftCell')) : null;
   const headings = attr(view, 'showRowColHeaders');
   return {
     zoom,
-    active: point(attr(sel, 'activeCell')),
-    topLeft: point(attr(view, 'topLeftCell')),
+    active: point(cell(attr(sel, 'activeCell'))),
+    topLeft: point(paneTop ?? cell(attr(view, 'topLeftCell'))),
     headings: headings === undefined || headings === '1' || headings === 'true',
   };
 }

@@ -57,7 +57,7 @@ import { CellEditor, editMoveStep, type CellEditMode, type EditMove } from './ce
 import { refusalOf, refusalText, type EditRefusal, type EditResult } from './cell-input.ts';
 import { cellContent, resolvedFormatAt, selectionRef, typedInput } from './editor-model.ts';
 import { decimalStepOps } from './decimal-selection.ts';
-import { entryOps, formatsFit } from './entry-ops.ts';
+import { entryOps, formatsFit, lineBreakWrapOp } from './entry-ops.ts';
 
 export type { CellFont, EditingHost, EditTarget, RunHistory } from './editing-host.ts';
 import type { EditingHost, EditTarget, RunHistory } from './editing-host.ts';
@@ -424,10 +424,25 @@ export class CellEditing {
     // A typed form such as `12%` also sets its number format on a General cell, in the same
     // transaction, so one undo restores the value and the format.
     const entry = typedInput(pkg, index, part, cell, text, locale);
-    const { value, format } = entryOps(pkg, target.entry.name, formatCellRef(cell), entry);
+    const ref = formatCellRef(cell);
+    const { value, format } = entryOps(pkg, target.entry.name, ref, entry);
+    // Text that the cell editor commits with a line break turns on wrap text, so each line
+    // shows; a value written by a command keeps the cell format.
+    const wrap =
+      command === 'commit'
+        ? lineBreakWrapOp(
+            pkg,
+            target.entry.name,
+            ref,
+            entry,
+            resolvedFormatAt(pkg, index, part, cell).alignment.wrapText
+          )
+        : undefined;
+    const formats = [format, wrap].filter((o): o is WorkbookOp => o !== undefined);
     // A full styles part takes the value only (`formatsFit`), as a protected sheet does.
-    const fits = format && formatsFit(pkg, [format], 1, (o) => target.store.dryRun(o));
-    const ops = format && fits ? [value, format] : [value];
+    const fits =
+      formats.length > 0 && formatsFit(pkg, formats, formats.length, (o) => target.store.dryRun(o));
+    const ops = fits ? [value, ...formats] : [value];
     // A value written to another cell than the active one is not a command on the selection:
     // its history entry keeps no selection, so undo and redo leave the selection alone.
     const own =

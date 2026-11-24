@@ -45,6 +45,8 @@ export const APPROXIMATIONS: readonly Approximation[] = Object.freeze([
       'overflow that reaches a formula with no cached value',
       'the minimum descent of bottom-aligned text in fonts other than Carlito 6 and 8',
       'stacked text at the top or center of a cell',
+      'a number in a cell with `wrapText`',
+      'a line break in a cell without `wrapText`',
     ],
   },
   {

@@ -131,8 +131,11 @@ interface FitCell {
   readonly general: boolean;
 }
 
-/** Line breaks take no width in a cell that does not wrap, as in `measureRuns`. */
-const unbroken = (text: string) => text.replace(/[\n\r]/g, '');
+/**
+ * In a cell that does not wrap, as in `measureRuns`: a run of line breaks between two other
+ * characters takes the width of a space, and a line break at the start or the end takes none.
+ */
+const unbroken = (text: string) => text.replace(/^[\n\r]+|[\n\r]+$/g, '').replace(/[\n\r]+/g, ' ');
 
 /** The width in points of the text of a cell, as layout measures it in `ctx`. */
 function textOf(cell: FitCell, ctx: TextContext): number {
@@ -203,8 +206,11 @@ function fitCells(
     const format = conditionalFormat(pkg, index, sheet.root, entry.row, entry.col, v, base, checks);
     if (checks.left <= 0) unknown.add(entry.col);
     const a = format.alignment;
-    if (a.textRotation !== 0 || a.wrapText) continue;
-    if (a.horizontal === 'justify' || a.horizontal === 'distributed') continue;
+    if (a.textRotation !== 0) continue;
+    // Only text wraps: a number shows on one line in any alignment (`layoutCellText`).
+    const number = v.kind === 'number' || v.kind === 'date';
+    if (!number && (a.wrapText || a.horizontal === 'justify' || a.horizontal === 'distributed'))
+      continue;
     // Text centered across a selection shows over the empty cells beside it, as a merge does.
     if (a.horizontal === 'centerContinuous') continue;
     if (v.kind === 'string' && v.runs && v.runs.length > 0) {

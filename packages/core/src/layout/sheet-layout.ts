@@ -453,11 +453,8 @@ function textOf(
     text = text.slice(0, at) + shown.fill.char.repeat(count) + text.slice(at);
     pads = pads.map((p) => (p.index >= at ? { index: p.index + count, char: p.char } : p));
   }
-  if (
-    kind === 'number' &&
-    !cell.format.alignment.wrapText &&
-    cell.format.alignment.textRotation === 0
-  ) {
+  // A number never wraps (`layoutCellText`), so it fits its text area also with `@wrapText`.
+  if (kind === 'number' && cell.format.alignment.textRotation === 0) {
     const general = formatCodeOf(cell.format, ctx.locale).toLowerCase() === 'general';
     const value = v.kind === 'number' ? v.value : Number.NaN;
     const fitted = fitNumber(

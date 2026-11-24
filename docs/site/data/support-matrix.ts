@@ -361,13 +361,14 @@ export const supportFeatures: readonly SupportFeature[] = [
     category: 'formatting',
     status: 'partial',
     notes:
-      'A row without a set height (`x:row/@ht`) grows to hold wrapped lines (`x:alignment/@wrapText`). No reference PDF measures that height. Wrapped text in a merged range does not change the row height.',
+      'A row without a set height (`x:row/@ht`) grows to hold wrapped lines (`x:alignment/@wrapText`). No reference PDF measures that height. Wrapped text in a merged range does not change the row height. Only text wraps: a number shows on one line, also with `wrapText`, `justify`, or `distributed`. A number that does not fit shows its General rounding or the `#` fill, as in a cell that does not wrap. A line break in text that does not wrap shows as one space. No reference PDF shows a number with `wrapText` or a line break in text that does not wrap.',
     evidence: {
       ...shows(TEXT_LAYOUT),
       tests: [
         `${CORE}/layout/__tests__/cell-text.test.ts`,
         `${CORE}/layout/__tests__/sheet-layout.test.ts`,
         `${CORE}/layout/__tests__/format-layout.test.ts`,
+        `${CORE}/layout/__tests__/fit.test.ts`,
       ],
       approximations: ['unmeasured-text-layout', 'row-auto-height'],
     },
@@ -665,12 +666,13 @@ export const supportFeatures: readonly SupportFeature[] = [
     category: 'editing',
     status: 'supported',
     notes:
-      'Typing starts an edit, F2 edits in place, Enter and Tab commit and move, and Escape cancels. An input method composes text in the cell editor, and a composition commits nothing until it ends.',
+      'Typing starts an edit, F2 edits in place, Enter and Tab commit and move, and Escape cancels. Alt+Enter adds a line break. A commit of text with a line break turns on wrap text (`x:alignment/@wrapText`) of the cell in the same undo step. It does not when the cell format wraps already, or when the sheet protection does not allow formatting cells. An input method composes text in the cell editor, and a composition commits nothing until it ends.',
     evidence: {
       saveVerified: ['basic-values'],
       tests: [
         `${CORE}/editor/__tests__/cell-editing.test.ts`,
         `${CORE}/editor/__tests__/cell-editor-cases.test.ts`,
+        `${CORE}/editor/__tests__/line-break-wrap.test.ts`,
       ],
     },
   },

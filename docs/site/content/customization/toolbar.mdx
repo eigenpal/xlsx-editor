@@ -238,13 +238,56 @@ const closePeriod = () => {
 | `disabled`, `disabledReason` | Disables the action and explains why. The action stays focusable, and the reason is its tooltip and accessible description. |
 | `asChild`, `className` | Custom element and styling. |
 
+`Toolbar.Action` also works outside the toolbar, such as in the header of a panel that holds the editor. It keeps the hover, pressed, disabled, and focus states of a toolbar button there. For its icon, use `Icon`. It draws an icon of the chrome by `name`, such as `file_download`, or the Material Symbols path data that you pass as `paths`, at the size and color of the toolbar icons:
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+import { Icon, XlsxEditor } from '@xlsx-editor.dev/react';
+
+<header className="panel-header">
+  <XlsxEditor.Toolbar.Action
+    label="Download"
+    icon={<Icon name="file_download" />}
+    onSelect={download}
+  />
+</header>;
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<script setup lang="ts">
+import { h } from 'vue';
+import { Icon, XlsxEditorToolbar } from '@xlsx-editor.dev/vue';
+
+const downloadIcon = h(Icon, { name: 'file_download' });
+const download = () => {
+  /* Save the workbook. */
+};
+</script>
+
+<template>
+  <header class="panel-header">
+    <XlsxEditorToolbar.Action label="Download" :icon="downloadIcon" @select="download" />
+  </header>
+</template>
+```
+
+</Framework>
+</FrameworkTabs>
+
+Place such a header inside `XlsxEditor.Viewport`, so the chrome styles reach it. `CHROME_ICON_PATHS` of `@xlsx-editor.dev/core/editor` lists every icon name, and the `ChromeIconName` type holds them.
+
 `Toolbar.Separator` draws a rule between two controls. It takes `className`. In a section of the **More** panel, it runs across the section.
 
 For an editor command, use `useEditorCommand(slotId)`. It returns `execute`, `isActive`, `isEnabled`, and `disabledReason`. Show `disabledReason` on refusal.
 
 ## Configure overflow
 
-When width runs out, the bar moves whole groups into **More**, in collapse order. The built-in groups leave from the end of the bar: `file` has the priority 10, and `history` has 90. An application group without a `priority` leaves before every built-in group. In the **More** panel, each group is a section with its heading, and an action is a row with its icon and label.
+When width runs out, the bar first moves its wide fields into **More**: the font family field and the number format field. The rest of each group stays in the bar. If the bar is still too short, it moves whole groups into **More**, in collapse order, and then gives a wide field back to a group that stays when there is room. The built-in groups leave from the end of the bar: `file` has the priority 10, and `history` has 90. An application group without a `priority` leaves before every built-in group. In the **More** panel, each group is a section with its heading, and an action is a row with its icon and label.
 
 <FrameworkTabs>
 <Framework value="react">
@@ -316,7 +359,7 @@ const saveRow = () => h(SaveRow);
 
 ## Differences from DOCX Editor
 
-- The bar collapses whole groups, one at a time. DOCX Editor collapses one control at a time.
+- The bar moves the wide fields first, then whole groups, one at a time. DOCX Editor collapses one control at a time.
 - No built-in group is pinned. No workbook control is the only way to open a pane.
 - A disabled control or action stays focusable with `aria-disabled`, so the keyboard reaches its reason.
 - A press on an action row in the **More** panel keeps the panel open, as the built-in rows do.

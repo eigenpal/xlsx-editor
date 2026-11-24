@@ -16,7 +16,8 @@ import type { CellEditing } from '../cell-editing.ts';
 import { saveInSlices } from '../editor-save.ts';
 import type { SavedWorkbook } from '../editor-instance.ts';
 import type { EditorSnapshot } from '../editor-model.ts';
-import { createXlsxEditor, type XlsxEditorInstance } from '../xlsx-editor.ts';
+import { createXlsxEditor } from '../create-editor.ts';
+import type { XlsxEditorInstance } from '../xlsx-editor.ts';
 import { runToolbarCommand, toolbarCommandState } from '../toolbar-commands.ts';
 
 const fontsDir = join(

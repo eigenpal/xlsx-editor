@@ -153,6 +153,7 @@ export const CHROME_GROUPS: readonly [{
         readonly labelKey: 'font.selectAriaLabel';
         readonly paths: null;
         readonly kind: 'value';
+        readonly wide: true;
     }, {
         readonly id: 'size';
         readonly shape: 'dropdown';
@@ -268,6 +269,7 @@ export const CHROME_GROUPS: readonly [{
         readonly labelKey: 'numberFormat.label';
         readonly paths: null;
         readonly kind: 'value';
+        readonly wide: true;
     }, {
         readonly id: 'custom';
         readonly shape: 'dialog';
@@ -484,6 +486,7 @@ export interface ChromeControl<Id extends string = string> {
     readonly paths: readonly string[] | null;
     readonly shape?: ChromeControlShape;
     readonly toggle?: true;
+    readonly wide?: true;
 }
 
 // @public
@@ -524,6 +527,9 @@ export interface ChromeHint {
     // (undocumented)
     readonly key: ToolbarHintKey;
 }
+
+// @public
+export type ChromeIconName = keyof typeof CHROME_ICON_PATHS;
 
 // @public
 export interface ChromeMenu {
@@ -1328,6 +1334,9 @@ export function measureMenuBar(el: HTMLElement, ids: readonly string[], widths: 
 export function measureToolbar(el: HTMLElement, groups: readonly ToolbarFitGroup[], widths: Map<string, number>): readonly string[];
 
 // @internal
+export function measureToolbarFit(el: HTMLElement, groups: readonly ToolbarFitGroup[], widths: Map<string, number>, trimmed?: readonly string[]): ToolbarFit;
+
+// @internal
 export const MENU_FIXED_ATTRIBUTE = "data-menu-fixed";
 
 // @internal
@@ -2029,6 +2038,14 @@ export interface SheetMenuOpening {
 }
 
 // @public
+export interface SheetPreviewOptions {
+    readonly height?: number;
+    readonly sheet?: number;
+    readonly width?: number;
+    readonly zoom?: number;
+}
+
+// @public
 export interface SheetProtection {
     readonly allowDeleteColumns: boolean;
     readonly allowDeleteRows: boolean;
@@ -2193,6 +2210,9 @@ export function tidySeparators(entries: readonly ChromeMenuEntry[]): ChromeMenuE
 export const TOOLBAR_COLLAPSE_ORDER: readonly string[];
 
 // @internal
+export const TOOLBAR_FIT_ALL: ToolbarFit;
+
+// @internal
 export const TOOLBAR_FIXED_ATTRIBUTE = "data-toolbar-fixed";
 
 // @public
@@ -2274,7 +2294,19 @@ export function toolbarCommandState(snapshot: EditorSnapshot, id: ChromeSlotId, 
 export function toolbarCommandStates(snapshot: EditorSnapshot, ids: readonly ChromeSlotId[], host?: ToolbarHost): readonly ToolbarCommandState[];
 
 // @internal
+export interface ToolbarFit {
+    // (undocumented)
+    readonly collapsed: readonly string[];
+    // (undocumented)
+    readonly trimmed: readonly string[];
+}
+
+// @internal
+export function toolbarFit(groups: readonly ToolbarFitGroup[], widths: ReadonlyMap<string, number>, savings: ReadonlyMap<string, number>, width: number, gap?: number): ToolbarFit;
+
+// @internal
 export interface ToolbarFitGroup {
+    readonly chrome?: ChromeGroup | null | undefined;
     // (undocumented)
     readonly id: string;
     readonly pinned?: boolean | undefined;
@@ -2363,6 +2395,9 @@ export interface ToolbarSlotRequest {
 export function trapTabWithin(panel: HTMLElement, event: KeyboardEvent): boolean;
 
 // @internal
+export function trimToolbarGroup<G extends ToolbarFitGroup>(group: G, part: 'bar' | 'panel'): G;
+
+// @internal
 export const VUE_MENU_PART_NAMES: MenuPartNames;
 
 // @internal
@@ -2376,6 +2411,9 @@ export function watchGridSetup(element: HTMLElement, part: string, stylesheet: s
 
 // @internal
 export function whenOpenSettles(editor: Pick<XlsxEditorInstance, 'subscribe' | 'snapshot'>, fire: () => void): () => void;
+
+// @internal
+export function wideSlots(group: ToolbarFitGroup): readonly ChromeSlotId[];
 
 // @public
 export type WorkbookKind = 'workbook' | 'template';
@@ -2423,6 +2461,7 @@ export interface XlsxEditorInstance {
     paste(data: PasteData): EditResult;
     redo(): EditResult;
     renameSheet(index: number, name: string): EditResult;
+    renderPreview(element: HTMLElement, options?: SheetPreviewOptions): boolean;
     save(): Uint8Array<ArrayBuffer> | null;
     saveInTasks(): Promise<SavedWorkbook | null>;
     select(anchor: GridPoint, focus?: GridPoint): boolean;

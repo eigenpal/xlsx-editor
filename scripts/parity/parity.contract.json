@@ -168,6 +168,24 @@
       "reactClassNameAsVueClass": {},
       "vueExclusive": {}
     },
+    "Icon": {
+      "reactProps": "IconProps",
+      "paired": ["className", "name", "paths"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {},
+      "reactRenderPropsAsVueSlots": {},
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
+    },
+    "SheetPreview": {
+      "reactProps": "SheetPreviewProps",
+      "paired": ["className", "label", "sheet", "zoom"],
+      "deferredInVue": {},
+      "reactCallbacksAsVueEmits": {},
+      "reactRenderPropsAsVueSlots": {},
+      "reactClassNameAsVueClass": {},
+      "vueExclusive": {}
+    },
     "StatusMessage": {
       "reactProps": "StatusMessageProps",
       "paired": ["t"],
@@ -323,6 +341,7 @@
       "ChromeGroup",
       "ChromeGroupId",
       "ChromeHint",
+      "ChromeIconName",
       "ChromeMenuEntry",
       "ChromeMenuId",
       "ChromeMenuItemEntry",
@@ -357,6 +376,8 @@
       "GridPoint",
       "GridRange",
       "GridSelection",
+      "Icon",
+      "IconProps",
       "LocaleProvider",
       "LocaleProviderProps",
       "MAX_COLUMN_WIDTH",
@@ -386,6 +407,9 @@
       "SheetCommand",
       "SheetCommandInput",
       "SheetCommandState",
+      "SheetPreview",
+      "SheetPreviewOptions",
+      "SheetPreviewProps",
       "SheetProtection",
       "SheetTabs",
       "SheetTabsProps",

@@ -94,15 +94,50 @@ To read the editor state in your own panel, place the panel inside `XlsxEditor.R
 
 ## Fit a narrow panel
 
-In a panel about 500 pixels wide, such as a panel beside a chat, the toolbar moves whole groups into its **More** panel. The font family field is wide, so it pushes the whole font group out, and the groups after it. To keep size, bold, italic, underline, and font color in the bar, hide the `font.family` slot below a panel width that you measure, for example with a `ResizeObserver`. On a phone-wide panel, leave out `ZoomControl`, so the sheet tabs keep the footer. The chat example in [`examples/chat`](https://github.com/eigenpal/xlsx-editor/tree/main/examples/chat) does both in `src/WorkbookPanel.tsx`.
+In a panel about 500 pixels wide, such as a panel beside a chat, the toolbar needs no setup. It moves the font family field into its **More** panel first, so size, bold, italic, underline, and font color stay in the bar, and then moves whole groups. On a phone-wide panel, leave out `ZoomControl`, so the sheet tabs keep the footer. To know when the panel is phone-wide, measure its width, for example with a `ResizeObserver`. The chat example in [`examples/chat`](https://github.com/eigenpal/xlsx-editor/tree/main/examples/chat) does this in `src/WorkbookPanel.tsx`.
 
 ```tsx
-<XlsxEditor.Toolbar hidden={narrow ? ['font.family'] : []} />
+<XlsxEditor.Toolbar />
 <div className="xlsx-footer" dir={useChromeDir()}>
   <XlsxEditor.SheetTabs />
   {phone ? null : <XlsxEditor.ZoomControl />}
 </div>
 ```
+
+## Show a sheet preview
+
+To show a sheet outside the editor, such as on the card of a workbook in a chat, use the `SheetPreview` part inside `XlsxEditor.Root`. It paints the top-left window of the sheet as the grid paints it, with no headings and no selection. It paints again after each edit, after a sheet change, and when its size changes. Give it a size with `className`. It is a `span`, so a button or a link can hold it.
+
+<FrameworkTabs>
+<Framework value="react">
+
+```tsx
+<XlsxEditor.Root document={bytes}>
+  <button className="card" onClick={openPanel}>
+    <XlsxEditor.SheetPreview className="card-preview" />
+    Sales.xlsx
+  </button>
+</XlsxEditor.Root>
+```
+
+</Framework>
+<Framework value="vue">
+
+```vue
+<XlsxEditorRoot :document="bytes">
+  <button class="card" @click="openPanel">
+    <SheetPreview class-name="card-preview" />
+    Sales.xlsx
+  </button>
+</XlsxEditorRoot>
+```
+
+</Framework>
+</FrameworkTabs>
+
+The `sheet` prop picks a sheet by its position in `snapshot().sheets`. Without it, the preview shows the sheet that the editor shows. The `zoom` prop sets the scale, from 0.1 to 4. The default is 0.6. The preview is hidden from assistive technology, because the control around it gives the name. To show the preview on its own, give it a `label`: it then has the `img` role and that name.
+
+To paint into an element of your own without a framework, call `renderPreview(element, options)` on the editor instance. It returns `false` and changes nothing when no workbook is ready or the sheet is not a worksheet. It does not follow edits, so call it again after a `change` event. The editor paints it again by itself when fonts or pictures finish loading. The preview shows the values that the file stores and the edits wrote. It evaluates no formula.
 
 ## Control zoom
 
@@ -141,6 +176,7 @@ Zoom changes only the view. It never changes the saved column widths, row height
 ## See also
 
 - [Toolbar](/docs/customization/toolbar)
+- [Events](/docs/customization/events)
 - [Appearance](/docs/customization/appearance)
 - [Language](/docs/customization/language)
 - [Accessibility](/docs/accessibility)

@@ -6,7 +6,8 @@
 
    Differences from PPTX Editor:
    - The chat uses the system UI face, so the example loads no web font of its own.
-   - The card shows a sheet strip (`.card__sheet`) in place of a slide thumbnail.
+   - The card shows a sheet preview and a tab strip (`.card__sheet`) in place of a slide
+     thumbnail.
    - The workbook panel (`.book`) replaces the deck panel: one column of the toolbar, the
      formula bar, the grid, and the footer, with no slide rail or notes.
    - The editor theme selects `.xlsx-editor`, and the accent is green, the family color of
@@ -393,15 +394,12 @@ button {
   animation: pulse 1.2s ease-in-out infinite;
 }
 .card__grid {
-  height: 84px;
+  height: 104px;
   margin: 12px 12px 0;
   border-radius: 6px 6px 0 0;
-  background:
-    linear-gradient(var(--c-accent-soft), var(--c-accent-soft)) 0 0 / 100% 16px no-repeat,
-    repeating-linear-gradient(to right, var(--c-border) 0 1px, transparent 1px 56px),
-    repeating-linear-gradient(to bottom, var(--c-border) 0 1px, transparent 1px 16px),
-    var(--c-surface);
-  box-shadow: inset 0 0 0 1px var(--c-border);
+  background: var(--c-surface);
+  outline: 1px solid var(--c-border);
+  outline-offset: -1px;
 }
 .card__tabs {
   display: flex;

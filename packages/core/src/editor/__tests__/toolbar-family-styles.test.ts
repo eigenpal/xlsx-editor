@@ -107,20 +107,21 @@ describe('the toolbar family styles', () => {
     ])
       expect(control).toContain(d);
     expect(flat).toContain(
-      ".xlsx-toolbar :where(.xlsx-toolbar-button, .xlsx-toolbar-select, .xlsx-toolbar-color):hover:not(:disabled):not( [aria-disabled='true'] ) { color: var(--doc-text); }"
+      ".xlsx-editor :where(.xlsx-toolbar-button, .xlsx-toolbar-select, .xlsx-toolbar-color):hover:not(:disabled):not( [aria-disabled='true'] ) { color: var(--doc-text); }"
     );
-    // A panel row keeps its own color on hover, so the active row stays marked.
-    expect(
-      rule(".xlsx-toolbar button:hover:not(:disabled):not([aria-disabled='true'])")
-    ).not.toContain('color:');
+    // A panel row keeps its own color on hover, so the active row stays marked. The hover also
+    // reaches a `Toolbar.Action` outside the toolbar, by its own class.
+    expect(flat).toContain(
+      ".xlsx-toolbar button:hover:not(:disabled):not([aria-disabled='true']), .xlsx-toolbar-button:hover:not(:disabled):not([aria-disabled='true']) { background: var(--doc-bg-hover); }"
+    );
     // A button and a color trigger press in; a field does not, as the family field does not.
     expect(flat).toContain(
-      ".xlsx-toolbar :is(.xlsx-toolbar-button, .xlsx-toolbar-color):active:not(:disabled):not([aria-disabled='true']) { transform: scale(0.94); }"
+      ".xlsx-editor :is(.xlsx-toolbar-button, .xlsx-toolbar-color):active:not(:disabled):not([aria-disabled='true']) { transform: scale(0.94); }"
     );
     expect(flat).not.toMatch(/\.xlsx-toolbar-select[^{]*:active/);
     // Reduced motion stops the press scale.
     expect(css).toMatch(
-      /@media \(prefers-reduced-motion: reduce\) \{\s*\.xlsx-toolbar :is\(\.xlsx-toolbar-button[^}]*transition: none;[^}]*\}[^}]*transform: none;/
+      /@media \(prefers-reduced-motion: reduce\) \{\s*\.xlsx-editor :is\(\.xlsx-toolbar-button[^}]*transition: none;[^}]*\}[^}]*transform: none;/
     );
   });
 
@@ -131,7 +132,7 @@ describe('the toolbar family styles', () => {
     );
     // The fade does not fade the focus ring of a disabled control, which stays focusable.
     expect(flat).toContain(
-      ".xlsx-toolbar [aria-disabled='true']:focus-visible { opacity: 1; color: var(--doc-text-subtle); }"
+      ".xlsx-toolbar [aria-disabled='true']:focus-visible, .xlsx-toolbar-button[aria-disabled='true']:focus-visible { opacity: 1; color: var(--doc-text-subtle); }"
     );
     // A disabled panel row takes the subtle text color and no fade, so its reason stays readable.
     expect(flat).toContain(

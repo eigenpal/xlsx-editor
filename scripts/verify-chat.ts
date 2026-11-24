@@ -13,10 +13,11 @@
 // screenshot to `screenshots/chat-<step>.png`.
 //
 // - The page opens with the workbook card. The card lists the sheet tabs, and the host's first
-//   sheet (Sales) is the shown sheet.
+//   sheet (Sales) is the shown sheet. The card paints a preview of the sheet.
 // - Open slides the panel in beside the chat at half the window. The chat stays usable, and the
 //   panel's chrome wears the chat's accent through the `--doc-*` tokens.
-// - A chat command writes a cell through the editor API, and the card shows "Edited".
+// - A chat command writes a cell through the editor API, the card shows "Edited", and its
+//   preview paints the edit.
 // - A press on the card of the open workbook puts the keyboard in the grid: typing edits a cell.
 // - Escape in an open cell edit cancels the edit and keeps the panel. Escape in the chat closes
 //   the panel and keeps the focus in the chat. Close gives the focus back to the card.
@@ -78,6 +79,10 @@ const probe = (page: Page): Promise<EditorProbe> =>
 
 const panelOpen = async (page: Page): Promise<boolean> =>
   (await page.getAttribute('.shell', 'data-open')) !== null;
+
+/** The pixels of the card's sheet preview, as a data URL. */
+const previewPixels = (page: Page): Promise<string> =>
+  page.evaluate(() => document.querySelector<HTMLCanvasElement>('.card__grid canvas')!.toDataURL());
 
 /** Opens the panel from the card when an earlier step left it closed. */
 async function ensureOpen(page: Page): Promise<void> {
@@ -154,6 +159,8 @@ const STEPS: readonly Step[] = [
       check(tabs.slice(0, 2).join() === 'Welcome,Sales', `the card tabs are ${tabs.join()}`);
       const active = await page.locator('.card__tab[data-active]').textContent();
       check(active === 'Sales', `the card marks ${active}`);
+      const preview = await page.locator('.card__grid canvas').boundingBox();
+      check((preview?.width ?? 0) > 100, 'the card paints no sheet preview');
       check(!(await panelOpen(page)), 'the panel is open at start');
     },
   ],
@@ -194,6 +201,7 @@ const STEPS: readonly Step[] = [
   [
     'a chat command writes a cell',
     async (page) => {
+      const before = await previewPixels(page);
       const text = await say(page, 'set B5 to 1200');
       check(text.startsWith('I wrote 1200 in B5'), `the reply is "${text}"`);
       const s = await probe(page);
@@ -202,6 +210,7 @@ const STEPS: readonly Step[] = [
         ((await page.locator('.card__meta').textContent()) ?? '').includes('Edited'),
         'the card does not show Edited'
       );
+      check((await previewPixels(page)) !== before, 'the card preview does not paint the edit');
     },
   ],
   [

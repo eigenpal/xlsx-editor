@@ -11,6 +11,7 @@ import { ChromeDisabledReason } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroup } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroupId } from '@xlsx-editor.dev/core/editor';
 import { ChromeHint } from '@xlsx-editor.dev/core/editor';
+import { ChromeIconName } from '@xlsx-editor.dev/core/editor';
 import { ChromeMenuEntry } from '@xlsx-editor.dev/core/editor';
 import { ChromeMenuId } from '@xlsx-editor.dev/core/editor';
 import { ChromeMenuItemEntry } from '@xlsx-editor.dev/core/editor';
@@ -96,6 +97,7 @@ import { SheetCommand } from '@xlsx-editor.dev/core/editor';
 import { SheetCommandInput } from '@xlsx-editor.dev/core/editor';
 import { SheetCommandState } from '@xlsx-editor.dev/core/editor';
 import { sheetCommandState } from '@xlsx-editor.dev/core/editor';
+import { SheetPreviewOptions } from '@xlsx-editor.dev/core/editor';
 import { SheetProtection } from '@xlsx-editor.dev/core/editor';
 import { StyleValue } from 'vue';
 import { TFunction } from '@xlsx-editor.dev/i18n';
@@ -124,6 +126,8 @@ export { ChromeGroup }
 export { ChromeGroupId }
 
 export { ChromeHint }
+
+export { ChromeIconName }
 
 export { ChromeMenuEntry }
 
@@ -236,6 +240,60 @@ export { GridPoint }
 export { GridRange }
 
 export { GridSelection }
+
+// @public
+export const Icon: vue.DefineComponent<vue.ExtractPropTypes<{
+    readonly name: {
+        readonly type: PropType<ChromeIconName>;
+        readonly default: undefined;
+    };
+    readonly paths: {
+        readonly type: PropType<readonly string[]>;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>, () => vue.VNode<vue.RendererNode, vue.RendererElement, {
+    [key: string]: any;
+}>, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly name: {
+        readonly type: PropType<ChromeIconName>;
+        readonly default: undefined;
+    };
+    readonly paths: {
+        readonly type: PropType<readonly string[]>;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>> & Readonly<{}>, {
+    readonly name: "123" | "add" | "add_column_left" | "add_row_above" | "arrow_drop_down" | "backspace" | "border_all" | "border_clear" | "border_outer" | "check" | "chevron_right" | "content_copy" | "content_cut" | "content_paste" | "decimal_decrease" | "decimal_increase" | "delete" | "delete_sweep" | "expand_more" | "file_download" | "folder_open" | "format_align_center" | "format_align_left" | "format_align_right" | "format_bold" | "format_clear" | "format_color_fill" | "format_color_text" | "format_italic" | "format_underlined" | "ink_eraser" | "more_horiz" | "redo" | "undo" | "vertical_align_bottom" | "vertical_align_center" | "vertical_align_top" | "wrap_text";
+    readonly paths: readonly string[];
+    readonly className: string;
+}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+
+// @public
+export type IconProps = ExtractPublicPropTypes<typeof iconProps>;
+
+// @public (undocumented)
+const iconProps: {
+    readonly name: {
+        readonly type: PropType<ChromeIconName>;
+        readonly default: undefined;
+    };
+    readonly paths: {
+        readonly type: PropType<readonly string[]>;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+};
 
 // @public
 export const LocaleProvider: vue.DefineComponent<vue.ExtractPropTypes<{
@@ -357,6 +415,75 @@ export { SheetCommandInput }
 export { SheetCommandState }
 
 export { sheetCommandState }
+
+// @public
+export const SheetPreview: vue.DefineComponent<vue.ExtractPropTypes<{
+    readonly sheet: {
+        readonly type: NumberConstructor;
+        readonly default: undefined;
+    };
+    readonly zoom: {
+        readonly type: NumberConstructor;
+        readonly default: undefined;
+    };
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>, () => vue.VNode<vue.RendererNode, vue.RendererElement, {
+    [key: string]: any;
+}>, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
+    readonly sheet: {
+        readonly type: NumberConstructor;
+        readonly default: undefined;
+    };
+    readonly zoom: {
+        readonly type: NumberConstructor;
+        readonly default: undefined;
+    };
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+}>> & Readonly<{}>, {
+    readonly sheet: number;
+    readonly zoom: number;
+    readonly label: string;
+    readonly className: string;
+}, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
+
+export { SheetPreviewOptions }
+
+// @public
+export type SheetPreviewProps = ExtractPublicPropTypes<typeof sheetPreviewProps>;
+
+// @public (undocumented)
+const sheetPreviewProps: {
+    readonly sheet: {
+        readonly type: NumberConstructor;
+        readonly default: undefined;
+    };
+    readonly zoom: {
+        readonly type: NumberConstructor;
+        readonly default: undefined;
+    };
+    readonly label: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+    readonly className: {
+        readonly type: StringConstructor;
+        readonly default: undefined;
+    };
+};
 
 export { SheetProtection }
 
@@ -1612,6 +1739,7 @@ export type XlsxEditorNamespace = typeof XlsxEditor$1 & {
     readonly ContextMenu: typeof XlsxEditorContextMenu;
     readonly FormulaBar: typeof FormulaBar;
     readonly SheetTabs: typeof SheetTabs;
+    readonly SheetPreview: typeof SheetPreview;
     readonly ZoomControl: typeof ZoomControl;
     readonly StatusMessage: typeof StatusMessage;
 };

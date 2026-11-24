@@ -22,6 +22,41 @@ import {
 afterEach(cleanup);
 
 describe('the overflow panel', () => {
+  test('a short bar moves the font family field before the font group', async () => {
+    // History is 60 pixels, the font group 380 with its 150 pixel family field, and every other
+    // group too wide to stay. In 340 pixels the font group fits without the field.
+    const rects = (el: HTMLElement): Rect | null => {
+      if (el.dataset.slot === 'font.family') return { width: 150 };
+      const group = el.dataset.group;
+      if (!group) return null;
+      if (group === 'history') return { width: 60 };
+      if (group === 'font')
+        return { width: el.querySelector('[data-slot="font.family"]') ? 380 : 230 };
+      return { width: 1000 };
+    };
+    const restore = stubLayout(rects, 340);
+    try {
+      const { view } = await openNarrow(340);
+      const bar = view.getByRole('toolbar');
+      await waitFor(() =>
+        expect(
+          [...bar.querySelectorAll<HTMLElement>('[data-group]')].map((g) => g.dataset.group)
+        ).toEqual(['history', 'font'])
+      );
+      const font = bar.querySelector('[data-group="font"]')!;
+      expect(font.querySelector('[data-slot="font.family"]')).toBeNull();
+      expect(font.querySelector('[data-slot="font.bold"]')).not.toBeNull();
+      fireEvent.click(view.getByRole('button', { name: 'More' }));
+      const panel = view.getByRole('dialog', { name: 'More' });
+      const sections = [...panel.querySelectorAll<HTMLElement>('[role="group"]')];
+      expect(sections[0]!.getAttribute('aria-label')).toBe('Font');
+      expect(sections[0]!.querySelector('[data-slot="font.family"]')).not.toBeNull();
+      expect(sections[0]!.querySelector('[data-slot="font.bold"]')).toBeNull();
+    } finally {
+      restore();
+    }
+  });
+
   test('a list in the panel renders in flow, and the keyboard reaches it', async () => {
     const restore = stubLayout(groupWidth, 400);
     try {

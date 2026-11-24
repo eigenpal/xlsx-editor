@@ -13,27 +13,24 @@
 //   label to Show chat and has no pressed state, so a screen reader hears one state, not two.
 // - The toolbar leaves out Open and Save: the chat owns where a workbook comes from, and the
 //   header's Download saves. Control+S in the grid still downloads, through `onSave`.
-// - A narrow panel hides the font family field, so the font group (size, bold, italic,
-//   underline, color) stays in the bar: the bar moves whole groups into its More panel, and
-//   the wide field alone pushes the group out. Expand brings the field back. A phone-wide panel
-//   also drops the zoom control, so the sheet tabs keep the footer, as the demo does.
+// - A phone-wide panel drops the zoom control, so the sheet tabs keep the footer, as the demo
+//   does. A narrow toolbar needs nothing from the host: the bar moves the font family field into
+//   its More panel first, and keeps size, bold, italic, underline, and color.
 
 import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import {
+  Icon,
   XlsxEditor,
   useChromeDir,
   useEditorState,
   type ChromeSlotId,
   type EditorSnapshot,
 } from '@xlsx-editor.dev/react';
-import { Icon } from './icons.tsx';
+import { PATHS } from './icon-paths.ts';
 import { TEXT } from './text.ts';
 
 /** The toolbar slots that the panel never shows: the chat owns open and save. */
 const HIDDEN: readonly ChromeSlotId[] = ['file.open', 'file.save'];
-/** Under this panel width, the font family field leaves the bar. */
-const NARROW = 640;
-const NARROW_HIDDEN: readonly ChromeSlotId[] = [...HIDDEN, 'font.family'];
 /** Under this panel width, the footer drops the zoom control. */
 const PHONE = 480;
 
@@ -107,7 +104,6 @@ export function WorkbookPanel({
   const dir = useChromeDir();
   const viewOnly = mode === 'view';
   const [box, width] = useWidth();
-  const narrow = width > 0 && width < NARROW;
   const phone = width > 0 && width < PHONE;
   return (
     // `chat-theme` scopes the chat's token map (styles.css). The panel `<section>` of App.tsx is
@@ -115,10 +111,10 @@ export function WorkbookPanel({
     <XlsxEditor.Viewport className="book chat-theme" label={false}>
       <header className="book__head">
         {sheet ? (
-          <HeaderAction label={TEXT.back} icon={<Icon name="back" />} onSelect={onClose} />
+          <HeaderAction label={TEXT.back} icon={<Icon paths={PATHS.back} />} onSelect={onClose} />
         ) : null}
         <span className="book__glyph" aria-hidden="true">
-          <Icon name="table" />
+          <Icon paths={PATHS.table} />
         </span>
         <div className="book__title">
           <span className="book__name">{title}</span>
@@ -135,14 +131,14 @@ export function WorkbookPanel({
         <div className="book__actions">
           <HeaderAction
             label={TEXT.lock}
-            icon={<Icon name="lock" />}
+            icon={<Icon paths={PATHS.lock} />}
             active={viewOnly}
             disabled={!ready}
             onSelect={onToggleMode}
           />
           <HeaderAction
             label={TEXT.download}
-            icon={<Icon name="download" />}
+            icon={<Icon name="file_download" />}
             disabled={!ready}
             onSelect={onDownload}
           />
@@ -150,12 +146,12 @@ export function WorkbookPanel({
             <>
               <HeaderAction
                 label={expanded ? TEXT.collapse : TEXT.expand}
-                icon={<Icon name={expanded ? 'collapse' : 'expand'} />}
+                icon={<Icon paths={expanded ? PATHS.collapse : PATHS.expand} />}
                 onSelect={onExpand}
               />
               <HeaderAction
                 label={TEXT.closeWorkbook}
-                icon={<Icon name="close" />}
+                icon={<Icon paths={PATHS.close} />}
                 onSelect={onClose}
               />
             </>
@@ -163,11 +159,7 @@ export function WorkbookPanel({
         </div>
       </header>
       <div ref={box} className="book__dock">
-        <XlsxEditor.Toolbar
-          className="book__toolbar"
-          hidden={narrow ? NARROW_HIDDEN : HIDDEN}
-          onSave={onSave}
-        />
+        <XlsxEditor.Toolbar className="book__toolbar" hidden={HIDDEN} onSave={onSave} />
       </div>
       <div className="book__sheet">
         <XlsxEditor.FormulaBar />

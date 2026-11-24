@@ -5,9 +5,10 @@
 // e0ac8351 (EigenPal).
 //
 // Differences from PPTX Editor:
-// - The card shows the sheet tabs of the workbook, with the shown sheet marked, in place of a
-//   slide thumbnail: the editor has no thumbnail of a sheet.
-// - The icons are the chat's own inline SVG (`icons.tsx`): the React adapter exports no `Icon`.
+// - The card shows a preview of the shown sheet (`XlsxEditor.SheetPreview`) over the sheet tabs
+//   of the workbook, in place of a slide thumbnail.
+// - The chat draws its icons with the editor's `Icon`: by name for an icon of the chrome, and
+//   with the paths of `icon-paths.ts` for the others.
 
 import {
   forwardRef,
@@ -21,8 +22,8 @@ import {
   type KeyboardEvent,
   type Ref,
 } from 'react';
-import { useEditorState, type EditorSnapshot } from '@xlsx-editor.dev/react';
-import { Icon } from './icons.tsx';
+import { Icon, XlsxEditor, useEditorState, type EditorSnapshot } from '@xlsx-editor.dev/react';
+import { PATHS } from './icon-paths.ts';
 import { TEXT } from './text.ts';
 
 export interface Message {
@@ -78,7 +79,7 @@ function SheetStrip() {
   const shown = tabs.slice(0, CARD_TABS);
   return (
     <span className="card__sheet" data-ready={ready || undefined} aria-hidden="true">
-      <span className="card__grid" />
+      <XlsxEditor.SheetPreview className="card__grid" />
       <span className="card__tabs">
         {shown.map((name) => (
           <span key={name} className="card__tab" data-active={name === active || undefined}>
@@ -116,7 +117,7 @@ export const WorkbookCard = forwardRef<
       <SheetStrip />
       <span className="card__foot">
         <span className="card__glyph" aria-hidden="true">
-          <Icon name="table" />
+          <Icon paths={PATHS.table} />
         </span>
         <span className="card__body">
           <span className="card__title">{title}</span>
@@ -187,7 +188,7 @@ const MessageView = memo(function MessageView({
 export function BrandMark({ busy = false }: { busy?: boolean }) {
   return (
     <span className="brand-mark" data-busy={busy || undefined} aria-hidden="true">
-      <Icon name="spark" />
+      <Icon paths={PATHS.spark} />
     </span>
   );
 }
@@ -293,7 +294,7 @@ export function EmptyState({ onPick }: { onPick: (text: string) => void }) {
             onClick={() => onPick(s)}
           >
             <span className="idea__text">{s}</span>
-            <Icon name="chevronRight" />
+            <Icon name="chevron_right" />
           </button>
         ))}
       </div>
@@ -334,7 +335,7 @@ export const Composer = forwardRef<
           <span className="composer__hint">{TEXT.composerHint}</span>
           <button type="submit" className="composer__send" disabled={!ready}>
             {TEXT.send}
-            <Icon name="arrowUp" />
+            <Icon paths={PATHS.arrowUp} />
           </button>
         </div>
       </div>

@@ -8,7 +8,8 @@ import { Window } from 'happy-dom';
 import { buildXlsx } from '../../../../../scripts/fixtures/builder.ts';
 import type { FontSource } from '../../layout/index.ts';
 import { breaksOf, keptLongTexts } from '../../layout/cell-text.ts';
-import { createXlsxEditor, type XlsxEditorInstance } from '../xlsx-editor.ts';
+import { createXlsxEditor } from '../create-editor.ts';
+import type { XlsxEditorInstance } from '../xlsx-editor.ts';
 
 const fontsDir = join(
   dirname(Bun.resolveSync('@docx-editor.dev/fonts/package.json', import.meta.dir)),

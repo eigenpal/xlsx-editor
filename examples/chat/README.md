@@ -24,7 +24,7 @@ Open `http://localhost:5182`.
 
 ## How it works
 
-One `XlsxEditor.Root` wraps the chat and the panel, so the chat reads and drives the workbook through `useXlsxEditor()`. The panel is `XlsxEditor.Viewport` with the toolbar, the formula bar, the status message, the grid, and the footer. Its header buttons are `XlsxEditor.Toolbar.Action` parts.
+One `XlsxEditor.Root` wraps the chat and the panel, so the chat reads and drives the workbook through `useXlsxEditor()`. The panel is `XlsxEditor.Viewport` with the toolbar, the formula bar, the status message, the grid, and the footer. Its header buttons are `XlsxEditor.Toolbar.Action` parts, with icons drawn by `Icon`. The card in the chat shows the sheet with `XlsxEditor.SheetPreview`.
 
 | Task in the chat | Call |
 | --- | --- |
@@ -35,6 +35,7 @@ One `XlsxEditor.Root` wraps the chat and the panel, so the chat reads and drives
 | Say why an edit was refused | `refusalText(result.refusal, t, snapshot.numberLocale)` |
 | View only | the root's `mode` prop |
 | Download | `editor.saveInTasks()` |
+| Show the sheet on the card | `<XlsxEditor.SheetPreview className="card__grid" />` |
 | Show the first sheet after each open | `useEditorEvent('change', …)` with `source === 'load'` |
 
 The chat's colors and shapes reach the editor chrome through the `--doc-*` tokens on `.xlsx-editor` (`src/styles.css`, "EDITOR THEME"). The workbook canvas keeps the workbook's own colors.

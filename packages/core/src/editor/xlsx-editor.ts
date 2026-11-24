@@ -43,6 +43,7 @@ import {
 import type { CellEditMode, EditMove, EditTextOptions } from './cell-editor.ts';
 import { goTo } from './go-to.ts';
 import { saveInSlices } from './editor-save.ts';
+import { LivePreviews, type SheetPreviewOptions } from './sheet-preview.ts';
 import { readError, readWorkbookForLoad, registerPickedLoad } from './load-steps.ts';
 import { sheetOpening } from './sheet-opening.ts';
 import { CellEditing, registerEditing, type EditTarget } from './cell-editing.ts';
@@ -79,13 +80,20 @@ import type { Opened } from './opened-workbook.ts';
 import { workbookBytes } from './workbook-bytes.ts';
 import { EditorListeners } from './editor-events.ts';
 
-class Editor implements XlsxEditorInstance {
+/** The editor behind `createXlsxEditor` (`create-editor.ts`). @internal */
+export class Editor implements XlsxEditorInstance {
   private readonly options: XlsxEditorOptions;
   private readonly events = new EditorListeners(this, () => this.edits.dropRefusal);
   private state: EditorSnapshot = EMPTY_SNAPSHOT;
   private opened: Opened | null = null;
   private active = -1;
   private readonly fonts: EditorFonts;
+  private readonly previews = new LivePreviews(() => ({
+    opened: this.state.status === 'ready' ? this.opened : null,
+    measurer: this.measurer,
+    locale: this.numberLocale,
+    active: this.active,
+  }));
   private numberLocale: NumberLocale;
   private host: HTMLElement | null = null;
   private els: SurfaceElements | null = null;
@@ -273,7 +281,7 @@ class Editor implements XlsxEditorInstance {
     this.layout = null;
     this.registerFaces();
     this.publish();
-    this.schedule();
+    this.repaint();
     return null;
   }
 
@@ -287,7 +295,7 @@ class Editor implements XlsxEditorInstance {
     this.numberLocale = next;
     this.layout = null;
     this.publish();
-    this.schedule();
+    this.repaint();
   }
 
   load(source: Uint8Array | ArrayBuffer): Promise<EditorSnapshot> {
@@ -328,7 +336,7 @@ class Editor implements XlsxEditorInstance {
     this.release();
     const win = this.host ? hostWindowOf(this.host) : undefined;
     const pictures = createPictureStore(read.pkg, win);
-    this.offPictures = pictures.onReady(() => this.schedule());
+    this.offPictures = pictures.onReady(this.repaint);
     const store = new WorkbookDocumentStore(read.pkg);
     this.offStore = store.subscribe(() => this.onStoreChange(store));
     this.opened = { store, pkg: read.pkg, index, sheets, pictures, views: new Map(), openedParts };
@@ -386,6 +394,7 @@ class Editor implements XlsxEditorInstance {
     this.offPictures = null;
     this.opened?.pictures.dispose();
     this.opened = null;
+    this.previews.clear();
     this.layout = null;
     this.pendingReveal = null;
     forgetLongTexts();
@@ -704,6 +713,11 @@ class Editor implements XlsxEditorInstance {
     return saveInSlices(store, this.edits, this.host, isCurrent);
   }
 
+  renderPreview(element: HTMLElement, options?: SheetPreviewOptions): boolean {
+    if (!this.host) this.fonts.register(element.ownerDocument, this.repaint);
+    return this.previews.render(element, options);
+  }
+
   beginEdit(text?: string, mode?: CellEditMode): EditResult {
     return this.edits.begin(text, mode);
   }
@@ -764,10 +778,10 @@ class Editor implements XlsxEditorInstance {
       this.opened.pictures.dispose();
       const pictures = createPictureStore(this.opened.pkg, win);
       this.opened = { ...this.opened, pictures };
-      this.offPictures = pictures.onReady(() => this.schedule());
+      this.offPictures = pictures.onReady(this.repaint);
     }
     this.registerFaces();
-    this.schedule();
+    this.repaint();
   }
 
   detach(): void {
@@ -794,8 +808,13 @@ class Editor implements XlsxEditorInstance {
   }
 
   private registerFaces(): void {
-    if (this.host) this.fonts.register(this.host.ownerDocument, () => this.schedule());
+    if (this.host) this.fonts.register(this.host.ownerDocument, this.repaint);
   }
+
+  private readonly repaint = (): void => {
+    this.schedule();
+    this.previews.repaint();
+  };
 
   private schedule(): void {
     if (!this.els || this.frame !== null) return;
@@ -978,22 +997,4 @@ class Editor implements XlsxEditorInstance {
   cycleSheet(direction: 1 | -1): void {
     this.sheetOps.cycle(direction);
   }
-}
-
-/**
- * Create a workbook editor. Mount it with `attach`, open a file with `load`.
- *
- * @public
- */
-export function createXlsxEditor(options: XlsxEditorOptions = {}): XlsxEditorInstance {
-  return new Editor(options);
-}
-
-/**
- * Paint an editor's window now, without waiting for an animation frame. For tests.
- *
- * @internal
- */
-export function flushEditor(editor: XlsxEditorInstance): void {
-  if (editor instanceof Editor) editor.render();
 }

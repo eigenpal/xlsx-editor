@@ -187,6 +187,9 @@ export async function vueAdapterShape(contract?: ParityContract): Promise<VueAda
     FormulaBar: { component: vue.FormulaBar, wrap: inViewport },
     SheetTabs: { component: vue.SheetTabs, wrap: inViewport },
     ZoomControl: { component: vue.ZoomControl, wrap: inViewport },
+    // A host icon needs no root: it reads only the icon set of core.
+    Icon: { component: vue.Icon },
+    SheetPreview: { component: vue.SheetPreview },
     StatusMessage: {
       component: vue.StatusMessage,
       wrap: inViewport,

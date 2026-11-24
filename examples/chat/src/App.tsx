@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { flushSync } from 'react-dom';
 import {
+  Icon,
   XlsxEditor,
   refusalText,
   useEditorEvent,
@@ -32,7 +33,7 @@ import { Composer, EmptyState, Thread, type Message } from './Chat.tsx';
 import { WorkbookPanel } from './WorkbookPanel.tsx';
 import { downloadBlob } from '../../vite/src/download.ts';
 import { usePanelLayout } from './panel-layout.ts';
-import { Icon } from './icons.tsx';
+import { PATHS } from './icon-paths.ts';
 import { TEXT } from './text.ts';
 
 const SAMPLE_URL = `${import.meta.env.BASE_URL}sample.xlsx`;
@@ -287,7 +288,7 @@ function ChatApp({
             </>
           ) : null}
           <button type="button" className="chat-head__new" onClick={newChat}>
-            <Icon name="editSquare" />
+            <Icon paths={PATHS.editSquare} />
             <span className="chat-head__new-label">{TEXT.newChat}</span>
           </button>
         </header>

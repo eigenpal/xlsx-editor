@@ -93,7 +93,7 @@ const ready = async (view: ReturnType<typeof render>) =>
 
 describe('useChromeTranslate', () => {
   test('an override wins with its placeholders filled, and other keys read the root locale', async () => {
-    const seen: string[] = [];
+    const seen: (string | undefined)[] = [];
     const overrides = new Map([['zoom.resetAt', 'Zoom {level}, press to reset']]);
     function Probe() {
       const t = useChromeTranslate(overrides);
@@ -110,7 +110,7 @@ describe('useChromeTranslate', () => {
 
   test('an override picks its plural branch with the plural rules of the root locale', () => {
     const overrides = new Map([['formulaBar.lines', '{count, plural, few {# (few)} other {#}}']]);
-    const seen: string[] = [];
+    const seen: (string | undefined)[] = [];
     function Probe() {
       const t = useChromeTranslate(overrides);
       seen.push(t('formulaBar.lines', { count: 3 }));
@@ -147,7 +147,7 @@ describe('useChromeTranslate', () => {
   });
 
   test('inside a part with t, it reads that t first', () => {
-    const seen: string[] = [];
+    const seen: (string | undefined)[] = [];
     function Probe() {
       const t = useChromeTranslate();
       seen.push(t('formattingBar.bold'));
@@ -166,7 +166,7 @@ describe('useChromeTranslate', () => {
   });
 
   test('outside a root, it reads English', () => {
-    const seen: string[] = [];
+    const seen: (string | undefined)[] = [];
     function Probe() {
       seen.push(useChromeTranslate()('zoom.zoomIn'));
       return null;
@@ -592,6 +592,107 @@ describe('direction', () => {
       for (const el of stubbed)
         delete (el as { getBoundingClientRect?: unknown }).getBoundingClientRect;
     }
+  });
+  test('a popup that runs past the right edge of a right-to-left editor is held inside it', async () => {
+    const view = render(<Parts locale={{ _lang: 'ar' }} />);
+    await ready(view);
+    const rect = (left: number, right: number) =>
+      ({
+        left,
+        right,
+        top: 0,
+        bottom: 20,
+        width: right - left,
+        height: 20,
+        x: left,
+        y: 0,
+      }) as DOMRect;
+    // The editor spans 0 to 800. The trigger, 760 to 840, runs past its right edge, and the
+    // popup opens at the trigger's start, its right edge: 640 to 840.
+    const original = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function (this: Element) {
+      if (this.classList.contains('xlsx-editor')) return rect(0, 800);
+      if (this.hasAttribute('data-popup')) return rect(640, 840);
+      if (this.classList.contains('xlsx-toolbar-dropdown')) return rect(760, 840);
+      return rect(100, 140);
+    };
+    try {
+      fireEvent.click(view.getByRole('button', { name: /^Number format/ }));
+      const popup = view.container.querySelector<HTMLElement>('[data-popup]')!;
+      expect(popup.dataset['align']).toBeUndefined();
+      // The popup's right edge moves 840 - 800 pixels in from the trigger's right edge.
+      expect([popup.style.right, popup.style.left]).toEqual(['40px', 'auto']);
+    } finally {
+      Element.prototype.getBoundingClientRect = original;
+    }
+  });
+
+  /**
+   * In a right-to-left bar of 600 pixels and a tab menu of 160, run `act` and give the left
+   * edge of the menu. The menu exists only after the open, so its width is stubbed for every
+   * element with the menu role.
+   */
+  function sheetMenuLeftAfter(view: ReturnType<typeof render>, act: () => void): string {
+    const bar = view.container.querySelector<HTMLElement>('.xlsx-sheet-bar')!;
+    Object.defineProperty(bar, 'clientWidth', { configurable: true, value: 600 });
+    const before = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')!;
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+      configurable: true,
+      get(this: HTMLElement) {
+        return this.getAttribute('role') === 'menu' ? 160 : before.get?.call(this);
+      },
+    });
+    try {
+      act();
+      return view.getByRole('menu').style.left;
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, 'offsetWidth', before);
+      delete (bar as { clientWidth?: unknown }).clientWidth;
+    }
+  }
+
+  test('in a right-to-left bar, a tab menu grows to the left of the pointer', async () => {
+    const view = render(<Parts locale={{ _lang: 'ar' }} />);
+    await ready(view);
+    // The menu's right edge is at the pointer: 200 - 160 pixels.
+    const left = sheetMenuLeftAfter(view, () =>
+      fireEvent.contextMenu(view.getAllByRole('tab')[0]!, { clientX: 200 })
+    );
+    expect(left).toBe('40px');
+  });
+
+  test('in a right-to-left bar, a key opens the tab menu at the right edge of its tab', async () => {
+    const view = render(<Parts locale={{ _lang: 'ar' }} />);
+    await ready(view);
+    const tab = view.getAllByRole('tab')[0]!;
+    const box = { left: 400, right: 500, top: 0, bottom: 20, width: 100, height: 20, x: 400, y: 0 };
+    Object.defineProperty(tab, 'getBoundingClientRect', { configurable: true, value: () => box });
+    try {
+      // The menu's right edge is at the tab's right edge: 500 - 160 pixels.
+      const left = sheetMenuLeftAfter(view, () =>
+        fireEvent.keyDown(tab, { key: 'F10', shiftKey: true })
+      );
+      expect(left).toBe('340px');
+    } finally {
+      delete (tab as { getBoundingClientRect?: unknown }).getBoundingClientRect;
+    }
+  });
+  test('the toolbar marks a direction that the host sets only in CSS, for its mirrored icons', async () => {
+    const view = render(
+      <div style={{ direction: 'rtl' }}>
+        <Parts />
+      </div>
+    );
+    await ready(view);
+    expect(view.getByRole('toolbar').getAttribute('data-dir')).toBe('rtl');
+    // An English catalog decides no direction, so the bar sets no dir attribute of its own.
+    expect(view.getByRole('toolbar').hasAttribute('dir')).toBe(false);
+  });
+
+  test('a left-to-right host marks the toolbar ltr', async () => {
+    const view = render(<Parts />);
+    await ready(view);
+    expect(view.getByRole('toolbar').getAttribute('data-dir')).toBe('ltr');
   });
 });
 

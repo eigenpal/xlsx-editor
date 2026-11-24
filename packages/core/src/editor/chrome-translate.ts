@@ -31,9 +31,9 @@ export type ChromeTranslate = (
 
 /**
  * The translator `base` with `overrides` first. It always returns a string, so it is a
- * `ChromeTranslate` that host code can also call for its own labels. An override's value is a message: its
- * placeholders and plural branches are filled from the values of the call, with the plural rules
- * of `lang`. A key that `overrides` does not hold reads `base`. `overrides` is a `Map`, because
+ * `ChromeTranslate` that host code can also call for its own labels. An override's value is a
+ * message: its placeholders and plural branches are filled from the values of the call, with
+ * the plural rules of `lang`. A key that `overrides` does not hold reads `base`. `overrides` is a `Map`, because
  * its keys come from the caller: an object would answer `constructor` from its prototype.
  *
  * @internal

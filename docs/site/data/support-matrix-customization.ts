@@ -1,7 +1,7 @@
 /**
  * The rows of the support matrix for the customization of the chrome by host code: the theme
- * scope, the editor events, and the language of the chrome. `support-matrix.ts` lists them in its order; the rules of that
- * file hold here.
+ * scope, the editor events, and the language of the chrome. `support-matrix.ts` lists them in
+ * its order; the rules of that file hold here.
  */
 
 import type { SupportFeature } from './support-matrix.ts';

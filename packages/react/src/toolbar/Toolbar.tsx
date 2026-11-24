@@ -47,6 +47,7 @@ import {
   listenSaveKey,
   measureToolbar,
   moveBarFocus,
+  markChromeDirection,
   observeToolbar,
   toolbarGroupHeading,
   type ArrangedToolbarGroup,
@@ -405,6 +406,9 @@ function XlsxEditorToolbarRoot({
   const widths = useRef(new Map<string, number>());
   // The ids of the groups in the "More" panel, in bar order (`toolbarCollapse`).
   const [collapsed, setCollapsed] = useState<readonly string[]>(NONE);
+
+  // Mark the bar's computed direction for the mirrored icons (`markChromeDirection`).
+  useLayoutEffect(() => markChromeDirection(bar.current), [dir]);
 
   // A new locale or a new set of groups changes the widths: measure every group again.
   useLayoutEffect(() => {

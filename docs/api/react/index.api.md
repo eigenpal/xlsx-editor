@@ -393,7 +393,7 @@ export { trapTabWithin }
 export function useChromeDir(): 'ltr' | 'rtl' | undefined;
 
 // @public
-export function useChromeTranslate(overrides?: ReadonlyMap<string, string>): (key: string, params?: Readonly<Record<string, string | number>>) => string;
+export function useChromeTranslate(overrides?: ReadonlyMap<string, string>): ChromeTranslate;
 
 // @public
 export function useEditorColorMode(): UseEditorColorModeReturn;

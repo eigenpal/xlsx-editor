@@ -13,8 +13,9 @@
  * or when that ancestor itself computes `rtl`. In every other case, the first inline
  * `direction` from `el` up to that ancestor, not counting the ancestor, decides, and without
  * one the attribute decides. A class rule that sets `direction: ltr` on the `dir="rtl"`
- * element itself is not detected: that element then counts as right to left. The chrome CSS
- * selects mirrored icons with `:dir(rtl)`, which follows the `dir` attribute alone. @internal
+ * element itself is not detected: that element then counts as right to left. CSS `:dir(rtl)`
+ * follows the `dir` attribute alone, so the chrome also marks its direction for its icons
+ * (`markChromeDirection`). @internal
  */
 export function isRightToLeft(el: Element): boolean {
   const view = el.ownerDocument.defaultView;
@@ -29,6 +30,17 @@ export function isRightToLeft(el: Element): boolean {
     if (inline === 'ltr' || inline === 'rtl') return inline === 'rtl';
   }
   return attribute === 'rtl';
+}
+
+/**
+ * Set `data-dir` on the chrome element `el` to its direction (`isRightToLeft`). The chrome CSS
+ * mirrors the icons that point along the reading direction on `[data-dir='rtl']` as well as on
+ * `:dir(rtl)`, so a host page that sets only a CSS `direction` mirrors them too. @internal
+ */
+export function markChromeDirection(el: HTMLElement | null): void {
+  if (!el) return;
+  const dir = isRightToLeft(el) ? 'rtl' : 'ltr';
+  if (el.dataset['dir'] !== dir) el.dataset['dir'] = dir;
 }
 
 /**

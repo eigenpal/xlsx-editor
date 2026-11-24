@@ -55,9 +55,9 @@ import { usePartTranslation } from './locale.ts';
 
 const sheetTabsProps = {
   /**
-   * The label resolver of the tabs, their menu, and the rename field: a key and the values of its placeholders, as DOCX
-   * Editor's `t` prop. A key that it leaves unresolved reads the root's `locale`. Keep it
-   * stable, for example from `useChromeTranslate(overrides)`.
+   * The label resolver of the tabs, their menu, and the rename field: a key and the values of
+   * its placeholders, as DOCX Editor's `t` prop. A key that it leaves unresolved reads the
+   * root's `locale`. Keep it stable, for example from `useChromeTranslate(overrides)`.
    */
   t: { type: Function as PropType<ChromeTranslate>, default: undefined },
 } as const;
@@ -371,7 +371,8 @@ export const SheetTabs = defineComponent({
       const renameState = stateOf('rename', sheet);
       const deleteState = stateOf('delete', sheet);
       // The commands move a sheet earlier or later in the workbook. In a right-to-left bar the
-      // earlier sheet is on the right, so the words swap: the items name the side that they move to.
+      // earlier sheet is on the right, so the words swap: the items name the side that they move
+      // to.
       const moveEarlier = open?.rtl ? 'sheetTabs.moveRight' : 'sheetTabs.moveLeft';
       const moveLater = open?.rtl ? 'sheetTabs.moveLeft' : 'sheetTabs.moveRight';
       const leftState = stateOf('moveLeft', sheet);

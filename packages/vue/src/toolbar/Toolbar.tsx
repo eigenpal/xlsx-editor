@@ -37,6 +37,7 @@ import {
   chromeSlotId,
   guardToolbarMousedown,
   listenSaveKey,
+  markChromeDirection,
   measureToolbar,
   moveBarFocus,
   observeToolbar,
@@ -344,6 +345,11 @@ const XlsxEditorToolbarRoot = defineComponent({
       },
       { immediate: true, flush: 'post' }
     );
+    // Mark the bar's computed direction for the mirrored icons (`markChromeDirection`).
+    watch([bar, dir, () => attrs['dir']], ([el]) => markChromeDirection(el), {
+      immediate: true,
+      flush: 'post',
+    });
     const widths = new Map<string, number>();
     // The ids of the groups in the "More" panel, in bar order (`toolbarCollapse`).
     const collapsed = shallowRef<readonly string[]>([]);

@@ -1330,6 +1330,7 @@
   box-shadow: inset 3px 0 0 var(--doc-primary);
   color: var(--doc-primary);
 }
+.xlsx-toolbar[data-dir='rtl'] .xlsx-toolbar-list [role='option'][aria-current='true'],
 .xlsx-toolbar-list [role='option'][aria-current='true']:dir(rtl) {
   box-shadow: inset -3px 0 0 var(--doc-primary);
 }
@@ -1337,7 +1338,10 @@
 /* Right-to-left chrome, after DOCX Editor's rules of the same name: the chrome parts follow the
  * direction that they inherit, the host page or the `dir` that a right-to-left catalog sets on
  * them (`useChromeDir`). Logical properties mirror the layout; this rule mirrors the icons that
- * point along the reading direction. The grid keeps a left-to-right layout. */
+ * point along the reading direction. `:dir(rtl)` follows the `dir` attribute alone, so the
+ * toolbar also marks its computed direction (`data-dir`, `markChromeDirection`) for a host page
+ * that sets only a CSS `direction`. The grid keeps a left-to-right layout. */
+.xlsx-toolbar[data-dir='rtl'] :is([data-slot='history.undo'], [data-slot='history.redo']) svg,
 .xlsx-toolbar :is([data-slot='history.undo'], [data-slot='history.redo']) svg:dir(rtl) {
   transform: scaleX(-1);
 }

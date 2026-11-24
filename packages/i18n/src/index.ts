@@ -3,11 +3,10 @@
 // `direction.ts`, as in DOCX Editor; the platform-shortcut helpers are left out until chrome needs
 // them. `formatMessage` is exported, where DOCX Editor keeps it private: the adapters'
 // `useChromeTranslate` formats an override with it, because the messages here take values. It
-// reads only the own values of `vars`, so a placeholder named after an object method stays
-// as written. The
-// disabled-reason helper is not here: the engine resolves its
-// own reasons to catalog text (`disabledReasonText` in `@xlsx-editor.dev/core/editor`), so the
-// adapters need no second copy. The adapter text names only what exists: the React adapter, its
+// reads only the own values of `vars`, so a placeholder named after an object method stays as
+// written. The disabled-reason helper is not here: the engine resolves its own reasons to
+// catalog text (`disabledReasonText` in `@xlsx-editor.dev/core/editor`), so the adapters need no
+// second copy. The adapter text names only what exists: the React adapter, its
 // `useTranslation` hook, the `locale` prop of its root, and the engine's English fallback
 // (`englishText` in the core editor lane).
 /**
@@ -22,6 +21,9 @@
  *   en,                                 // typed locale data
  *   locales,                            // record keyed by BCP-47 tag
  *   deepMerge, createT,                 // build a t() for custom hosts
+ *   formatMessage,                      // fill one message as t() does
+ *   localeDirection, catalogDirection,  // the writing direction of a tag
+ *   chromeDirection,                    //   or a catalog, and of the chrome
  *   type LocaleStrings,                 // shape of `en` (source of truth)
  *   type Translations,                  // shape of a community partial
  *   type TranslationKey,                // every valid `t()` key

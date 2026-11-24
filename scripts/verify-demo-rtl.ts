@@ -6,6 +6,10 @@
 //   `packages/core/src/styles/editor.css`), so its physical coordinates hold.
 // - A jump to AZ1 from the name box shows the AZ column heading inside the visible part of the
 //   grid, with the cell under it.
+// - With a right-to-left catalog (`?lang=ar` in the demo, `chrome-locale.ts`) on a page with no
+//   `dir`, the toolbar is right to left. The number format list opens inside the window, with
+//   its right edge, its inline start, at the right edge of its trigger. A tab menu that Shift+F10
+//   opens has its right edge at the right edge of its tab.
 
 import type { Browser, Page } from '@playwright/test';
 import { goTo, showsSheet } from './verify-demo-browser.ts';
@@ -90,8 +94,73 @@ export async function verifyRightToLeftHost(
   const jumped = await shownHeadings(page);
   if (!jumped.includes('AZ'))
     throw new Error(`after a jump to AZ1, the shown headings are ${jumped.join(' ')}`);
+  const chrome = await verifyRightToLeftCatalog(browser, url, watch, adopt, sheet);
   return (
     `on a right-to-left page, a wheel scrolled the grid ${Math.round(scrolled)} pixels and the ` +
-    `headings show ${added[0]}, and a jump to AZ1 shows AZ`
+    `headings show ${added[0]}, and a jump to AZ1 shows AZ; ${chrome}`
+  );
+}
+
+/** The demo address with `lang=ar` added to its query. */
+function withArabicCatalog(url: string): string {
+  const address = new URL(url);
+  address.searchParams.set('lang', 'ar');
+  return address.toString();
+}
+
+/**
+ * The popups of a right-to-left chrome from a right-to-left catalog, on a page of their own with
+ * no `dir`: the toolbar list and the tab menu open at the inline start of their trigger, which
+ * is its right edge, inside the window.
+ */
+async function verifyRightToLeftCatalog(
+  browser: Browser,
+  url: string,
+  watch: (page: Page) => void,
+  adopt: (page: Page, close: () => Promise<void>) => void,
+  sheet: string
+): Promise<string> {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  adopt(page, () => context.close());
+  watch(page);
+  await page.goto(withArabicCatalog(url));
+  if (!(await showsSheet(page, sheet))) throw new Error('the sample did not open');
+  const toolbar = page.getByRole('toolbar', { name: 'Formatting controls' });
+  const dir = await toolbar.getAttribute('dir');
+  if (dir !== 'rtl') throw new Error(`with a right-to-left catalog, the toolbar dir is ${dir}`);
+
+  const trigger = page.getByRole('button', { name: /^Number format/ }).first();
+  await trigger.click();
+  const popup = page.locator('.xlsx-toolbar [data-popup]').first();
+  await popup.waitFor({ state: 'visible', timeout: 5000 });
+  const opened = (await popup.boundingBox())!;
+  const from = (await trigger.boundingBox())!;
+  const width = page.viewportSize()!.width;
+  if (opened.x < 0 || opened.x + opened.width > width)
+    throw new Error(
+      `the number format list spans ${opened.x} to ${opened.x + opened.width}, past the window`
+    );
+  const listGap = Math.abs(opened.x + opened.width - (from.x + from.width));
+  if (listGap > 1)
+    throw new Error(
+      `the number format list ends ${listGap} pixels from the right edge of its trigger`
+    );
+  await page.keyboard.press('Escape');
+
+  const tab = page.getByRole('tab').first();
+  await tab.focus();
+  await page.keyboard.press('Shift+F10');
+  const menu = page.getByRole('menu').first();
+  await menu.waitFor({ state: 'visible', timeout: 5000 });
+  const menuBox = (await menu.boundingBox())!;
+  const tabBox = (await tab.boundingBox())!;
+  const menuGap = Math.abs(menuBox.x + menuBox.width - (tabBox.x + tabBox.width));
+  if (menuGap > 1)
+    throw new Error(`the tab menu ends ${menuGap} pixels from the right edge of its tab`);
+  await page.keyboard.press('Escape');
+  return (
+    'with a right-to-left catalog, the number format list and the tab menu open at the right ' +
+    'edge of their trigger, inside the window'
   );
 }

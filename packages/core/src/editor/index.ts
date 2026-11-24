@@ -214,7 +214,7 @@ export {
   type StatusNotice,
   type StatusView,
 } from './chrome-status.ts';
-export { inlineStep, isRightToLeft } from './chrome-direction.ts';
+export { inlineStep, isRightToLeft, markChromeDirection } from './chrome-direction.ts';
 export {
   chromeTranslator,
   partTranslator,

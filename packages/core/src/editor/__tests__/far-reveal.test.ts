@@ -7,18 +7,14 @@
 import { afterEach, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { buildXlsx, c, row } from '../../../../scripts/fixtures/builder.ts';
-import {
-  createXlsxEditor,
-  flushEditor,
-  type XlsxEditorInstance,
-} from '../../../core/src/editor/xlsx-editor.ts';
-import type { FontSource } from '../index.ts';
+import { Window } from 'happy-dom';
+import { buildXlsx, c, row } from '../../../../../scripts/fixtures/builder.ts';
+import { createXlsxEditor, type XlsxEditorInstance } from '../index.ts';
+import { flushEditor } from './flush-editor.ts';
+import type { FontSource } from '../../layout/index.ts';
 
 const fontsDir = join(
-  dirname(
-    Bun.resolveSync('@docx-editor.dev/fonts/package.json', join(import.meta.dir, '../../../core'))
-  ),
+  dirname(Bun.resolveSync('@docx-editor.dev/fonts/package.json', import.meta.dir)),
   'assets'
 );
 const FONTS: FontSource[] = [
@@ -34,14 +30,15 @@ const FONTS: FontSource[] = [
 const editors: XlsxEditorInstance[] = [];
 afterEach(() => {
   for (const editor of editors.splice(0)) editor.destroy();
-  document.body.replaceChildren();
 });
 
 const WIDTH = 800;
 
 test('a jump to a far cell grows the extent before it scrolls, so the scroll is not cut short', async () => {
-  const host = document.createElement('div');
-  document.body.append(host);
+  const win = new Window();
+  const doc = win.document as unknown as Document;
+  const host = doc.createElement('div');
+  doc.body.append(host);
   const editor = createXlsxEditor({ fonts: FONTS });
   editors.push(editor);
   editor.attach(host);
@@ -66,7 +63,7 @@ test('a jump to a far cell grows the extent before it scrolls, so the scroll is 
 
   editor.select({ row: 0, col: 51 });
   // The scroll event of the container arrives before the next frame paints.
-  scroller.dispatchEvent(new Event('scroll'));
+  scroller.dispatchEvent(new win.Event('scroll') as unknown as Event);
   flushEditor(editor);
 
   expect(editor.snapshot().selectionRef).toBe('AZ1');

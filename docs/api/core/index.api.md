@@ -974,6 +974,9 @@ export function loadSubstituteFonts(options?: {
     readonly failures: readonly SubstituteFontFailure[];
 }>;
 
+// @internal
+export function markChromeDirection(el: HTMLElement | null): void;
+
 // @public
 export const MAX_COLS = 16384;
 

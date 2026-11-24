@@ -121,8 +121,8 @@ export function sheetRenameBox(
 /**
  * Where the tab menu opens in the bar `bar`, in its CSS pixels from the bar's left edge: at the
  * pointer (`clientX`), or at the tab's start edge when a key opens it (the right edge in a
- * right-to-left bar, where `openSheetMenu` puts the menu's right edge at this point). Inside a host that scales
- * the editor, window pixels are converted to the bar's pixels. @internal
+ * right-to-left bar, where `openSheetMenu` puts the menu's right edge at this point). Inside a
+ * host that scales the editor, window pixels are converted to the bar's pixels. @internal
  */
 export function sheetMenuLeft(bar: HTMLElement | null, tab: HTMLElement, clientX?: number): number {
   const box = bar?.getBoundingClientRect();

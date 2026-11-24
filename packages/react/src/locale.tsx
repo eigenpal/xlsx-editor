@@ -169,6 +169,7 @@ export function LocaleProvider({ i18n, dir, children }: LocaleProviderProps): Re
  * `{name}` placeholders and `{count, plural, ...}` branches are filled from the values that the
  * part passes.
  *
+ * The returned `ChromeTranslate` always gives a string: the override, else the catalog text.
  * Keep the `overrides` map stable (module level or memoized): the returned function follows its
  * identity, and a new function renders every part that receives it again.
  *
@@ -184,9 +185,7 @@ export function LocaleProvider({ i18n, dir, children }: LocaleProviderProps): Re
  *
  * @public
  */
-export function useChromeTranslate(
-  overrides?: ReadonlyMap<string, string>
-): (key: string, params?: Readonly<Record<string, string | number>>) => string {
+export function useChromeTranslate(overrides?: ReadonlyMap<string, string>): ChromeTranslate {
   const t = useContext(TranslationContext);
   const { lang } = useContext(CatalogContext);
   return useMemo(() => chromeTranslator(t, overrides, lang), [t, overrides, lang]);

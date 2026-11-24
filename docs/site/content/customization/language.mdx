@@ -262,6 +262,7 @@ To build a translator outside the editor, use `createT` and `formatMessage` of [
 - Keep a part's `t` and the overrides map of `useChromeTranslate` stable: a new function renders the part again, and a new toolbar `t` measures the bar again.
 - A `LocaleProvider` with `i18n` inside a part with `t` starts from the catalog, not from that `t`.
 - `locale` does not change the number formats or the text of the cells.
+- The live region of the editor reads the root `locale`. A screen reader announces a refused edit, a copy, and a sheet command in that text, also where a part's `t` relabels the shown text. To change both, put the override in the root `locale`.
 - The grid paints a text in a right-to-left script with the alignment and the order of a left-to-right text, so the text can move when the cell editor opens or closes.
 
 ## Differences from DOCX Editor

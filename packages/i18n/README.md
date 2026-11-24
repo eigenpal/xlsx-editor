@@ -43,6 +43,22 @@ const custom: Translations = { formattingBar: { bold: 'Fett' } };
 const tCustom = createT(deepMerge(en, custom) as typeof en);
 ```
 
+`formatMessage` formats one message that is not in a catalog, with the same rules:
+
+```ts
+import { formatMessage } from '@xlsx-editor.dev/i18n';
+
+formatMessage('{count, plural, one {# sheet} other {# sheets}}', { count: 2 }); // "2 sheets"
+```
+
+The direction helpers give the writing direction that the chrome uses:
+
+| Export | What it gives |
+| --- | --- |
+| `localeDirection` | The writing direction of a BCP 47 tag, `'ltr'` or `'rtl'` |
+| `catalogDirection` | The writing direction of a catalog: its `_dir`, else the direction of its `_lang` |
+| `chromeDirection` | The direction that a provider decides for the chrome, as the adapters decide it |
+
 `@xlsx-editor.dev/i18n/en` is the English catalog as its own entry. In a React app, pass a catalog to the `locale` prop of `XlsxEditor` and read the translator with `useTranslation()`. See [Root props](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#root-props) and [Hooks](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#hooks) in the React guide.
 
 ## Contribute

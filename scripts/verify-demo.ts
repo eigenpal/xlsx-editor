@@ -47,8 +47,9 @@
 //   within the window, and the status strip keeps its width and its text in a host flex row
 //   (`verify-demo-content-sized.ts`).
 // - On a page of its own with `dir="rtl"` on the root element, a horizontal wheel scrolls the
-//   grid and the headings follow, and a jump to AZ1 from the name box shows AZ
-//   (`verify-demo-rtl.ts`).
+//   grid and the headings follow, and a jump to AZ1 from the name box shows AZ. With a
+//   right-to-left catalog (`?lang=ar`), the number format list and the tab menu open at the
+//   right edge of their trigger (`verify-demo-rtl.ts`).
 // - On a new page with no file save picker, the header's Save downloads one file whose bytes
 //   hold the edit and every sheet. A phone-wide bar shows Save and names each control, the page
 //   does not scroll sideways, and the text of a notice and of an error starts at the padding of

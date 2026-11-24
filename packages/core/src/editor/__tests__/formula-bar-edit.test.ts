@@ -396,7 +396,7 @@ describe('selectReference', () => {
       ['Nope!A1', 'go-to-sheet', 'Nope'],
       ['A0', 'go-to-reference', undefined],
       ['XFE1', 'go-to-reference', undefined],
-      ['A1 B2', 'go-to-reference', undefined],
+      ['A1 R1C1', 'go-to-reference', undefined],
       ['=A1', 'go-to-reference', undefined],
       ['', 'go-to-reference', undefined],
       ['[1]Data!A1', 'go-to-reference', undefined],

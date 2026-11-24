@@ -2,6 +2,7 @@
 // implements it.
 
 import type { GridPoint } from '../contracts/index.ts';
+
 import type { FormatPatch } from '../store/index.ts';
 import type { FormatToggle, MergeOptions } from '../automation/index.ts';
 import type { CellEditMode, EditMove, EditTextOptions } from './cell-editor.ts';
@@ -16,6 +17,18 @@ import type {
 import type { NumberLocale } from '../cascade/index.ts';
 import type { FontReport } from './substitute-fonts.ts';
 import type { EditorEvents } from './editor-events.ts';
+
+/**
+ * One range of `selectRanges`: the cell at `anchor`, or the range from `anchor` to `focus`.
+ *
+ * @public
+ */
+export interface SelectionRangeInput {
+  /** The first corner (0-based): the active cell when this range is the last one. */
+  readonly anchor: GridPoint;
+  /** The far corner (0-based). Absent, the range is the cell at `anchor`. */
+  readonly focus?: GridPoint;
+}
 
 /**
  * The result of {@link XlsxEditorInstance.saveInTasks}.
@@ -113,6 +126,23 @@ export interface XlsxEditorInstance {
    */
   select(anchor: GridPoint, focus?: GridPoint): boolean;
   /**
+   * Select several ranges on the shown sheet, in order, as presses with the platform modifier
+   * (Command on Apple platforms, Control elsewhere) add them: each range runs from `anchor` to
+   * `focus` (or is the cell at `anchor`), and grows to cover the merged ranges that it meets.
+   * The last range holds the active cell, at its `anchor`. The ranges are the space-delimited
+   * references of `snapshot().selectionRef`, as `x:selection/@sqref` (`ST_Sqref`, ECMA-376
+   * Part 1, 18.18.76) states them. One range selects as `select` does.
+   *
+   * A clear and a format patch then apply to every range in one undo step. A command that acts
+   * on one range (copy, cut, paste, merge, a decimal step, and an insert or a delete of rows or
+   * columns) is refused with `multiple-ranges`, and `toolbarCommandState` disables it.
+   *
+   * Returns `false`, and changes nothing, for a value that is not a list of ranges, an empty
+   * list, a list of more than `MAX_SELECTION_RANGES` ranges, a coordinate that is not a finite
+   * number, no ready workbook, or an open cell edit whose commit the store refuses.
+   */
+  selectRanges(ranges: readonly SelectionRangeInput[]): boolean;
+  /**
    * Select the whole shown sheet, as Control or Command and A in the grid does. An open cell edit
    * is committed first; when the store refuses that commit, the selection stays.
    */
@@ -207,7 +237,9 @@ export interface XlsxEditorInstance {
    * reference with a sheet name. A name that the shown sheet scopes (`@localSheetId`) comes
    * before a workbook name, and a sheet prefix (`Data!Rates`) reads the name that that sheet
    * scopes. The active cell is the top-left cell of the range, and the view scrolls to it.
-   * An open cell edit commits first, as `select` states.
+   * Several cell or range references, space delimited as `snapshot().selectionRef` writes them
+   * (`B2:C4 E5`), select those ranges on the shown sheet, as `selectRanges` does; each one must
+   * read. An open cell edit commits first, as `select` states.
    *
    * Refused with `go-to-name` for a defined name that names a formula, several ranges, or a
    * range on a sheet that is not a visible worksheet, or that only another sheet scopes;

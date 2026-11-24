@@ -119,15 +119,23 @@ export interface EditorEvents {
 const samePoint = (a: GridSelection['active'], b: GridSelection['active']): boolean =>
   a.row === b.row && a.col === b.col;
 
+const sameRange = (a: GridSelection['range'], b: GridSelection['range']): boolean =>
+  samePoint(a.start, b.start) && samePoint(a.end, b.end);
+
 function sameSelection(a: GridSelection | null, b: GridSelection | null): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
+  // Every range of a selection of several ranges counts, and so does the order.
+  const ra = a.ranges ?? [];
+  const rb = b.ranges ?? [];
   return (
     a.sheetIndex === b.sheetIndex &&
     samePoint(a.active, b.active) &&
     samePoint(a.anchor, b.anchor) &&
-    samePoint(a.range.start, b.range.start) &&
-    samePoint(a.range.end, b.range.end)
+    sameRange(a.range, b.range) &&
+    (a.activeRange ?? 0) === (b.activeRange ?? 0) &&
+    ra.length === rb.length &&
+    ra.every((r, i) => sameRange(r, rb[i]!))
   );
 }
 

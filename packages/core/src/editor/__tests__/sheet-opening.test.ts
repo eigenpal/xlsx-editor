@@ -7,7 +7,7 @@
 import { expect, test } from 'bun:test';
 import { buildXlsx, c, row } from '../../../../../scripts/fixtures/builder.ts';
 import { readXlsx } from '../../store/index.ts';
-import { sheetOpening } from '../editor-model.ts';
+import { sheetOpening } from '../sheet-opening.ts';
 import { scrollToTopLeft } from '../view-map.ts';
 import type { SheetGeometry } from '../../layout/index.ts';
 

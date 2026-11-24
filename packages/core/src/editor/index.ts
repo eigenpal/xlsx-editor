@@ -26,7 +26,7 @@ export {
 } from './color-mode.ts';
 export { createXlsxEditor, type XlsxEditorInstance } from './xlsx-editor.ts';
 export type { DocumentChange, EditorEvents } from './editor-events.ts';
-export type { SavedWorkbook } from './editor-instance.ts';
+export type { SavedWorkbook, SelectionRangeInput } from './editor-instance.ts';
 export {
   CUT_REFUSAL_CODES,
   EDIT_REFUSAL_CODES,
@@ -50,6 +50,7 @@ export {
 export { historyShortcutOf, type HistoryShortcutKeys } from './history-shortcut.ts';
 export type { CellEditMode, EditMove, EditTextOptions } from './cell-editor.ts';
 export { MAX_GO_TO_LENGTH } from './go-to.ts';
+export { MAX_SELECTION_RANGES } from './selection.ts';
 export { MAX_CONTENT_FIELD_CHARS, contentFieldText } from './cell-editor.ts';
 export {
   composesKey,

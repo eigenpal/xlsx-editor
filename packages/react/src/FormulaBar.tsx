@@ -328,7 +328,11 @@ function NameBox(props: {
           if (stepFieldHistory(e, editor, draft !== null || editor.snapshot().editing)) return;
           if (e.key === 'Enter') {
             e.preventDefault();
-            go(editor, e.currentTarget.value);
+            // With no typed text, Enter keeps a selection of several ranges, which the name box
+            // does not show; for one range it goes to that range, as typed text does.
+            if (draft === null && (editor.snapshot().selection?.ranges?.length ?? 0) > 1)
+              editor.focus();
+            else go(editor, e.currentTarget.value);
           } else if (e.key === 'Escape') {
             e.preventDefault();
             e.stopPropagation();

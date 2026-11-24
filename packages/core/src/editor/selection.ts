@@ -1,10 +1,78 @@
 // Cell and range selection on one sheet: pure functions over `GridSelection`, so the keyboard,
 // the pointer, and the tests share one model. The selection stays inside the grid bounds, and a
 // range that meets a merged range grows to cover it, as a merged range selects as one cell.
+//
+// A selection can hold several ranges (`x:selection/@sqref`, `ST_Sqref`, ECMA-376 Part 1,
+// 18.18.76, "can be non-contiguous set of ranges", Part 1, 18.3.1.78). `addRange` adds one and
+// makes it active; `extendTo` extends the active range; `selectCell` and `selectBand` start a
+// selection of one range again.
 
 import type { GridPoint, GridRange, GridSelection } from '../contracts/index.ts';
-import { MAX_COLS, MAX_ROWS, type HistorySelection } from '../store/index.ts';
+import { MAX_COLS, MAX_ROWS, type HistorySelection, type RangeBox } from '../store/index.ts';
 import type { CellRange } from '../layout/index.ts';
+import { selectionRanges } from '../automation/structure-commands.ts';
+
+/**
+ * The most ranges that one selection holds: a press past it adds no range, an open reads no
+ * more, and `selectRanges` refuses more. It bounds the paint, the snapshot state, the commands,
+ * and the announcement of a selection.
+ *
+ * @public
+ */
+export const MAX_SELECTION_RANGES = 64;
+
+/** Whether two ranges have the same corners. */
+export const sameRange = (a: GridRange, b: GridRange): boolean =>
+  a.start.row === b.start.row &&
+  a.start.col === b.start.col &&
+  a.end.row === b.end.row &&
+  a.end.col === b.end.col;
+
+/** Whether a selection holds two or more ranges. */
+export const isMultiRange = (sel: GridSelection): boolean => (sel.ranges?.length ?? 0) > 1;
+
+/**
+ * Add `range` to a selection as its last range, with `active` (a cell of it) as the active cell
+ * and the anchor. Past `MAX_SELECTION_RANGES`, the selection stays as it is.
+ */
+export function addRange(sel: GridSelection, range: GridRange, active: GridPoint): GridSelection {
+  // A range that the selection holds already moves to the end, as the active range: the list
+  // keeps no two equal ranges.
+  const ranges = selectionRanges(sel).filter((r) => !sameRange(r, range));
+  if (ranges.length >= MAX_SELECTION_RANGES) return sel;
+  if (ranges.length === 0) return { sheetIndex: sel.sheetIndex, active, anchor: active, range };
+  const next = [...ranges, range];
+  return {
+    sheetIndex: sel.sheetIndex,
+    active,
+    anchor: active,
+    range,
+    ranges: next,
+    activeRange: next.length - 1,
+  };
+}
+
+/**
+ * Replace the range that holds the active cell with `range`, keeping the other ranges. An
+ * extension can pass through a range equal to another one, by a drag or by Shift and arrows: both
+ * stay, so a further step of the same gesture never loses a range.
+ */
+export function withActiveRange(sel: GridSelection, range: GridRange): GridSelection {
+  if (!isMultiRange(sel)) return { ...sel, range };
+  const at = activeRangeIndex(sel);
+  const ranges = sel.ranges!.map((r, i) => (i === at ? range : r));
+  return { ...sel, range, ranges, activeRange: at };
+}
+
+/** The position of the range that holds the active cell in `selectionRanges(sel)`. */
+export function activeRangeIndex(sel: GridSelection): number {
+  const count = sel.ranges?.length ?? 0;
+  return count > 1 ? indexIn(sel.activeRange ?? count - 1, count, 0) : 0;
+}
+
+/** `at` when it is an integer position in a list of `count` items, else `fallback`. */
+const indexIn = (at: number | undefined, count: number, fallback: number): number =>
+  Number.isInteger(at) && at! >= 0 && at! < count ? at! : fallback;
 
 /** The merged ranges of the sheet, for selection. */
 export type Merges = readonly CellRange[];
@@ -86,7 +154,53 @@ export function selectCell(sheetIndex: number, at: GridPoint, merges: Merges): G
  */
 export function extendTo(sel: GridSelection, to: GridPoint, merges: Merges): GridSelection {
   const range = coverMerges(rangeOf(sel.anchor, clampPoint(to)), merges);
-  return { ...sel, range, active: inRange(range, sel.active) ? sel.active : sel.anchor };
+  const active = inRange(range, sel.active) ? sel.active : sel.anchor;
+  return { ...withActiveRange(sel, range), active };
+}
+
+/**
+ * At most this many merged range checks, for each pass of `coverMerges` (at most 64 passes),
+ * cover the ranges that a sheet opens with.
+ */
+const OPEN_MERGE_CHECKS = 400_000;
+
+/**
+ * The selection that a sheet opens with, from its `x:selection` (`CT_Selection`, ECMA-376
+ * Part 1, 18.3.1.78): the ranges of `@sqref`, each grown to cover the merged ranges it meets,
+ * and the active cell `@activeCell` in the range at `@activeCellId`. When `@activeCellId` is
+ * absent or out of range, the first range that holds `@activeCell` is the active range, as
+ * "when this value is out of range then activeCell can be used". When no range holds the active
+ * cell, or `@sqref` is absent, the selection is the active cell alone. With many merged ranges,
+ * fewer ranges are read, so the merge checks stay bounded; the active range stays.
+ */
+export function openingSelection(
+  sheetIndex: number,
+  opening: {
+    readonly active: GridPoint;
+    readonly ranges: readonly GridRange[];
+    readonly activeRange: number | undefined;
+  },
+  merges: Merges
+): GridSelection {
+  const one = selectCell(sheetIndex, opening.active, merges);
+  const listed = opening.ranges.slice(0, MAX_SELECTION_RANGES);
+  const holds = (r: GridRange) => inRange(r, one.active);
+  let at = opening.activeRange ?? listed.findIndex(holds);
+  if (at < 0 || at >= listed.length) return one;
+  const room = Math.max(1, Math.floor(OPEN_MERGE_CHECKS / Math.max(1, merges.length)));
+  const kept = listed.filter((_, i) => i === at || i < room - 1);
+  at = Math.min(at, kept.length - 1);
+  const grown = kept.map((r) =>
+    coverMerges(rangeOf(clampPoint(r.start), clampPoint(r.end)), merges)
+  );
+  // A range equal to an earlier one, as the file lists it or as merged cells grow it, opens
+  // once: the active range keeps its place among the ranges that stay.
+  const ranges = grown.filter((r, i) => grown.findIndex((o) => sameRange(o, r)) === i);
+  at = ranges.findIndex((r) => sameRange(r, grown[at]!));
+  const range = ranges[at]!;
+  const active = holds(range) ? one.active : selectCell(sheetIndex, range.start, merges).active;
+  const base = { sheetIndex, active, anchor: active, range };
+  return ranges.length > 1 ? { ...base, ranges, activeRange: at } : base;
 }
 
 /** Select whole columns, whole rows, or the whole sheet. */
@@ -155,19 +269,43 @@ export function historyGridSelection(
   s: HistorySelection,
   sheetIndex: number
 ): { selection: GridSelection; focus: GridPoint } {
-  const [top, left, bottom, right] = s.range;
+  const gridRange = ([top, left, bottom, right]: RangeBox): GridRange => ({
+    start: clampPoint({ row: top, col: left }),
+    end: clampPoint({ row: bottom, col: right }),
+  });
+  // A history entry can come from a host transaction: at most `MAX_SELECTION_RANGES` ranges
+  // reach the paint and the live region, as at open.
+  const kept = s.ranges?.slice(0, MAX_SELECTION_RANGES);
+  const ranges = kept && kept.length > 1 ? kept.map(gridRange) : undefined;
+  // A position that is not an integer in `ranges` takes the last range.
+  const at = ranges ? indexIn(s.activeRange, ranges.length, ranges.length - 1) : 0;
+  // When the active range moved, the active cell moves to its first corner, so it stays inside.
+  const active = clampPoint(s.active);
+  const inside = (r: GridRange) =>
+    active.row >= r.start.row &&
+    active.row <= r.end.row &&
+    active.col >= r.start.col &&
+    active.col <= r.end.col;
+  const corner = ranges && !inside(ranges[at]!) ? ranges[at]!.start : undefined;
   return {
     selection: {
       sheetIndex,
-      anchor: clampPoint(s.anchor),
-      active: clampPoint(s.active),
-      range: {
-        start: clampPoint({ row: top, col: left }),
-        end: clampPoint({ row: bottom, col: right }),
-      },
+      anchor: corner ?? clampPoint(s.anchor),
+      active: corner ?? active,
+      range: ranges ? ranges[at]! : gridRange(s.range),
+      ...(ranges ? { ranges, activeRange: at } : {}),
     },
-    focus: clampPoint(s.focus),
+    focus: corner ?? clampPoint(s.focus),
   };
+}
+
+/** The boxes of the ranges of a selection, for a history entry, when it holds several ranges. */
+export function historyRanges(
+  sel: GridSelection
+): Pick<HistorySelection, 'ranges' | 'activeRange'> {
+  if (!isMultiRange(sel)) return {};
+  const box = ({ start, end }: GridRange): RangeBox => [start.row, start.col, end.row, end.col];
+  return { ranges: sel.ranges!.map(box), activeRange: activeRangeIndex(sel) };
 }
 
 /** The words of a selection for the live region, and what they name. */
@@ -203,8 +341,8 @@ export function selectionWords(
     cell === undefined || cell === selection
       ? said
       : t('grid.selectionCell', { selection: said, cell });
-  const { start, end } = sel.range;
-  const range = `${sel.sheetIndex}:${start.row},${start.col}:${end.row},${end.col}`;
+  const box = ({ start, end }: GridRange) => `${start.row},${start.col}:${end.row},${end.col}`;
+  const range = `${sel.sheetIndex}:${selectionRanges(sel).map(box).join(' ')}`;
   return { said, again, range, at: `${sel.active.row},${sel.active.col}`, cell };
 }
 

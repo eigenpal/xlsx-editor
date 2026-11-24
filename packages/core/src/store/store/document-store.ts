@@ -120,23 +120,54 @@ export interface HistoryCell {
  */
 export interface HistorySelection {
   readonly sheet: string;
+  /** The range that holds the active cell. */
   readonly range: RangeBox;
   readonly active: HistoryCell;
   readonly anchor: HistoryCell;
   readonly focus: HistoryCell;
+  /**
+   * Every range of a selection of two or more ranges, in the order of selection, or absent for
+   * one range. `range` is `ranges[activeRange]`.
+   */
+  readonly ranges?: readonly RangeBox[];
+  /** The position in `ranges` of the range that holds the active cell. Present with `ranges`. */
+  readonly activeRange?: number;
 }
 
 const frozenCell = (c: HistoryCell): HistoryCell => Object.freeze({ row: c.row, col: c.col });
 
+/**
+ * The most ranges that a history selection keeps: the editor's `MAX_SELECTION_RANGES`, which the
+ * store lane cannot import. A test keeps the two equal. A host transaction can name more.
+ */
+const HISTORY_RANGES = 64;
+
 /** A frozen copy of a selection, so no caller can change what the history keeps. */
 function frozenSelection(s: HistorySelection): HistorySelection {
-  const [top, left, bottom, right] = s.range;
+  const box = ([top, left, bottom, right]: RangeBox): RangeBox =>
+    Object.freeze([top, left, bottom, right] as const);
+  const kept = s.ranges?.slice(0, HISTORY_RANGES);
+  const ranges = kept && kept.length > 1 ? kept : undefined;
+  // `range` is the active range; past the kept ranges, the last kept range is active.
+  const at = !ranges
+    ? 0
+    : Number.isInteger(s.activeRange) && s.activeRange! >= 0 && s.activeRange! < ranges.length
+      ? s.activeRange!
+      : ranges.length - 1;
+  // When the active range moved, the active cell moves to its first corner, so it stays inside.
+  const holds = (
+    [top, left, bottom, right]: RangeBox,
+    { row, col }: { row: number; col: number }
+  ) => row >= top && row <= bottom && col >= left && col <= right;
+  const moved = ranges !== undefined && !holds(ranges[at]!, s.active);
+  const corner = moved ? { row: ranges[at]![0], col: ranges[at]![1] } : undefined;
   return Object.freeze({
     sheet: s.sheet,
-    range: Object.freeze([top, left, bottom, right] as const),
-    active: frozenCell(s.active),
-    anchor: frozenCell(s.anchor),
-    focus: frozenCell(s.focus),
+    range: box(ranges ? ranges[at]! : s.range),
+    active: frozenCell(corner ?? s.active),
+    anchor: frozenCell(corner ?? s.anchor),
+    focus: frozenCell(corner ?? s.focus),
+    ...(ranges ? { ranges: Object.freeze(ranges.map(box)), activeRange: at } : {}),
   });
 }
 

@@ -1,9 +1,11 @@
 // The name box: read a typed reference and select it (`selectReference`).
 //
 // The text is read by the bounded formula tokenizer (design D4), never by a regular expression,
-// so a long or hostile text costs time in proportion to its capped length. The text must be one
-// reference: a cell (`B2`, `$B$2`), a range (`B2:C5`), whole columns (`C:E`), or whole rows
-// (`3:5`), with an optional sheet name (`Sheet2!A1`, `'My sheet'!A1:B2`), or a defined name
+// so a long or hostile text costs time in proportion to its capped length. Several cell or range
+// references, space delimited (`B2:C4 E5`), select those ranges on the shown sheet. Else the
+// text must be one reference: a cell (`B2`, `$B$2`), a range (`B2:C5`), whole columns (`C:E`),
+// or whole rows (`3:5`), with an optional sheet name (`Sheet2!A1`, `'My sheet'!A1:B2`), or a
+// defined name
 // whose text is one such reference with a sheet name. Letters can be in any case. Anything else
 // is refused with a typed reason, never ignored: a defined name that names no one range on a
 // visible worksheet (`go-to-name`), a sheet that is not a visible worksheet (`go-to-sheet`),
@@ -12,7 +14,7 @@
 // formula on that sheet reads it.
 
 import type { GridPoint, GridSelection } from '../contracts/index.ts';
-import { selectBand } from './selection.ts';
+import { MAX_SELECTION_RANGES, selectBand } from './selection.ts';
 import {
   MAX_COLS,
   MAX_ROWS,
@@ -32,7 +34,7 @@ import {
 import type { EditRefusal, EditResult } from './cell-input.ts';
 import type { CellEditing } from './cell-editing.ts';
 import type { EditorSheet } from './editor-model.ts';
-import type { XlsxEditorInstance } from './editor-instance.ts';
+import type { SelectionRangeInput, XlsxEditorInstance } from './editor-instance.ts';
 
 /** Where a name box reference goes: the sheet position, and the corners of the range. */
 export interface GoToTarget {
@@ -174,6 +176,7 @@ export function goTo(
     readonly active: number;
   } | null,
   editor: Pick<XlsxEditorInstance, 'setActiveSheet'> & {
+    selectRanges(ranges: readonly SelectionRangeInput[], reveal?: GridPoint): boolean;
     select(anchor: GridPoint, focus: GridPoint, reveal: GridPoint): boolean;
     setSelection(selection: GridSelection, focus: GridPoint, reveal?: GridPoint): void;
   }
@@ -181,6 +184,31 @@ export function goTo(
   if (!shown) return edits.refuse({ code: 'not-editable' });
   // The composed text of an open edit belongs to the input method: nothing is read until it ends.
   if (edits.composing) return edits.refuse({ code: 'composing' });
+  // Several references, space delimited, as `ST_Sqref` (ECMA-376 Part 1, 18.18.76) and
+  // `snapshot().selectionRef` write them, select those ranges on the shown sheet; the last one
+  // holds the active cell. Each one reads as one reference of the name box does: a cell, a range,
+  // whole columns or rows, or a defined name, on the shown sheet. A text in which some part does
+  // not read so, such as a sheet name with a space, is read as one reference below.
+  const short = typeof text === 'string' && text.length <= MAX_GO_TO_LENGTH;
+  const tokens = short ? text.trim().split(/\s+/, MAX_SELECTION_RANGES + 1) : [];
+  if (tokens.length > 1) {
+    const read = tokens.map((t) => readGoTo(t, shown.pkg, shown.index, shown.sheets, shown.active));
+    const targets = read.filter((t): t is GoToTarget => !('code' in t) && t.sheet === shown.active);
+    // Past `MAX_SELECTION_RANGES` references, the first `MAX_SELECTION_RANGES + 1` are read:
+    // only text in which each of them reads is too many ranges.
+    if (tokens.length > MAX_SELECTION_RANGES)
+      return edits.refuse({
+        code: targets.length === tokens.length ? 'too-many-ranges' : 'go-to-reference',
+      });
+    if (targets.length === tokens.length) {
+      const committed = edits.commitOpenEdit();
+      if (!committed.ok) return committed;
+      // The view scrolls to the active cell, the first corner of the last range.
+      const ranges = targets.map((t) => ({ anchor: t.anchor, focus: t.focus }));
+      if (editor.selectRanges(ranges, targets[targets.length - 1]!.anchor)) return { ok: true };
+      return edits.refuse({ code: 'go-to-reference' });
+    }
+  }
   const to = readGoTo(text, shown.pkg, shown.index, shown.sheets, shown.active);
   if ('code' in to) return edits.refuse(to);
   // The view scrolls to the active cell, the top-left cell of the range, not to its far corner.

@@ -21,6 +21,7 @@ export const FORMULA_BAR_FEATURES: readonly SupportFeature[] = [
       saveVerified: ['basic-values'],
       tests: [
         `${CORE}/editor/__tests__/formula-bar-edit.test.ts`,
+        `${CORE}/editor/__tests__/several-ranges.test.ts`,
         `${CORE}/editor/__tests__/stale-notice.test.ts`,
         'packages/react/src/__tests__/formula-bar.test.tsx',
       ],
@@ -46,7 +47,7 @@ export const FORMULA_BAR_FEATURES: readonly SupportFeature[] = [
     category: 'viewer',
     status: 'supported',
     notes:
-      'Enter in the name box selects a typed cell, range, whole columns, or whole rows, with an optional sheet name, in any letter case. A defined name goes to its range when its text is one reference with a sheet name; another defined name is refused with `go-to-name`. A sheet that is not a visible worksheet is refused with `go-to-sheet`, and other text with `go-to-reference`.',
+      'Enter in the name box selects a typed cell, range, whole columns, or whole rows, with an optional sheet name, in any letter case. A defined name goes to its range when its text is one reference with a sheet name; another defined name is refused with `go-to-name`. A sheet that is not a visible worksheet is refused with `go-to-sheet`, and other text with `go-to-reference`. Several references, space delimited (`B2:C4 E5` or `A:A C:C`), select those ranges on the shown sheet. A sheet name with a space cannot be one of them. More than `MAX_SELECTION_RANGES` references are refused with `too-many-ranges`. With several ranges selected, the name box shows the active cell, and Enter with no typed text keeps every range.',
     evidence: {
       tests: [
         `${CORE}/editor/__tests__/formula-bar-edit.test.ts`,

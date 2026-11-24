@@ -547,6 +547,73 @@ function clearCreations(
 }
 
 /**
+ * A union of ranges as disjoint row bands, ascending, each with disjoint column runs `[left,
+ * right]`, ascending, all 0-based and inclusive.
+ */
+export type RangeBands = readonly {
+  readonly top: number;
+  readonly bottom: number;
+  readonly runs: readonly (readonly [number, number])[];
+}[];
+
+/**
+ * The `s="0"` cells that clearing the formats of every range of a union creates, as
+ * `clearCreations` counts them for one range: a cell that two ranges hold counts once, as one
+ * command clears it once. One pass reads the rows and one the cells of the sheet, never the
+ * positions of the union, and each finds its band and run by a binary search.
+ */
+export function clearFormatsCreatedIn(root: Element, index: SheetIndex, bands: RangeBands): number {
+  const info = bands.map((b) => {
+    let width = 0;
+    let styled = 0;
+    for (const [left, right] of b.runs) {
+      width += right - left + 1;
+      styled += columnFormats(root, left, right).size;
+    }
+    return { width, styled, rowsIn: 0 };
+  });
+  const bandOf = (row: number): number => {
+    let [lo, hi] = [0, bands.length - 1];
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      const b = bands[mid]!;
+      if (row < b.top) hi = mid - 1;
+      else if (row > b.bottom) lo = mid + 1;
+      else return mid;
+    }
+    return -1;
+  };
+  const inRuns = (runs: readonly (readonly [number, number])[], col: number): boolean => {
+    let [lo, hi] = [0, runs.length - 1];
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      const [left, right] = runs[mid]!;
+      if (col < left) hi = mid - 1;
+      else if (col > right) lo = mid + 1;
+      else return true;
+    }
+    return false;
+  };
+  let count = 0;
+  for (const [row, rowEl] of index.rows) {
+    const i = bandOf(row);
+    if (i < 0) continue;
+    const band = info[i]!;
+    band.rowsIn += 1;
+    const own = rowFormat(rowEl);
+    count += own === undefined ? band.styled : own !== 0 ? band.width : 0;
+  }
+  bands.forEach((b, i) => (count += (b.bottom - b.top + 1 - info[i]!.rowsIn) * info[i]!.styled));
+  if (count === 0) return 0;
+  for (const e of index.cells.values()) {
+    const i = bandOf(e.row);
+    if (i < 0 || !inRuns(bands[i]!.runs, e.col)) continue;
+    if ((rowFormat(index.rows.get(e.row)) ?? columnFormatAt(root, e.col) ?? 0) !== 0) count -= 1;
+  }
+  return count;
+}
+
+/**
  * The `s="0"` cells that clearing the formats of a range creates, when they are more than
  * `MAX_FORMAT_NEW_CELLS`, or null. The range is 0-based and inclusive. A range no larger than
  * the limit returns null at once. The toolbar state and the command read this one count, so they

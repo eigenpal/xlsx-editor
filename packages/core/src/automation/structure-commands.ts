@@ -7,13 +7,36 @@
 // the active cell's row instead. Column commands mirror this. A whole-sheet selection is
 // refused (`isWholeSheet`): it would insert or delete every row or every column.
 
-import type { GridSelection } from '../contracts/neutral.ts';
+import type { GridRange, GridSelection } from '../contracts/neutral.ts';
 import { MAX_COLS, MAX_ROWS, type StructuralOpName, type WorkbookOp } from '../store/index.ts';
+
+/**
+ * Every range of a selection, in the order of selection: `ranges` for a selection of several
+ * ranges (`x:selection/@sqref`, `ST_Sqref`, ECMA-376 Part 1, 18.18.76), else `range` alone.
+ *
+ * @internal
+ */
+export function selectionRanges(selection: GridSelection): readonly GridRange[] {
+  const ranges = selection.ranges;
+  return ranges && ranges.length > 1 ? ranges : [selection.range];
+}
+
+/**
+ * Throw for a selection of several ranges: a command that acts on one range refuses it, never
+ * applies to one of the ranges alone. The editor refuses such a selection before it lowers it.
+ */
+export function requireOneRange(selection: GridSelection, command: string): void {
+  if (selectionRanges(selection).length > 1)
+    throw new RangeError(`${command} acts on one range; the selection has several ranges`);
+}
 
 /** The kind of band that a selection is: whole rows, whole columns, or neither. */
 export type SelectionBand = 'rows' | 'columns' | null;
 
-/** Whether a selection covers whole rows or whole columns. A whole sheet is neither. */
+/**
+ * Whether a selection covers whole rows or whole columns. A whole sheet is neither. It reads
+ * `range`, the range of the active cell, also in a selection of several ranges.
+ */
 export function selectionBand(selection: GridSelection): SelectionBand {
   const { start, end } = selection.range;
   const allCols = start.col === 0 && end.col === MAX_COLS - 1;
@@ -23,18 +46,25 @@ export function selectionBand(selection: GridSelection): SelectionBand {
   return null;
 }
 
-/** Whether a selection covers the whole sheet, which a structural command refuses. */
+/**
+ * Whether a selection covers the whole sheet, which a structural command refuses. It reads
+ * `range`, the range of the active cell, also in a selection of several ranges.
+ */
 export function isWholeSheet(selection: GridSelection): boolean {
   const { start, end } = selection.range;
   return start.col === 0 && end.col === MAX_COLS - 1 && start.row === 0 && end.row === MAX_ROWS - 1;
 }
 
-/** The structural op of a command on a selection of a sheet that is not the whole sheet. */
+/**
+ * The structural op of a command on a selection of a sheet that is not the whole sheet. It
+ * throws a `RangeError` for a selection of several ranges.
+ */
 export function structureOp(
   sheet: string,
   selection: GridSelection,
   name: StructuralOpName
 ): WorkbookOp {
+  requireOneRange(selection, name);
   const rows = name === 'insertRows' || name === 'deleteRows';
   const band = selectionBand(selection);
   const { start, end } = selection.range;

@@ -10,6 +10,7 @@
 
 import type { GridSelection } from '../contracts/neutral.ts';
 import { formatCellRef, type WorkbookOp } from '../store/index.ts';
+import { requireOneRange } from './structure-commands.ts';
 
 /**
  * How a merge treats the selection.
@@ -31,12 +32,16 @@ export interface MergeOptions {
 const ref = (top: number, left: number, bottom: number, right: number): string =>
   `${formatCellRef({ row: top, col: left })}:${formatCellRef({ row: bottom, col: right })}`;
 
-/** The ops that merge the range of `selection` on `sheet`. */
+/**
+ * The ops that merge the range of `selection` on `sheet`. It throws a `RangeError` for a
+ * selection of several ranges.
+ */
 export function mergeOps(
   sheet: string,
   selection: GridSelection,
   options: MergeOptions = {}
 ): WorkbookOp[] {
+  requireOneRange(selection, 'mergeCells');
   const { start, end } = selection.range;
   const range = ref(start.row, start.col, end.row, end.col);
   const ops: WorkbookOp[] = [];
@@ -59,8 +64,12 @@ export function mergeOps(
   return ops;
 }
 
-/** The op that unmerges the merged ranges that the range of `selection` meets on `sheet`. */
+/**
+ * The op that unmerges the merged ranges that the range of `selection` meets on `sheet`. It
+ * throws a `RangeError` for a selection of several ranges.
+ */
 export function unmergeOp(sheet: string, selection: GridSelection): WorkbookOp {
+  requireOneRange(selection, 'unmergeCells');
   const { start, end } = selection.range;
   return { op: 'unmergeCells', sheet, ref: ref(start.row, start.col, end.row, end.col) };
 }

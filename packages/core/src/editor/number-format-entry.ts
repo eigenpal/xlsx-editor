@@ -34,7 +34,7 @@ import {
 import { editingOf } from './cell-editing.ts';
 import { numberFormatCodeProblem, type NumberFormatCodeProblem } from './number-format-code.ts';
 import { resolvedFormatAt } from './editor-model.ts';
-import { selectCell } from './selection.ts';
+import { isMultiRange, selectCell } from './selection.ts';
 import { toolbarCommandState } from './toolbar-commands.ts';
 import type { XlsxEditorInstance } from './xlsx-editor.ts';
 
@@ -119,11 +119,14 @@ export function previewNumberFormat(editor: XlsxEditorInstance, code: string): N
   return done(displayValue(value, format, { locale, date1904: index.date1904 }), sample, stale);
 }
 
-/** True when the selection is the active cell alone, or the merged range that holds it. */
+/**
+ * True when the selection is the active cell alone, or the merged range that holds it. A
+ * selection of several ranges is not, also when the range of the active cell is one cell.
+ */
 function selectsOneCell(editor: XlsxEditorInstance): boolean {
   const editing = editingOf(editor);
   const sel = editing?.target?.selection;
-  if (!editing || !sel) return false;
+  if (!editing || !sel || isMultiRange(sel)) return false;
   const own = selectCell(sel.sheetIndex, sel.active, editing.merges).range;
   const { start, end } = sel.range;
   return (

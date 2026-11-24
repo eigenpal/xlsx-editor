@@ -66,6 +66,7 @@ const GO_TO_CODES: ReadonlySet<EditRefusalCode> = new Set([
   'go-to-reference',
   'go-to-name',
   'go-to-sheet',
+  'too-many-ranges',
 ]);
 
 /**

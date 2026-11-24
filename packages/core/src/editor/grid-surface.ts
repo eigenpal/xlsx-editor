@@ -184,12 +184,15 @@ function clipHead(el: HTMLElement, e: HeadEntry, scale: number, vertical: boolea
     : `inset(0 ${px(after)} 0 ${px(before)})`;
 }
 
-/** Draw the row and column headings of a layout, marking the selected ones. */
+/**
+ * Draw the row and column headings of a layout, marking the ones that a range of `selected`
+ * covers. It reads the shown headings only, once for each range.
+ */
 export function drawHeadings(
   els: SurfaceElements,
   layout: SheetLayout,
   box: StageBox,
-  selected: GridRange | null,
+  selected: readonly GridRange[],
   show: boolean
 ): void {
   const doc = els.stage.ownerDocument;
@@ -209,7 +212,7 @@ export function drawHeadings(
     const el = div(doc, 'xlsx-head');
     el.textContent = columnLetters(e.index + 1);
     el.dataset.col = String(e.index);
-    if (selected && e.index >= selected.start.col && e.index <= selected.end.col)
+    if (selected.some((r) => e.index >= r.start.col && e.index <= r.end.col))
       el.classList.add('xlsx-head-selected');
     place(el, e.start * box.scale, 0, e.size * box.scale, box.headHeight);
     clipHead(el, e, box.scale, false);
@@ -219,7 +222,7 @@ export function drawHeadings(
     const el = div(doc, 'xlsx-head');
     el.textContent = String(e.index + 1);
     el.dataset.row = String(e.index);
-    if (selected && e.index >= selected.start.row && e.index <= selected.end.row)
+    if (selected.some((r) => e.index >= r.start.row && e.index <= r.end.row))
       el.classList.add('xlsx-head-selected');
     place(el, 0, e.start * box.scale, box.headWidth, e.size * box.scale);
     clipHead(el, e, box.scale, true);
@@ -250,23 +253,29 @@ const sameRange = (a: GridRange, b: GridRange) =>
 const PENDING_EDGE = 2;
 
 /**
- * Draw the selection: a tint over `range`, and an outline around `activeRange`, the active cell
- * or the merged range that holds it. A range of one cell, or one that is the active range, gets
- * the outline only. A dashed outline, above them, marks the source range of a pending copy or
- * cut. It has a strip for each edge that shows, inside the range, so a pane seam or the edge of
- * the window adds no line. It lives in this overlay only, never in the canvas of the workbook.
+ * Draw the selection: a tint over each range of `ranges`, and an outline around `activeRange`,
+ * the active cell or the merged range that holds it. A selection of one range that is one cell,
+ * or that is the active range, gets the outline only. In a selection of several ranges, each
+ * range gets the tint and its outline, as one cell does too, so every range shows. Each range is
+ * clipped to the window (`rangeRects`), so a range outside it draws nothing. A dashed outline,
+ * above them, marks the source range of a pending copy or cut. It has a strip for each edge that
+ * shows, inside the range, so a pane seam or the edge of the window adds no line. It lives in this
+ * overlay only, never in the canvas of the workbook.
  */
 export function drawSelection(
   els: SurfaceElements,
   box: StageBox,
   view: ViewState,
-  range: GridRange,
+  ranges: readonly GridRange[],
   activeRange: GridRange,
   pending: GridRange | null = null
 ): void {
+  const range = ranges[0];
   const single =
-    (range.start.row === range.end.row && range.start.col === range.end.col) ||
-    sameRange(activeRange, range);
+    ranges.length === 1 &&
+    range !== undefined &&
+    ((range.start.row === range.end.row && range.start.col === range.end.col) ||
+      sameRange(activeRange, range));
   const activeRects = rangeRects(view, activeRange);
   const doc = els.overlay.ownerDocument;
   place(
@@ -278,11 +287,12 @@ export function drawSelection(
   );
   const out: HTMLElement[] = [];
   if (!single)
-    for (const r of rangeRects(view, range)) {
-      const el = div(doc, 'xlsx-selection-range');
-      place(el, r.x * box.scale, r.y * box.scale, r.width * box.scale, r.height * box.scale);
-      out.push(el);
-    }
+    for (const each of ranges)
+      for (const r of rangeRects(view, each)) {
+        const el = div(doc, 'xlsx-selection-range');
+        place(el, r.x * box.scale, r.y * box.scale, r.width * box.scale, r.height * box.scale);
+        out.push(el);
+      }
   for (const r of activeRects) {
     const el = div(doc, 'xlsx-active-cell');
     place(el, r.x * box.scale, r.y * box.scale, r.width * box.scale, r.height * box.scale);

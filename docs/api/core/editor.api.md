@@ -764,7 +764,7 @@ export const CUSTOM_NUMBER_FORMAT_PREFIX: 'custom:';
 export const customHexDraft: (text: string) => string;
 
 // @public
-export const CUT_REFUSAL_CODES: readonly ["loading", "view-mode", "not-editable", "merged-range", "copy-too-large", "copy-conditional-limit", "copy-array-formula", "copy-unreadable-formula", "copy-wrapped-formula", "cut-wrapped-value", "cell-alternate-content", "shared-formula", "invalid-sheet"];
+export const CUT_REFUSAL_CODES: readonly ["loading", "view-mode", "not-editable", "merged-range", "copy-too-large", "copy-conditional-limit", "copy-array-formula", "copy-unreadable-formula", "copy-wrapped-formula", "cut-wrapped-value", "cell-alternate-content", "shared-formula", "invalid-sheet", "multiple-ranges"];
 
 // @internal
 export function cycleRegion(e: RegionKey, root: HTMLElement, editor: XlsxEditorInstance | null): boolean;
@@ -779,7 +779,7 @@ export interface DecimalSteps {
 export function defaultChromeGroups(): readonly ChromeGroup[];
 
 // @public
-export const DISABLED_REASON_KEYS: readonly ['disabledReason.editorNotReady', 'disabledReason.loading', 'disabledReason.notWired', 'disabledReason.nothingToUndo', 'disabledReason.nothingToRedo', 'disabledReason.editPending', 'disabledReason.rangeTooLarge', 'disabledReason.clearTooLarge', 'disabledReason.structureBlocked', 'disabledReason.structureBlockedUnnamed', 'disabledReason.structureUnavailable', 'disabledReason.wholeSheet', 'disabledReason.noSave', 'disabledReason.viewMode', 'disabledReason.locked', 'disabledReason.cellAlternateContent', 'disabledReason.cellAlternateContentClearAll', 'disabledReason.formulaRange', 'disabledReason.formulaRangeClearAll', 'disabledReason.formulaCell', 'disabledReason.formulaCellClearAll', 'disabledReason.formulaUnreadable', 'disabledReason.formulaUnreadableClearAll', 'disabledReason.formatLocked', 'disabledReason.stylesUnread', 'disabledReason.stylesUnreadProtected', 'disabledReason.structureLocked', 'disabledReason.workbookLocked', 'disabledReason.lastSheet', 'disabledReason.notWorksheet', 'disabledReason.sheetEditBlocked', 'disabledReason.sheetOrderBlocked', 'disabledReason.composing', 'disabledReason.decimalsNoNumberSelection', 'disabledReason.decimalsNoNumber', 'disabledReason.decimalsNoShownPlaces', 'disabledReason.decimalsGeneralSection', 'disabledReason.decimalsGeneralSectionSelection', 'disabledReason.decimalsDate', 'disabledReason.decimalsDateSelection', 'disabledReason.decimalsText', 'disabledReason.decimalsTextSelection', 'disabledReason.decimalsFraction', 'disabledReason.decimalsFractionSelection', 'disabledReason.decimalsNoDecimals', 'disabledReason.decimalsNoDecimalsSelection', 'disabledReason.decimalsNoDecimalsCellSelection', 'disabledReason.decimalsMaxDecimals', 'disabledReason.decimalsMaxDecimalsSelection', 'disabledReason.decimalsMaxDecimalsCellSelection', 'disabledReason.decimalsTooLong', 'disabledReason.decimalsTooLongSelection', 'disabledReason.decimalsUnreadable', 'disabledReason.decimalsUnreadableSelection', 'disabledReason.decimalsNoCode', 'disabledReason.decimalsNoCodeSelection', 'disabledReason.decimalsMissingCode', 'disabledReason.decimalsMissingCodeSelection', 'disabledReason.decimalsTooLarge', 'disabledReason.mergeLocked', 'disabledReason.mergeOneCell', 'disabledReason.mergeOverlap', 'disabledReason.mergeDropsValues', 'disabledReason.noMergedRange', 'disabledReason.noOpen', 'disabledReason.noClipboard', 'disabledReason.zoomMax', 'disabledReason.zoomMin', 'disabledReason.zoomActual'];
+export const DISABLED_REASON_KEYS: readonly ['disabledReason.editorNotReady', 'disabledReason.loading', 'disabledReason.notWired', 'disabledReason.nothingToUndo', 'disabledReason.nothingToRedo', 'disabledReason.editPending', 'disabledReason.rangeTooLarge', 'disabledReason.clearTooLarge', 'disabledReason.structureBlocked', 'disabledReason.structureBlockedUnnamed', 'disabledReason.structureUnavailable', 'disabledReason.wholeSheet', 'disabledReason.multipleRanges', 'disabledReason.noSave', 'disabledReason.viewMode', 'disabledReason.locked', 'disabledReason.cellAlternateContent', 'disabledReason.cellAlternateContentClearAll', 'disabledReason.formulaRange', 'disabledReason.formulaRangeClearAll', 'disabledReason.formulaCell', 'disabledReason.formulaCellClearAll', 'disabledReason.formulaUnreadable', 'disabledReason.formulaUnreadableClearAll', 'disabledReason.formatLocked', 'disabledReason.stylesUnread', 'disabledReason.stylesUnreadProtected', 'disabledReason.structureLocked', 'disabledReason.workbookLocked', 'disabledReason.lastSheet', 'disabledReason.notWorksheet', 'disabledReason.sheetEditBlocked', 'disabledReason.sheetOrderBlocked', 'disabledReason.composing', 'disabledReason.decimalsNoNumberSelection', 'disabledReason.decimalsNoNumber', 'disabledReason.decimalsNoShownPlaces', 'disabledReason.decimalsGeneralSection', 'disabledReason.decimalsGeneralSectionSelection', 'disabledReason.decimalsDate', 'disabledReason.decimalsDateSelection', 'disabledReason.decimalsText', 'disabledReason.decimalsTextSelection', 'disabledReason.decimalsFraction', 'disabledReason.decimalsFractionSelection', 'disabledReason.decimalsNoDecimals', 'disabledReason.decimalsNoDecimalsSelection', 'disabledReason.decimalsNoDecimalsCellSelection', 'disabledReason.decimalsMaxDecimals', 'disabledReason.decimalsMaxDecimalsSelection', 'disabledReason.decimalsMaxDecimalsCellSelection', 'disabledReason.decimalsTooLong', 'disabledReason.decimalsTooLongSelection', 'disabledReason.decimalsUnreadable', 'disabledReason.decimalsUnreadableSelection', 'disabledReason.decimalsNoCode', 'disabledReason.decimalsNoCodeSelection', 'disabledReason.decimalsMissingCode', 'disabledReason.decimalsMissingCodeSelection', 'disabledReason.decimalsTooLarge', 'disabledReason.mergeLocked', 'disabledReason.mergeOneCell', 'disabledReason.mergeOverlap', 'disabledReason.mergeDropsValues', 'disabledReason.noMergedRange', 'disabledReason.noOpen', 'disabledReason.noClipboard', 'disabledReason.zoomMax', 'disabledReason.zoomMin', 'disabledReason.zoomActual'];
 
 // @public
 export type DisabledReasonKey = (typeof DISABLED_REASON_KEYS)[number];
@@ -797,7 +797,7 @@ export interface DocumentChange {
 }
 
 // @public
-export const EDIT_REFUSAL_CODES: readonly ['unknown-sheet', 'bad-reference', 'bad-value', 'text-too-long', 'bad-size', 'merge-one-cell', 'merge-overlap', 'merge-drops-values', 'bad-position', 'invalid-sheet', 'shared-formula', 'unreadable-formula', 'formula-syntax', 'r1c1-formula', 'unsupported-function', 'unknown-formula-reference', 'invalid-character', 'unsupported-package', 'cell-alternate-content', 'bad-format', 'unreadable-number-format', 'range-too-large', 'clear-too-large', 'decimals-too-large', 'decimals-unchanged', 'style-limit', 'invalid-part', 'locked', 'structure-blocked', 'sheet-range-blocked', 'grid-full', 'stale-revision', 'save-failed', 'open-failed', 'sheet-name-invalid', 'sheet-name-too-long', 'sheet-name-taken', 'sheet-name-ambiguous', 'last-sheet', 'nothing-to-undo', 'nothing-to-redo', 'not-editable', 'whole-sheet', 'merged-range', 'paste-html', 'clipboard-read', 'copy-too-large', 'copy-conditional-limit', 'copy-array-formula', 'copy-unreadable-formula', 'copy-wrapped-formula', 'paste-unreadable-formula', 'paste-name-scope', 'cut-wrapped-value', 'cut-expired', 'copy-expired', 'paste-reference-outside', 'too-many-rows', 'resize-anchor', 'view-mode', 'composing', 'edit-pending', 'edit-dropped', 'loading', 'go-to-reference', 'go-to-name', 'go-to-sheet'];
+export const EDIT_REFUSAL_CODES: readonly ['unknown-sheet', 'bad-reference', 'bad-value', 'text-too-long', 'bad-size', 'merge-one-cell', 'merge-overlap', 'merge-drops-values', 'bad-position', 'invalid-sheet', 'shared-formula', 'unreadable-formula', 'formula-syntax', 'r1c1-formula', 'unsupported-function', 'unknown-formula-reference', 'invalid-character', 'unsupported-package', 'cell-alternate-content', 'bad-format', 'unreadable-number-format', 'range-too-large', 'clear-too-large', 'decimals-too-large', 'decimals-unchanged', 'style-limit', 'invalid-part', 'locked', 'structure-blocked', 'sheet-range-blocked', 'grid-full', 'stale-revision', 'save-failed', 'open-failed', 'sheet-name-invalid', 'sheet-name-too-long', 'sheet-name-taken', 'sheet-name-ambiguous', 'last-sheet', 'nothing-to-undo', 'nothing-to-redo', 'not-editable', 'whole-sheet', 'multiple-ranges', 'too-many-ranges', 'merged-range', 'paste-html', 'clipboard-read', 'copy-too-large', 'copy-conditional-limit', 'copy-array-formula', 'copy-unreadable-formula', 'copy-wrapped-formula', 'paste-unreadable-formula', 'paste-name-scope', 'cut-wrapped-value', 'cut-expired', 'copy-expired', 'paste-reference-outside', 'too-many-rows', 'resize-anchor', 'view-mode', 'composing', 'edit-pending', 'edit-dropped', 'loading', 'go-to-reference', 'go-to-name', 'go-to-sheet'];
 
 // @public
 export type EditMove = 'down' | 'up' | 'right' | 'left';
@@ -909,7 +909,6 @@ export interface EditorSnapshot {
     readonly protection: SheetProtection | null;
     readonly refusal: EditRefusal | null;
     readonly revision: number;
-    // (undocumented)
     readonly selection: GridSelection | null;
     readonly selectionContentBlocked: string | null;
     readonly selectionContentLocked: boolean;
@@ -1163,10 +1162,11 @@ export interface GridRange {
 export interface GridSelection {
     // (undocumented)
     readonly active: GridPoint;
+    readonly activeRange?: number;
     // (undocumented)
     readonly anchor: GridPoint;
-    // (undocumented)
     readonly range: GridRange;
+    readonly ranges?: readonly GridRange[];
     // (undocumented)
     readonly sheetIndex: number;
 }
@@ -1313,6 +1313,9 @@ export const MAX_ROW_HEIGHT = 409;
 
 // @public
 export const MAX_ROWS = 1048576;
+
+// @public
+export const MAX_SELECTION_RANGES = 64;
 
 // @public (undocumented)
 export const MAX_ZOOM = 4;
@@ -1971,6 +1974,12 @@ export interface SavedWorkbook {
 // @internal
 export function scrollIntoNearestScroller(target: HTMLElement, within?: Element | null): void;
 
+// @public
+export interface SelectionRangeInput {
+    readonly anchor: GridPoint;
+    readonly focus?: GridPoint;
+}
+
 // @internal
 export const SHEET_MENU_ITEM = "[role=\"menuitem\"]";
 
@@ -2417,6 +2426,7 @@ export interface XlsxEditorInstance {
     saveInTasks(): Promise<SavedWorkbook | null>;
     select(anchor: GridPoint, focus?: GridPoint): boolean;
     selectAll(): void;
+    selectRanges(ranges: readonly SelectionRangeInput[]): boolean;
     selectReference(reference: string): EditResult;
     setActiveSheet(index: number): boolean;
     setColumnWidth(first: number, last: number, width: number): EditResult;

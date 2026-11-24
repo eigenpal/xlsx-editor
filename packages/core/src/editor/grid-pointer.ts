@@ -1,6 +1,10 @@
 // The pointer input of the grid surface: a press on a cell selects it, a press on a heading
 // selects whole rows or columns, a press on the corner selects the sheet, Shift extends, and a
-// drag extends the selection until the pointer goes up. A press commits the open cell edit
+// drag extends the selection until the pointer goes up. A press with the platform modifier
+// (Command on Apple platforms, Control elsewhere) adds the cell or the heading band as a new
+// range of the selection (`addRange`), and its drag extends that range; Shift then extends the
+// range that holds the active cell. A plain press starts a selection of one range again. A press
+// commits the open cell edit
 // first; a refused commit keeps the editor and the selection. A press on the edge of a heading
 // starts a resize drag instead (`grid-resize.ts`), and selects nothing. A double-click on that
 // edge fits the columns or rows to their content (`grid-fit.ts`).
@@ -11,7 +15,18 @@
 
 import type { GridPoint, GridSelection } from '../contracts/index.ts';
 import { windowScale } from './host-frame.ts';
-import { inRange, selectBand } from './selection.ts';
+import { hostWindowOf } from './host-realm.ts';
+import { isApplePlatform } from './chrome-menus.ts';
+import { selectionRanges } from '../automation/structure-commands.ts';
+import {
+  addRange,
+  inRange,
+  isMultiRange,
+  selectBand,
+  selectCell,
+  withActiveRange,
+  type Merges,
+} from './selection.ts';
 import { cellAtPoint } from './view-map.ts';
 import {
   ResizeDrag,
@@ -44,6 +59,8 @@ export interface GridPointerHost {
   select(anchor: GridPoint, focus?: GridPoint): void;
   /** Extend the selection from its anchor to `to` (`extendTo`), and reveal `to`. */
   extend(to: GridPoint): void;
+  /** The merged ranges of the shown sheet, which a press that adds a range covers. */
+  merges(): Merges;
   /** Commit the open cell edit; false when the store refused it. */
   commitOpenEdit(): boolean;
   focus(): void;
@@ -51,6 +68,8 @@ export interface GridPointerHost {
   refusal(): EditRefusal | null;
   /** Show a refusal again, through the refusal channel. */
   showRefusal(refusal: EditRefusal): void;
+  /** Whether a host listens to `contextMenu`, so a press of its gesture selects nothing. */
+  hasContextMenu(): boolean;
   /**
    * Set the size of columns or rows (0-based), as the editor's `setColumnWidth`, or fit them to
    * their content (`'fit'`, `grid-fit.ts`).
@@ -69,7 +88,28 @@ export interface GridPointerHost {
  */
 function keepActive(band: GridSelection, from: GridSelection): GridSelection {
   const active = inRange(band.range, from.active) ? from.active : from.anchor;
+  // In a selection of several ranges, the band takes the place of the range of the active cell.
+  if (isMultiRange(from)) return { ...withActiveRange(from, band.range), active };
   return { ...band, active, anchor: from.anchor };
+}
+
+/**
+ * Whether a press adds a range to the selection: the platform modifier is down, Command on an
+ * Apple platform, else Control. On an Apple platform, Control and a press opens a context menu.
+ */
+function addsRange(e: PointerEvent, target: Element | undefined): boolean {
+  if (e.shiftKey || e.altKey) return false;
+  const apple = isApplePlatform(target ? hostWindowOf(target).navigator : undefined);
+  return apple ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
+}
+
+/**
+ * Whether a press is the context-menu gesture of an Apple platform: Control and a primary press.
+ * It selects nothing; the `contextmenu` event that follows keeps a selection that holds the cell.
+ */
+function appleContextPress(e: PointerEvent, target: Element | undefined): boolean {
+  if (!e.ctrlKey || e.metaKey || e.button !== 0 || e.pointerType === 'touch') return false;
+  return isApplePlatform(target ? hostWindowOf(target).navigator : undefined);
 }
 
 /** How far a touch can move, in CSS pixels, and still be a tap. */
@@ -166,10 +206,13 @@ export class GridPointer {
               at.kind === 'columns' ? at.cell.col : at.cell.row,
               at.kind === 'columns' ? at.cell.col : at.cell.row
             );
-    const range = cur.selection.range;
-    const holds = target
-      ? inRange(range, target.range.start) && inRange(range, target.range.end)
-      : inRange(range, (at as { cell: GridPoint }).cell);
+    // A press inside any range of the selection keeps every range, so a command of the menu
+    // applies to all of them.
+    const holds = selectionRanges(cur.selection).some((range) =>
+      target
+        ? inRange(range, target.range.start) && inRange(range, target.range.end)
+        : inRange(range, (at as { cell: GridPoint }).cell)
+    );
     if (!holds) {
       if (target) this.#host.setSelection(target, target.active, target.active);
       else this.#host.select((at as { cell: GridPoint }).cell);
@@ -214,7 +257,12 @@ export class GridPointer {
     cur: NonNullable<ReturnType<GridPointerHost['current']>>,
     resize: { readonly edge: ResizeEdge; readonly painted: PaintedGrid } | null
   ): void {
-    this.#edgePress = resize ? { edge: resize.edge, x: e.clientX, y: e.clientY } : null;
+    // The context-menu gesture of an Apple platform starts no resize either.
+    // With no context menu to open, the press selects, as before the gesture had a menu.
+    const context =
+      this.#host.hasContextMenu() && appleContextPress(e, this.#host.painted()?.stage);
+    this.#edgePress = resize && !context ? { edge: resize.edge, x: e.clientX, y: e.clientY } : null;
+    if (context) return;
     if (resize) {
       this.#resize.down(e, resize.edge, resize.painted);
       return;
@@ -224,7 +272,24 @@ export class GridPointer {
       this.#host.setSelection(all, all.active);
       return;
     }
-    if (at.kind === 'columns' || at.kind === 'rows') {
+    const adds = e.pointerType !== 'touch' && addsRange(e, this.#host.painted()?.stage);
+    if (adds) {
+      // The new range is the cell (or its merged range), or the band of the heading.
+      const one =
+        at.kind === 'cells'
+          ? selectCell(cur.sheet, at.cell, this.#host.merges())
+          : selectBand(
+              cur.sheet,
+              at.kind,
+              at.kind === 'columns' ? at.cell.col : at.cell.row,
+              at.kind === 'columns' ? at.cell.col : at.cell.row
+            );
+      const next = addRange(cur.selection, one.range, one.active);
+      // At `MAX_SELECTION_RANGES` no range is added: the press refuses with `too-many-ranges`,
+      // which the live region announces, and starts no drag.
+      if (next === cur.selection) return this.#host.showRefusal({ code: 'too-many-ranges' });
+      this.#host.setSelection(next, at.kind === 'cells' ? one.active : at.cell, at.cell);
+    } else if (at.kind === 'columns' || at.kind === 'rows') {
       const i = at.kind === 'columns' ? at.cell.col : at.cell.row;
       const anchor = e.shiftKey
         ? at.kind === 'columns'
@@ -266,6 +331,7 @@ export class GridPointer {
     const at = this.hit(e);
     if (!at || at.kind === 'corner') return;
     if (drag.kind === 'cells') {
+      // `extendTo` extends the range of the active cell: the added range of a modifier drag.
       if (at.cell.row !== cur.focus.row || at.cell.col !== cur.focus.col)
         this.#host.extend(at.cell);
       return;

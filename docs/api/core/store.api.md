@@ -370,12 +370,13 @@ export type HistoryOp = WorkbookOp | InverseOp;
 export interface HistorySelection {
     // (undocumented)
     readonly active: HistoryCell;
+    readonly activeRange?: number;
     // (undocumented)
     readonly anchor: HistoryCell;
     // (undocumented)
     readonly focus: HistoryCell;
-    // (undocumented)
     readonly range: RangeBox;
+    readonly ranges?: readonly RangeBox[];
     // (undocumented)
     readonly sheet: string;
 }

@@ -2,7 +2,7 @@
 // and its formula, or the reference of a range. Split from `editor-model.ts`, so that each file
 // stays within its line limit.
 
-import type { GridPoint, GridRange, GridSelection } from '../contracts/index.ts';
+import type { GridPoint, GridSelection } from '../contracts/index.ts';
 import {
   attr,
   cellKey,
@@ -22,10 +22,12 @@ import {
 } from '../cascade/index.ts';
 import type { EditorTranslate } from './cell-input.ts';
 import type { ShownGeneralText } from './decimal-selection.ts';
-import { selectCell, type Merges } from './selection.ts';
+import { sameRange, selectCell, type Merges } from './selection.ts';
 import { contentFieldText } from './cell-editor.ts';
 import { cellContent, selectionRef } from './editor-model.ts';
+import { rangeRef } from './selection-ranges.ts';
 import { isWholeSheet, selectionBand } from '../automation/index.ts';
+import { selectionRanges } from '../automation/structure-commands.ts';
 
 /**
  * What the live region says about one active cell: its reference, the text that the grid
@@ -88,9 +90,10 @@ function heardStart(text: string, t: EditorTranslate): string {
 }
 
 /**
- * What the live region says about a selection: the range of a selection of more than one
- * cell, else the active cell as `cellAnnouncement` reads it. A merged cell is one cell, so its
- * range announces as the cell. `rules` is the flag of `cellAnnouncement`.
+ * What the live region says about a selection: every range of a selection of several ranges,
+ * the range of a selection of more than one cell, else the active cell as `cellAnnouncement`
+ * reads it. A merged cell is one cell, so its range announces as the cell. `rules` is the flag
+ * of `cellAnnouncement`.
  */
 export function selectionAnnouncement(
   pkg: XlsxPackage,
@@ -103,6 +106,12 @@ export function selectionAnnouncement(
   rules = true,
   shown?: ShownGeneralText
 ): string {
+  const ranges = selectionRanges(sel);
+  if (ranges.length > 1)
+    return t('grid.selectedRanges', {
+      count: String(ranges.length),
+      ranges: ranges.map(rangeRef).join(', '),
+    });
   const own = selectCell(sel.sheetIndex, sel.active, merges).range;
   if (!sameRange(own, sel.range)) return rangeAnnouncement(sel, t);
   return cellAnnouncement(pkg, index, partName, sel.active, locale, t, rules, shown);
@@ -127,13 +136,4 @@ function rangeAnnouncement(sel: GridSelection, t: EditorTranslate): string {
       : t('grid.selectedColumns', { first: col(start.col), last: col(end.col) });
   }
   return t('grid.selectedRange', { range: selectionRef(sel) });
-}
-
-function sameRange(a: GridRange, b: GridRange): boolean {
-  return (
-    a.start.row === b.start.row &&
-    a.start.col === b.start.col &&
-    a.end.row === b.end.row &&
-    a.end.col === b.end.col
-  );
 }

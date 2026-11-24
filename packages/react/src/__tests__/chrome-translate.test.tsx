@@ -15,7 +15,7 @@ import {
   useChromeDir,
   useChromeTranslate,
   useTranslation,
-  type ChromeTranslate,
+  type ChromePartTranslate,
   type FontSource,
   type Translations,
   type XlsxEditorInstance,
@@ -50,7 +50,7 @@ const workbook = buildXlsx({
 
 /** A resolver for the keys it holds; every other key is left to the inherited translator. */
 const only =
-  (labels: Record<string, string>): ChromeTranslate =>
+  (labels: Record<string, string>): ChromePartTranslate =>
   (key, params) => {
     const text = Object.hasOwn(labels, key) ? labels[key]! : undefined;
     return text?.replace(/\{(\w+)\}/g, (_, name: string) => String(params?.[name]));
@@ -58,7 +58,7 @@ const only =
 
 interface PartsProps {
   readonly locale?: Translations;
-  readonly t?: ChromeTranslate;
+  readonly t?: ChromePartTranslate;
   readonly children?: ReactNode;
   readonly onReady?: (editor: XlsxEditorInstance) => void;
 }
@@ -93,7 +93,7 @@ const ready = async (view: ReturnType<typeof render>) =>
 
 describe('useChromeTranslate', () => {
   test('an override wins with its placeholders filled, and other keys read the root locale', async () => {
-    const seen: (string | undefined)[] = [];
+    const seen: string[] = [];
     const overrides = new Map([['zoom.resetAt', 'Zoom {level}, press to reset']]);
     function Probe() {
       const t = useChromeTranslate(overrides);
@@ -110,7 +110,7 @@ describe('useChromeTranslate', () => {
 
   test('an override picks its plural branch with the plural rules of the root locale', () => {
     const overrides = new Map([['formulaBar.lines', '{count, plural, few {# (few)} other {#}}']]);
-    const seen: (string | undefined)[] = [];
+    const seen: string[] = [];
     function Probe() {
       const t = useChromeTranslate(overrides);
       seen.push(t('formulaBar.lines', { count: 3 }));
@@ -147,7 +147,7 @@ describe('useChromeTranslate', () => {
   });
 
   test('inside a part with t, it reads that t first', () => {
-    const seen: (string | undefined)[] = [];
+    const seen: string[] = [];
     function Probe() {
       const t = useChromeTranslate();
       seen.push(t('formattingBar.bold'));
@@ -166,7 +166,7 @@ describe('useChromeTranslate', () => {
   });
 
   test('outside a root, it reads English', () => {
-    const seen: (string | undefined)[] = [];
+    const seen: string[] = [];
     function Probe() {
       seen.push(useChromeTranslate()('zoom.zoomIn'));
       return null;
@@ -222,7 +222,7 @@ describe('the t prop of each part', () => {
 
   test('a change of t relabels the part and keeps it mounted', async () => {
     function Switch() {
-      const [t, setT] = useState<ChromeTranslate | undefined>(undefined);
+      const [t, setT] = useState<ChromePartTranslate | undefined>(undefined);
       return (
         <>
           <button type="button" onClick={() => setT(() => only({ 'formattingBar.label': 'Bar' }))}>
@@ -340,7 +340,7 @@ describe('a t that throws', () => {
     const warn = console.warn;
     console.warn = (line: string) => void warnings.push(line);
     try {
-      const t: ChromeTranslate = (key) => {
+      const t: ChromePartTranslate = (key) => {
         if (key === 'zoom.zoomIn') throw new Error('broken');
         return undefined;
       };

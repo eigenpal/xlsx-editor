@@ -197,6 +197,7 @@
       "ChromeGroup",
       "ChromeGroupId",
       "ChromeHint",
+      "ChromePartTranslate",
       "ChromeSlotId",
       "ChromeTranslate",
       "CLIPBOARD_TYPE",

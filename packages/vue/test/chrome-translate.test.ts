@@ -21,7 +21,7 @@ import {
   useChromeDir,
   useChromeTranslate,
   useTranslation,
-  type ChromeTranslate,
+  type ChromePartTranslate,
   type Translations,
   type XlsxEditorInstance,
 } from '../src/index.ts';
@@ -39,7 +39,7 @@ const workbook = buildXlsx({
 
 /** A resolver for the keys it holds; every other key is left to the inherited translator. */
 const only =
-  (labels: Record<string, string>): ChromeTranslate =>
+  (labels: Record<string, string>): ChromePartTranslate =>
   (key, params) => {
     const text = Object.hasOwn(labels, key) ? labels[key]! : undefined;
     return text?.replace(/\{(\w+)\}/g, (_, name: string) => String(params?.[name]));
@@ -47,7 +47,7 @@ const only =
 
 interface PartsOptions {
   readonly locale?: Translations;
-  readonly t?: ChromeTranslate;
+  readonly t?: ChromePartTranslate;
   readonly children?: () => VNodeChild;
   readonly onReady?: (editor: XlsxEditorInstance) => void;
 }
@@ -227,7 +227,7 @@ describe('the t prop of each part', () => {
   });
 
   test('a change of t relabels the part and keeps it mounted', async () => {
-    const t = shallowRef<ChromeTranslate | undefined>(undefined);
+    const t = shallowRef<ChromePartTranslate | undefined>(undefined);
     const view = mount(() => parts(t.value ? { t: t.value } : {}));
     await tabsShow(view);
     const bar = view.getByRole('toolbar');
@@ -326,11 +326,11 @@ describe('a t that throws', () => {
     const warn = console.warn;
     console.warn = (line: string) => void warnings.push(line);
     try {
-      const t: ChromeTranslate = (key) => {
+      const t: ChromePartTranslate = (key) => {
         if (key === 'zoom.zoomIn') throw new Error('broken');
         return undefined;
       };
-      const current = shallowRef<ChromeTranslate>(t);
+      const current = shallowRef<ChromePartTranslate>(t);
       const view = mount(() => parts({ t: current.value }));
       await tabsShow(view);
       expect(view.getByRole('button', { name: 'Zoom in' })).toBeTruthy();

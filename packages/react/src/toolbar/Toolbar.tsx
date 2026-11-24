@@ -57,7 +57,7 @@ import {
   type SavedWorkbook,
   type ToolbarArrangement,
   type ToolbarHost,
-  type ChromeTranslate,
+  type ChromePartTranslate,
 } from '@xlsx-editor.dev/core/editor';
 import { ToolbarAction, ToolbarSeparator } from './action.tsx';
 import { TOOLBAR_PARTS, type ToolbarNamedParts } from './named-parts.tsx';
@@ -136,7 +136,7 @@ export interface XlsxEditorToolbarProps {
    * leaves unresolved reads the root's `locale`. Keep it stable, for example from
    * `useChromeTranslate(overrides)`: a new function measures the bar again.
    */
-  readonly t?: ChromeTranslate;
+  readonly t?: ChromePartTranslate;
   /**
    * Slot ids to leave out, such as `['file.save']`. A group whose slots are all hidden is left
    * out with its separator. The order of the list does not matter.

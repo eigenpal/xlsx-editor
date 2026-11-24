@@ -404,6 +404,9 @@ export interface ChromeHint {
     readonly key: ToolbarHintKey;
 }
 
+// @public
+export type ChromePartTranslate = (key: string, params?: Readonly<Record<string, string | number>>) => string | undefined;
+
 // @internal
 export interface ChromePress {
     // (undocumented)
@@ -425,10 +428,10 @@ export function chromeSlotId(group: {
 }): ChromeSlotId;
 
 // @public
-export type ChromeTranslate = (key: string, params?: Readonly<Record<string, string | number>>) => string | undefined;
+export type ChromeTranslate = (key: string, params?: Readonly<Record<string, string | number>>) => string;
 
 // @internal
-export function chromeTranslator(base: TFunction, overrides: ReadonlyMap<string, string> | undefined, lang: string): (key: string, params?: Readonly<Record<string, string | number>>) => string;
+export function chromeTranslator(base: TFunction, overrides: ReadonlyMap<string, string> | undefined, lang: string): ChromeTranslate;
 
 // @public
 export const CLIPBOARD_TYPE = "application/x-xlsx-editor";
@@ -1191,7 +1194,7 @@ export interface PartPastLimit {
 }
 
 // @internal
-export function partTranslator(inherited: TFunction, t: ChromeTranslate | undefined, onError?: (key: string, error: unknown) => void): TFunction;
+export function partTranslator(inherited: TFunction, t: ChromePartTranslate | undefined, onError?: (key: string, error: unknown) => void): TFunction;
 
 // @public
 export interface PasteData {

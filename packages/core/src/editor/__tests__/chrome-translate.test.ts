@@ -15,7 +15,7 @@ import {
   chromeTranslator,
   partTranslator,
   warnPartTranslateError,
-  type ChromeTranslate,
+  type ChromePartTranslate,
 } from '../chrome-translate.ts';
 
 const english = createT(en);
@@ -82,7 +82,7 @@ describe('partTranslator', () => {
 
   test('t wins and receives the key and its values', () => {
     const seen: unknown[] = [];
-    const t: ChromeTranslate = (key, params) => {
+    const t: ChromePartTranslate = (key, params) => {
       seen.push([key, params]);
       return key === 'zoom.resetAt' ? `Reset (${params?.['level']})` : `[${key}]`;
     };
@@ -96,7 +96,7 @@ describe('partTranslator', () => {
   });
 
   test('a key that t leaves unresolved reads the inherited translator', () => {
-    const t: ChromeTranslate = (key) => (key === 'zoom.zoomIn' ? 'Larger' : undefined);
+    const t: ChromePartTranslate = (key) => (key === 'zoom.zoomIn' ? 'Larger' : undefined);
     const part = partTranslator(english, t);
     expect(part('zoom.zoomIn')).toBe('Larger');
     expect(part('zoom.zoomOut')).toBe('Zoom out');

@@ -64,7 +64,7 @@ Pass a comparator for an object slice. Common fields include `status`, `sheets`,
 | `useEditorCommand(slot)` | `EditorCommandState` | One toolbar command. See [Connect a command button](#connect-a-command-button). |
 | `useEditorColorMode()` | `{ colorMode }` | `'light'` or `'dark'`, after `'system'` resolves. |
 | `useTranslation()` | `{ t, catalogue, lang, dir }` | The translator of the nearest catalog (the root's `locale` or a `LocaleProvider`), the merged catalog, its BCP 47 tag, and the direction of its strings. See [Language](/docs/customization/language). |
-| `useChromeTranslate(overrides?)` | `ChromeTranslate` | A `t` for a part's `t` prop: the nearest part's `t` or catalog, with `overrides` first. See [Language](/docs/customization/language#override-labels-in-one-part). |
+| `useChromeTranslate(overrides?)` | `ChromeTranslate` | A `t` that always returns a string, for a part's `t` prop: the nearest part's `t` or catalog, with `overrides` first. See [Language](/docs/customization/language#override-labels-in-one-part). |
 | `useChromeDir()` | `'ltr' \| 'rtl' \| undefined` | The chrome direction that a catalog or a `LocaleProvider` decided. |
 | `useViewModeWaits()` | `boolean` | `true` while a change of the `mode` prop to view mode waits for the open cell edit. |
 

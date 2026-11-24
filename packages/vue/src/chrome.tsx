@@ -15,7 +15,7 @@ import {
   statusSlice,
   statusView,
   zoomSlice,
-  type ChromeTranslate,
+  type ChromePartTranslate,
 } from '@xlsx-editor.dev/core/editor';
 import { useEditorState, useLayoutPart, useViewModeWaits, useXlsxEditor } from './context.ts';
 import { ZoomInIcon, ZoomOutIcon } from './icons.tsx';
@@ -27,7 +27,7 @@ const zoomControlProps = {
    * `t` prop. A key that it leaves unresolved reads the root's `locale`. Keep it stable, for
    * example from `useChromeTranslate(overrides)`.
    */
-  t: { type: Function as PropType<ChromeTranslate>, default: undefined },
+  t: { type: Function as PropType<ChromePartTranslate>, default: undefined },
 } as const;
 
 /** Props for `ZoomControl`, the twin of React's `ZoomControlProps`. @public */
@@ -39,7 +39,7 @@ const statusMessageProps = {
    * `t` prop. A key that it leaves unresolved reads the root's `locale`. Keep it stable, for
    * example from `useChromeTranslate(overrides)`.
    */
-  t: { type: Function as PropType<ChromeTranslate>, default: undefined },
+  t: { type: Function as PropType<ChromePartTranslate>, default: undefined },
 } as const;
 
 /** Props for `StatusMessage`, the twin of React's `StatusMessageProps`. @public */

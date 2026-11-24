@@ -108,7 +108,7 @@ Put `LocaleProvider` inside `XlsxEditor.Root` (`XlsxEditorRoot` in Vue) for a re
 
 The toolbar, the formula bar, the sheet tabs, the zoom control, and the status message each take a `t` prop. `t` receives a catalog key and the values of its placeholders, and returns the text. The toolbar's `t` also reaches its parts, its **More** panel, and its number format dialog.
 
-`useChromeTranslate(overrides)` builds a `t` from the nearest catalog, with your overrides first. An override is a message, as in the catalog: the part fills its `{name}` placeholders and picks its `{count, plural, ...}` branch.
+`useChromeTranslate(overrides)` builds a `t` from the nearest catalog, with your overrides first. It returns a `ChromeTranslate`, which always returns a string, so you can also call it for the labels of your own controls. An override is a message, as in the catalog: the part fills its `{name}` placeholders and picks its `{count, plural, ...}` branch.
 
 <FrameworkTabs>
 <Framework value="react">
@@ -162,7 +162,7 @@ const dir = useChromeDir();
 </Framework>
 </FrameworkTabs>
 
-You can also pass a function of your own. A key that it leaves unresolved, by a result that is not a string, reads the catalog of the root, so a raw key never shows.
+You can also pass a function of your own. The `t` prop has the type `ChromePartTranslate`, which can return `undefined`. A key that the function leaves unresolved, by a result that is not a string, reads the inherited catalog, so a raw key never shows.
 
 ## Choose the language setting
 
@@ -268,7 +268,8 @@ To build a translator outside the editor, use `createT` and `formatMessage` of [
 ## Differences from DOCX Editor
 
 - The root's catalog prop is `locale`, and DOCX Editor's is `i18n`. `LocaleProvider` keeps the DOCX Editor name, `i18n`.
-- The `t` prop of each part takes the values of the placeholders, `(key, params) => string`, because the messages here take values. DOCX Editor's toolbar `t` takes only the key.
+- The `t` prop of each part takes the values of the placeholders, because the messages here take values. DOCX Editor's toolbar `t` takes only the key.
+- The `t` prop has its own type, `ChromePartTranslate`, which can return `undefined` for a key that the part reads from its inherited catalog. DOCX Editor's parts take `ChromeTranslate`, which `useChromeTranslate` returns here too.
 - An override of `useChromeTranslate` is a message with placeholders and plural branches. In DOCX Editor, it is a fixed string.
 
 ## See also

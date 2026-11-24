@@ -38,6 +38,7 @@ import {
 } from '@xlsx-editor.dev/vue';
 import { SHOW_ADAPTER_SWITCHER } from '../../vite/src/adapters.ts';
 import { downloadBlob } from '../../vite/src/download.ts';
+import { chromeLocale } from '../../vite/src/chrome-locale.ts';
 import { initialTheme, rememberTheme, type Theme } from '../../vite/src/theme.ts';
 import { shownName } from '../../vite/src/workbook-names.ts';
 import { SAMPLE_URL } from '../../vite/src/workbooks.ts';
@@ -54,6 +55,8 @@ const viewOnly = shallowRef(false);
 // The shell's light or dark theme, as in the React demo: `?theme=`, else the theme picked
 // before, else light. A pick is kept for the next visit.
 const theme = shallowRef<Theme>(initialTheme(window.location.search));
+// The chrome catalog from `?lang=`, such as `?lang=ar` for a right-to-left chrome. Read once.
+const locale = chromeLocale(window.location.search);
 watch(theme, rememberTheme);
 let attached = (): void => {};
 const ready = new Promise<void>((resolve) => (attached = resolve));
@@ -127,6 +130,7 @@ void session.openSample(async () => {
     ref="editor"
     :mode="viewOnly ? 'view' : 'edit'"
     :color-mode="theme"
+    :locale="locale"
     @ready="attached"
     @change="(s: EditorSnapshot) => (status = s.status)"
   >

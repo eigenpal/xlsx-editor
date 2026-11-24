@@ -219,6 +219,7 @@ export {
   chromeTranslator,
   partTranslator,
   warnPartTranslateError,
+  type ChromePartTranslate,
   type ChromeTranslate,
 } from './chrome-translate.ts';
 export {

@@ -40,6 +40,7 @@ import {
   chromeTranslator,
   partTranslator,
   warnPartTranslateError,
+  type ChromePartTranslate,
   type ChromeTranslate,
 } from '@xlsx-editor.dev/core/editor';
 import {
@@ -152,9 +153,7 @@ export const LocaleProvider = defineComponent({
 });
 
 /** What `useChromeTranslate` returns: the chrome's translator, as a computed ref. @public */
-export type UseChromeTranslateReturn = ComputedRef<
-  (key: string, params?: Readonly<Record<string, string | number>>) => string
->;
+export type UseChromeTranslateReturn = ComputedRef<ChromeTranslate>;
 
 /**
  * The chrome's translator, ready to pass as the `t` prop of any chrome part, the twin of
@@ -211,7 +210,7 @@ export interface PartTranslation {
  */
 export function usePartTranslation(
   part: string,
-  t: () => ChromeTranslate | undefined
+  t: () => ChromePartTranslate | undefined
 ): PartTranslation {
   const inherited = useTranslator();
   const build = (): TFunction =>
@@ -234,4 +233,4 @@ export function usePartTranslation(
   };
 }
 
-export type { ChromeTranslate };
+export type { ChromePartTranslate, ChromeTranslate };

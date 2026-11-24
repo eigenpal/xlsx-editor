@@ -162,6 +162,7 @@ export type {
   ChromeGroup,
   ChromeGroupId,
   ChromeHint,
+  ChromePartTranslate,
   ChromeSlotId,
   ChromeTranslate,
   ClipboardContent,

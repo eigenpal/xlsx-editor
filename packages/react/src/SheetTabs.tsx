@@ -93,7 +93,7 @@ import {
   type SheetCommandState,
   type SheetRenameBox,
 } from '@xlsx-editor.dev/core/editor';
-import type { ChromeTranslate, EditorSheet } from '@xlsx-editor.dev/core/editor';
+import type { ChromePartTranslate, EditorSheet } from '@xlsx-editor.dev/core/editor';
 import { useTranslation, useEditorState, useXlsxEditor } from './context.ts';
 import { AddIcon } from './icons.tsx';
 import { useChromeDir, withChromeTranslate } from './locale.tsx';
@@ -105,7 +105,7 @@ export interface SheetTabsProps {
    * its placeholders, as DOCX Editor's `t` prop. A key that it leaves unresolved reads the
    * root's `locale`. Keep it stable, for example from `useChromeTranslate(overrides)`.
    */
-  readonly t?: ChromeTranslate;
+  readonly t?: ChromePartTranslate;
 }
 
 /** An open tab menu: the sheet it acts on, and its left edge in the bar, in CSS pixels. */

@@ -44,7 +44,7 @@ import {
   stepFieldHistory,
   type EditorSnapshot,
   type XlsxEditorInstance,
-  type ChromeTranslate,
+  type ChromePartTranslate,
 } from '@xlsx-editor.dev/core/editor';
 import { useEditorState, useTranslation, useXlsxEditor } from './context.ts';
 import { usePartTranslation } from './locale.ts';
@@ -55,7 +55,7 @@ const formulaBarProps = {
    * `t` prop. A key that it leaves unresolved reads the root's `locale`. Keep it stable, for
    * example from `useChromeTranslate(overrides)`.
    */
-  t: { type: Function as PropType<ChromeTranslate>, default: undefined },
+  t: { type: Function as PropType<ChromePartTranslate>, default: undefined },
 } as const;
 
 /** Props for `FormulaBar`, the twin of React's `FormulaBarProps`. @public */

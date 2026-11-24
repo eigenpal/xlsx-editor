@@ -55,7 +55,7 @@ import {
   stepFieldHistory,
 } from '@xlsx-editor.dev/core/editor';
 import type {
-  ChromeTranslate,
+  ChromePartTranslate,
   EditorSnapshot,
   XlsxEditorInstance,
 } from '@xlsx-editor.dev/core/editor';
@@ -69,7 +69,7 @@ export interface FormulaBarProps {
    * `t` prop. A key that it leaves unresolved reads the root's `locale`. Keep it stable, for
    * example from `useChromeTranslate(overrides)`.
    */
-  readonly t?: ChromeTranslate;
+  readonly t?: ChromePartTranslate;
 }
 
 /**

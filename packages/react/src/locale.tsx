@@ -48,6 +48,7 @@ import {
   chromeTranslator,
   partTranslator,
   warnPartTranslateError,
+  type ChromePartTranslate,
   type ChromeTranslate,
 } from '@xlsx-editor.dev/core/editor';
 import { CatalogContext, TranslationContext, type CatalogScope } from './context.ts';
@@ -209,7 +210,7 @@ export function useChromeDir(): 'ltr' | 'rtl' | undefined {
  * `t` leaves unresolved. The provider always renders, so a change of `t` between set and unset
  * keeps the part mounted. Internal.
  */
-export function withChromeTranslate<P extends { readonly t?: ChromeTranslate | undefined }>(
+export function withChromeTranslate<P extends { readonly t?: ChromePartTranslate | undefined }>(
   Component: (props: Omit<P, 't'>) => ReactNode,
   name: string
 ): (props: P) => ReactElement {
@@ -237,4 +238,4 @@ export function withChromeTranslate<P extends { readonly t?: ChromeTranslate | u
   return Translated;
 }
 
-export type { ChromeTranslate };
+export type { ChromePartTranslate, ChromeTranslate };

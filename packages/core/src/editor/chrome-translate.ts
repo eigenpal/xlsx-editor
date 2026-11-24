@@ -10,31 +10,43 @@
 //   no values for the keys a host renames. Here many messages take values, such as
 //   `zoom.resetAt` with `{level}`, so a literal override would show its placeholders.
 // - A part's `t` falls back to the inherited translator for each key that it leaves unresolved
-//   (a result that is not a string), as DOCX Editor's `useToolbarLabelFor` does with `??`, so
-//   the result type is `string | undefined`, where DOCX Editor writes `string`. A `t` that
-//   throws falls back too.
+//   (a result that is not a string), as DOCX Editor's `useToolbarLabelFor` does with `??`. So
+//   the part prop has its own type, `ChromePartTranslate`, whose result can be `undefined`.
+//   `ChromeTranslate`, the result of `useChromeTranslate`, keeps the DOCX Editor shape and
+//   always returns a string. A `t` that throws falls back too.
 
 import { formatMessage, type TFunction, type TranslationKey } from '@xlsx-editor.dev/i18n';
 
 /**
- * A chrome label resolver: a key and the values of its placeholders. It is the type of each
- * chrome part's `t` prop and of `useChromeTranslate()`'s result. It takes `string`, not the
- * `TranslationKey` union, so a host can resolve its own keys with the same function. A part
- * reads its inherited catalog for a key that `t` returns `undefined` for.
+ * A chrome label resolver, as DOCX Editor's `ChromeTranslate`: a key and the values of its
+ * placeholders give a string. It is the result of `useChromeTranslate()`, and any part's `t`
+ * prop takes it. It takes `string`, not the `TranslationKey` union, so a host can resolve its
+ * own keys with the same function.
  *
  * @public
  */
 export type ChromeTranslate = (
   key: string,
   params?: Readonly<Record<string, string | number>>
+) => string;
+
+/**
+ * The type of each chrome part's `t` prop: a `ChromeTranslate`, or a resolver that returns
+ * `undefined` for a key that it leaves to the part's inherited catalog.
+ *
+ * @public
+ */
+export type ChromePartTranslate = (
+  key: string,
+  params?: Readonly<Record<string, string | number>>
 ) => string | undefined;
 
 /**
- * The translator `base` with `overrides` first. It always returns a string, so it is a
- * `ChromeTranslate` that host code can also call for its own labels. An override's value is a
- * message: its placeholders and plural branches are filled from the values of the call, with
- * the plural rules of `lang`. A key that `overrides` does not hold reads `base`. `overrides` is a `Map`, because
- * its keys come from the caller: an object would answer `constructor` from its prototype.
+ * The translator `base` with `overrides` first, as a `ChromeTranslate`: host code can also call
+ * it for its own labels. An override's value is a message: its placeholders and plural branches
+ * are filled from the values of the call, with the plural rules of `lang`. A key that
+ * `overrides` does not hold reads `base`. `overrides` is a `Map`, because its keys come from the
+ * caller: an object would answer `constructor` from its prototype.
  *
  * @internal
  */
@@ -42,7 +54,7 @@ export function chromeTranslator(
   base: TFunction,
   overrides: ReadonlyMap<string, string> | undefined,
   lang: string
-): (key: string, params?: Readonly<Record<string, string | number>>) => string {
+): ChromeTranslate {
   return (key, params) => {
     const message = overrides?.get(key);
     const values = params ? { ...params } : undefined;
@@ -62,7 +74,7 @@ export function chromeTranslator(
  */
 export function partTranslator(
   inherited: TFunction,
-  t: ChromeTranslate | undefined,
+  t: ChromePartTranslate | undefined,
   onError?: (key: string, error: unknown) => void
 ): TFunction {
   if (!t) return inherited;

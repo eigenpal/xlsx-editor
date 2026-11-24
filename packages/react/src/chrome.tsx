@@ -15,7 +15,7 @@ import {
   statusSlice,
   statusView,
   zoomSlice,
-  type ChromeTranslate,
+  type ChromePartTranslate,
 } from '@xlsx-editor.dev/core/editor';
 import {
   ModeWaitsContext,
@@ -34,7 +34,7 @@ export interface ZoomControlProps {
    * Editor's `t` prop. A key that it leaves unresolved reads the root's `locale`. Keep it stable,
    * for example from `useChromeTranslate(overrides)`.
    */
-  readonly t?: ChromeTranslate;
+  readonly t?: ChromePartTranslate;
 }
 
 /** Props for `XlsxEditor.StatusMessage`. @public */
@@ -44,7 +44,7 @@ export interface StatusMessageProps {
    * Editor's `t` prop. A key that it leaves unresolved reads the root's `locale`. Keep it stable,
    * for example from `useChromeTranslate(overrides)`.
    */
-  readonly t?: ChromeTranslate;
+  readonly t?: ChromePartTranslate;
 }
 
 function ZoomControlPart() {

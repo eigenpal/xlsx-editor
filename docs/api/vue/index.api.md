@@ -11,6 +11,7 @@ import { ChromeDisabledReason } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroup } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroupId } from '@xlsx-editor.dev/core/editor';
 import { ChromeHint } from '@xlsx-editor.dev/core/editor';
+import { ChromePartTranslate } from '@xlsx-editor.dev/core/editor';
 import { ChromeSlotId } from '@xlsx-editor.dev/core/editor';
 import { ChromeTranslate } from '@xlsx-editor.dev/core/editor';
 import { CLIPBOARD_TYPE } from '@xlsx-editor.dev/core/editor';
@@ -117,6 +118,8 @@ export { ChromeGroupId }
 
 export { ChromeHint }
 
+export { ChromePartTranslate }
+
 export { ChromeSlotId }
 
 export { ChromeTranslate }
@@ -170,16 +173,16 @@ export { FontSource }
 // @public
 export const FormulaBar: vue.DefineComponent<vue.ExtractPropTypes<{
     readonly t: {
-        readonly type: PropType<ChromeTranslate>;
+        readonly type: PropType<ChromePartTranslate>;
         readonly default: undefined;
     };
 }>, () => vue_jsx_runtime.JSX.Element | null, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
     readonly t: {
-        readonly type: PropType<ChromeTranslate>;
+        readonly type: PropType<ChromePartTranslate>;
         readonly default: undefined;
     };
 }>> & Readonly<{}>, {
-    readonly t: ChromeTranslate;
+    readonly t: ChromePartTranslate;
 }, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
 
 // @public
@@ -188,7 +191,7 @@ export type FormulaBarProps = ExtractPublicPropTypes<typeof formulaBarProps>;
 // @public (undocumented)
 const formulaBarProps: {
     readonly t: {
-        readonly type: PropType<ChromeTranslate>;
+        readonly type: PropType<ChromePartTranslate>;
         readonly default: undefined;
     };
 };
@@ -325,16 +328,16 @@ export { SheetProtection }
 // @public
 export const SheetTabs: vue.DefineComponent<vue.ExtractPropTypes<{
     readonly t: {
-        readonly type: PropType<ChromeTranslate>;
+        readonly type: PropType<ChromePartTranslate>;
         readonly default: undefined;
     };
 }>, () => vue_jsx_runtime.JSX.Element | null, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
     readonly t: {
-        readonly type: PropType<ChromeTranslate>;
+        readonly type: PropType<ChromePartTranslate>;
         readonly default: undefined;
     };
 }>> & Readonly<{}>, {
-    readonly t: ChromeTranslate;
+    readonly t: ChromePartTranslate;
 }, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
 
 // @public
@@ -343,7 +346,7 @@ export type SheetTabsProps = ExtractPublicPropTypes<typeof sheetTabsProps>;
 // @public (undocumented)
 const sheetTabsProps: {
     readonly t: {
-        readonly type: PropType<ChromeTranslate>;
+        readonly type: PropType<ChromePartTranslate>;
         readonly default: undefined;
     };
 };
@@ -351,16 +354,16 @@ const sheetTabsProps: {
 // @public
 export const StatusMessage: vue.DefineComponent<vue.ExtractPropTypes<{
     readonly t: {
-        readonly type: PropType<ChromeTranslate>;
+        readonly type: PropType<ChromePartTranslate>;
         readonly default: undefined;
     };
 }>, () => vue_jsx_runtime.JSX.Element, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
     readonly t: {
-        readonly type: PropType<ChromeTranslate>;
+        readonly type: PropType<ChromePartTranslate>;
         readonly default: undefined;
     };
 }>> & Readonly<{}>, {
-    readonly t: ChromeTranslate;
+    readonly t: ChromePartTranslate;
 }, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
 
 // @public
@@ -369,7 +372,7 @@ export type StatusMessageProps = ExtractPublicPropTypes<typeof statusMessageProp
 // @public (undocumented)
 const statusMessageProps: {
     readonly t: {
-        readonly type: PropType<ChromeTranslate>;
+        readonly type: PropType<ChromePartTranslate>;
         readonly default: undefined;
     };
 };
@@ -556,7 +559,7 @@ export type UseChromeDirReturn = ComputedRef<'ltr' | 'rtl' | undefined>;
 export function useChromeTranslate(overrides?: MaybeRefOrGetter<ReadonlyMap<string, string> | undefined>): UseChromeTranslateReturn;
 
 // @public
-export type UseChromeTranslateReturn = ComputedRef<(key: string, params?: Readonly<Record<string, string | number>>) => string>;
+export type UseChromeTranslateReturn = ComputedRef<ChromeTranslate>;
 
 // @public
 export function useEditorColorMode(): UseEditorColorModeReturn;
@@ -1083,7 +1086,7 @@ const xlsxEditorToolbarProps: {
         readonly default: undefined;
     };
     readonly t: {
-        readonly type: PropType<ChromeTranslate>;
+        readonly type: PropType<ChromePartTranslate>;
         readonly default: undefined;
     };
     readonly hidden: {
@@ -1244,16 +1247,16 @@ export const xlsxTranslationKey: InjectionKey<ShallowRef<TFunction>>;
 // @public
 export const ZoomControl: vue.DefineComponent<vue.ExtractPropTypes<{
     readonly t: {
-        readonly type: PropType<ChromeTranslate>;
+        readonly type: PropType<ChromePartTranslate>;
         readonly default: undefined;
     };
 }>, () => vue_jsx_runtime.JSX.Element | null, {}, {}, {}, vue.ComponentOptionsMixin, vue.ComponentOptionsMixin, {}, string, vue.PublicProps, Readonly<vue.ExtractPropTypes<{
     readonly t: {
-        readonly type: PropType<ChromeTranslate>;
+        readonly type: PropType<ChromePartTranslate>;
         readonly default: undefined;
     };
 }>> & Readonly<{}>, {
-    readonly t: ChromeTranslate;
+    readonly t: ChromePartTranslate;
 }, {}, {}, {}, string, vue.ComponentProvideOptions, true, {}, any>;
 
 // @public
@@ -1262,7 +1265,7 @@ export type ZoomControlProps = ExtractPublicPropTypes<typeof zoomControlProps>;
 // @public (undocumented)
 const zoomControlProps: {
     readonly t: {
-        readonly type: PropType<ChromeTranslate>;
+        readonly type: PropType<ChromePartTranslate>;
         readonly default: undefined;
     };
 };

@@ -47,7 +47,7 @@ import {
   type SheetCommand,
   type SheetCommandState,
   type SheetRenameBox,
-  type ChromeTranslate,
+  type ChromePartTranslate,
 } from '@xlsx-editor.dev/core/editor';
 import { useEditorState, useXlsxEditor } from './context.ts';
 import { AddIcon } from './icons.tsx';
@@ -59,7 +59,7 @@ const sheetTabsProps = {
    * its placeholders, as DOCX Editor's `t` prop. A key that it leaves unresolved reads the
    * root's `locale`. Keep it stable, for example from `useChromeTranslate(overrides)`.
    */
-  t: { type: Function as PropType<ChromeTranslate>, default: undefined },
+  t: { type: Function as PropType<ChromePartTranslate>, default: undefined },
 } as const;
 
 /** Props for `SheetTabs`, the twin of React's `SheetTabsProps`. @public */

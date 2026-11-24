@@ -10,6 +10,7 @@ import { ChromeDisabledReason } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroup } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroupId } from '@xlsx-editor.dev/core/editor';
 import { ChromeHint } from '@xlsx-editor.dev/core/editor';
+import { ChromePartTranslate } from '@xlsx-editor.dev/core/editor';
 import { ChromeSlotId } from '@xlsx-editor.dev/core/editor';
 import { ChromeTranslate } from '@xlsx-editor.dev/core/editor';
 import { CLIPBOARD_TYPE } from '@xlsx-editor.dev/core/editor';
@@ -109,6 +110,8 @@ export { ChromeGroupId }
 
 export { ChromeHint }
 
+export { ChromePartTranslate }
+
 export { ChromeSlotId }
 
 export { ChromeTranslate }
@@ -174,7 +177,7 @@ export const FormulaBar: (props: FormulaBarProps) => ReactElement;
 
 // @public
 export interface FormulaBarProps {
-    readonly t?: ChromeTranslate;
+    readonly t?: ChromePartTranslate;
 }
 
 export { GridPoint }
@@ -282,7 +285,7 @@ export const SheetTabs: (props: SheetTabsProps) => ReactElement;
 
 // @public
 export interface SheetTabsProps {
-    readonly t?: ChromeTranslate;
+    readonly t?: ChromePartTranslate;
 }
 
 // @public
@@ -290,7 +293,7 @@ export const StatusMessage: (props: StatusMessageProps) => ReactElement;
 
 // @public
 export interface StatusMessageProps {
-    readonly t?: ChromeTranslate;
+    readonly t?: ChromePartTranslate;
 }
 
 // @public
@@ -553,7 +556,7 @@ export interface XlsxEditorToolbarProps {
     readonly opening?: boolean;
     readonly overflow?: boolean;
     readonly preset?: boolean;
-    readonly t?: ChromeTranslate;
+    readonly t?: ChromePartTranslate;
 }
 
 // @public
@@ -587,7 +590,7 @@ export const ZoomControl: (props: ZoomControlProps) => ReactElement;
 
 // @public
 export interface ZoomControlProps {
-    readonly t?: ChromeTranslate;
+    readonly t?: ChromePartTranslate;
 }
 
 ```

@@ -142,6 +142,8 @@ describe('XlsxEditor', () => {
     const grid = view.container.querySelector('.xlsx-canvas') as HTMLElement;
     const strip = view.container.querySelector('.xlsx-status-strip') as HTMLElement;
     expect(strip.textContent).toBe('');
+    // Empty, it keeps its live status nodes mounted, so a later notice is announced.
+    expect(strip.querySelectorAll('[role="status"]').length).toBeGreaterThan(0);
     expect(grid.previousElementSibling).toBe(strip);
     viewer.enterValue('7');
     viewer.beginEdit('=SUM(', 'enter');

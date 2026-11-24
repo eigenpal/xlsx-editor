@@ -905,19 +905,24 @@
   font-variant-numeric: tabular-nums;
   color: var(--doc-text);
 }
-/* The status strip: one line above the grid, present while a workbook is ready and empty when
-   there is no message, so nothing covers the grid. A refusal shows in full on its own row, in
-   every layout, and the strip grows while it shows; the catalog keeps each refusal text short,
-   and a name in it is cut to 64 characters. The notices go on the next row. */
+/* The status strip: present above the grid while a workbook is ready. With no message it takes
+   no room: no height, padding, or line, so the grid starts under the formula bar. Its notices
+   stay mounted with `role="status"`, at zero size, so a screen reader announces a later notice.
+   A message pushes the grid down by its height and covers no cell: the notices can stay for
+   the whole session, so they sit in the flow, not over the column headings. A refusal shows in
+   full on its own row, in every layout; the catalog keeps each refusal text short, and a name
+   in it is cut to 64 characters. The notices go on the next row. */
 .xlsx-status-strip {
   display: flex;
   flex-wrap: wrap;
   flex: none;
-  min-height: 28px;
   overflow: hidden;
   background: var(--doc-bg);
-  border-bottom: 1px solid var(--doc-border);
   box-sizing: border-box;
+}
+/* The line under the strip shows only while a message shows. */
+.xlsx-status-strip:has(> :not(:empty)) {
+  border-bottom: 1px solid var(--doc-border);
 }
 .xlsx-refusal,
 .xlsx-notice {

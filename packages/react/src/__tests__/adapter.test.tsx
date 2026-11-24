@@ -134,12 +134,14 @@ describe('XlsxEditor', () => {
     expect(viewer.snapshot().stale).toBe(true);
   });
 
-  test('the status strip keeps its place above the grid, and a refusal wraps to two lines', async () => {
+  test('the status strip keeps its place above the grid, takes no room when empty, and a refusal wraps to two lines', async () => {
     const { view, viewer } = await open();
     const grid = view.container.querySelector('.xlsx-canvas') as HTMLElement;
     const strip = view.container.querySelector('.xlsx-status-strip') as HTMLElement;
     // Empty, the strip already sits above the grid, with only the empty status node.
     expect(strip.textContent).toBe('');
+    // Empty, it keeps its live status nodes mounted, so a later notice is announced.
+    expect(strip.querySelectorAll('[role="status"]').length).toBeGreaterThan(0);
     expect(grid.previousElementSibling).toBe(strip);
     act(() => void viewer.enterValue('7'));
     act(() => void viewer.beginEdit('=SUM(', 'enter'));
@@ -159,12 +161,18 @@ describe('XlsxEditor', () => {
     expect(notice.title).toContain('the editor shows the stored results');
     expect(view.container.querySelector('.xlsx-status-strip')).toBe(strip);
     expect(grid.previousElementSibling).toBe(strip);
-    // The strip is one line, and grows while a refusal shows; it hides nothing of a refusal,
-    // and no message is positioned over the grid.
+    // With no message, the strip takes no room: no height, padding, or line. Its line shows
+    // only while a message shows. It grows with its messages, hides nothing of a refusal, and
+    // no message is positioned over the grid.
     const css = readFileSync(join(import.meta.dir, '../../../core/src/styles/editor.css'), 'utf8');
     const rule = /\.xlsx-status-strip \{([^}]*)\}/.exec(css)![1]!;
-    expect(rule).toMatch(/\bmin-height: \d+px;/);
-    expect(rule).not.toContain('max-height');
+    expect(rule).not.toMatch(/\b(min-height|height|max-height|padding|border[\w-]*|gap):/);
+    expect(rule).not.toContain('position:');
+    expect(css).toMatch(
+      /\n\.xlsx-status-strip:has\(> :not\(:empty\)\) \{\s*border-bottom: 1px solid var\(--doc-border\);\s*\}/
+    );
+    // An empty notice, the status node that stays mounted, takes no room either.
+    expect(css).toMatch(/\n\.xlsx-notice:empty \{[^}]*flex: 0 0 0;[^}]*padding: 0;[^}]*border: 0;/);
     expect(rule).toContain('flex-wrap: wrap;');
     expect(rule).toContain('flex: none;');
     // A refusal shows in full on its own row in every layout: no line clamp and no height

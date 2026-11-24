@@ -24,6 +24,10 @@
 //   (`verify-demo-editing.ts`).
 // - A press on the line count puts the caret at the end of the shown line, and the bar scrolls
 //   to show it: on a long line, a line shorter than the next, a line of tabs, and in a scaled bar.
+// - On a page of its own, with no message, the status strip takes no room between the formula
+//   bar and the grid, and keeps its live status nodes. A refused formula gives the strip a
+//   height, and the grid keeps its scroll position and its selection while the message shows
+//   and after Escape clears it (`verify-demo-status-strip.ts`).
 // - A copy of a cell with Control+C or Command+C, pasted with Control+V or Command+V, reaches
 //   the grid as clipboard events with the private clipboard type, and undo takes it back
 //   (`verify-demo-engine.ts`).
@@ -130,6 +134,7 @@ import {
 } from './verify-demo-browser.ts';
 import { verifyDownloadSave } from './verify-demo-download.ts';
 import { verifyFormulaBarLayout, verifyLineCountPress } from './verify-demo-editing.ts';
+import { verifyStatusStrip } from './verify-demo-status-strip.ts';
 
 const ROOT = join(import.meta.dir, '..');
 const DEMO = join(ROOT, 'examples/vite');
@@ -347,6 +352,12 @@ async function runEngine(engine: Engine, url: string): Promise<EngineResult> {
       await step('type, save, and reopen', () => verifyTypeSaveReopen(page));
       await step('formula bar layout', () => verifyFormulaBarLayout(page));
       await step('line count press', () => verifyLineCountPress(page));
+      await step('status strip', () =>
+        verifyStatusStrip(browser, url, watch, adopt, {
+          first: SAMPLE_SHEET,
+          scrolled: LAST_SHEET,
+        })
+      );
       await step('copy and paste', () => verifyClipboard(page, 'copy'));
       await step('cut and paste', () => verifyClipboard(page, 'cut'));
       await step('clipboard outline', () => verifyClipboardMark(page));

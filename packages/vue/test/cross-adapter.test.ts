@@ -211,9 +211,9 @@ describe('the React and Vue editors render the same chrome', () => {
       outside,
       (host) => button(host, /^Font size/),
       outside,
-      (host) => button(host, 'Font color'),
+      (host) => button(host, 'Font color options'),
       outside,
-      (host) => button(host, 'Fill color'),
+      (host) => button(host, 'Fill color options'),
       outside,
       (host) => button(host, 'Insert and delete'),
       outside,
@@ -228,11 +228,11 @@ describe('the React and Vue editors render the same chrome', () => {
     expect(opened(0, 'Select font family', 'listbox')).toBe(true);
     expect(vue[0]!.markup.includes('role="option"')).toBe(true);
     expect(opened(2, 'Font size', 'listbox')).toBe(true);
-    expect(opened(4, 'Font color', 'listbox')).toBe(true);
-    expect(opened(6, 'Fill color', 'listbox')).toBe(true);
+    expect(opened(4, 'Font color', 'dialog')).toBe(true);
+    expect(opened(6, 'Fill color', 'dialog')).toBe(true);
     expect(opened(8, 'Insert and delete', 'menu')).toBe(true);
     for (const i of [1, 3, 5, 7, 9])
-      expect([i, /role="(listbox|menu)"/.test(vue[i]!.markup)]).toEqual([i, false]);
+      expect([i, /role="(listbox|menu|dialog)"/.test(vue[i]!.markup)]).toEqual([i, false]);
     for (const [i, step] of vue.entries()) {
       expect(step.markup).toBe(react[i]!.markup);
       expect(step.focus).toBe(react[i]!.focus);

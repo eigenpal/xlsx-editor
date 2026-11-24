@@ -86,7 +86,9 @@ With `asChild`, your single child element renders the control. It receives the c
 | `ClearContents`, `ClearFormatting`, `ClearAll` | `clear.contents`, `clear.formats`, `clear.all` |
 | `Save` | `file.save` |
 
-`FontFamily`, `FontSize`, `FontColor`, `FillColor`, `NumberFormat`, and `MoreNumberFormats` are value controls: a list, a palette, or a dialog opener. They take `hidden`, `className`, and `overflowContent` only.
+`FontFamily`, `FontSize`, `NumberFormat`, and `MoreNumberFormats` are value controls: a list or a dialog opener. They take `hidden`, `className`, and `overflowContent` only.
+
+`FontColor` and `FillColor` are split buttons, as in the DOCX and PPTX editors. The main half applies the last color that it applied, which the bar under its glyph shows. The caret opens the color picker: **Automatic** (or **No fill**), the workbook theme colors with five rows of tints and shades, the standard colors, and a custom hex color. They take `hidden`, `className`, `overflowContent`, and `icon`. The `icon` replaces the glyph above the bar, and the bar keeps its color.
 
 ## Choose the toolbar arrangement
 

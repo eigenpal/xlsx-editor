@@ -13,6 +13,7 @@ import { defineComponent, h, type DefineComponent, type PropType, type VNodeChil
 import {
   TOOLBAR_NAMED_PARTS,
   isToolbarButtonSlot,
+  takesToolbarIcon,
   type ChromeSlotId,
 } from '@xlsx-editor.dev/core/editor';
 import {
@@ -51,8 +52,20 @@ export interface ToolbarSlotPartProps {
   readonly overflowContent?: () => VNodeChild;
 }
 
+/** Props of the named color parts, the twin of React's `ToolbarColorSplitProps`. @public */
+export interface ToolbarColorSplitProps extends ToolbarSlotPartProps {
+  /**
+   * Replaces the glyph above the color bar, about 18 pixels: a vnode or a string. The bar is not
+   * replaceable: it still paints the color that the main half applies.
+   */
+  readonly icon?: VNodeChild;
+}
+
 /** A named button part. @public */
 export type ToolbarPartComponent = DefineComponent<ToolbarPartProps>;
+
+/** A named color part. @public */
+export type ToolbarColorSplitComponent = DefineComponent<ToolbarColorSplitProps>;
 
 /** A named value part. @public */
 export type ToolbarSlotPartComponent = DefineComponent<ToolbarSlotPartProps>;
@@ -78,9 +91,9 @@ export interface ToolbarNamedParts {
   /** `font.underline`. */
   readonly Underline: ToolbarPartComponent;
   /** `font.color`. */
-  readonly FontColor: ToolbarSlotPartComponent;
+  readonly FontColor: ToolbarColorSplitComponent;
   /** `fill.color`. */
-  readonly FillColor: ToolbarSlotPartComponent;
+  readonly FillColor: ToolbarColorSplitComponent;
   /** `borders.outline`. */
   readonly OutsideBorders: ToolbarPartComponent;
   /** `borders.all`. */
@@ -129,18 +142,17 @@ export interface ToolbarNamedParts {
 
 function definePart(name: string, slot: ChromeSlotId) {
   const button = isToolbarButtonSlot(slot);
+  const takesIcon = takesToolbarIcon(slot);
   const Part = defineComponent({
     name: `XlsxEditorToolbar${name}`,
     props: {
       hidden: { type: Boolean, default: undefined },
       className: { type: String, default: undefined },
       overflowContent: { type: Function as PropType<() => VNodeChild>, default: undefined },
-      ...(button
-        ? {
-            icon: { type: [Object, String, Array] as PropType<VNodeChild>, default: undefined },
-            asChild: { type: Boolean, default: undefined },
-          }
+      ...(takesIcon
+        ? { icon: { type: [Object, String, Array] as PropType<VNodeChild>, default: undefined } }
         : {}),
+      ...(button ? { asChild: { type: Boolean, default: undefined } } : {}),
     },
     setup(props, { attrs, slots }) {
       return () => {

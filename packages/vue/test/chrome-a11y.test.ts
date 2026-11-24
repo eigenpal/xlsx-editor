@@ -90,18 +90,18 @@ describe('the chrome in each state matches its forced-colors rule', () => {
   test('the selected color swatch and the selected no fill', async () => {
     const { swatch, selectedSwatch, selectedNoFill, focusedSwatch } = FORCED_STATES;
     const view = await open();
-    await act(() => fireEvent.click(view.getByRole('button', { name: 'Font color' })));
-    const red = view.getByRole('option', { name: 'Red' });
+    await act(() => fireEvent.click(view.getByRole('button', { name: 'Font color options' })));
+    const red = view.getByRole('button', { name: 'Red' });
     expect(red.matches(swatch.selector)).toBe(true);
     expect(red.matches(selectedSwatch.selector)).toBe(false);
     await act(() => fireEvent.click(red));
-    await act(() => fireEvent.click(view.getByRole('button', { name: 'Font color' })));
-    expect(view.getByRole('option', { name: 'Red' }).matches(selectedSwatch.selector)).toBe(true);
-    expect(view.getByRole('option', { name: 'Blue' }).matches(selectedSwatch.selector)).toBe(false);
-    await act(() => fireEvent.click(view.getByRole('button', { name: 'Fill color' })));
+    await act(() => fireEvent.click(view.getByRole('button', { name: 'Font color options' })));
+    expect(view.getByRole('button', { name: 'Red' }).matches(selectedSwatch.selector)).toBe(true);
+    expect(view.getByRole('button', { name: 'Blue' }).matches(selectedSwatch.selector)).toBe(false);
+    await act(() => fireEvent.click(view.getByRole('button', { name: 'Fill color options' })));
     // A cell with no fill: the no fill option is the selected one.
-    const none = view.getByRole('option', { name: 'No fill' });
-    expect(none.getAttribute('aria-selected')).toBe('true');
+    const none = view.getByRole('button', { name: 'No fill' });
+    expect(none.getAttribute('aria-pressed')).toBe('true');
     expect(none.matches(selectedNoFill.selector)).toBe(true);
     expect(none.matches(selectedSwatch.selector)).toBe(false);
     expect(none.matches(focusedSwatch.selector)).toBe(false);
@@ -112,11 +112,11 @@ describe('the chrome in each state matches its forced-colors rule', () => {
   test('a focused color swatch differs from the selected one', async () => {
     const { selectedSwatch, focusedSwatch } = FORCED_STATES;
     const view = await open();
-    await act(() => fireEvent.click(view.getByRole('button', { name: 'Font color' })));
-    await act(() => fireEvent.click(view.getByRole('option', { name: 'Red' })));
-    await act(() => fireEvent.click(view.getByRole('button', { name: 'Font color' })));
-    const red = view.getByRole('option', { name: 'Red' });
-    const blue = view.getByRole('option', { name: 'Blue' });
+    await act(() => fireEvent.click(view.getByRole('button', { name: 'Font color options' })));
+    await act(() => fireEvent.click(view.getByRole('button', { name: 'Red' })));
+    await act(() => fireEvent.click(view.getByRole('button', { name: 'Font color options' })));
+    const red = view.getByRole('button', { name: 'Red' });
+    const blue = view.getByRole('button', { name: 'Blue' });
     blue.focus();
     expect(blue.matches(focusedSwatch.selector)).toBe(true);
     expect(blue.matches(selectedSwatch.selector)).toBe(false);

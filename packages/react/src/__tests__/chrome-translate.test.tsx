@@ -517,7 +517,7 @@ describe('direction', () => {
   test('in a right-to-left palette, ArrowLeft moves to the next swatch', async () => {
     const view = render(<Parts locale={{ _lang: 'ar' }} />);
     await ready(view);
-    fireEvent.click(view.getByRole('button', { name: /^Fill color/ }));
+    fireEvent.click(view.getByRole('button', { name: 'Fill color options' }));
     const swatches = [...view.container.querySelectorAll<HTMLElement>('.xlsx-toolbar-swatch')];
     expect(swatches.length).toBeGreaterThan(2);
     act(() => swatches[0]!.focus());

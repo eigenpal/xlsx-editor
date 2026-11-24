@@ -657,6 +657,7 @@ describe('the arrow keys in the preset bar', () => {
       bar.querySelector<HTMLElement>('[data-slot="file.save"]')!,
       view.getByRole('button', { name: 'Share it' }),
       fixed.querySelector<HTMLElement>('button[data-slot="font.color"]')!,
+      fixed.querySelector<HTMLElement>('.xlsx-toolbar-colorsplit-caret')!,
       view.getByRole('link', { name: 'Help' }),
       view.getByRole('combobox', { name: 'Pick' }),
       view.getByRole('button', { name: 'Chip' }),
@@ -669,9 +670,9 @@ describe('the arrow keys in the preset bar', () => {
     }
     // A text area keeps every key, with its own action: `keyDown` gives true for a key that is
     // not cancelled.
-    expect(fireEvent.keyDown(stops[6]!, { key: 'ArrowLeft' })).toBe(true);
-    expect(fireEvent.keyDown(stops[6]!, { key: 'End' })).toBe(true);
-    expect(document.activeElement).toBe(stops[6]!);
+    expect(fireEvent.keyDown(stops[7]!, { key: 'ArrowLeft' })).toBe(true);
+    expect(fireEvent.keyDown(stops[7]!, { key: 'End' })).toBe(true);
+    expect(document.activeElement).toBe(stops[7]!);
     // A field keeps the keys that move its caret, and gives an arrow back at the end of its text.
     // The bar cancels a key that moves the focus. The keys stop at the ends of the bar.
     const note = view.getByRole('textbox', { name: 'Note' }) as HTMLInputElement;
@@ -685,7 +686,7 @@ describe('the arrow keys in the preset bar', () => {
     expect(document.activeElement).toBe(note);
     note.setSelectionRange(0, 0);
     expect(fireEvent.keyDown(note, { key: 'ArrowLeft' })).toBe(false);
-    expect(document.activeElement).toBe(stops[6]!);
+    expect(document.activeElement).toBe(stops[7]!);
     const undo = view.getByRole('button', { name: 'Undo' });
     undo.focus();
     fireEvent.keyDown(undo, { key: 'ArrowLeft' });
@@ -815,12 +816,14 @@ describe(':preset="false"', () => {
         button('Loose'),
       ])
     );
-    // A list and a palette are a block that holds their trigger: each trigger is a stop.
+    // A list is a block that holds its trigger, a stop. A color split button is two stops: its
+    // main half and its caret.
     const stops = [
       view.getByRole('button', { name: 'Bold' }),
       view.getByRole('button', { name: 'Own' }),
       bar.querySelector<HTMLElement>('button[data-slot="font.size"]')!,
       bar.querySelector<HTMLElement>('button[data-slot="font.color"]')!,
+      view.getByRole('button', { name: 'Font color options' }),
       view.getByRole('button', { name: 'Loose' }),
     ];
     stops[0]!.focus();
@@ -831,7 +834,7 @@ describe(':preset="false"', () => {
     fireEvent.keyDown(document.activeElement!, { key: 'Home' });
     expect(document.activeElement).toBe(stops[0]!);
     fireEvent.keyDown(document.activeElement!, { key: 'End' });
-    expect(document.activeElement).toBe(stops[4]!);
+    expect(document.activeElement).toBe(stops[5]!);
   });
 
   test('a group with no content is left out, and a built-in group has its own heading', async () => {

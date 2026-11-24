@@ -602,14 +602,16 @@ describe('the grid focus ring', () => {
     return css.slice(at, css.indexOf('}', at));
   };
 
-  test('the ring is an overlay above the stage and the cell editor, shown with the focus', () => {
+  test('the ring is an overlay above the stage and the cell editor, shown with keyboard focus only', () => {
     const overlay = rule('.xlsx-surface::after');
     expect(overlay).toContain('position: absolute;');
     expect(overlay).toContain('pointer-events: none;');
     const ringZ = Number(/z-index: (\d+);/.exec(overlay)![1]);
     const editorZ = Number(/z-index: (\d+);/.exec(rule('.xlsx-cell-editor'))![1]);
     expect(ringZ).toBeGreaterThan(editorZ);
-    expect(rule('.xlsx-surface:focus-within::after')).toContain('var(--doc-focus-ring)');
+    expect(
+      rule('.xlsx-surface:not([data-no-focus-ring]):has(.xlsx-scroller:focus-visible)::after')
+    ).toContain('var(--doc-focus-ring)');
   });
 
   test('the active cell border differs when the grid has no focus', () => {
@@ -628,6 +630,21 @@ describe('the grid focus ring', () => {
     expect(surface.querySelector('.xlsx-active-cell')).not.toBeNull();
     // Editable content of the host page does not reach the surface.
     expect(surface.getAttribute('contenteditable')).toBe('false');
+  });
+
+  test('a script focus with no focus ring before it, as after an open, shows no ring', async () => {
+    const { viewer, host } = mount();
+    await viewer.load(buildXlsx({ sheets: [{ name: 'S', rows: row(1, [c('A1', 1)]) }] }));
+    flushEditor(viewer);
+    const surface = host.querySelector('.xlsx-surface')!;
+    viewer.focus();
+    expect(host.ownerDocument.activeElement).toBe(host.querySelector('.xlsx-scroller'));
+    expect(surface.hasAttribute('data-no-focus-ring')).toBe(true);
+    // The mark goes when the focus leaves the grid, so a Tab back in shows the ring.
+    const outside = host.ownerDocument.createElement('button');
+    host.ownerDocument.body.append(outside);
+    outside.focus();
+    expect(surface.hasAttribute('data-no-focus-ring')).toBe(false);
   });
 
   test('the grid states the sheet size, since it paints only the visible cells', () => {

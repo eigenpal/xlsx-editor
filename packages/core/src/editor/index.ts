@@ -125,6 +125,24 @@ export {
   type SlotOf,
 } from './chrome-controls.ts';
 export {
+  AUTO_COLOR,
+  CLEAR_CHIP_HEX,
+  COLOR_PICKER_STANDARD_COLORS,
+  COLOR_PICKER_THEME_SLOTS,
+  colorPickHex,
+  colorPickLabel,
+  colorPickerGrid,
+  customHexDraft,
+  focusColorSwatch,
+  hexFromText,
+  moveColorSwatchFocus,
+  workbookThemeHexes,
+  type ColorPick,
+  type ColorPickerGrid,
+  type ColorPickerThemeSlot,
+  type ColorSwatch,
+} from './color-picker.ts';
+export {
   COLOR_CHOICES,
   CUSTOM_NUMBER_FORMAT_PREFIX,
   DISABLED_REASON_KEYS,
@@ -250,6 +268,7 @@ export {
   focusPopupItem,
   groupsThatFit,
   isHexColor,
+  colorBarTone,
   listenSaveKey,
   measureToolbar,
   moveBarFocus,
@@ -285,6 +304,7 @@ export {
 } from './toolbar-arrange.ts';
 export {
   isToolbarButtonSlot,
+  takesToolbarIcon,
   TOOLBAR_NAMED_PARTS,
   type ToolbarPartName,
 } from './toolbar-named-parts.ts';

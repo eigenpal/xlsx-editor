@@ -272,8 +272,10 @@ export const FONT_SIZE_CHOICES: readonly number[] = [
 ];
 
 /**
- * The colors of the font color and fill color palettes, as `RRGGBB`.
+ * The colors of the earlier font color and fill color palettes, as `RRGGBB`.
  *
+ * @deprecated The toolbar color picker shows `colorPickerGrid`: the workbook theme colors with
+ * their tints and shades, and `COLOR_PICKER_STANDARD_COLORS`.
  * @public
  */
 export const COLOR_CHOICES = [
@@ -613,6 +615,8 @@ export function valuePatch(
       return value.trim() !== '' && Number.isFinite(size) ? { fontSize: size } : null;
     }
     case 'font.color':
+      // `auto` writes the automatic color (`AUTO_COLOR`, `color-picker.ts`).
+      if (value === 'auto') return { fontColor: 'auto' };
       return HEX6.test(value) ? { fontColor: value.toUpperCase() } : null;
     case 'fill.color':
       if (value === NO_FILL) return { fill: { type: 'none' } };

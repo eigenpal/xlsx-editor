@@ -138,8 +138,8 @@ const STATES: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
     (p) => opens(p, p.getByRole('button', { name: /^Select font family/ }), '[data-popup]'),
   ],
   [
-    'the fill palette',
-    (p) => opens(p, p.getByRole('button', { name: 'Fill color' }), '[data-popup]'),
+    'the fill color picker',
+    (p) => opens(p, p.getByRole('button', { name: 'Fill color options' }), '[data-popup]'),
   ],
   ['the number format list', (p) => opens(p, numberList(p), '[data-popup]')],
   [

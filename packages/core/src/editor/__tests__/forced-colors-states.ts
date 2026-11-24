@@ -25,7 +25,7 @@ export const FORCED_STATES = {
     declarations: ['outline-color: Highlight'],
   },
   gridFocus: {
-    selector: '.xlsx-surface:focus-within::after',
+    selector: '.xlsx-surface:not([data-no-focus-ring]):has(.xlsx-scroller:focus-visible)::after',
     declarations: ['box-shadow: none', 'outline: 2px solid Highlight', 'outline-offset: -2px'],
   },
   selection: {
@@ -101,29 +101,29 @@ export const FORCED_STATES = {
   },
   swatch: {
     selector: '.xlsx-toolbar-swatch',
-    declarations: ['forced-color-adjust: none', 'border-color: CanvasText'],
+    declarations: ['forced-color-adjust: none', 'box-shadow: inset 0 0 0 1px CanvasText'],
   },
   colorBar: {
     selector: '.xlsx-toolbar-color-bar',
-    declarations: ['forced-color-adjust: none', 'border-color: CanvasText'],
+    declarations: ['forced-color-adjust: none', 'box-shadow: inset 0 0 0 1px CanvasText'],
+  },
+  colorChip: {
+    selector: '.xlsx-toolbar-color-chip',
+    declarations: ['forced-color-adjust: none', 'box-shadow: inset 0 0 0 1px CanvasText'],
   },
   selectedSwatch: {
-    selector: ".xlsx-toolbar .xlsx-toolbar-swatch[aria-selected='true']",
+    selector: ".xlsx-toolbar .xlsx-toolbar-swatch[aria-pressed='true']",
     declarations: [
       'outline: 3px solid Highlight',
       'box-shadow: inset 0 0 0 2px Canvas, inset 0 0 0 4px Highlight',
     ],
   },
-  noFill: {
-    selector: '.xlsx-toolbar .xlsx-toolbar-no-fill',
-    declarations: ['border-color: CanvasText'],
-  },
   selectedNoFill: {
-    selector: ".xlsx-toolbar .xlsx-toolbar-no-fill[aria-selected='true']",
-    declarations: [...HIGHLIGHT, 'outline: none', 'border-color: CanvasText'],
+    selector: ".xlsx-toolbar .xlsx-toolbar-color-clear[aria-pressed='true']",
+    declarations: [...HIGHLIGHT, 'outline: none'],
   },
   focusedSwatch: {
-    selector: '.xlsx-toolbar :is(.xlsx-toolbar-swatch, .xlsx-toolbar-no-fill):focus-visible',
+    selector: '.xlsx-toolbar :is(.xlsx-toolbar-swatch, .xlsx-toolbar-color-clear):focus-visible',
     declarations: ['outline: 2px solid CanvasText', 'outline-offset: 1px'],
   },
   selectedHeading: {

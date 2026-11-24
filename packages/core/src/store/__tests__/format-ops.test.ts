@@ -257,6 +257,17 @@ describe('applyFormat', () => {
     expect(xml).toContain('formatCode="&quot;&lt;&amp;&gt;&quot;0"');
   });
 
+  test('an automatic font color writes `x:color` with `auto` in place of `rgb`', () => {
+    const store = new WorkbookDocumentStore(open(base()));
+    expect(store.transact([fmt('A1', { fontColor: 'FF0000' })]).ok).toBe(true);
+    expect(store.transact([fmt('A1', { fontColor: 'auto' })]).ok).toBe(true);
+    const color = child(formatOf(store.package, 'A1').font, 'x:color');
+    // `CT_Color/@auto` (ECMA-376 Part 1, 18.8.19), and no `rgb` from the earlier color.
+    expect(attr(color, 'auto')).toBe('1');
+    expect(attr(color, 'rgb')).toBeUndefined();
+    expect(store.transact([fmt('A1', { fontColor: 'AUTO' })]).ok).toBe(false);
+  });
+
   test('values outside their ranges are refused with bad-format', () => {
     const store = new WorkbookDocumentStore(open(base()));
     const bad: FormatPatch[] = [

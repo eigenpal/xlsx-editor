@@ -449,9 +449,9 @@ describe('XlsxEditor.Toolbar', () => {
     expect(viewer.snapshot().activeFormat?.fontSize).toBe(14);
     expect(view.queryByRole('listbox')).toBeNull();
     expect(document.activeElement).toBe(grid);
-    fireEvent.click(view.getByRole('button', { name: 'Fill color' }));
-    const yellow = view.getByRole('option', { name: 'Yellow' });
-    expect(yellow.getAttribute('aria-selected')).toBe('false');
+    fireEvent.click(view.getByRole('button', { name: 'Fill color options' }));
+    const yellow = view.getByRole('button', { name: 'Yellow' });
+    expect(yellow.getAttribute('aria-pressed')).toBe('false');
     fireEvent.click(yellow);
     expect(viewer.snapshot().activeFormat?.fillColor).toBe('FFFF00');
   });
@@ -481,7 +481,7 @@ describe('XlsxEditor.Toolbar', () => {
         .querySelector('svg.xlsx-toolbar-caret path')
         ?.getAttribute('d');
     expect(caret(/^Font size/)).toBe(CHROME_ICON_PATHS.expand_more[0]);
-    expect(caret(/^Fill color/)).toBe(CHROME_ICON_PATHS.arrow_drop_down[0]);
+    expect(caret(/^Fill color options/)).toBe(CHROME_ICON_PATHS.arrow_drop_down[0]);
     const menu = view.container.querySelector('[data-group-menu] svg.xlsx-toolbar-caret path');
     expect(menu?.getAttribute('d')).toBe(CHROME_ICON_PATHS.arrow_drop_down[0]);
     expect(view.container.querySelector('span.xlsx-toolbar-caret')).toBeNull();
@@ -491,10 +491,10 @@ describe('XlsxEditor.Toolbar', () => {
 
   test('a press outside an open popup closes it', async () => {
     const { view, grid } = await open();
-    fireEvent.click(view.getByRole('button', { name: 'Font color' }));
-    expect(view.getByRole('listbox', { name: 'Font color' })).toBeTruthy();
+    fireEvent.click(view.getByRole('button', { name: 'Font color options' }));
+    expect(view.getByRole('dialog', { name: 'Font color' })).toBeTruthy();
     fireEvent.pointerDown(grid);
-    expect(view.queryByRole('listbox')).toBeNull();
+    expect(view.queryByRole('dialog')).toBeNull();
   });
 
   test('a structural command that design D4 refuses is disabled with its reason', async () => {
@@ -645,15 +645,15 @@ describe('the toolbar keyboard', () => {
 
   test('Down on an open popup moves the keyboard into it', async () => {
     const { view } = await open();
-    const trigger = view.getByRole('button', { name: 'Fill color' });
+    const trigger = view.getByRole('button', { name: 'Fill color options' });
     fireEvent.click(trigger);
     trigger.focus();
     fireEvent.keyDown(trigger, { key: 'ArrowDown' });
-    const palette = view.getByRole('listbox', { name: 'Fill color' });
-    // The cell has no fill: the selected option is "No fill".
-    expect(document.activeElement).toBe(view.getByRole('option', { name: 'No fill' }));
-    fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
-    expect(document.activeElement).toBe(view.getByRole('option', { name: 'Black' }));
+    const palette = view.getByRole('dialog', { name: 'Fill color' });
+    // The cell has no fill: the keyboard starts on "No fill", and Down moves to the grid.
+    expect(document.activeElement).toBe(view.getByRole('button', { name: 'No fill' }));
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(view.getByRole('button', { name: 'Background 1' }));
     expect(palette.contains(document.activeElement)).toBe(true);
   });
 

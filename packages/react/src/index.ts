@@ -74,6 +74,8 @@ export {
   type ToolbarSeparatorProps,
 } from './toolbar/action.tsx';
 export type {
+  ToolbarColorSplitComponent,
+  ToolbarColorSplitProps,
   ToolbarNamedParts,
   ToolbarPartComponent,
   ToolbarPartProps,

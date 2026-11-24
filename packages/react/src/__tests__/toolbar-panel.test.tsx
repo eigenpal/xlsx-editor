@@ -121,7 +121,11 @@ describe('the overflow panel', () => {
       fireEvent.click(view.getByRole('button', { name: 'More' }));
       if (host.padding !== undefined) view.getByRole('dialog').style.padding = `${host.padding}px`;
       fireEvent.click(view.getByRole('button', { name: control }));
-      return view.getByRole('listbox', { name: listName }).closest<HTMLElement>('[data-popup]')!;
+      // A list is a listbox, and the color picker is a dialog.
+      const popup =
+        view.queryByRole('listbox', { name: listName }) ??
+        view.getByRole('dialog', { name: listName });
+      return popup.closest<HTMLElement>('[data-popup]')!;
     } finally {
       unstub();
       restore();
@@ -162,7 +166,7 @@ describe('the overflow panel', () => {
 
   test('a palette taller than the visible panel scrolls inside itself too', async () => {
     // In a bar of 100 pixels, no group fits: the fill group is in the panel.
-    const popup = await openInPanel('Fill color', 'Fill color', 300, [100, 0]);
+    const popup = await openInPanel('Fill color options', 'Fill color', 300, [100, 0]);
     expect(popup.closest('[role="dialog"]')).not.toBeNull();
     expect(popup.style.maxHeight).toBe('300px');
   });

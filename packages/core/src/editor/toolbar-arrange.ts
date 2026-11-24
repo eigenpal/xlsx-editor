@@ -37,7 +37,7 @@ import {
   type ChromeGroup,
   type ChromeSlotId,
 } from './chrome-controls.ts';
-import { isToolbarButtonSlot } from './toolbar-named-parts.ts';
+import { isToolbarButtonSlot, takesToolbarIcon } from './toolbar-named-parts.ts';
 
 /**
  * Collapse order: the first id here is the first group to leave the bar. The reverse of the bar
@@ -425,15 +425,22 @@ export function arrangeToolbar(input: {
       const button = isToolbarButtonSlot(slot.slotId);
       if (slot.asChild && button && slot.asChildElement === false)
         problems.push(toolbarAsChildProblem(names.slot, slot.slotId));
-      for (const setting of ['icon', 'asChild'] as const)
-        if (slot[setting] && !button)
-          problems.push(
-            `${names.slot} "${slot.slotId}" has ${setting}, but the slot is not a button ` +
-              `(it is a list, a palette, or a dialog opener), so the ${setting} is ignored. ` +
-              `Give the slot content to replace the control.`
-          );
+      // A color split button takes `icon` for its glyph, but no `asChild`: it is two buttons.
+      const takesIcon = takesToolbarIcon(slot.slotId);
+      if (slot.icon && !takesIcon)
+        problems.push(
+          `${names.slot} "${slot.slotId}" has icon, but the slot is not a button or a color ` +
+            `control (it is a list or a dialog opener), so the icon is ignored. ` +
+            `Give the slot content to replace the control.`
+        );
+      if (slot.asChild && !button)
+        problems.push(
+          `${names.slot} "${slot.slotId}" has asChild, but the slot is not a button ` +
+            `(it is a list, a color control, or a dialog opener), so the asChild is ignored. ` +
+            `Give the slot content to replace the control.`
+        );
       const element = slot.asChild && slot.asChildElement !== false;
-      if ((slot.icon && button) || (element && button) || slot.className)
+      if ((slot.icon && takesIcon) || (element && button) || slot.className)
         customized.add(slot.slotId as ChromeSlotId);
     }
   }

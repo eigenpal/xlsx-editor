@@ -107,7 +107,9 @@ describe('useChromeTranslate', () => {
     const overrides = new Map([['formulaBar.lines', '{count, plural, few {# (few)} other {#}}']]);
     mount(() =>
       h(XlsxEditorRoot, { locale: { _lang: 'pl' } }, () => [
-        probe(() => seen.push(useChromeTranslate(overrides).value('formulaBar.lines', { count: 3 }))),
+        probe(() =>
+          seen.push(useChromeTranslate(overrides).value('formulaBar.lines', { count: 3 }))
+        ),
       ])
     );
     expect(seen).toEqual(['3 (few)']);
@@ -265,10 +267,14 @@ describe('LocaleProvider', () => {
   test('around the root, the root locale merges onto it, and host controls outside read it', async () => {
     const seen: string[] = [];
     const view = mount(() =>
-      h(LocaleProvider, { i18n: { _lang: 'de', zoom: { zoomIn: 'Größer', zoomOut: 'Kleiner' } } }, () => [
-        probe(() => seen.push(useTranslation().t('zoom.zoomIn'))),
-        parts({ locale: { zoom: { zoomOut: 'Verkleinern' } } }),
-      ])
+      h(
+        LocaleProvider,
+        { i18n: { _lang: 'de', zoom: { zoomIn: 'Größer', zoomOut: 'Kleiner' } } },
+        () => [
+          probe(() => seen.push(useTranslation().t('zoom.zoomIn'))),
+          parts({ locale: { zoom: { zoomOut: 'Verkleinern' } } }),
+        ]
+      )
     );
     await tabsShow(view);
     expect(seen).toEqual(['Größer']);
@@ -353,7 +359,10 @@ describe('a runtime change of the root locale', () => {
     const ready: { editor: XlsxEditorInstance | null } = { editor: null };
     const locale = shallowRef<Translations | undefined>(undefined);
     const view = mount(() =>
-      parts({ ...(locale.value ? { locale: locale.value } : {}), onReady: (e) => (ready.editor = e) })
+      parts({
+        ...(locale.value ? { locale: locale.value } : {}),
+        onReady: (e) => (ready.editor = e),
+      })
     );
     await tabsShow(view);
     const first = ready.editor!;
@@ -379,9 +388,13 @@ describe('a runtime change of the root locale', () => {
 
 describe('direction', () => {
   const chrome = (view: Mounted) =>
-    ['.xlsx-toolbar', '.xlsx-formula-bar', '.xlsx-status-strip', '.xlsx-sheet-bar', '.xlsx-zoom'].map(
-      (selector) => view.container.querySelector(selector)!
-    );
+    [
+      '.xlsx-toolbar',
+      '.xlsx-formula-bar',
+      '.xlsx-status-strip',
+      '.xlsx-sheet-bar',
+      '.xlsx-zoom',
+    ].map((selector) => view.container.querySelector(selector)!);
 
   test('a right-to-left catalog mirrors each chrome part, and the grid keeps its direction', async () => {
     const view = mount(() => parts({ locale: { _lang: 'ar' } }));
@@ -437,7 +450,9 @@ describe('direction', () => {
 
   test('in a right-to-left bar, ArrowLeft moves to the next sheet tab', async () => {
     const ready: { editor: XlsxEditorInstance | null } = { editor: null };
-    const view = mount(() => parts({ locale: { _lang: 'ar' }, onReady: (e) => (ready.editor = e) }));
+    const view = mount(() =>
+      parts({ locale: { _lang: 'ar' }, onReady: (e) => (ready.editor = e) })
+    );
     await tabsShow(view);
     const [first] = view.getAllByRole('tab');
     first!.focus();
@@ -463,7 +478,16 @@ describe('direction', () => {
     const view = mount(() => parts({ locale: { _lang: 'ar' } }));
     await tabsShow(view);
     const rect = (left: number, right: number) =>
-      ({ left, right, top: 0, bottom: 20, width: right - left, height: 20, x: left, y: 0 }) as DOMRect;
+      ({
+        left,
+        right,
+        top: 0,
+        bottom: 20,
+        width: right - left,
+        height: 20,
+        x: left,
+        y: 0,
+      }) as DOMRect;
     const original = Element.prototype.getBoundingClientRect;
     Element.prototype.getBoundingClientRect = function (this: Element) {
       if (this.classList.contains('xlsx-editor')) return rect(0, 800);
@@ -494,7 +518,7 @@ describe('direction', () => {
   test('in a right-to-left palette, ArrowLeft moves to the next swatch', async () => {
     const view = mount(() => parts({ locale: { _lang: 'ar' } }));
     await tabsShow(view);
-    fireEvent.click(view.getByRole('button', { name: /^Fill color/ }));
+    fireEvent.click(view.getByRole('button', { name: 'Fill color options' }));
     await nextTick();
     await nextTick();
     const swatches = [...view.container.querySelectorAll<HTMLElement>('.xlsx-toolbar-swatch')];
@@ -508,7 +532,9 @@ describe('direction', () => {
 
   test('in a right-to-left bar, the tab menu names the side that each move goes to', async () => {
     const ready: { editor: XlsxEditorInstance | null } = { editor: null };
-    const view = mount(() => parts({ locale: { _lang: 'ar' }, onReady: (e) => (ready.editor = e) }));
+    const view = mount(() =>
+      parts({ locale: { _lang: 'ar' }, onReady: (e) => (ready.editor = e) })
+    );
     await tabsShow(view);
     fireEvent.keyDown(view.getAllByRole('tab')[0]!, { key: 'F10', shiftKey: true });
     await nextTick();
@@ -524,17 +550,28 @@ describe('direction', () => {
     await tabsShow(view);
     fireEvent.keyDown(view.getAllByRole('tab')[0]!, { key: 'F10', shiftKey: true });
     await nextTick();
-    expect(view.getAllByRole('menuitem').map((el) => el.textContent).slice(-2)).toEqual([
-      'Move left',
-      'Move right',
-    ]);
+    expect(
+      view
+        .getAllByRole('menuitem')
+        .map((el) => el.textContent)
+        .slice(-2)
+    ).toEqual(['Move left', 'Move right']);
   });
 
   test('in a right-to-left bar, the rename field starts at the right edge of its tab', async () => {
     const view = mount(() => parts({ locale: { _lang: 'ar' } }));
     await tabsShow(view);
     const rect = (left: number, right: number) =>
-      ({ left, right, top: 0, bottom: 20, width: right - left, height: 20, x: left, y: 0 }) as DOMRect;
+      ({
+        left,
+        right,
+        top: 0,
+        bottom: 20,
+        width: right - left,
+        height: 20,
+        x: left,
+        y: 0,
+      }) as DOMRect;
     // The bar spans 0 to 600, the list 100 to 600, the add button 60 to 100, the first tab 500
     // to 600 (the right end, where a right-to-left bar starts). Each element gets its own box,
     // so no stub on a prototype from another test file changes it.
@@ -558,14 +595,24 @@ describe('direction', () => {
       // The field ends before the add button: 600 - 100 - 2 pixels.
       expect(field.style.maxWidth).toBe('498px');
     } finally {
-      for (const el of stubbed) delete (el as { getBoundingClientRect?: unknown }).getBoundingClientRect;
+      for (const el of stubbed)
+        delete (el as { getBoundingClientRect?: unknown }).getBoundingClientRect;
     }
   });
   test('a popup that runs past the right edge of a right-to-left editor is held inside it', async () => {
     const view = mount(() => parts({ locale: { _lang: 'ar' } }));
     await tabsShow(view);
     const rect = (left: number, right: number) =>
-      ({ left, right, top: 0, bottom: 20, width: right - left, height: 20, x: left, y: 0 }) as DOMRect;
+      ({
+        left,
+        right,
+        top: 0,
+        bottom: 20,
+        width: right - left,
+        height: 20,
+        x: left,
+        y: 0,
+      }) as DOMRect;
     // The editor spans 0 to 800. The trigger, 760 to 840, runs past its right edge, and the
     // popup opens at the trigger's start, its right edge: 640 to 840.
     const original = Element.prototype.getBoundingClientRect;

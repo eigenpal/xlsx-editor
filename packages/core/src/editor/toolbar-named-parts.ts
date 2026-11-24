@@ -66,3 +66,12 @@ export function isToolbarButtonSlot(slot: string): boolean {
   const control = chromeControlForSlot(slot);
   return control !== null && (control.shape ?? 'icon') === 'icon';
 }
+
+/**
+ * Whether the part of `slot` takes `icon`: a button part, and the font color and fill color
+ * split buttons, whose `icon` replaces the glyph above the color bar, as DOCX Editor's
+ * `ToolbarColorSplitProps`. @internal
+ */
+export function takesToolbarIcon(slot: string): boolean {
+  return isToolbarButtonSlot(slot) || chromeControlForSlot(slot)?.shape === 'color';
+}

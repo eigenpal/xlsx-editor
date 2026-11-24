@@ -701,6 +701,15 @@ describe('arrangeToolbar with changed controls', () => {
     expect(a.customized.size).toBe(0);
     expect(a.problems).toHaveLength(2);
     expect(a.problems[0]).toContain('"font.size" has icon, but the slot is not a button');
+    expect(a.problems[1]).toContain('"fill.color" has asChild, but the slot is not a button');
+  });
+
+  test('icon on a color control replaces its glyph, as on a button', () => {
+    const a = arrangeToolbar({
+      slots: [{ slotId: 'font.color', hidden: false, content: false, icon: true }],
+    });
+    expect([...a.customized]).toEqual(['font.color']);
+    expect(a.problems).toEqual([]);
   });
 
   test('asChild with children on a value slot replaces the control, with a problem', () => {

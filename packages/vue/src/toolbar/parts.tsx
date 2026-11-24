@@ -24,14 +24,24 @@ import {
   type VNodeChild,
 } from 'vue';
 import {
-  COLOR_CHOICES,
+  AUTO_COLOR,
+  CLEAR_CHIP_HEX,
   FONT_FAMILY_CHOICES,
   FONT_SIZE_CHOICES,
   NO_FILL,
   focusPopupItem,
   guardToolbarMousedown,
   isHexColor,
+  colorBarTone,
+  colorPickLabel,
+  colorPickerGrid,
+  customHexDraft,
+  focusColorSwatch,
+  hexFromText,
+  moveColorSwatchFocus,
   movePopupFocus,
+  workbookThemeHexes,
+  type ColorPick,
   numberFormatListView,
   parseFontSize,
   placePopup,
@@ -514,6 +524,7 @@ export const FontSizeList = defineComponent({
 });
 
 const numberLocaleOf = (snapshot: EditorSnapshot) => snapshot.numberLocale;
+const themeColorsOf = (snapshot: EditorSnapshot) => snapshot.themeColors;
 
 /**
  * The number format list: the built-in choices, and the code of any other format. A format
@@ -645,9 +656,12 @@ export const NumberFormatDialogButton = defineComponent({
 });
 
 /**
- * A color palette for `font.color` or `fill.color`. The swatch colors are constants of core
- * (`COLOR_CHOICES`), and the bar under the icon shows the active cell's color only after a
- * six-digit hex check, so no inline style carries other text.
+ * The font color or the fill color as a split button, the twin of React's `ColorPalette` and of
+ * docx-editor/packages/vue/src/editor/toolbar/ColorSplit.tsx at 60a86b48 (EigenPal). The main
+ * half applies the last color that it applied, which its bar shows. The caret opens the picker:
+ * Automatic (or No fill), the workbook theme colors with five rows of tints and shades, the
+ * standard colors, and a custom hex field, from core (`color-picker.ts`). A swatch paints six
+ * hex digits that core checked, so no inline style carries other text.
  */
 export const ColorPalette = defineComponent({
   name: 'XlsxColorPalette',
@@ -657,82 +671,220 @@ export const ColorPalette = defineComponent({
   },
   setup(props) {
     const { t } = useTranslation();
+    const themeColors = useEditorState(themeColorsOf);
     const s = useToolbarSlot(props.slot);
     const popup = usePopup('[data-color]', {
       inline: props.layout === 'row',
       closed: () => !s.isEnabled.value,
     });
     const reasonId = useId();
+    const headingId = useId();
     const overrideOf = useSlotOverride(() => props.slot);
-    const pick = (value: string): void => {
+    const fill = props.slot === 'fill.color';
+    const clear = fill ? NO_FILL : AUTO_COLOR;
+    const last = shallowRef(fill ? 'FFFF00' : 'FF0000');
+    const draft = shallowRef('');
+    let keyboardOpen = false;
+    const popupEl = (): HTMLElement | null =>
+      popup.root.value?.querySelector<HTMLElement>('[data-popup]') ?? null;
+    watch(
+      popup.open,
+      (isOpen) => {
+        if (!isOpen) {
+          draft.value = '';
+          return;
+        }
+        if (!keyboardOpen) return;
+        keyboardOpen = false;
+        focusColorSwatch(popupEl());
+      },
+      { flush: 'post' }
+    );
+    const apply = (value: string): void => {
       popup.setOpen(false);
+      if (!s.isEnabled.value) return;
       s.execute(value);
+      if (value !== clear) last.value = value;
       s.focusGrid();
     };
+    const tr = (key: string, params?: Readonly<Record<string, string | number>>): string =>
+      translateKey(t, key, params);
     return () => {
       const { layout } = props;
       const label = s.words.value.label;
-      const current = s.value.value ?? undefined;
-      const colors = [
-        ...(props.slot === 'fill.color'
-          ? [{ value: NO_FILL, label: t('colorPicker.noFill') }]
-          : []),
-        ...COLOR_CHOICES.map((c) => ({ value: c.value, label: translateKey(t, c.labelKey) })),
-      ];
+      const current = s.value.value?.toUpperCase() ?? null;
+      const override = overrideOf();
+      const attributes = slotAttributes(s, reasonId);
+      // The caret is part of the slot's control: the main half alone carries `data-slot`.
+      const { 'data-slot': _slot, ...caretAttributes } = attributes;
+      const grid = popup.open.value ? colorPickerGrid(workbookThemeHexes(themeColors.value)) : null;
+      const custom = hexFromText(draft.value);
+      const swatch = (pick: ColorPick, hex: string) => {
+        const value = hex.slice(1);
+        const name = colorPickLabel(pick, tr);
+        return (
+          <button
+            key={pick}
+            type="button"
+            tabindex={-1}
+            class="xlsx-toolbar-swatch"
+            data-color-swatch=""
+            data-color={value}
+            data-tone={colorBarTone(value)}
+            aria-label={name}
+            title={name}
+            aria-pressed={current === value}
+            style={{ backgroundColor: hex }}
+            onMousedown={guardToolbarMousedown}
+            onClick={() => apply(value)}
+          />
+        );
+      };
       return (
         <div
           ref={popup.root}
-          class={`xlsx-toolbar-dropdown${layout === 'row' ? ' xlsx-toolbar-labelled' : ''}`}
+          class={`xlsx-toolbar-dropdown xlsx-toolbar-colorsplit${layout === 'row' ? ' xlsx-toolbar-labelled' : ''}`}
         >
           {layout === 'row' ? <span class="xlsx-toolbar-row-label">{label}</span> : null}
-          {trigger(
-            t,
-            {
-              s,
-              popup,
-              kind: 'listbox',
-              className: 'xlsx-toolbar-color',
-              override: overrideOf(),
-              caret: 'menu',
-              name: label,
-              reasonId,
-            },
+          <button
+            type="button"
+            class={withClass('xlsx-toolbar-button xlsx-toolbar-colorsplit-main', override)}
+            aria-label={label}
+            {...attributes}
+            onClick={() => apply(last.value)}
+          >
             <span class="xlsx-toolbar-color-icon">
-              <ChromeIcon paths={s.control.paths} />
+              {override?.icon ?? <ChromeIcon paths={s.control.paths} />}
               <span
                 class="xlsx-toolbar-color-bar"
-                data-none={isHexColor(current) ? undefined : ''}
-                style={isHexColor(current) ? { backgroundColor: `#${current}` } : undefined}
+                data-tone={colorBarTone(last.value)}
+                style={isHexColor(last.value) ? { backgroundColor: `#${last.value}` } : undefined}
               />
             </span>
-          )}
-          {popup.open.value ? (
+          </button>
+          <button
+            type="button"
+            class="xlsx-toolbar-button xlsx-toolbar-colorsplit-caret"
+            aria-haspopup="dialog"
+            aria-expanded={popup.open.value}
+            aria-controls={popup.open.value ? popup.id : undefined}
+            aria-label={t('colorPicker.colorOptions', { label })}
+            {...caretAttributes}
+            onClick={() => {
+              if (s.isEnabled.value) popup.setOpen(!popup.open.value);
+            }}
+            onKeydown={(e: KeyboardEvent) => {
+              const action = popupTriggerAction(e.key, popup.open.value);
+              if (!action) return;
+              e.preventDefault();
+              if (!s.isEnabled.value) return;
+              if (action === 'open') {
+                keyboardOpen = true;
+                popup.setOpen(true);
+              } else if (action === 'focusIn') focusColorSwatch(popupEl());
+              else popup.setOpen(false);
+            }}
+            onKeyup={(e: KeyboardEvent) => {
+              if (e.key === ' ') e.preventDefault();
+            }}
+          >
+            <ChromeIcon paths={ICON_MENU_CARET} className="xlsx-toolbar-caret" />
+          </button>
+          {reasonText(reasonId, s.words.value.description)}
+          {grid ? (
             <div
               id={popup.id}
-              role="listbox"
+              role="dialog"
               aria-label={label}
-              aria-orientation="horizontal"
-              {...popupAttributes(layout, 'xlsx-toolbar-palette')}
-              onKeydown={(e: KeyboardEvent) => movePopupFocus(e, '[data-color]', true)}
+              {...popupAttributes(layout, 'xlsx-toolbar-color-popup')}
+              onKeydown={(e: KeyboardEvent) => {
+                if ((e.target as HTMLElement).tagName === 'INPUT') return;
+                if (moveColorSwatchFocus(e.currentTarget as HTMLElement, e.key)) e.preventDefault();
+              }}
             >
-              {colors.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  role="option"
-                  tabindex={-1}
-                  data-color={c.value}
-                  aria-label={c.label}
-                  title={c.label}
-                  aria-selected={c.value === current}
-                  class={c.value === NO_FILL ? 'xlsx-toolbar-no-fill' : 'xlsx-toolbar-swatch'}
-                  style={c.value === NO_FILL ? undefined : { backgroundColor: `#${c.value}` }}
-                  onMousedown={guardToolbarMousedown}
-                  onClick={() => pick(c.value)}
+              <button
+                type="button"
+                class="xlsx-toolbar-color-clear"
+                data-color-none=""
+                data-color={clear}
+                aria-pressed={fill ? current === NO_FILL.toUpperCase() : undefined}
+                onMousedown={guardToolbarMousedown}
+                onClick={() => apply(clear)}
+              >
+                <span
+                  class={`xlsx-toolbar-color-chip${fill ? ' xlsx-toolbar-color-chip-none' : ''}`}
+                  style={{ backgroundColor: `#${CLEAR_CHIP_HEX[fill ? 'none' : 'auto']}` }}
+                  aria-hidden="true"
+                />
+                {t(fill ? 'colorPicker.noFill' : 'colorPicker.automatic')}
+              </button>
+              <div class="xlsx-toolbar-color-section">
+                <div class="xlsx-toolbar-color-heading" id={`${headingId}-theme`}>
+                  {t('colorPicker.themeColors')}
+                </div>
+                <div
+                  role="group"
+                  aria-labelledby={`${headingId}-theme`}
+                  class="xlsx-toolbar-color-grid xlsx-toolbar-color-grid-theme"
                 >
-                  {c.value === NO_FILL ? c.label : null}
-                </button>
-              ))}
+                  {grid.theme.flat().map((c) => swatch(c.pick, c.hex))}
+                </div>
+              </div>
+              <div class="xlsx-toolbar-color-section">
+                <div class="xlsx-toolbar-color-heading" id={`${headingId}-standard`}>
+                  {t('colorPicker.standardColors')}
+                </div>
+                <div
+                  role="group"
+                  aria-labelledby={`${headingId}-standard`}
+                  class="xlsx-toolbar-color-grid"
+                >
+                  {grid.standard.map((c) => swatch(c.pick, c.hex))}
+                </div>
+              </div>
+              <div class="xlsx-toolbar-color-section">
+                <label class="xlsx-toolbar-color-heading" for={`${headingId}-hex`}>
+                  {t('colorPicker.customColor')}
+                </label>
+                <div class="xlsx-toolbar-color-custom">
+                  <span class="xlsx-toolbar-color-hash" aria-hidden="true">
+                    #
+                  </span>
+                  <input
+                    id={`${headingId}-hex`}
+                    type="text"
+                    class="xlsx-toolbar-color-hex"
+                    dir="ltr"
+                    value={draft.value}
+                    maxlength={6}
+                    spellcheck={false}
+                    autocomplete="off"
+                    aria-label={t('colorPicker.hexColor')}
+                    onInput={(e: Event) => {
+                      const input = e.target as HTMLInputElement;
+                      draft.value = customHexDraft(input.value);
+                      input.value = draft.value;
+                    }}
+                    onKeydown={(e: KeyboardEvent) => {
+                      if (e.key === 'Enter' && custom) {
+                        e.preventDefault();
+                        apply(custom);
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    class="xlsx-toolbar-color-apply"
+                    disabled={!custom}
+                    onMousedown={guardToolbarMousedown}
+                    onClick={() => {
+                      if (custom) apply(custom);
+                    }}
+                  >
+                    {t('colorPicker.apply')}
+                  </button>
+                </div>
+              </div>
             </div>
           ) : null}
         </div>

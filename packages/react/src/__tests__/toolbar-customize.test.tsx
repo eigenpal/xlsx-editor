@@ -208,6 +208,20 @@ describe('asChild', () => {
       seen.some((w) => w.includes('"font.family" has icon, but the slot is not a button'))
     ).toBe(true);
   });
+  test('icon on a color part replaces the glyph above the color bar, with no warning', async () => {
+    let bar!: HTMLElement;
+    const seen = await warnings(async () => {
+      ({ bar } = await open(
+        <XlsxEditor.Toolbar>
+          <XlsxEditor.Toolbar.FontColor icon={<b data-host-icon="">A</b>} />
+        </XlsxEditor.Toolbar>
+      ));
+    });
+    const main = slot(bar, 'font.color')!;
+    expect(main.querySelector('[data-host-icon]')).not.toBeNull();
+    expect(main.querySelector('.xlsx-toolbar-color-bar')).not.toBeNull();
+    expect(seen).toEqual([]);
+  });
 });
 
 describe('XlsxEditor.Toolbar.Action', () => {

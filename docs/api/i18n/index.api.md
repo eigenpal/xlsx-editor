@@ -418,6 +418,27 @@ const enJson: {
     };
     colorPicker: {
         noFill: string;
+        automatic: string;
+        themeColors: string;
+        theme: {
+            background1: string;
+            text1: string;
+            background2: string;
+            text2: string;
+            accent1: string;
+            accent2: string;
+            accent3: string;
+            accent4: string;
+            accent5: string;
+            accent6: string;
+        };
+        standardColors: string;
+        customColor: string;
+        hexColor: string;
+        apply: string;
+        lighterPercent: string;
+        darkerPercent: string;
+        colorOptions: string;
         colors: {
             black: string;
             white: string;

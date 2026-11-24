@@ -124,6 +124,7 @@ const readySnapshot = (): EditorSnapshot => ({
   selectionRef: 'A1',
   activeCell: null,
   zoom: 1,
+  headings: true,
   stale: false,
   editing: false,
   editText: null,

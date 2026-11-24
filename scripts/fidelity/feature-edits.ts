@@ -141,6 +141,17 @@ export const FEATURE_EDITS: Readonly<Record<string, FeatureEdit>> = {
       ),
     parts: [WORKBOOK],
   },
+  'editing.sheet-headings': {
+    fixture: 'basic-values',
+    // The fixture hides its headings (`showRowColHeaders="0"`). View > Headings shows them, and
+    // the default of the attribute is true, so the saved view has no attribute.
+    edit: (t) => t.toolbar('view.headings'),
+    check: (d) =>
+      all(
+        has(d.sheetXml('Values'), '<sheetView'),
+        lacks(d.sheetXml('Values'), 'showRowColHeaders')
+      ),
+  },
   'editing.clear': {
     fixture: 'colors-fonts',
     // Clear formats keeps the text of B1; clear contents keeps the cell format of B2.

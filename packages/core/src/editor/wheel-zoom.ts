@@ -27,4 +27,15 @@ export class WheelZoom {
     this.#sum = 0;
     return dir;
   }
+
+  /**
+   * Handle a wheel event on the grid: a zoom event zooms one step through `zoomStep` when its
+   * deltas make one, and never scrolls or zooms the page. Any other event scrolls.
+   */
+  handle(e: WheelEvent, zoomStep: (direction: 1 | -1) => void): void {
+    const step = this.step(e);
+    if (step === undefined) return;
+    e.preventDefault();
+    if (step !== 0) zoomStep(step);
+  }
 }

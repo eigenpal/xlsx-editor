@@ -72,6 +72,7 @@ export const MENU_NAMED_PARTS = {
   ZoomIn: row('view.zoomIn'),
   ZoomOut: row('view.zoomOut'),
   ZoomReset: row('view.zoomReset'),
+  Headings: row('view.headings'),
   InsertRows: row('cells.insertRows'),
   InsertColumns: row('cells.insertColumns'),
   InsertSheet: row('sheet.add'),

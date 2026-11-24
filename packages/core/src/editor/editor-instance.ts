@@ -369,6 +369,15 @@ export interface XlsxEditorInstance {
    */
   unmergeCells(): EditResult;
   /**
+   * Show or hide the row and column headings of the shown sheet: `x:sheetView/@showRowColHeaders`
+   * of its first sheet view (`CT_SheetView`, ECMA-376 Part 1, 18.3.1.87). `snapshot().headings`
+   * gives the current state. The flag is part of the workbook, so a change is one undo step and
+   * the save keeps it. A sheet that already has the asked state changes nothing and makes no undo
+   * step. Sheet protection does not refuse it. An open cell edit commits first. While an input
+   * method composes, it is refused with `composing`, and in view mode with `view-mode`.
+   */
+  setShowHeadings(show: boolean): EditResult;
+  /**
    * Add an empty worksheet after the shown sheet, and show it. Without `name`, the name is the
    * catalog text `sheetTabs.newSheetName` with the smallest free number `{n}` from 1. A name
    * that breaks the rules of a sheet name is refused with `sheet-name-invalid` (empty, more

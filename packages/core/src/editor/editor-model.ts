@@ -182,6 +182,12 @@ export interface EditorSnapshot {
   /** 1 is 100%. */
   readonly zoom: number;
   /**
+   * The shown sheet shows its row and column headings: `x:sheetView/@showRowColHeaders` of its
+   * first sheet view (`CT_SheetView`, ECMA-376 Part 1, 18.3.1.87), true by default. True with no
+   * shown sheet.
+   */
+  readonly headings: boolean;
+  /**
    * The shown values of formulas can be out of date: the stale flag is set, and the
    * shown sheet holds a formula cell. That includes a formula cell that the grid does not show:
    * an `x:c` inside `mc:AlternateContent` (also in a wrapped row), outside a row, or inside
@@ -510,6 +516,7 @@ export const EMPTY_SNAPSHOT: EditorSnapshot = Object.freeze({
   selectionRef: null,
   activeCell: null,
   zoom: 1,
+  headings: true,
   stale: false,
   editing: false,
   editText: null,

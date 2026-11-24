@@ -207,4 +207,26 @@ describe('the toolbar family styles', () => {
     for (const selector of ['.xlsx-sheet-menu-item', '.xlsx-toolbar-row'])
       expect(rule(selector)).toContain('border-radius: var(--doc-radius-control, 6px)');
   });
+
+  test('a disabled add-sheet button fades as a disabled toolbar button, with no hover', () => {
+    const faded = rule(".xlsx-sheet-add[aria-disabled='true']");
+    for (const d of ['opacity: 0.35', 'cursor: default']) expect(faded).toContain(d);
+    const focused = rule(".xlsx-sheet-add[aria-disabled='true']:focus-visible");
+    for (const d of ['opacity: 1', 'color: var(--doc-text-subtle)']) expect(focused).toContain(d);
+    expect(css).not.toMatch(/\.xlsx-sheet-add:hover\s*\{/);
+    expect(() => rule(".xlsx-sheet-add:hover:not([aria-disabled='true'])")).not.toThrow();
+    // In forced colors, the focused disabled button keeps `GrayText` over its focus rule.
+    expect(flat).toMatch(
+      /@media \(forced-colors: active\) \{[^@]*\.xlsx-sheet-add\[aria-disabled='true'\]:focus-visible,[^{]*\{ color: GrayText; \}/
+    );
+  });
+
+  test('a disabled sheet tab takes the subtle text color and no hover', () => {
+    const disabled = rule(".xlsx-sheet-tab[aria-disabled='true']");
+    for (const d of ['color: var(--doc-text-subtle)', 'cursor: default'])
+      expect(disabled).toContain(d);
+    expect(css).not.toMatch(/\.xlsx-sheet-tab:hover\s*\{/);
+    // `:where` keeps the hover rule at two classes, under the selected tab rule.
+    expect(() => rule(".xlsx-sheet-tab:hover:where(:not([aria-disabled='true']))")).not.toThrow();
+  });
 });

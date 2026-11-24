@@ -46,7 +46,6 @@ async function verifyPhoneBar(page: Page): Promise<void> {
     if (wide) throw new Error('a phone-wide page scrolls sideways');
     // The bar hides the label text of these controls, and each control keeps its name.
     for (const [role, name] of [
-      ['checkbox', 'Show all headings'],
       ['checkbox', 'View only'],
       ['button', 'Open a file'],
     ] as const) {

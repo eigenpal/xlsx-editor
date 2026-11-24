@@ -1,20 +1,18 @@
 /** @jsxImportSource react */
 // The opens of the demo over the open workbook, in happy-dom (`demo-harness.tsx`): a file that
 // does not open changes nothing; opening another workbook over unsaved edits asks first, from
-// a picked file, over a headings switch, for a value typed with no Enter, and after a cancelled
-// save; the newest pick is the workbook that opens; and a sample that does not download says
-// what to do. These were steps of the browser check (`scripts/verify-demo.ts`).
+// a picked file, for a value typed with no Enter, and after a cancelled save; the newest pick is
+// the workbook that opens; and a sample that does not download says what to do. These were steps
+// of the browser check (`scripts/verify-demo.ts`).
 
 import { afterEach, describe, expect, test } from 'bun:test';
 import { act, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import { buildXlsx } from '../../../../scripts/fixtures/builder.ts';
 import { SAMPLE_BOLD_EDIT } from '../../../../scripts/sample-workbook/edits.ts';
 import {
-  flagsOf,
   formatAt,
   mountDemo,
   readSaved,
-  sampleBytes,
   sampleWithNoSheet,
   settle,
   WAIT_MS,
@@ -26,11 +24,9 @@ afterEach(cleanup);
 const { sheet, ref } = SAMPLE_BOLD_EDIT;
 const boldIn = (bytes: Uint8Array) => formatAt(readSaved(bytes), sheet, ref).bold;
 
-/** Mounts the demo with the headings option off, on the sheet of the Bold edit. */
+/** Mounts the demo on the sheet of the Bold edit. */
 async function onEditSheet(): Promise<Demo> {
   const demo = await mountDemo();
-  await demo.setHeadings(false);
-  demo.closeMessage();
   await demo.tab(sheet);
   return demo;
 }
@@ -48,9 +44,6 @@ describe('a file that does not open', () => {
   test('changes nothing, keeps its message over a change of selection, and a close from the keyboard keeps the focus', async () => {
     const demo = await onEditSheet();
     demo.bold();
-    const flags = flagsOf(sampleBytes());
-    // The headings option is on, so the save reads the flags that the demo keeps.
-    await demo.setHeadings(true);
     for (const [name, bytes] of [
       ['broken.xlsx', 'not a workbook'],
       ['no-sheet.xlsx', sampleWithNoSheet()],
@@ -91,17 +84,15 @@ describe('a file that does not open', () => {
       }
       const after = await demo.save();
       expect(boldIn(after)).toBe(true);
-      expect(flagsOf(after)).toBe(flags);
       expect(demo.workbookName()).toBe('Sample workbook.xlsx');
     }
   });
 });
 
 describe('the question before unsaved edits are lost', () => {
-  test('from a file: only after the file passes the checks, and a no keeps the edit and the flags', async () => {
+  test('from a file: only after the file passes the checks, and a no keeps the edit', async () => {
     const demo = await onEditSheet();
     demo.bold();
-    await demo.setHeadings(true);
     const broken = await demo.askedOnOpen(async () => {
       demo.pickFile('broken.xlsx', 'not a workbook');
       await demo.alertSays('Could not open broken.xlsx');
@@ -114,25 +105,6 @@ describe('the question before unsaved edits are lost', () => {
     expect(demo.workbookName()).toBe('Sample workbook.xlsx');
     const saved = await demo.save();
     expect(boldIn(saved)).toBe(wasBold);
-    expect(flagsOf(saved)).toBe(flagsOf(sampleBytes()));
-  });
-
-  test('over a headings switch: an edit, a typed value, and an edit after a save each ask', async () => {
-    const demo = await onEditSheet();
-    const toFile = () => demo.pickFixture('basic-values');
-    demo.bold();
-    await demo.setHeadings(true);
-    expect(await demo.askedOnOpen(toFile)).toBe(1);
-    await demo.save();
-    typeWithNoEnter(demo);
-    await demo.setHeadings(false);
-    expect(await demo.askedOnOpen(toFile)).toBe(1);
-    await demo.save();
-    demo.bold();
-    await demo.save();
-    await demo.setHeadings(true);
-    demo.bold();
-    expect(await demo.askedOnOpen(toFile)).toBe(1);
   });
 
   test('a typed value asks, a formula that does not commit stops the open, and an edit after a cancelled save asks', async () => {

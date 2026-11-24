@@ -18,10 +18,10 @@
  * - The adapter switcher (`.demo-adapter-switcher`) is the source's, after
  *   pptx-editor/examples/shared/shell.css at 31be6abb. It leaves on a phone (600 px), not at the
  *   source's 1100 px, because this bar has no menu bar.
- * - The mode pill and the headings pill are checkboxes in a pill (`.demo-pill`), not a menu
- *   button with a popover: the editor's React adapter has no `Popover` or `MenuItem` part. So
- *   the pill holds its visually hidden input (`position: relative`), keeps its label on one
- *   line, and shows a pressed state while it is checked.
+ * - The mode pill is a checkbox in a pill (`.demo-pill`), not a menu button with a popover:
+ *   the editor's React adapter has no `Popover` or `MenuItem` part. So the pill holds its
+ *   visually hidden input (`position: relative`), keeps its label on one line, and shows a
+ *   pressed state while it is checked.
  * - The editor's toolbar, formula bar, grid, and footer sit in one card (`.demo-canvas`), as the
  *   slide sits in the PPTX canvas card; the zoom stays in the editor's own footer. The PPTX card
  *   is clear, and the slide stage in it carries the surface and the page shadow. A grid has no
@@ -393,7 +393,7 @@ body,
 .demo-topbar__actions .demo-topbar__divider {
   margin: 0 4px;
 }
-/* The status of a long open, save, or headings switch. */
+/* The status of a long open or save. */
 .demo-busy {
   color: var(--doc-text-muted);
   font-size: 12px;
@@ -604,8 +604,8 @@ body,
     padding: 0 8px;
   }
 }
-/* The status text of a long open or switch leaves the row at 820 px and below, so that the
-   longest status ("Switching the headings.") never pushes Save past the edge with a touch
+/* The status text of a long open or save leaves the row at 820 px and below, so that the
+   longest status ("Opening the workbook.") never pushes Save past the edge with a touch
    screen's 40 px controls. It stays in the accessibility tree, so a screen reader still
    announces it. */
 @media (max-width: 820px) {

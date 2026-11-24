@@ -159,7 +159,7 @@ export const savedNoticeStays = (savedAt: number | null, now: number): boolean =
 /**
  * Whether kept bytes still hold the open workbook. `kept` gives the load and the revision of the
  * bytes; `now` gives the load and the revision of the editor, and whether an open replaces the
- * workbook. An edit, a headings switch, or another open makes the bytes stale.
+ * workbook. An edit or another open makes the bytes stale.
  */
 export const keptSaveHolds = (
   kept: { readonly loadAt: number; readonly revision: number },

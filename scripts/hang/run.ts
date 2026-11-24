@@ -14,18 +14,15 @@
 // `cases.ts`, and `HANG_ALL=1` runs them all.
 //
 // Each case runs in its own browser, one browser at a time. The test opens the workbook in the
-// demo through its file input, with the demo's default options, unless the case sets
-// `headingsOff`. It then moves in the grid, scrolls, saves, types in a cell, and opens a small
-// workbook with the network fault lifted. The page must answer after each step. A watchdog outside
-// the page (`watchdog.ts`) stops the browser when it passes the memory cap or the time of the case.
+// demo through its file input, with the demo's default options. It then moves in the grid,
+// scrolls, saves, types in a cell, and opens a small workbook with the network fault lifted. The
+// page must answer after each step. A watchdog outside the page (`watchdog.ts`) stops the browser
+// when it passes the memory cap or the time of the case.
 // A read of the watchdog that comes more than 5 s late (a sleeping machine or a stalled test
 // process) does not count its delay as time of the case.
 //
-// A race case replaces the moves, the save, and the typing:
-// - `headings-switch` and `save` open a small workbook during the long work. That workbook must
-//   stay open, and the demo must say that another workbook opened.
-// - `headings-second-press` presses the headings option and Save again during a switch. The demo
-//   must refuse each press, write no file, and end the switch.
+// A race case replaces the moves, the save, and the typing: `save` opens a small workbook during
+// the long work. That workbook must stay open, and the demo must say that another workbook opened.
 //
 // Verdicts, worst first, as in PPTX Editor's hang check. Each verdict but `ok` and `SLOW` fails
 // the run:
@@ -82,7 +79,6 @@ import {
 } from './cases.ts';
 import { LAST_CELL, SAVE_KEEPS_CONTENT } from './first-cells.ts';
 import { readZip } from '../../packages/ooxml-core/src/zip.ts';
-import { HEADINGS_FROM_FILE } from '../../examples/vite/src/headings.ts';
 import { SAVE_READY } from '../../examples/vite/src/save.ts';
 import { fails, showsException, verdictOf, type Verdict } from './verdict.ts';
 import { killTree, watchBrowser, type Watch } from './watchdog.ts';
@@ -413,10 +409,6 @@ async function exercise(page: Page, testCase: HangCase): Promise<Problem | null>
   return null;
 }
 
-/** The option of the demo that shows the headings of every sheet. */
-const headingsPill = (page: Page) =>
-  page.locator('label.demo-pill', { hasText: 'Show all headings' });
-
 /**
  * Starts the long work of a race case, and opens the small workbook while it runs. The work must
  * say that another workbook opened, which proves the overlap, and the small workbook must still
@@ -428,7 +420,7 @@ async function raceOpen(
   input: Locator,
   file: string
 ): Promise<Problem | null> {
-  const start = testCase.race === 'headings-switch' ? headingsPill(page) : saveButton(page);
+  const start = saveButton(page);
   const late = await click(start, `the control of the ${testCase.race}`);
   if (late) return late;
   writeFileSync(file, recoveryWorkbook(RACE_SHEET));
@@ -457,60 +449,9 @@ async function raceOpen(
     };
   if (![...alerts].some((alert) => alert.includes(RACE_MESSAGE)))
     return { verdict: 'ERROR', why: `the ${testCase.race} did not say "${RACE_MESSAGE}"` };
-  if (testCase.race === 'save' && (last.picked > 0 || last.saved > 0))
+  if (last.picked > 0 || last.saved > 0)
     return { verdict: 'ERROR', why: 'the save wrote a workbook that another workbook replaced' };
   return null;
-}
-
-/** Clicks `target`, and waits for an alert that holds `text`. */
-async function refusedPress(page: Page, target: Locator, name: string, text: string) {
-  const late = await click(target, name);
-  if (late) return late;
-  const end = Date.now() + STEP_BUDGET_MS;
-  while (Date.now() < end) {
-    const state = await within(pageState(page), STEP_BUDGET_MS);
-    if (state?.alerts.some((alert) => alert.includes(text))) return null;
-    await Bun.sleep(25);
-  }
-  return { verdict: 'ERROR', why: `${name} during the switch did not say "${text}"` } as Problem;
-}
-
-/** Presses the headings option again and Save during one switch: the switch still ends well. */
-async function raceSecondPress(page: Page): Promise<Problem | null> {
-  const first = await click(headingsPill(page), 'the headings option');
-  if (first) return first;
-  const second = await refusedPress(
-    page,
-    headingsPill(page),
-    'the second press',
-    'a switch is running'
-  );
-  if (second) return second;
-  const save = await refusedPress(page, saveButton(page), 'Save', 'the headings are switching');
-  if (save) return save;
-  const end = Date.now() + OPEN_BUDGET_MS;
-  while (Date.now() < end) {
-    const state = await within(pageState(page), STEP_BUDGET_MS);
-    if (state?.notices.some((n) => n.includes(HEADINGS_FROM_FILE))) {
-      if (state.picked > 0) return { verdict: 'ERROR', why: 'a refused Save wrote a file' };
-      return null;
-    }
-    await Bun.sleep(50);
-  }
-  return { verdict: 'ERROR', why: 'the headings switch did not end after the refused presses' };
-}
-
-/** Turns off the demo's headings option, so the editor reads the bytes of the case. */
-async function headingsOff(page: Page): Promise<Problem | null> {
-  const late = await click(headingsPill(page), 'the headings option');
-  if (late) return late;
-  const end = Date.now() + STEP_BUDGET_MS;
-  while (Date.now() < end) {
-    const state = await within(pageState(page), Math.max(1, end - Date.now()));
-    if (state?.notices.some((n) => n.includes(HEADINGS_FROM_FILE))) return null;
-    await Bun.sleep(50);
-  }
-  return { verdict: 'ERROR', why: 'the demo did not switch its headings option' };
 }
 
 /** Applies the font fault of the case before the first request of the page. */
@@ -557,10 +498,6 @@ async function runCase(
     if (testCase.network === 'offline-after-start') await page.context().setOffline(true);
     const file = join(dir, `${testCase.id}.xlsx`);
     writeFileSync(file, testCase.bytes());
-    if (testCase.headingsOff) {
-      const off = await headingsOff(page);
-      if (off) return fail(off.verdict, off.why);
-    }
     await takeBlock(page);
     const t0 = Date.now();
     const taken = await within(
@@ -597,12 +534,9 @@ async function runCase(
       return fail('ERROR', 'the demo did not say that some fonts did not load');
   }
   if (result.outcome === 'open') {
-    const problem =
-      testCase.race === 'headings-second-press'
-        ? await raceSecondPress(page)
-        : testCase.race
-          ? await raceOpen(page, testCase, input, join(dir, 'race.xlsx'))
-          : await exercise(page, testCase);
+    const problem = testCase.race
+      ? await raceOpen(page, testCase, input, join(dir, 'race.xlsx'))
+      : await exercise(page, testCase);
     if (problem) return fail(problem.verdict, problem.why);
     const files = await within(pageState(page), STEP_BUDGET_MS);
     if (files && files.picked !== files.saved)

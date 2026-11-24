@@ -347,7 +347,7 @@ export async function pageAlerts(
   }
 }
 
-/** How long a step waits for the result of a save or a headings switch. */
+/** How long a step waits for the result of a save. */
 export const WAIT_MS = 10_000;
 
 /** The alerts on the page, as a note for an error message, or nothing. */

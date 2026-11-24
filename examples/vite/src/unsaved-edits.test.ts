@@ -44,33 +44,14 @@ describe('unsavedEdits', () => {
     expect(state.hasUnsavedEdits()).toBe(false);
   });
 
-  test('a reopen that carried edits stays unsaved at its first revision', () => {
-    const { state, set } = withFacts({ revision: 4 });
-    set({ revision: 0 });
-    state.markClean(0, true);
-    expect(state.hasUnsavedEdits()).toBe(true);
-  });
-
   test('no open workbook leaves no edit to ask about, until a workbook opens', () => {
     const { state, set } = withFacts({});
-    state.markClean(0, true);
+    state.markClean(0);
     set({ revision: 3 });
     expect(state.hasUnsavedEdits()).toBe(true);
     set({ status: 'failed', revision: 0 });
     expect(state.hasUnsavedEdits()).toBe(false);
     set({ status: 'loading' });
     expect(state.hasUnsavedEdits()).toBe(false);
-  });
-
-  test('a reopen that carries edits keeps them protected until it ends', () => {
-    let facts: EditFacts = { status: 'loading', revision: 0, editing: false, editChanged: false };
-    const state = unsavedEdits(() => facts);
-    expect(state.hasUnsavedEdits()).toBe(false);
-    state.holdEdits(true);
-    expect(state.hasUnsavedEdits()).toBe(true);
-    state.holdEdits(false);
-    facts = { ...facts, status: 'ready' };
-    state.markClean(0, true);
-    expect(state.hasUnsavedEdits()).toBe(true);
   });
 });

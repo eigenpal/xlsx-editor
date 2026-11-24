@@ -1,6 +1,6 @@
 /** @jsxImportSource react */
-// The demo (`App.tsx`) in happy-dom, for the tests of its flows: the open, the saves, the headings
-// switch, the questions before unsaved edits are lost, and the work that overlaps a load. These
+// The demo (`App.tsx`) in happy-dom, for the tests of its flows: the open, the saves, the
+// questions before unsaved edits are lost, and the work that overlaps a load. These
 // tests took the steps of the browser check (`scripts/verify-demo.ts`) that need no browser
 // engine. The check keeps the steps that need one: the paint, the real clipboard, a real
 // download, and the layout of the page.
@@ -36,7 +36,6 @@ import {
 } from '../../../../packages/core/src/store/index.ts';
 import { readZip, writeZip } from '../../../../packages/ooxml-core/src/zip.ts';
 import { fixtureFile } from '../../../../scripts/fixtures/catalog.ts';
-import { HEADINGS_FROM_FILE, HEADINGS_SHOWN, headingFlags } from '../headings.ts';
 
 const ROOT = join(import.meta.dir, '../../../..');
 export const FIXTURES_DIR = join(ROOT, 'fixtures');
@@ -75,10 +74,6 @@ export function sampleWithNoSheet(): Uint8Array {
   entries.set('/xl/workbook.xml', new TextEncoder().encode(empty));
   return writeZip(entries);
 }
-
-/** The heading flags of every worksheet view of `bytes`, as text to compare. */
-export const flagsOf = (bytes: Uint8Array): string =>
-  JSON.stringify([...headingFlags(readXlsx(bytes))]);
 
 /** A cell of `pkg`, with its resolved font weight, format code, and number format id. */
 export function formatAt(pkg: XlsxPackage, sheet: string, ref: string) {
@@ -280,10 +275,6 @@ export class Demo {
     return one<HTMLInputElement>(document, '.demo-topbar input[type=file]');
   }
 
-  get headingsBox(): HTMLInputElement {
-    return this.view.getByRole('checkbox', { name: 'Show all headings' }) as HTMLInputElement;
-  }
-
   get viewOnlyBox(): HTMLInputElement {
     return this.view.getByRole('checkbox', { name: 'View only' }) as HTMLInputElement;
   }
@@ -467,24 +458,6 @@ export class Demo {
   /** Picks the committed sample workbook as a file. */
   pickSample(): void {
     this.pickFile('sample.xlsx', sampleBytes());
-  }
-
-  /** Switches the headings option and waits for the demo to reopen the workbook. */
-  async setHeadings(on: boolean): Promise<void> {
-    act(() => void fireEvent.click(this.headingsBox));
-    if (this.headingsBox.checked !== on) throw new Error('the headings box did not switch');
-    await this.statusSays(on ? HEADINGS_SHOWN : HEADINGS_FROM_FILE);
-    await waitFor(
-      () => {
-        if (this.busy() !== '' || this.loading()) throw new Error('the switch runs');
-      },
-      { timeout: WAIT_MS }
-    );
-  }
-
-  /** Sets the headings option, and waits for the switch only when the option changes. */
-  async headingsTo(on: boolean): Promise<void> {
-    if (this.headingsBox.checked !== on) await this.setHeadings(on);
   }
 
   /** Whether the grid shows its column headings. */

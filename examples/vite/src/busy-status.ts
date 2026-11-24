@@ -1,6 +1,6 @@
-// The status text of the demo while a long open, save, or headings switch runs. Short work shows
-// nothing: the text comes only after a delay, so a small workbook does not make the bar flicker.
-// The text names the newest work that still runs.
+// The status text of the demo while a long open or save runs. Short work shows nothing: the text
+// comes only after a delay, so a small workbook does not make the bar flicker. The text names the
+// newest work that still runs.
 
 import { useState } from 'react';
 

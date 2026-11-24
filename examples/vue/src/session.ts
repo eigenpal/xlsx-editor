@@ -1,17 +1,14 @@
-// The open, headings, and save logic of the Vue demo (`App.vue`), in plain TypeScript, so that
+// The open and save logic of the Vue demo (`App.vue`), in plain TypeScript, so that
 // `session.test.ts` runs it under Bun. It follows the React demo's page (examples/vite/src/
 // App.tsx) in a smaller form:
 // - An open reads the file and checks it (`whyNotOpen`) before it asks about unsaved edits, so a
 //   file that does not open leaves the workbook as it is. A file over 64 MiB is refused.
-// - It asks again when an edit came during the read or the headings steps. A newer pick stops an
-//   older open that has not loaded, and a no to the question stops it too.
-// - The name, the heading flags, and the clean revision of a workbook are kept only when its
-//   load ends ready, and only when no newer load replaced it.
-// - The headings option (examples/vite/src/headings.ts) is on at start: an open shows every
-//   heading, a switch saves and reopens the workbook with the edits, and Save puts the file's own
-//   heading flags back. During the reopen, the edits stay protected (`hasUnsavedEdits`).
-// - A switch is refused while an open, a save (also a toolbar save before its bytes arrive), or
-//   another switch runs; an open and a save are refused while a switch runs.
+// - A newer pick stops an older open that has not loaded, and a no to the question stops it too.
+// - The name and the clean revision of a workbook are kept only when its load ends ready, and
+//   only when no newer load replaced it.
+// - The editor shows the row and column headings of each sheet as the file sets them
+//   (`x:sheetView/@showRowColHeaders`), and Save writes the bytes that the editor saves.
+// - A save is refused while an open runs.
 // - One save runs at a time over the top bar's Save, the toolbar's Save, and the keys, and a
 //   second download of the same revision soon after the first is dropped, as in the React demo.
 // - A name that the user gives the workbook in the top bar (`rename`) is the name of its
@@ -24,17 +21,10 @@ import type {
   SavedWorkbook,
   XlsxEditorInstance,
 } from '@xlsx-editor.dev/core/editor';
-import {
-  headingFlags,
-  packageWithHeadingsSteps,
-  withHeadingsSteps,
-  type HeadingFlags,
-} from '../../vite/src/headings.ts';
 import { FILE_KINDS, fileKindOf } from '../../vite/src/file-kinds.ts';
 import { readForOpen, whyNotOpen } from '../../vite/src/open-check.ts';
 import { SAMPLE } from '../../vite/src/sample.ts';
 import { saveFileName, saveRepeatGuard } from '../../vite/src/save.ts';
-import { runInTasks } from '../../vite/src/steps-in-tasks.ts';
 import { renamedTo, shownName, titleOf } from '../../vite/src/workbook-names.ts';
 
 /** The largest file that the demo reads into memory: 64 MiB, as in the React demo. */
@@ -42,14 +32,13 @@ export const MAX_FILE_BYTES = 64 * 1024 * 1024;
 
 const NO_WORKBOOK = 'Could not save: no workbook is open.';
 const SAVE_REPLACED = 'Nothing was saved: another workbook opened during the save.';
-const SWITCHING = 'the headings are switching. Try again when the switch ends.';
 
 /** The part of the editor handle (`XlsxEditorRef`) that the session uses. */
 export interface SessionEditor {
   load(bytes: Uint8Array): Promise<EditorSnapshot | null>;
   saveInTasks(): Promise<SavedWorkbook | null>;
   snapshot(): EditorSnapshot;
-  getEditor(): Pick<XlsxEditorInstance, 'commitEdit' | 'setActiveSheet' | 'select'> | null;
+  getEditor(): Pick<XlsxEditorInstance, 'commitEdit'> | null;
 }
 
 /** The page services of the session. */
@@ -75,20 +64,14 @@ export interface SessionState {
   error: string | undefined;
   /** Whether an open runs, from its read or download to the end of its load. */
   opening: boolean;
-  /** Whether a headings switch runs. */
-  switching: boolean;
-  /** Whether every sheet shows its row and column headings. */
-  headings: boolean;
 }
 
-/** The state at start: no workbook, and the headings option on. */
+/** The state at start: no workbook. */
 export const initialSessionState = (): SessionState => ({
   label: null,
   chosen: null,
   error: undefined,
   opening: false,
-  switching: false,
-  headings: true,
 });
 
 /** A picked file, as the file input gives it. */
@@ -111,16 +94,11 @@ export class DemoSession {
   private openRuns = 0;
   // The opens that the user accepted: the workbook on screen is about to go.
   private replacing = 0;
-  // The revision of the last open or save. -1 keeps edits from before a reopen unsaved.
+  // The revision of the last open or save.
   private cleanAt: number | null = null;
-  // True during the reopen of a headings switch over unsaved edits.
-  private holding = false;
   private saving = false;
-  // The toolbar saves that have not delivered their bytes.
-  private toolbarSaves = 0;
   // Drops a second download of the same revision soon after the first.
   private readonly downloadOnce = saveRepeatGuard();
-  private flags: HeadingFlags = new Map();
 
   constructor(
     private readonly host: SessionHost,
@@ -135,17 +113,12 @@ export class DemoSession {
     this.state.error = error;
   }
 
-  private revision(): number {
-    return this.editor?.snapshot().revision ?? 0;
-  }
-
   private showOpening(): void {
     this.state.opening = this.openRuns > 0;
   }
 
   /** True when the open workbook has an edit after the last open or save. */
   hasUnsavedEdits(): boolean {
-    if (this.holding) return true;
     const s = this.editor?.snapshot();
     if (!s || s.status !== 'ready' || this.cleanAt === null) return false;
     return s.revision !== this.cleanAt || (s.editing && s.editChanged);
@@ -208,10 +181,6 @@ export class DemoSession {
 
   /** Opens a picked file. */
   async openFile(file: PickedFile): Promise<void> {
-    if (this.state.switching) {
-      this.say(`Could not open ${titleOf(file.name)}: ${SWITCHING}`);
-      return;
-    }
     if (file.size > MAX_FILE_BYTES) {
       this.say(`Could not open ${titleOf(file.name)}: the file is larger than 64 MiB.`);
       return;
@@ -256,24 +225,14 @@ export class DemoSession {
         return;
       }
       if (!this.mayReplace(label)) return;
-      const asked = this.revision();
       replaces = true;
       this.replacing += 1;
-      const opened = headingFlags(read1);
-      const shown = this.state.headings
-        ? await runInTasks(packageWithHeadingsSteps(read1.pkg, true, opened))
-        : bytes;
-      if (pick !== this.picks) return;
-      // The grid stays editable during the steps above, and the answer covers no later edit.
-      const now = this.editor?.snapshot();
-      const touched = this.revision() !== asked || (now?.editing && now.editChanged);
-      if (touched && !this.mayReplace(label)) return;
       await this.host.ready;
       if (pick !== this.picks) return;
       const at = ++this.loads;
-      const result = await this.editor?.load(shown);
+      const result = await this.editor?.load(bytes);
       // Only a newer load replaces this workbook. A newer pick that has not loaded leaves this
-      // workbook on screen, so its name and flags must still be recorded.
+      // workbook on screen, so its name must still be recorded.
       if (at !== this.loads) return;
       if (result?.status !== 'ready') {
         if (pick === this.picks)
@@ -282,7 +241,6 @@ export class DemoSession {
           );
         return;
       }
-      this.flags = opened;
       this.state.label = label;
       this.state.chosen = null;
       this.cleanAt = result.revision;
@@ -316,23 +274,10 @@ export class DemoSession {
   }
 
   /**
-   * Counts a toolbar save from its press until its bytes arrive, as the React demo does: a
-   * headings switch is refused meanwhile, because its reload would drop the bytes.
-   */
-  onToolbarSaveStart(started: Promise<SavedWorkbook | null>): void {
-    this.toolbarSaves += 1;
-    void started.finally(() => (this.toolbarSaves -= 1));
-  }
-
-  /**
    * Runs one save at a time, as the React demo's `saveOnce` does: a press during a save, of either
-   * Save or of the keys, does nothing. A save is refused during a headings switch and an open.
+   * Save or of the keys, does nothing. A save is refused during an open.
    */
   private async saveOnce(work: () => Promise<void>): Promise<void> {
-    if (this.state.switching) {
-      this.say(`Could not save: ${SWITCHING}`);
-      return;
-    }
     if (this.openRuns > 0) {
       this.say('Could not save: a workbook is opening. Try again when it shows.');
       return;
@@ -346,7 +291,7 @@ export class DemoSession {
     }
   }
 
-  /** Writes the saved `bytes` to a download, with the file's own heading flags. */
+  /** Writes the saved `bytes` to a download. */
   private async write(bytes: Uint8Array<ArrayBuffer>, result: SavedWorkbook): Promise<void> {
     // Another open ended this workbook during the save: these bytes are not the open workbook.
     const label = this.state.label;
@@ -362,23 +307,8 @@ export class DemoSession {
     const at = this.loads;
     const snap = this.editor?.snapshot();
     const kind = (snap ? fileKindOf(snap) : null) ?? 'workbook';
-    // The file keeps its own heading flags: the headings option changes only the view.
-    const restored = this.state.headings
-      ? await runInTasks(withHeadingsSteps(bytes, false, this.flags))
-      : bytes;
-    if (!restored) {
-      this.say(
-        'Nothing was saved: the editor cannot read the saved workbook to put back its own heading flags.'
-      );
-      return;
-    }
-    // The rewrite yields to the page, so another workbook can have opened.
-    if (at !== this.loads || this.replacing > 0) {
-      this.say(SAVE_REPLACED);
-      return;
-    }
     const file = FILE_KINDS[kind];
-    const blob = new Blob([new Uint8Array(restored)], { type: file.type });
+    const blob = new Blob([bytes], { type: file.type });
     // Each save starts a download at once, so a repeat of the same revision, as a double click
     // gives, is dropped (`saveRepeatGuard`, as the React demo's `downloadOnce`). A reload starts
     // the revisions again, so the key holds the number of the load too.
@@ -387,69 +317,5 @@ export class DemoSession {
       return true;
     });
     if (at === this.loads) this.cleanAt = result.revision;
-  }
-
-  /** Why the headings option cannot switch now, or null. */
-  private headingsRefusal(): string | null {
-    if (this.openRuns > 0) return 'a workbook is opening. Try again when it shows';
-    if (this.state.switching) return 'a switch is running. Try again when it ends';
-    if (this.saving || this.toolbarSaves > 0) return 'a save is running. Try again when it ends';
-    if (this.editor?.snapshot().status !== 'ready') return 'no workbook is open';
-    return null;
-  }
-
-  /** Switches the headings option, and reopens the edited workbook on the same sheet and cells. */
-  async setHeadings(show: boolean): Promise<void> {
-    const refusal = this.headingsRefusal();
-    if (refusal) {
-      this.say(`Could not switch the headings: ${refusal}.`);
-      return;
-    }
-    const editor = this.editor;
-    const instance = editor?.getEditor();
-    if (!editor || !instance) return;
-    this.state.switching = true;
-    try {
-      // The save commits an open cell edit first. When it cannot, it shows the reason.
-      const saved = await editor.saveInTasks();
-      if (!saved) return;
-      const rewritten = await runInTasks(withHeadingsSteps(saved.bytes, show, this.flags));
-      if (!rewritten) {
-        this.say(
-          'Could not switch the headings: the editor cannot read the saved workbook again. The workbook and your edits stay open.'
-        );
-        return;
-      }
-      // The reopen shows the saved bytes, so an edit made during the save must not be lost.
-      const now = editor.snapshot();
-      if (now.revision !== saved.revision || (now.editing && now.editChanged)) {
-        this.say('Could not switch the headings: the workbook changed. Try again.');
-        return;
-      }
-      const { activeSheet: sheet, selection } = now;
-      const edited = this.hasUnsavedEdits();
-      const at = ++this.loads;
-      // During the reopen, only the saved bytes hold the edits, so they stay protected.
-      this.holding = edited;
-      let result: EditorSnapshot | null;
-      try {
-        result = await editor.load(rewritten);
-      } finally {
-        this.holding = false;
-      }
-      if (at !== this.loads) return;
-      if (result?.status !== 'ready') {
-        this.say(`Could not switch the headings: ${loadFailure(result)}. Open a file to go on.`);
-        return;
-      }
-      this.state.headings = show;
-      if (sheet >= 0) instance.setActiveSheet(sheet);
-      if (selection) instance.select(selection.anchor, selection.active);
-      // The reopen starts the revisions again: edits from before it stay unsaved.
-      this.cleanAt = edited ? -1 : editor.snapshot().revision;
-      this.clearMessage();
-    } finally {
-      this.state.switching = false;
-    }
   }
 }

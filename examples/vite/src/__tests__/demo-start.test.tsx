@@ -1,28 +1,26 @@
 /** @jsxImportSource react */
-// The demo at start, in happy-dom (`demo-harness.tsx`): the sample opens with the headings option
-// on, the top bar names it, and every sheet shows; F6 and Shift+F6 move among the regions of the
-// page; view only refuses edits; the theme toggle switches and keeps its pick; and the headings
-// option goes off. These were steps of the browser check (`scripts/verify-demo.ts`), which keeps
-// the paint of each sheet.
+// The demo at start, in happy-dom (`demo-harness.tsx`): the sample opens with its headings, the
+// top bar names it, and every sheet shows; F6 and Shift+F6 move among the regions of the page;
+// view only refuses edits; the theme toggle switches and keeps its pick; and a file that hides
+// its headings shows none, and its save keeps that flag. These were steps of the browser check
+// (`scripts/verify-demo.ts`), which keeps the paint of each sheet.
 
 import { afterEach, describe, expect, test } from 'bun:test';
 import { act, cleanup, fireEvent } from '@testing-library/react';
+import { buildXlsx, c, row } from '../../../../scripts/fixtures/builder.ts';
 import { SHEET_GUIDE } from '../../../../scripts/sample-workbook/showcase-sheets.ts';
-import { mountDemo, settle } from './demo-harness.tsx';
+import { mountDemo } from './demo-harness.tsx';
+import { holdsText } from './demo-race-helpers.ts';
 
 afterEach(() => {
   cleanup();
   localStorage.clear();
 });
 
-const [SAMPLE_SHEET] = SHEET_GUIDE[0]!;
-
 describe('the demo at start', () => {
-  test('the sample opens with the headings option on, the top bar names it, and every sheet shows', async () => {
+  test('the sample opens with its headings, the top bar names it, and every sheet shows', async () => {
     const demo = await mountDemo();
     expect(demo.workbookName()).toBe('Sample workbook.xlsx');
-    expect(demo.headingsBox.checked).toBe(true);
-    // The first sheet hides its headings in the file, and the option shows them.
     expect(demo.headingsShown()).toBe(true);
     expect(demo.view.getAllByRole('tab').map((t) => t.textContent)).toEqual(
       SHEET_GUIDE.map(([n]) => n)
@@ -92,11 +90,15 @@ describe('the demo at start', () => {
     expect(dark()).toBe(false);
   });
 
-  test('the headings option goes off, and the sheet shows the headings of the file', async () => {
+  test('a file that hides its headings shows none, and its save keeps that flag', async () => {
     const demo = await mountDemo();
-    await demo.setHeadings(false);
+    // `x:sheetView/@showRowColHeaders="0"` (CT_SheetView, ECMA-376 Part 1, 18.3.1.87).
+    const hidden = buildXlsx({
+      sheets: [{ name: 'Hidden', headings: false, rows: row(1, [c('A1', 'x')]) }],
+    });
+    demo.pickFile('hidden.xlsx', hidden);
+    await demo.showsSheet('Hidden');
     expect(demo.headingsShown()).toBe(false);
-    await settle();
-    expect(demo.shownSheet()).toBe(SAMPLE_SHEET);
+    expect(holdsText(await demo.save(), 'showRowColHeaders="0"')).toBe(true);
   });
 });

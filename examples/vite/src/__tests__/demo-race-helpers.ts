@@ -7,7 +7,7 @@ import { readZip } from '../../../../packages/ooxml-core/src/zip.ts';
 import { buildXlsx, c, row, type FixtureSheet } from '../../../../scripts/fixtures/builder.ts';
 import { WAIT_MS, type Demo } from './demo-harness.tsx';
 
-export const EDIT = 'edit-kept-over-the-reload';
+export const EDIT = 'edit-to-keep';
 
 /** The rows of {@link largeWorkbook}, built once. */
 let largeRows: string | undefined;
@@ -26,8 +26,8 @@ export function largeWorkbook(name: string, extra: Partial<FixtureSheet> = {}): 
   return buildXlsx({ sheets: [{ name, rows: largeRows, ...extra }] });
 }
 
-export const smallWorkbook = (name: string): Uint8Array =>
-  buildXlsx({ sheets: [{ name, rows: row(1, [c('A1', 'small')]) }] });
+export const smallWorkbook = (name: string, extra: Partial<FixtureSheet> = {}): Uint8Array =>
+  buildXlsx({ sheets: [{ name, rows: row(1, [c('A1', 'small')]), ...extra }] });
 
 /** Whether any part of a saved copy holds `text`. */
 export function holdsText(bytes: Uint8Array, text: string): boolean {
@@ -55,9 +55,6 @@ export async function timedOpen(demo: Demo, sheet: string): Promise<number> {
   await openFile(demo, sheet, file);
   return performance.now() - start;
 }
-
-/** Clicks the headings box with no wait for the end of the switch. */
-export const pressHeadings = (demo: Demo) => act(() => void fireEvent.click(demo.headingsBox));
 
 /** Presses the Save button of the top bar. */
 export const pressSave = (demo: Demo) => act(() => void fireEvent.click(demo.headerSave));

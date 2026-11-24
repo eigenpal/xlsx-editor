@@ -34,7 +34,6 @@ const TIPS = [
   'Open the other sheets with the tabs under the grid.',
   'Select Save at the top of the page, or in the toolbar, to write the edited workbook to a file. If your browser cannot ask where to save, Save downloads the file.',
   'Formulas show stored results. After an edit, a notice says that they can be out of date.',
-  'This sheet hides its headings in the file. "Show all headings" at the top of the page is on at start, so they show. Clear it to hide them.',
 ];
 
 /** The first row of the sheet guide on the Welcome sheet, under its heading and header row. */
@@ -98,8 +97,7 @@ export function buildWelcomeSheet(styles: StyleTable, strings: StringTable): Fix
     rows: rows.join(''),
     // The title spans B:C, so the selection outline frames all of it.
     merges: ['B2:C2'],
-    // A cover page: no headings. The demo's headings option shows them.
-    headings: false,
+    headings: true,
     // Open on the title, which spans B2:C2, so the selection frames all of it.
     viewChildren: '<selection activeCell="B2" sqref="B2:C2"/>',
   };

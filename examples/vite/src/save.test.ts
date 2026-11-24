@@ -261,7 +261,7 @@ describe('the bytes that wait for a press of Save', () => {
     expect(keptSaveHolds(kept, { ...now, revision: 6 })).toBe(false);
   });
 
-  test('go after a headings switch or another open, which load the editor again', () => {
+  test('go after another open, which loads the editor again', () => {
     expect(keptSaveHolds(kept, { ...now, load: 3 })).toBe(false);
   });
 

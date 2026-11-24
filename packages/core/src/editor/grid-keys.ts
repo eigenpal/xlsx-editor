@@ -12,7 +12,9 @@
 // |                                       | (a row or column band extends as a band)       |
 // | Page Up, Page Down, Home, Mod+Home/End | Move by a page, to the row start, to the ends |
 // |                                       | (a hidden row or column takes no selection)    |
-// | Enter, Tab (with Shift)               | Move down or right (up or left)                |
+// | Enter, Tab (with Shift)               | Move down or right (up or left); Enter after   |
+// |                                       | Tab goes down to the column where the Tab run  |
+// |                                       | started (`tab-return.ts`)                      |
 // |                                       | (inside a multi-cell selection: move the active |
 // |                                       | cell in it, wrap, and keep the range)          |
 // | Shift+Tab in column A; Tab in the last | Leave the grid for the previous or next control |
@@ -39,6 +41,7 @@ import { inRange as holds, mergeAt, selectBand, step, type Merges } from './sele
 import type { CellEditMode } from './cell-editor.ts';
 import { selectionBand, type FormatToggle } from '../automation/index.ts';
 import { MAX_COLS, MAX_ROWS, type StructuralOpName } from '../store/index.ts';
+import type { TabReturn } from './tab-return.ts';
 
 /** What the key table reads and calls on the editor. */
 export interface GridKeyHost {
@@ -71,6 +74,8 @@ export interface GridKeyHost {
   structure(name: StructuralOpName): void;
   /** Escape on the grid: end a pending copy or cut. False when nothing waited. */
   escape(): boolean;
+  /** The return column of a Tab run (`tab-return.ts`): Enter after Tab goes back to it. */
+  readonly tabReturn?: TabReturn;
 }
 
 const TOGGLES: Readonly<Record<string, FormatToggle>> = { b: 'bold', i: 'italic', u: 'underline' };
@@ -278,12 +283,17 @@ export function handleGridKey(host: GridKeyHost, e: KeyboardEvent, grid: EventTa
       return;
     }
     const d: [number, number] = e.key === 'Tab' ? [0, back ? -1 : 1] : [back ? -1 : 1, 0];
-    const next = step(sel.active, d[0], d[1], host.merges, host.hidden());
+    // Enter after a run of Tab moves goes down to the column where the run started.
+    const run = host.tabReturn;
+    const from = run?.origin(sel, sel.active, d, true) ?? sel.active;
+    const next = step(from, d[0], d[1], host.merges, host.hidden());
     // Tab at the first or last column leaves the grid: the browser moves the focus to the
     // previous or next control, so the grid is no keyboard trap (WCAG 2.1.2).
-    if (e.key === 'Tab' && next.row === sel.active.row && next.col === sel.active.col) return;
+    if (e.key === 'Tab' && next.row === sel.active.row && next.col === sel.active.col)
+      return run?.end();
     done();
     host.select(next);
+    run?.moved(sel, sel.active, host.selection, d, true);
     return;
   }
   if (!to) return;

@@ -591,6 +591,28 @@ export function toolbarCommandStates(
   return ids.map((id) => toolbarCommandState(snapshot, id, host));
 }
 
+/**
+ * The state of a control that only opens rows of slots, such as a toolbar group menu or a menu
+ * submenu. To open rows is no command, so the state comes from the rows (`toolbarCommandState`):
+ * the control is enabled while one of its rows is, else disabled with the reason of its first
+ * row. A control with no rows stays enabled. @internal
+ */
+export function toolbarRowsState(
+  snapshot: EditorSnapshot,
+  ids: readonly ChromeSlotId[],
+  host: ToolbarHost = {}
+): { readonly enabled: boolean; readonly disabledReason: ChromeDisabledReason | null } {
+  let first: ChromeDisabledReason | null = null;
+  for (const id of ids) {
+    const state = toolbarCommandState(snapshot, id, host);
+    if (state.enabled) return { enabled: true, disabledReason: null };
+    first ??= state.disabledReason;
+  }
+  return ids.length === 0
+    ? { enabled: true, disabledReason: null }
+    : { enabled: false, disabledReason: first };
+}
+
 const refused = (code: EditRefusal['code'], detail: string): EditResult => ({
   ok: false,
   refusal: { code, detail },

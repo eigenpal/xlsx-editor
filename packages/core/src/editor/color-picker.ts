@@ -253,7 +253,8 @@ export function colorPickerGrid(themeHexes: readonly string[]): ColorPickerGrid 
 
 /**
  * The custom color field's text with every character that is not a hex digit removed, at most
- * six digits: the draft that the field shows. @public
+ * six digits: the draft that the field shows. The field itself has no length limit, so a pasted
+ * `#RRGGBB` or ` RRGGBB ` keeps all six digits. @public
  */
 export const customHexDraft = (text: string): string =>
   text.replace(/[^0-9A-Fa-f]/g, '').slice(0, 6);

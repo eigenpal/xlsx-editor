@@ -6,7 +6,12 @@
 import { displayName, refusalText, type EditorTranslate } from './cell-input.ts';
 import type { ChromeSlotId } from './chrome-controls.ts';
 import type { EditorFailure, EditorSnapshot, PartPastLimit } from './editor-model.ts';
-import { disabledReasonText, toolbarCommandState, type ToolbarHost } from './toolbar-commands.ts';
+import {
+  disabledReasonText,
+  toolbarCommandState,
+  toolbarRowsState,
+  type ToolbarHost,
+} from './toolbar-commands.ts';
 
 /** Whether two slices hold the same values, key by key. @internal */
 export function sameSlice<T extends object>(a: T, b: T): boolean {
@@ -192,6 +197,21 @@ export function editorCommandSlice(
     hint: !reason && state.hint ? t(state.hint.key) : null,
     value: state.value ?? null,
   };
+}
+
+/**
+ * The state of a control that opens the rows `slots` (`toolbarRowsState`), with the disabled
+ * reason translated. @internal
+ */
+export function editorRowsSlice(
+  snapshot: EditorSnapshot,
+  slots: readonly ChromeSlotId[],
+  host: ToolbarHost,
+  t: EditorTranslate
+): { readonly enabled: boolean; readonly disabledReason: string | null } {
+  const state = toolbarRowsState(snapshot, slots, host);
+  const reason = state.disabledReason;
+  return { enabled: state.enabled, disabledReason: reason ? disabledReasonText(reason, t) : null };
 }
 
 /** Whether two slot states show the same thing. @internal */

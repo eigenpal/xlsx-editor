@@ -8,14 +8,23 @@
 // Differences from React: `useToolbarSlot` returns a computed view of the words beside the
 // command's refs, and `ChromeIcon` is a function component.
 
-import { computed, type ComputedRef } from 'vue';
+import {
+  computed,
+  inject,
+  shallowRef,
+  toValue,
+  type ComputedRef,
+  type MaybeRefOrGetter,
+} from 'vue';
 import {
   chromeControlForSlot,
+  editorRowsSlice,
   slotWords,
   type ChromeControl,
   type ChromeSlotId,
+  type ToolbarHost,
 } from '@xlsx-editor.dev/core/editor';
-import { useTranslation, useXlsxEditor } from '../context.ts';
+import { useEditorState, useTranslation, useTranslator, useXlsxEditor } from '../context.ts';
 import {
   toolbarHostKey,
   translateKey,
@@ -65,6 +74,32 @@ export function useToolbarSlot(slot: ChromeSlotId): ToolbarSlot {
     slot,
     control,
     focusGrid: () => editor.value?.focus(),
+  };
+}
+
+/** The state of a control that opens rows: enabled, and the reason when disabled. */
+export interface RowsState {
+  readonly isEnabled: ComputedRef<boolean>;
+  readonly disabledReason: ComputedRef<string | null>;
+}
+
+const noHost = shallowRef<ToolbarHost>({});
+
+/**
+ * The state of a control that only opens the rows `slots`, such as a group menu or a submenu:
+ * disabled with the reason of its first row when every row is disabled (`toolbarRowsState`).
+ */
+export function useRowsState(slots: MaybeRefOrGetter<readonly ChromeSlotId[]>): RowsState {
+  const host = inject(toolbarHostKey, noHost);
+  const t = useTranslator();
+  const slice = useEditorState(
+    (snapshot) => editorRowsSlice(snapshot, toValue(slots), host.value, t.value),
+    (a, b) => a.enabled === b.enabled && a.disabledReason === b.disabledReason,
+    () => [toValue(slots).join('\n'), host.value, t.value]
+  );
+  return {
+    isEnabled: computed(() => slice.value.enabled),
+    disabledReason: computed(() => slice.value.disabledReason),
   };
 }
 

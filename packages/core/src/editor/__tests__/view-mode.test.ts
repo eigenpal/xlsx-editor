@@ -12,6 +12,7 @@ import {
   createXlsxEditor,
   runToolbarCommand,
   toolbarCommandState,
+  toolbarRowsState,
   type EditResult,
   type XlsxEditorInstance,
 } from '../index.ts';
@@ -229,5 +230,25 @@ describe('view mode', () => {
     expect(toolbarCommandState(snap, 'font.size', host).value).toBe('11');
     expect(code(runToolbarCommand(viewer, 'font.bold', undefined, host))).toBe('view-mode');
     expect(runToolbarCommand(viewer, 'file.save', undefined, host).ok).toBe(true);
+  });
+});
+
+describe('a control that only opens rows', () => {
+  test('is disabled with the reason of its first row when every row is', async () => {
+    const { viewer } = await mount('view');
+    const snap = viewer.snapshot();
+    const state = toolbarRowsState(snap, ['cells.insertRows', 'cells.deleteRows']);
+    expect(state.enabled).toBe(false);
+    expect(state.disabledReason?.key).toBe('disabledReason.viewMode');
+    // One enabled row enables it: Copy reads the workbook.
+    expect(toolbarRowsState(snap, ['clear.all', 'edit.copy']).enabled).toBe(true);
+    // A control with no slot rows cannot know their state, and stays enabled.
+    expect(toolbarRowsState(snap, [])).toEqual({ enabled: true, disabledReason: null });
+  });
+
+  test('is enabled in edit mode', async () => {
+    const { viewer } = await mount('edit');
+    const state = toolbarRowsState(viewer.snapshot(), ['clear.contents', 'clear.all']);
+    expect(state).toEqual({ enabled: true, disabledReason: null });
   });
 });

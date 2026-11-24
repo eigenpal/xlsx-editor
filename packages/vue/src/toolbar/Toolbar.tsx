@@ -58,7 +58,8 @@ import type { TFunction } from '@xlsx-editor.dev/i18n';
 import { useEditorState, useTranslation, useXlsxEditor } from '../context.ts';
 import { usePartTranslation } from '../locale.ts';
 import { ChromeIcon, toolbarHostKey, translateKey } from './slot.tsx';
-import { GroupMenu, popupTriggerKeys, usePopup, type PartLayout } from './parts.tsx';
+import { GroupMenu, type PartLayout } from './parts.tsx';
+import { popupTriggerKeys, usePopup } from './popup.ts';
 import { ICON_MORE } from './icons.ts';
 import { NumberFormatDialogHost, panelCloseKey } from './NumberFormatDialog.tsx';
 import {

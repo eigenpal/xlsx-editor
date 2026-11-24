@@ -6,13 +6,8 @@
 // and window from the host element at use time (`host-realm.ts`), also in a pop-out or an iframe.
 
 import type { GridPoint, GridSelection } from '../contracts/index.ts';
-import {
-  saveXlsx,
-  sheetIndex,
-  workbookIndex,
-  WorkbookDocumentStore,
-  xmlPartOf,
-} from '../store/index.ts';
+import { saveXlsx, sheetIndex, workbookIndex, WorkbookDocumentStore } from '../store/index.ts';
+import { xmlPartOf } from '../store/index.ts';
 import { EN_US, sameNumberLocale, type NumberLocale } from '../cascade/index.ts';
 import { mergedRanges, zoomProfile, type SheetLayout } from '../layout/index.ts';
 import { forgetLongTexts } from '../layout/cell-text.ts';
@@ -50,6 +45,7 @@ import { readError, readWorkbookForLoad, registerPickedLoad } from './load-steps
 import { CellEditing, registerEditing, type EditTarget } from './cell-editing.ts';
 import { LiveAnnouncer } from './live-announcer.ts';
 import { commitMove } from './grid-keys.ts';
+import { TabReturn } from './tab-return.ts';
 import type { EditResult } from './cell-input.ts';
 import type { FormatPatch, HistorySelection, StructuralOpName } from '../store/index.ts';
 import type { FormatToggle, MergeOptions } from '../automation/index.ts';
@@ -120,6 +116,7 @@ class Editor implements XlsxEditorInstance {
   private readonly sheetOps: SheetCommands;
   private readonly clipboard: WorkbookClipboard;
   private offStore: (() => void) | null = null;
+  readonly tabReturn = new TabReturn();
 
   constructor(options: XlsxEditorOptions) {
     this.options = options;
@@ -944,9 +941,12 @@ class Editor implements XlsxEditorInstance {
   private moveFrom(cell: GridPoint, move: readonly [number, number], inRange: boolean): void {
     const view = this.view();
     if (!view) return;
-    const m = commitMove(view.selection, cell, move, inRange, this.merges, this.hidden());
-    if (m.keep) this.setSelection({ ...view.selection, active: m.at }, view.focus, m.at);
+    const before = view.selection;
+    const from = this.tabReturn.origin(before, cell, move, inRange);
+    const m = commitMove(before, from, move, inRange, this.merges, this.hidden());
+    if (m.keep) this.setSelection({ ...before, active: m.at }, view.focus, m.at);
     else this.select(m.at);
+    this.tabReturn.moved(before, cell, m.keep ? before : view.selection, move, inRange);
   }
 
   extend(to: GridPoint): void {

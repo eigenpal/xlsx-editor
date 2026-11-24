@@ -8,7 +8,10 @@
 // `decimal_increase`, and `decimal_decrease` from google/material-design-icons at 10ecc147,
 // symbols/web/<name>/materialsymbolsoutlined/<name>_24px.svg, which DOCX Editor does not use.
 // `folder_open`, `content_cut`, `content_copy`, `content_paste`, `chevron_right`, and `add` of the
-// menu bar are from pptx-editor/packages/core/src/editor/icon-paths.ts at fef01c93.
+// menu bar are from pptx-editor/packages/core/src/editor/icon-paths.ts at fef01c93. `delete` of
+// the delete rows and delete columns rows is from DOCX Editor's file at a0825f1f, and `backspace`
+// and `ink_eraser` of the clear rows are from google/material-design-icons at 10ecc147 (the path
+// above).
 // Difference: only the icons of the XLSX Editor toolbar and menu bar. Never hand-draw or edit a path here:
 // every entry is an official Material Symbol.
 
@@ -71,6 +74,15 @@ export const ICON_PATHS = {
   ],
   delete_sweep: [
     'M600-240v-80h160v80H600Zm0-320v-80h280v80H600Zm0 160v-80h240v80H600ZM120-640H80v-80h160v-60h160v60h160v80h-40v360q0 33-23.5 56.5T440-200H200q-33 0-56.5-23.5T120-280v-360Zm80 0v360h240v-360H200Zm0 0v360-360Z',
+  ],
+  delete: [
+    'M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z',
+  ],
+  backspace: [
+    'M360-200q-20 0-37.5-9T294-234L120-480l174-246q11-16 28.5-25t37.5-9h400q33 0 56.5 23.5T840-680v400q0 33-23.5 56.5T760-200H360Zm400-80v-400 400Zm-400 0h400v-400H360L218-480l142 200Zm96-40 104-104 104 104 56-56-104-104 104-104-56-56-104 104-104-104-56 56 104 104-104 104 56 56Z',
+  ],
+  ink_eraser: [
+    'M690-240h190v80H610l80-80Zm-500 80-85-85q-23-23-23.5-57t22.5-58l440-456q23-24 56.5-24t56.5 23l199 199q23 23 23 57t-23 57L520-160H190Zm296-80 314-322-198-198-442 456 64 64h262Zm-6-240Z',
   ],
   format_clear: [
     'm528-546-93-93-121-121h486v120H568l-40 94ZM792-56 460-388l-80 188H249l119-280L56-792l56-56 736 736-56 56Z',

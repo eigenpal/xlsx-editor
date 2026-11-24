@@ -342,6 +342,27 @@ export function observeMenuBar(el: HTMLElement, measure: () => void): () => void
   return () => observer?.disconnect();
 }
 
+/**
+ * The slots of the rows of a submenu, for its state (`toolbarRowsState`). Hidden rows and
+ * separators do not count. When a row is not a slot row, such as a host row or another submenu,
+ * the submenu cannot know the state of its rows: the list is empty, and the submenu stays
+ * enabled. @internal
+ */
+export function submenuRowSlots<T>(
+  rows: readonly T[],
+  slotRow: (row: T) => { readonly slotId: string; readonly hidden?: boolean } | null,
+  isSeparator: (row: T) => boolean
+): ChromeSlotId[] {
+  const slots: ChromeSlotId[] = [];
+  for (const row of rows) {
+    const slot = slotRow(row);
+    if (slot) {
+      if (!slot.hidden) slots.push(slot.slotId as ChromeSlotId);
+    } else if (!isSeparator(row)) return [];
+  }
+  return slots;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Keys
 

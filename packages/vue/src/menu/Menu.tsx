@@ -28,16 +28,21 @@ import {
 import {
   MENU_FIXED_ATTRIBUTE,
   arrangeMenuBar,
+  enterMenuPanel,
+  focusMenuPanelEdge,
   guardToolbarMousedown,
   hostWindowOf,
   isApplePlatform,
   isElementNode,
   listenForOutsidePress,
+  listenForPointerPopupKeys,
   listenForPopupEscape,
   listenForPopupFocusLeave,
   listenSaveKey,
   measureMenuBar,
+  menuPanelOf,
   menuRowInBarProblem,
+  menuStep,
   observeMenuBar,
   openPickedWorkbook,
   VUE_MENU_PART_NAMES,
@@ -183,12 +188,18 @@ const XlsxEditorMenuRoot = defineComponent({
           : `:scope > [data-menu="${id.replace(/["\\]/g, '\\$&')}"] > [role="menuitem"]`
       ) ?? null;
     let openedInBar = false;
+    // The control that held the keyboard when a key moved it from outside the bar into a menu
+    // opened by a pointer press: Escape gives the keyboard back to it, such as an open cell edit.
+    let enteredFrom: HTMLElement | null = null;
     const state: MenuBarState = {
       openMenu,
       open: (id, edge) => {
         // Whether the bar held the keyboard when the menu opened: a keyboard open. A pointer
         // press keeps the keyboard in the grid, so a pointer open leaves this false.
         const el = bar.value;
+        // The menu shows already, so no render follows: its row takes the focus now.
+        if (id && edge && id === openMenu.value)
+          return focusMenuPanelEdge(menuPanelOf(triggerOf(id)), edge);
         if (id && openMenu.value === null)
           openedInBar = !!el && el.contains(el.ownerDocument.activeElement);
         focusRequest.current = id && edge ? { id, edge } : null;
@@ -209,9 +220,12 @@ const XlsxEditorMenuRoot = defineComponent({
       apple,
       closeAll: (focus) => {
         const was = openMenu.value;
+        const from = enteredFrom;
+        enteredFrom = null;
         openMenu.value = null;
-        const toTrigger = focus === 'trigger' || (focus === 'origin' && openedInBar);
-        if (toTrigger && was) triggerOf(was)?.focus();
+        if (focus === 'trigger' && from?.isConnected) from.focus();
+        else if ((focus === 'trigger' || (focus === 'origin' && openedInBar)) && was)
+          triggerOf(was)?.focus();
         else if (focus === 'grid') editor.value?.focus();
       },
       triggerOf,
@@ -225,16 +239,37 @@ const XlsxEditorMenuRoot = defineComponent({
     });
 
     // While a menu is open: a press outside the bar, an Escape from outside it, and focus that
-    // leaves it close the menu.
+    // leaves it close the menu. A navigation key from outside the bar moves the keyboard into the
+    // open menu (`listenForPointerPopupKeys`).
     watch(
       [openMenu, bar],
       ([id, el], _old, onCleanup) => {
-        if (id === null || !el) return;
+        if (id === null || !el) {
+          enteredFrom = null;
+          return;
+        }
         const contains = (node: Node) => el.contains(node);
         const close = (): void => {
           openMenu.value = null;
         };
+        const enter = (entry: Parameters<typeof enterMenuPanel>[0]) => {
+          // A close in a focus event ends the menu before this watch runs again.
+          if (openMenu.value !== id) return null;
+          const panel = menuPanelOf(triggerOf(id));
+          if (!panel) return null;
+          const active = el.ownerDocument.activeElement;
+          if (!enteredFrom && isElementNode(active)) enteredFrom = active as HTMLElement;
+          const list = order.value;
+          return enterMenuPanel(entry, panel, {
+            rtl: rtl.value,
+            step: (by) => {
+              const next = list[menuStep(list.length, list.indexOf(id), by)];
+              if (next) state.open(next, 'first');
+            },
+          });
+        };
         const stops = [
+          listenForPointerPopupKeys({ popup: el, contains, enter }),
           listenForOutsidePress({ popup: el, contains, close }),
           listenForPopupEscape({
             popup: el,

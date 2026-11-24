@@ -433,12 +433,18 @@ function partMentions(part: PackagePart, needles: SheetMentions): boolean {
 
 /**
  * The drawing, legacy drawing, and control property parts that the worksheets relate to, with
- * the kind of content and the sheet that the refusal names.
+ * the kind of content and the sheet that the refusal names. The parts of the sheet `skip` (a
+ * deleted sheet) are left out, because they go with it; a part that another sheet relates to
+ * stays in through that sheet.
  */
-function linkedParts(pkg: XlsxPackage, index: WorkbookIndex): Map<string, StructureSubject> {
+function linkedParts(
+  pkg: XlsxPackage,
+  index: WorkbookIndex,
+  skip?: string
+): Map<string, StructureSubject> {
   const out = new Map<string, StructureSubject>();
   for (const sheet of index.sheets) {
-    if (!sheet.partName) continue;
+    if (!sheet.partName || sheet.partName === skip) continue;
     for (const rel of relationshipsOf(pkg, sheet.partName)) {
       const kind = LINKING_RELS.get(rel.type);
       if (rel.target && kind) out.set(rel.target, { kind, name: sheet.name });
@@ -591,13 +597,15 @@ export function workbookPartBlocker(
 }
 
 /**
- * The first table or query table part, or workbook element outside the allowlist, whose text
- * names the sheet of `needles`, or undefined.
+ * The first table or query table part, linked drawing part, or workbook element outside the
+ * allowlist, whose text names the sheet of `needles`, or undefined. `skip` is the part of a
+ * deleted sheet: its own drawings go with it, so they refuse nothing.
  */
 export function workbookMentionBlocker(
   pkg: XlsxPackage,
   index: WorkbookIndex,
-  needles: SheetMentions
+  needles: SheetMentions,
+  skip?: string
 ): OpRejection | undefined {
   const reason = 'it refers to the edited sheet, and the editor does not move it';
   for (const [name, part] of pkg.parts) {
@@ -607,7 +615,7 @@ export function workbookMentionBlocker(
         kind: contentTypeOf(pkg, name)!.includes('queryTable') ? 'workbook-content' : 'table',
       });
   }
-  for (const [name, about] of linkedParts(pkg, index))
+  for (const [name, about] of linkedParts(pkg, index, skip))
     for (const scanned of [name, relsPartName(name)]) {
       const part = pkg.parts.get(equivalentPartName(pkg, scanned) ?? scanned);
       if (part && partMentions(part, needles)) return blocked(scanned, reason, about);

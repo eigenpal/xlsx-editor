@@ -378,10 +378,17 @@ export {
   type MenuSlotRowSpec,
 } from './menu-arrangement.ts';
 export { editorClipboardReader, systemClipboardReader } from './menu-commands.ts';
+export {
+  gridContextMenuEntries,
+  type GridContextMenuRequest,
+  type GridContextMenuTargetKind,
+} from './grid-context-menu.ts';
 export { openPickedWorkbook } from './file-open.ts';
 export {
   MENU_PANEL_MARGIN,
+  contextMenuPlacement,
   menuPanelPlacement,
+  placeContextMenu,
   placeMenuPanel,
   type MenuBox,
   type MenuPanelPlacement,

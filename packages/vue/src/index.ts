@@ -19,6 +19,7 @@ import { FormulaBar } from './FormulaBar.tsx';
 import { SheetTabs } from './SheetTabs.tsx';
 import { XlsxEditorToolbar } from './toolbar/Toolbar.tsx';
 import { XlsxEditorMenu } from './menu/Menu.tsx';
+import { XlsxEditorContextMenu } from './menu/ContextMenu.tsx';
 
 /**
  * The type of `XlsxEditor`: the composed editor, and its parts as statics for a custom layout.
@@ -33,6 +34,8 @@ export type XlsxEditorNamespace = typeof XlsxEditorDefault & {
   readonly Content: typeof XlsxEditorContent;
   readonly Toolbar: typeof XlsxEditorToolbar;
   readonly Menu: typeof XlsxEditorMenu;
+  /** The grid context menu. Mounted by default; `contextMenu: false` removes it. */
+  readonly ContextMenu: typeof XlsxEditorContextMenu;
   readonly FormulaBar: typeof FormulaBar;
   readonly SheetTabs: typeof SheetTabs;
   readonly ZoomControl: typeof ZoomControl;
@@ -50,6 +53,7 @@ export const XlsxEditor: XlsxEditorNamespace = Object.assign(XlsxEditorDefault, 
   Content: XlsxEditorContent,
   Toolbar: XlsxEditorToolbar,
   Menu: XlsxEditorMenu,
+  ContextMenu: XlsxEditorContextMenu,
   FormulaBar,
   SheetTabs,
   ZoomControl,
@@ -104,6 +108,18 @@ export type {
   ToolbarSlotPartComponent,
   ToolbarSlotPartProps,
 } from './toolbar/named-parts.tsx';
+export {
+  type ContextMenuAnchor,
+  type ContextMenuTarget,
+  useContextMenuAnchor,
+  type UseContextMenuAnchorReturn,
+  useContextMenuTarget,
+  type UseContextMenuTargetReturn,
+  XlsxEditorContextMenu,
+  type XlsxEditorContextMenuNamespace,
+  type XlsxEditorContextMenuProps,
+  XlsxEditorContextMenuStart,
+} from './menu/ContextMenu.tsx';
 export {
   XlsxEditorMenu,
   type XlsxEditorMenuNamespace,
@@ -218,6 +234,8 @@ export type {
   EditTextOptions,
   FieldKeys,
   FontSource,
+  GridContextMenuRequest,
+  GridContextMenuTargetKind,
   GridPoint,
   GridRange,
   GridSelection,

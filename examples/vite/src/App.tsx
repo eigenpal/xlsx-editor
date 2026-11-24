@@ -963,7 +963,10 @@ export function App() {
 
 const statusOf = (snapshot: EditorSnapshot) => snapshot.status;
 
-/** The formula bar, the grid, and the footer with the sheet tabs and the zoom, in one card. */
+/**
+ * The formula bar, the grid, the footer with the sheet tabs and the zoom, and the grid context
+ * menu, in one card.
+ */
 function Workbench() {
   // The status alone: this renders again only when it changes, not on each key of an edit.
   const status = useEditorState(statusOf);
@@ -976,6 +979,7 @@ function Workbench() {
         <XlsxEditor.SheetTabs />
         <XlsxEditor.ZoomControl />
       </div>
+      <XlsxEditor.ContextMenu />
     </div>
   );
 }

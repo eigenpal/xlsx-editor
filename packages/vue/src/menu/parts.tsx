@@ -607,7 +607,7 @@ function renderRows(
 }
 
 /** The rows of a panel: the registry rows with the host's rows merged, or only the host's. */
-function panelRows(
+export function panelRows(
   entries: readonly ChromeMenuEntry[] | undefined,
   children: unknown,
   preset: boolean,
@@ -658,6 +658,8 @@ export const MenuPanel = defineComponent({
     },
     /** For a bar menu's panel: the menu, whose keyboard open the bar asks for. */
     menuId: { type: String, default: undefined },
+    /** The owner places the panel, as the context menu does at its point (`placeContextMenu`). */
+    placed: { type: Boolean, default: false },
     onClose: { type: Function as PropType<() => void>, required: true },
   },
   setup(props, { slots }) {
@@ -686,7 +688,7 @@ export const MenuPanel = defineComponent({
     watch(
       [panel, () => props.hidden],
       ([node, hidden], _old, onCleanup) => {
-        if (!node || hidden) return;
+        if (!node || hidden || props.placed) return;
         onCleanup(
           placeMenuPanel(node, {
             submenu: props.submenu,

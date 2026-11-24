@@ -43,6 +43,8 @@ import { fieldHistoryKey } from '@xlsx-editor.dev/core/editor';
 import { FieldKeys } from '@xlsx-editor.dev/core/editor';
 import { FontSource } from '@xlsx-editor.dev/core/editor';
 import { ForwardRefExoticComponent } from 'react';
+import { GridContextMenuRequest } from '@xlsx-editor.dev/core/editor';
+import { GridContextMenuTargetKind } from '@xlsx-editor.dev/core/editor';
 import { GridPoint } from '@xlsx-editor.dev/core/editor';
 import { GridRange } from '@xlsx-editor.dev/core/editor';
 import { GridSelection } from '@xlsx-editor.dev/core/editor';
@@ -141,6 +143,20 @@ export { composesKey }
 
 export { contentFieldText }
 
+// @public
+export interface ContextMenuAnchor {
+    readonly trigger: 'pointer' | 'keyboard';
+    readonly x: number;
+    readonly y: number;
+}
+
+// @public
+export interface ContextMenuTarget {
+    readonly kind: GridContextMenuTargetKind;
+    readonly range: GridRange;
+    readonly sheetIndex: number;
+}
+
 export { CopyResult }
 
 export { CUSTOM_NUMBER_FORMAT_PREFIX }
@@ -194,6 +210,10 @@ export const FormulaBar: (props: FormulaBarProps) => ReactElement;
 export interface FormulaBarProps {
     readonly t?: ChromePartTranslate;
 }
+
+export { GridContextMenuRequest }
+
+export { GridContextMenuTargetKind }
 
 export { GridPoint }
 
@@ -422,6 +442,12 @@ export function useChromeDir(): 'ltr' | 'rtl' | undefined;
 export function useChromeTranslate(overrides?: ReadonlyMap<string, string>): ChromeTranslate;
 
 // @public
+export function useContextMenuAnchor(): ContextMenuAnchor | null;
+
+// @public
+export function useContextMenuTarget(): ContextMenuTarget | null;
+
+// @public
 export function useEditorColorMode(): UseEditorColorModeReturn;
 
 // @public
@@ -477,6 +503,69 @@ export interface XlsxEditorContentProps {
 
 // @public
 export const XlsxEditorContext: react.Context<XlsxEditorInstance | null>;
+
+// @public
+export const XlsxEditorContextMenu: XlsxEditorContextMenuNamespace;
+
+// @public
+export interface XlsxEditorContextMenuNamespace {
+    (props: XlsxEditorContextMenuProps): ReactElement;
+    // (undocumented)
+    readonly ClearAll: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ClearContents: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly ClearFormatting: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Copy: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Cut: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly DeleteColumns: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly DeleteRows: XlsxEditorMenuNamedRow;
+    readonly Group: typeof XlsxEditorMenuGroup;
+    // (undocumented)
+    readonly InsertColumns: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly InsertRows: XlsxEditorMenuNamedRow;
+    readonly Item: typeof XlsxEditorMenuItem;
+    // (undocumented)
+    readonly MergeAndCenter: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly MergeCells: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly NumberFormat: XlsxEditorMenuNamedRow;
+    // (undocumented)
+    readonly Paste: XlsxEditorMenuNamedRow;
+    readonly Row: typeof XlsxEditorMenuRow;
+    // (undocumented)
+    readonly Separator: typeof XlsxEditorMenuSeparator;
+    readonly Start: typeof XlsxEditorContextMenuStart;
+    // (undocumented)
+    readonly Submenu: typeof XlsxEditorMenuSubmenu;
+    // (undocumented)
+    readonly UnmergeCells: XlsxEditorMenuNamedRow;
+}
+
+// @public
+export interface XlsxEditorContextMenuProps {
+    // (undocumented)
+    readonly children?: ReactNode;
+    readonly className?: string;
+    readonly disabled?: boolean;
+    readonly onOpenChange?: (open: boolean) => void;
+    readonly preset?: boolean;
+}
+
+// @public
+export function XlsxEditorContextMenuStart(input: XlsxEditorContextMenuStartProps): react.JSX.Element;
+
+// @public
+export interface XlsxEditorContextMenuStartProps {
+    // (undocumented)
+    readonly children?: ReactNode;
+}
 
 // @public
 export type XlsxEditorFonts = readonly FontSource[] | (() => Promise<readonly FontSource[]>);
@@ -707,6 +796,7 @@ export interface XlsxEditorMenuSubmenuProps {
 export interface XlsxEditorNamespace extends ForwardRefExoticComponent<XlsxEditorProps & RefAttributes<XlsxEditorRef>> {
     // (undocumented)
     readonly Content: typeof XlsxEditorContent;
+    readonly ContextMenu: typeof XlsxEditorContextMenu;
     // (undocumented)
     readonly FormulaBar: typeof FormulaBar;
     // (undocumented)
@@ -728,6 +818,7 @@ export interface XlsxEditorNamespace extends ForwardRefExoticComponent<XlsxEdito
 // @public
 export interface XlsxEditorProps extends Omit<XlsxEditorRootProps, 'children'> {
     readonly className?: string;
+    readonly contextMenu?: boolean | XlsxEditorContextMenuProps;
     readonly menu?: boolean | XlsxEditorMenuProps;
     readonly onSave?: (bytes: Uint8Array<ArrayBuffer>, saved: SavedWorkbook) => void;
     readonly onSaveStart?: (saving: Promise<SavedWorkbook | null>) => void;

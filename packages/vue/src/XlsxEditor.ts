@@ -39,6 +39,7 @@ import { SheetTabs } from './SheetTabs.tsx';
 import { hasListener, useEditorState } from './context.ts';
 import { XlsxEditorToolbar } from './toolbar/Toolbar.tsx';
 import { XlsxEditorMenu, type XlsxEditorMenuProps } from './menu/Menu.tsx';
+import { XlsxEditorContextMenu, type XlsxEditorContextMenuProps } from './menu/ContextMenu.tsx';
 import type { Translations } from '@xlsx-editor.dev/i18n';
 import { useChromeDir } from './locale.ts';
 
@@ -78,6 +79,14 @@ const xlsxEditorProps = {
     type: [Boolean, Object] as PropType<boolean | XlsxEditorMenuProps>,
     default: undefined,
   },
+  /**
+   * The grid context menu: `true` (the default) mounts it, `false` leaves it out, so a secondary
+   * press on the grid shows the browser's own menu, and an object mounts it with those props.
+   */
+  contextMenu: {
+    type: [Boolean, Object] as PropType<boolean | XlsxEditorContextMenuProps>,
+    default: undefined,
+  },
 } as const;
 
 /**
@@ -106,6 +115,10 @@ const Body = defineComponent({
       type: [Boolean, Object] as PropType<boolean | XlsxEditorMenuProps>,
       default: undefined,
     },
+    contextMenu: {
+      type: [Boolean, Object] as PropType<boolean | XlsxEditorContextMenuProps>,
+      default: undefined,
+    },
   },
   setup(props) {
     // The status alone: the body renders again only when it changes, not on each key of an edit.
@@ -129,6 +142,9 @@ const Body = defineComponent({
       h(StatusMessage),
       h(XlsxEditorContent, status.value === 'ready' ? {} : { className: 'xlsx-canvas-idle' }),
       h('div', { class: 'xlsx-footer', dir: dir.value }, [h(SheetTabs), h(ZoomControl)]),
+      props.contextMenu !== false
+        ? h(XlsxEditorContextMenu, typeof props.contextMenu === 'object' ? props.contextMenu : {})
+        : null,
     ];
   },
 });
@@ -199,6 +215,7 @@ export const XlsxEditor = defineComponent({
                 ...(hasListener(listeners, 'saveStart') ? { onSaveStart } : {}),
                 ...(props.opening === undefined ? {} : { opening: props.opening }),
                 ...(props.menu === undefined ? {} : { menu: props.menu }),
+                ...(props.contextMenu === undefined ? {} : { contextMenu: props.contextMenu }),
               })
             ),
         }

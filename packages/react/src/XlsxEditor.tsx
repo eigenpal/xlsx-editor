@@ -1,7 +1,8 @@
 /** @jsxImportSource react */
 // The composed editor: the menu bar, the toolbar, the formula bar, the grid, and a footer with
 // the sheet tabs and the zoom. The `menu` prop shows or hides the menu bar, as DOCX Editor's
-// `menu` prop does (docx-editor/packages/react/src/components/DocxEditor.tsx at ad686574).
+// `menu` prop does (docx-editor/packages/react/src/components/DocxEditor.tsx at ad686574). The
+// `contextMenu` prop mounts the grid context menu, as DOCX Editor's prop of the same name.
 
 import { forwardRef, type CSSProperties } from 'react';
 import type { EditorSnapshot, SavedWorkbook } from '@xlsx-editor.dev/core/editor';
@@ -19,6 +20,7 @@ import { useEditorState } from './context.ts';
 import { XlsxEditorToolbar } from './toolbar/Toolbar.tsx';
 import { useChromeDir } from './locale.tsx';
 import { XlsxEditorMenu, type XlsxEditorMenuProps } from './menu/Menu.tsx';
+import { XlsxEditorContextMenu, type XlsxEditorContextMenuProps } from './menu/ContextMenu.tsx';
 
 /** Props for `XlsxEditor`: the root's props and the viewport's class. @public */
 export interface XlsxEditorProps extends Omit<XlsxEditorRootProps, 'children'> {
@@ -62,6 +64,11 @@ export interface XlsxEditorProps extends Omit<XlsxEditorRootProps, 'children'> {
    * To remove the row, set `menu` to `false` and compose the menu bar with a hidden `Open` row.
    */
   readonly menu?: boolean | XlsxEditorMenuProps;
+  /**
+   * The grid context menu: `true` (the default) mounts it, `false` leaves it out, so a secondary
+   * press on the grid shows the browser's own menu, and an object mounts it with those props.
+   */
+  readonly contextMenu?: boolean | XlsxEditorContextMenuProps;
 }
 
 const statusOf = (snapshot: EditorSnapshot) => snapshot.status;
@@ -71,7 +78,8 @@ function Body({
   onSaveStart,
   opening,
   menu = true,
-}: Pick<XlsxEditorProps, 'onSave' | 'onSaveStart' | 'opening' | 'menu'>) {
+  contextMenu = true,
+}: Pick<XlsxEditorProps, 'onSave' | 'onSaveStart' | 'opening' | 'menu' | 'contextMenu'>) {
   // The status alone: the body renders again only when it changes, not on each key of an edit.
   const status = useEditorState(statusOf);
   const dir = useChromeDir();
@@ -97,13 +105,16 @@ function Body({
         <SheetTabs />
         <ZoomControl />
       </div>
+      {contextMenu !== false ? (
+        <XlsxEditorContextMenu {...(typeof contextMenu === 'object' ? contextMenu : {})} />
+      ) : null}
     </>
   );
 }
 
 /** A workbook editor with its chrome. Takes a `ref` to an `XlsxEditorRef`. @public */
 export const XlsxEditor = forwardRef<XlsxEditorRef, XlsxEditorProps>(function XlsxEditor(
-  { className, style, onSave, onSaveStart, opening, menu, ...props },
+  { className, style, onSave, onSaveStart, opening, menu, contextMenu, ...props },
   ref
 ) {
   return (
@@ -114,6 +125,7 @@ export const XlsxEditor = forwardRef<XlsxEditorRef, XlsxEditorProps>(function Xl
           {...(onSaveStart ? { onSaveStart } : {})}
           {...(opening === undefined ? {} : { opening })}
           {...(menu === undefined ? {} : { menu })}
+          {...(contextMenu === undefined ? {} : { contextMenu })}
         />
       </XlsxEditorViewport>
     </XlsxEditorRoot>

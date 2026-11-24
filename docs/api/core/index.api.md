@@ -726,6 +726,22 @@ export function composesKey(event: {
 // @public
 export function contentFieldText(text: string): string;
 
+// @internal
+export function contextMenuPlacement(input: {
+    readonly x: number;
+    readonly y: number;
+    readonly rtl: boolean;
+    readonly width: number;
+    readonly height: number;
+    readonly viewportWidth: number;
+    readonly viewportHeight: number;
+    readonly margin?: number;
+}): {
+    readonly left: number;
+    readonly top: number;
+    readonly maxHeight: number;
+};
+
 // @public
 export type CopyResult = {
     readonly ok: true;
@@ -809,6 +825,7 @@ export function editorCommandSlice(snapshot: EditorSnapshot, slot: ChromeSlotId,
 // @public
 export interface EditorEvents {
     change: (change: DocumentChange) => void;
+    contextMenu: (request: GridContextMenuRequest) => void;
     openFailure: (failure: EditorFailure, snapshot: EditorSnapshot) => void;
     rejection: (refusal: EditRefusal, snapshot: EditorSnapshot) => void;
     selectionChange: (snapshot: EditorSnapshot) => void;
@@ -1083,6 +1100,23 @@ export const formulaSlice: (s: EditorSnapshot) => {
     refusal: EditRefusal | null;
     numberLocale: NumberLocale;
 };
+
+// @public
+export function gridContextMenuEntries(kind: GridContextMenuTargetKind): readonly ChromeMenuEntry[];
+
+// @public
+export interface GridContextMenuRequest {
+    readonly kind: GridContextMenuTargetKind;
+    readonly range: GridRange;
+    readonly sheetIndex: number;
+    readonly trigger: 'pointer' | 'keyboard';
+    readonly x: number;
+    // (undocumented)
+    readonly y: number;
+}
+
+// @public
+export type GridContextMenuTargetKind = 'cells' | 'rows' | 'columns' | 'all';
 
 // @public
 export interface GridPoint {
@@ -1709,6 +1743,9 @@ export type PatchVertical = (typeof PATCH_VERTICAL)[number];
 
 // @public
 export const pixelsToPoints: (pixels: number) => number;
+
+// @internal
+export function placeContextMenu(anchor: HTMLElement, panel: HTMLElement, x: number, y: number): () => void;
 
 // @internal
 export function placeMenuPanel(panel: HTMLElement, options: {

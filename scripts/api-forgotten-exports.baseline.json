@@ -158,6 +158,7 @@
       "sheetTabsProps",
       "statusMessageProps",
       "xlsxEditorContentProps",
+      "xlsxEditorContextMenuProps",
       "xlsxEditorMenuEntryProps",
       "xlsxEditorMenuGroupProps",
       "xlsxEditorMenuItemProps",

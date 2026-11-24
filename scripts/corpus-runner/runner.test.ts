@@ -151,20 +151,24 @@ function grandchildRecord(file: string): { child: number; grandchild: number; wo
 }
 
 describe('the workbook list', () => {
-  test('takes the .xlsx files of every folder, sorted, and names them by position', () => {
+  test('takes the workbook files of every folder, sorted, and names them by position', () => {
     const dir = scratch();
     mkdirSync(join(dir, 'b'));
     mkdirSync(join(dir, '.hidden'));
     writeFileSync(join(dir, 'b', 'one.xlsx'), '');
     writeFileSync(join(dir, 'a.XLSX'), '');
+    writeFileSync(join(dir, 'b', 'm.xlsm'), '');
+    writeFileSync(join(dir, 'f.XLTM'), '');
     writeFileSync(join(dir, 'notes.txt'), '');
+    writeFileSync(join(dir, 'tool.xlam'), '');
     writeFileSync(join(dir, '.hidden', 'x.xlsx'), '');
     // The owner file that a program keeps next to a workbook that it edits.
     writeFileSync(join(dir, '~$a.xlsx'), '');
     symlinkSync(join(dir, 'a.XLSX'), join(dir, 'link.xlsx'));
     const jobs = listWorkbooks(dir);
-    expect(jobs.map((j) => j.id)).toEqual(['workbook1', 'workbook2']);
-    expect(jobs.map((j) => j.path)).toEqual([join(dir, 'a.XLSX'), join(dir, 'b', 'one.xlsx')]);
+    expect(jobs.map((j) => j.id)).toEqual(['workbook1', 'workbook2', 'workbook3', 'workbook4']);
+    const paths = [['a.XLSX'], ['b', 'm.xlsm'], ['b', 'one.xlsx'], ['f.XLTM']];
+    expect(jobs.map((j) => j.path)).toEqual(paths.map((p) => join(dir, ...p)));
   });
 
   test('names no folder when a folder cannot be read', () => {

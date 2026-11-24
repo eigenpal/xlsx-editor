@@ -46,7 +46,7 @@ The store SHALL refuse a sheet name that is empty, longer than 31 UTF-16 code un
 
 ### Requirement: Add a sheet
 
-The store SHALL add a worksheet with a new part, relationship, content type override, and `sheetId`, at the requested position.
+The store SHALL add a worksheet with a new part, relationship, content type override, and `sheetId`, at the requested position. It SHALL refuse an add with `structure-blocked`, with the `about` kind `macros`, when the workbook holds macros.
 
 #### Scenario: Add and save
 
@@ -86,6 +86,11 @@ The store SHALL rewrite every reference to a renamed sheet in formulas, defined 
 
 - **WHEN** the workbook holds a chart, a pivot table, a sheet that is not a worksheet, or a workbook or package relationship outside the allowlist, and the user opens the menu of a sheet tab
 - **THEN** Rename and Delete are disabled with the reason `sheetEditBlocked`, which names the part. F2 or a double-click starts no rename. Each worksheet tab shows that reason in its title and its accessible description
+
+#### Scenario: The sheet tabs in a workbook that holds macros
+
+- **WHEN** the workbook has a macro project relationship or a macro sheet, and the user opens the menu of a sheet tab
+- **THEN** Rename and Delete are disabled with the reason `sheetEditBlocked`, which names the macros, and the add button, Move left, and Move right are disabled with the reason `sheetOrderBlocked`, because macro code can read a sheet by its position. The store refuses the same edits with `structure-blocked`
 
 #### Scenario: The tab of a chartsheet
 
@@ -134,6 +139,11 @@ The store SHALL remove a deleted sheet with its part, relationships, and overrid
 ### Requirement: Move a sheet
 
 The store SHALL move a sheet to a new position and keep `@localSheetId` and the active tab on their sheets. It SHALL refuse with `sheet-range-blocked` a move that changes the sheets between the ends of a 3-D reference or which end comes first in tab order, and a delete of the start or end sheet of one. The editor SHALL refuse a move of a sheet that is not a worksheet with `structure-blocked`, with the sheet name as the subject.
+
+#### Scenario: A move in a workbook that holds macros
+
+- **WHEN** the workbook holds a macro project or a macro sheet, and the user moves a sheet
+- **THEN** the store refuses the move with `structure-blocked` and the `about` kind `macros`, because macro code can read a sheet by its position
 
 #### Scenario: A sheet-scoped name
 

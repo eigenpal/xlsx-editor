@@ -43,6 +43,7 @@ import {
 import { SHOW_ADAPTER_SWITCHER } from '../../vite/src/adapters.ts';
 import { downloadBlob } from '../../vite/src/download.ts';
 import { chromeLocale } from '../../vite/src/chrome-locale.ts';
+import { OPEN_ACCEPT, fileKindOf, type FileKind } from '../../vite/src/file-kinds.ts';
 import { initialTheme, rememberTheme, type Theme } from '../../vite/src/theme.ts';
 import {
   NAME_FIELD_LABEL,
@@ -64,8 +65,8 @@ const openInput = useTemplateRef<HTMLInputElement>('openInput');
 const nameField = useTemplateRef<HTMLInputElement>('nameField');
 // The status of the editor, so the grid shows idle until a workbook is ready.
 const status = shallowRef<EditorSnapshot['status']>('empty');
-// The package kind of the open workbook, for the extension that Save writes.
-const kind = shallowRef<EditorSnapshot['workbookKind']>(null);
+// The file kind of the open workbook, for the extension that Save writes.
+const kind = shallowRef<FileKind | null>(null);
 const viewOnly = shallowRef(false);
 // The shell's light or dark theme, as in the React demo: `?theme=`, else the theme picked
 // before, else light. A pick is kept for the next visit.
@@ -129,10 +130,10 @@ function startRename() {
   nameField.value?.select();
 }
 
-/** Keeps the status and the package kind of the editor. */
+/** Keeps the status and the file kind of the editor. */
 function onChange(s: EditorSnapshot) {
   status.value = s.status;
-  kind.value = s.workbookKind;
+  kind.value = fileKindOf(s);
 }
 
 function pick(event: Event) {
@@ -274,7 +275,7 @@ void session.openSample(async () => {
               class="demo-sr-only"
               type="file"
               aria-label="Open a file"
-              accept=".xlsx,.xltx"
+              :accept="OPEN_ACCEPT"
               @change="pick"
             />
           </label>

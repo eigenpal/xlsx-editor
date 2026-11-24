@@ -186,7 +186,9 @@ export type WorkbookOp =
    * count with `bad-position`. Each sheet op is refused with `locked` (rule `workbook`) when
    * `x:workbookProtection/@lockStructure` is true. Refused with `structure-blocked` when the add
    * changes the position of the sheet that the `@localSheetId` of a defined name inside
-   * `mc:AlternateContent` names, because the editor does not rewrite each branch.
+   * `mc:AlternateContent` names, because the editor does not rewrite each branch, and when the
+   * workbook holds macros (`about` kind `macros`), because macro code can read a sheet by its
+   * position.
    */
   | { readonly op: 'addSheet'; readonly name: string; readonly index: number }
   /**
@@ -219,7 +221,8 @@ export type WorkbookOp =
    * the sheet list, with `sheet-range-blocked` for a sheet range whose span the move
    * changes, and with `locked` when the workbook protection locks its structure. Refused with
    * `structure-blocked` when the move changes the position of the sheet that the `@localSheetId`
-   * of a defined name inside `mc:AlternateContent` names.
+   * of a defined name inside `mc:AlternateContent` names, and when the workbook holds macros
+   * (`about` kind `macros`).
    */
   | { readonly op: 'moveSheet'; readonly sheet: string; readonly index: number }
   /**
@@ -540,6 +543,7 @@ export const STRUCTURE_SUBJECT_KINDS = [
   'defined-name',
   'sheet-content',
   'workbook-content',
+  'macros',
 ] as const;
 
 /** One of {@link STRUCTURE_SUBJECT_KINDS}. A test keeps them equal to the catalog nouns. */

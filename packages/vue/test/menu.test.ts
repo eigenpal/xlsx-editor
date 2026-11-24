@@ -140,9 +140,17 @@ describe('menu bar', () => {
   test('Control or Command and S saves once with the menu bar and the toolbar both mounted', async () => {
     const saves: Uint8Array[] = [];
     const onSave = (bytes: Uint8Array) => void saves.push(bytes);
-    const { view } = await open(() => [h(XlsxEditorMenu, { onSave }), h(XlsxEditorToolbar, { onSave })]);
+    const { view } = await open(() => [
+      h(XlsxEditorMenu, { onSave }),
+      h(XlsxEditorToolbar, { onSave }),
+    ]);
     const grid = view.container.querySelector<HTMLElement>('.xlsx-scroller')!;
-    const event = new KeyboardEvent('keydown', { key: 's', ctrlKey: true, bubbles: true, cancelable: true });
+    const event = new KeyboardEvent('keydown', {
+      key: 's',
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
     grid.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
     await waitFor(() => expect(saves.length).toBe(1));
@@ -185,6 +193,8 @@ describe('menu bar', () => {
     viewer.commitEdit();
     viewer.select({ row: 0, col: 0 });
     const input = view.container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    // The picker lists the workbook and template extensions and their macro-enabled forms.
+    expect(input.accept.split(',').slice(0, 4)).toEqual(['.xlsx', '.xltx', '.xlsm', '.xltm']);
     const file = new File(['not a workbook'], 'broken.xlsx');
     Object.defineProperty(input, 'files', { value: [file], configurable: true });
     fireEvent.change(input);
@@ -282,15 +292,19 @@ describe('menu bar', () => {
     await click((await alignment()).querySelector<HTMLElement>('[data-slot="alignment.center"]')!);
     expect(viewer.snapshot().activeFormat?.horizontal).toBe('center');
     const sub = await alignment();
-    const horizontal = ['alignment.left', 'alignment.center', 'alignment.right'].map(
-      (slot) => sub.querySelector<HTMLElement>(`[data-slot="${slot}"]`)!
+    const horizontal = ['alignment.left', 'alignment.center', 'alignment.right'].map((slot) =>
+      sub.querySelector<HTMLElement>(`[data-slot="${slot}"]`)!
     );
     expect(horizontal.map((r) => r.getAttribute('role'))).toEqual([
       'menuitemradio',
       'menuitemradio',
       'menuitemradio',
     ]);
-    expect(horizontal.map((r) => r.getAttribute('aria-checked'))).toEqual(['false', 'true', 'false']);
+    expect(horizontal.map((r) => r.getAttribute('aria-checked'))).toEqual([
+      'false',
+      'true',
+      'false',
+    ]);
     expect(panel(bar)!.querySelector('[data-slot="alignment.wrap"]')?.getAttribute('role')).toBe(
       'menuitemcheckbox'
     );
@@ -486,8 +500,16 @@ describe('menu bar parts', () => {
         h(XlsxEditorMenu.File, null, () => [
           h(XlsxEditorMenu.Separator),
           h(XlsxEditorMenu.Group, { label: 'Share' }, () => [
-            h(XlsxEditorMenu.Row, { label: 'Copy link', shortcut: 'L', onSelect: () => (selected += 1) }),
-            h(XlsxEditorMenu.Row, { label: 'Publish', disabled: true, disabledReason: 'Sign in first.' }),
+            h(XlsxEditorMenu.Row, {
+              label: 'Copy link',
+              shortcut: 'L',
+              onSelect: () => (selected += 1),
+            }),
+            h(XlsxEditorMenu.Row, {
+              label: 'Publish',
+              disabled: true,
+              disabledReason: 'Sign in first.',
+            }),
           ]),
           h(XlsxEditorMenu.Submenu, { label: 'Recent' }, () => [
             h(XlsxEditorMenu.Row, { label: 'Budget' }),
@@ -606,7 +628,9 @@ describe('menu bar parts', () => {
       h(XlsxEditorMenu, { preset: false }, () => [
         h(XlsxEditorMenu.Edit, { preset: false }, () => [
           h(XlsxEditorMenu.Undo),
-          h(XlsxEditorMenu.Entry, { entry: { kind: 'item', slot: 'edit.copy', shortcut: 'Mod+C' } }),
+          h(XlsxEditorMenu.Entry, {
+            entry: { kind: 'item', slot: 'edit.copy', shortcut: 'Mod+C' },
+          }),
         ]),
       ])
     );

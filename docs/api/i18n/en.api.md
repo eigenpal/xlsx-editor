@@ -546,6 +546,7 @@ const enJson: {
         "defined-name": string;
         "sheet-content": string;
         "workbook-content": string;
+        macros: string;
     };
     hint: {
         conditionalFormat: string;
@@ -583,6 +584,7 @@ const enJson: {
         lastSheet: string;
         notWorksheet: string;
         sheetEditBlocked: string;
+        sheetOrderBlocked: string;
         composing: string;
         decimalsNoNumberSelection: string;
         decimalsNoNumber: string;

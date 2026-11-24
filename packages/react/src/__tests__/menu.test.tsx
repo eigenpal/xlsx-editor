@@ -178,6 +178,8 @@ describe('menu bar', () => {
     const row = packaged.bar.querySelector<HTMLElement>('[data-slot="file.open"]')!;
     expect(row.getAttribute('aria-disabled')).toBeNull();
     const input = packaged.view.container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    // The picker lists the workbook and template extensions and their macro-enabled forms.
+    expect(input.accept.split(',').slice(0, 4)).toEqual(['.xlsx', '.xltx', '.xlsm', '.xltm']);
     let picked = 0;
     input.addEventListener('click', () => (picked += 1));
     fireEvent.click(row);

@@ -33,6 +33,8 @@ try {
 
 Calls queue until `context.sync()`. Load the properties that you read, and read them after the sync. Synchronize pending writes before you return from `run()`. The runtime drops actions that no sync sent, where an Office.js host sends them with a final sync of its own. A development build prints a warning for dropped writes.
 
+`runtime.save()` keeps the package type of the input. A macro-enabled workbook (`.xlsm`) or template (`.xltm`) opens and saves with its macro part unchanged and never run. Save the result with the extension of the input file.
+
 ## Supported members
 
 | Object                | Members                                                         |

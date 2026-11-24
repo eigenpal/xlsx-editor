@@ -133,9 +133,11 @@ const xlsxEditorMenuProps = {
 /** Props of `XlsxEditorMenu`, the twin of React's `XlsxEditorMenuProps`. @public */
 export type XlsxEditorMenuProps = ExtractPublicPropTypes<typeof xlsxEditorMenuProps>;
 
+// A workbook, a template, and their macro-enabled forms, by extension and media type.
 const ACCEPT =
-  '.xlsx,.xltx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,' +
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.template';
+  '.xlsx,.xltx,.xlsm,.xltm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,' +
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.template,' +
+  'application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.ms-excel.template.macroEnabled.12';
 
 const isLoading = (s: EditorSnapshot): boolean => s.status === 'loading';
 

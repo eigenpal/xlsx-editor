@@ -1,15 +1,16 @@
 /** @jsxImportSource react */
 // The demo opens the sample workbook at start, as the PPTX Editor demo opens its sample deck. The
 // user can then open a file that they pick, and edit it with the toolbar. Save writes the edited
-// workbook to a file that the user picks, with the extension of the package kind (`.xlsx` or
-// `.xltx`), or downloads it where the browser has no file save picker. The headings option, on by
-// default, is a view option of the demo: Save writes the heading flags of the opened file, not the
-// option. A pill switches the editor to view mode. The page shell, its top bar, and its light and
-// dark theme follow the PPTX Editor and DOCX Editor demos (`demo.css`): the brand lockup, the React
-// | Vue switcher, the name of the open workbook with its muted extension, the menu bar, then the
-// actions. The name is a text field, as the deck name of the PPTX Editor demo: a click edits it,
-// and File > Rename workbook focuses it. Save suggests the name that the user gave. The demo's
-// own text is English and stays out of `packages/i18n` (AGENTS.md, "i18n").
+// workbook to a file that the user picks, with the extension of the file kind (`.xlsx`, `.xltx`,
+// `.xlsm`, or `.xltm`, from `file-kinds.ts`), or downloads it where the browser has no file save
+// picker. The headings option, on by default, is a view option of the demo: Save writes the heading
+// flags of the opened file, not the option. A pill switches the editor to view mode. The page
+// shell, its top bar, and its light and dark theme follow the PPTX Editor and DOCX Editor demos
+// (`demo.css`): the brand lockup, the React | Vue switcher, the name of the open workbook with its
+// muted extension, the menu bar, then the actions. The name is a text field, as the deck name of
+// the PPTX Editor demo: a click edits it, and File > Rename workbook focuses it. Save suggests the
+// name that the user gave. The demo's own text is English and stays out of `packages/i18n`
+// (AGENTS.md, "i18n").
 //
 // The demo reads each file before the editor gets it, so a file that does not read leaves the
 // open workbook, its name, and its flags as they were. It opens a file with
@@ -26,13 +27,13 @@ import {
   useEditorState,
   type EditorSnapshot,
   type SavedWorkbook,
-  type WorkbookKind,
   type XlsxEditorRef,
 } from '@xlsx-editor.dev/react';
 import type { readXlsx } from '@xlsx-editor.dev/core/store';
 import { AdapterSwitcher, SHOW_ADAPTER_SWITCHER } from './AdapterSwitcher.tsx';
 import { BrandLogo } from './BrandLogo.tsx';
 import { chromeLocale } from './chrome-locale.ts';
+import { FILE_KINDS, OPEN_ACCEPT, fileKindOf, type FileKind } from './file-kinds.ts';
 import { useBusyStatus } from './busy-status.ts';
 import { FONTS_FAILED, FONTS_NEXT_STEP, fontsMissingNotice } from './font-messages.ts';
 import { Icon } from './icons.tsx';
@@ -76,20 +77,6 @@ const OPEN_A_FILE = 'Open a file to go on.';
 /** The error of a press of Save while a workbook opens. The open does no save work for it. */
 const SAVE_OPENING = 'Could not save: a workbook is opening. Try again when it shows.';
 
-/** The extension and the media type of each package kind. */
-const KIND_FILE: Readonly<Record<WorkbookKind, { ext: string; type: string; label: string }>> = {
-  workbook: {
-    ext: '.xlsx',
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    label: 'Workbook',
-  },
-  template: {
-    ext: '.xltx',
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.template',
-    label: 'Workbook template',
-  },
-};
-
 /** The reason of a load that did not end ready, for a message. */
 const loadFailure = (result: EditorSnapshot | null | undefined) =>
   result?.failure?.code === 'fonts'
@@ -114,7 +101,7 @@ interface ReadySave {
   readonly label: string;
   /** The name that the user gave the workbook in the top bar, or null. */
   readonly chosen: string | null;
-  readonly kind: WorkbookKind | null | undefined;
+  readonly kind: FileKind | null;
 }
 
 /** The error of a save whose workbook another workbook replaced. */
@@ -630,12 +617,8 @@ export function App() {
   };
 
   /** The options of the file dialog for the workbook `label`, or the name that the user gave. */
-  const saveOptions = (
-    label: string,
-    chosenName: string | null,
-    kind: WorkbookKind | null | undefined
-  ) => {
-    const file = KIND_FILE[kind ?? 'workbook'];
+  const saveOptions = (label: string, chosenName: string | null, kind: FileKind | null) => {
+    const file = FILE_KINDS[kind ?? 'workbook'];
     return {
       suggestedName: saveFileName(label, chosenName, file.ext),
       types: [{ description: file.label, accept: { [file.type]: [file.ext] } }],
@@ -714,7 +697,7 @@ export function App() {
       say(SAVE_REPLACED, 'error');
       return;
     }
-    const kind = snapshot.workbookKind;
+    const kind = fileKindOf(snapshot);
     const chosenName = chosenNow.current;
     await writeSave({ bytes, revision: result.revision, loadAt, label, chosen: chosenName, kind });
   };
@@ -891,7 +874,7 @@ export function App() {
                 type="file"
                 aria-label="Open a file"
                 aria-keyshortcuts="F6"
-                accept=".xlsx,.xltx"
+                accept={OPEN_ACCEPT}
                 onChange={(e) => void onFile(e)}
               />
             </label>

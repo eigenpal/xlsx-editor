@@ -14,7 +14,8 @@ import {
 } from '../../store/index.ts';
 import { en } from '@xlsx-editor.dev/i18n';
 import type { WorkbookOp } from '../../store/index.ts';
-import { NO_WORKBOOK_STATE, structureRefusalOf, workbookState } from '../editor-model.ts';
+import { structureRefusalOf } from '../editor-model.ts';
+import { NO_WORKBOOK_STATE, workbookState } from '../workbook-state.ts';
 import { refusalOf, refusalText } from '../cell-input.ts';
 import { englishText } from '../english.ts';
 

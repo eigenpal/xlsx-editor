@@ -29,8 +29,9 @@ export interface SheetCommandState {
   /**
    * The engine's reason when the command is disabled, as a catalog key: `viewMode`,
    * `workbookLocked`, `notWorksheet`, `sheetEditBlocked` (with the part that refuses it as its
-   * `about`), or `lastSheet`. Null when the command is enabled, and for a move at the end of
-   * the tabs or a sheet that has no tab.
+   * `about`), `sheetOrderBlocked` (macros), or `lastSheet`. Null when the command is enabled,
+   * and for a move at the end of the tabs or a sheet that has no tab, except in a workbook that
+   * holds macros, where a move is disabled with `sheetOrderBlocked`.
    */
   readonly disabledReason: ChromeDisabledReason | null;
   /**
@@ -57,11 +58,12 @@ const ENABLED: SheetCommandState = { enabled: true, disabledReason: null };
  * View mode disables every command with `viewMode`, and a workbook protection that locks the
  * sheet list with `workbookLocked`. A sheet that is not a worksheet (a chartsheet, a macro
  * sheet, a dialog sheet, or a sheet whose part is missing) has every command but `add`
- * disabled with `notWorksheet`. Delete needs another visible sheet (`lastSheet`). A chart, a
- * pivot table, a sheet that is not a worksheet, or a workbook or package relationship outside
- * the allowlist (for example data connections) disables Rename and Delete of every sheet with
- * `sheetEditBlocked` (`snapshot.sheetEditRefusal`), as the store refuses them with
- * `structure-blocked`.
+ * disabled with `notWorksheet`, except that macros come first for the moves. Delete needs
+ * another visible sheet (`lastSheet`). A chart, a pivot table, a sheet that is not a
+ * worksheet, or a workbook or package relationship outside the allowlist (for example data
+ * connections) disables Rename and Delete of every sheet with `sheetEditBlocked`
+ * (`snapshot.sheetEditRefusal`), as the store refuses them with `structure-blocked`. Macros
+ * also disable Add and the moves with `sheetOrderBlocked`.
  *
  * @public
  */
@@ -73,6 +75,14 @@ export function sheetCommandState(
   if (snapshot.mode === 'view') return disabled('disabledReason.viewMode');
   if (snapshot.workbookProtection?.allowStructure === false)
     return disabled('disabledReason.workbookLocked');
+  // Macro code can read a sheet by its position, so a workbook that holds macros takes no add
+  // and no move (`sheetOrderBlocked`), as the store refuses them.
+  const ordered = command === 'add' || command === 'moveLeft' || command === 'moveRight';
+  if (ordered && snapshot.sheetEditRefusal?.about?.kind === 'macros')
+    return {
+      enabled: false,
+      disabledReason: { key: 'disabledReason.sheetOrderBlocked', about: { kind: 'macros' } },
+    };
   if (command === 'add') return ENABLED;
   const tabs = snapshot.sheets.filter((s) => s.visible);
   const at = tabs.findIndex((s) => s.index === sheet);

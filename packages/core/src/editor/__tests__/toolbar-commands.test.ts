@@ -158,6 +158,7 @@ const readySnapshot = (): EditorSnapshot => ({
   modeRequests: 0,
   revision: 0,
   workbookKind: 'workbook',
+  macroEnabled: false,
 });
 
 /** A catalog value by its dotted key, or undefined. */

@@ -102,7 +102,7 @@ The ref is small: `load()`, `save()`, `saveInTasks()`, `getEditor()`, `focus()`,
 
 To get the edited workbook, call `save()` on the ref. The [package README](../README.md#edit-and-save) has a sample.
 
-The bytes keep the kind of the opened package: a workbook (`.xlsx`) stays a workbook, and a template (`.xltx`) stays a template. Name the file with the extension of `snapshot().workbookKind`. If the workbook already has a shared string table, text that an edit adds to it stays in the saved file after an undo of the edit, because the editor never removes items from a table that it opened. If the edit created the table, the undo removes the table, with its relationship and content type.
+The bytes keep the kind of the opened package: a workbook (`.xlsx`) stays a workbook, a template (`.xltx`) stays a template, and a macro-enabled workbook (`.xlsm`) or template (`.xltm`) keeps its macro part and content type. Name the file with the extension of `snapshot().workbookKind`, and with the macro-enabled extension when `snapshot().macroEnabled` is true. If the workbook already has a shared string table, text that an edit adds to it stays in the saved file after an undo of the edit, because the editor never removes items from a table that it opened. If the edit created the table, the undo removes the table, with its relationship and content type.
 
 ## Rules for open edits and loads
 

@@ -140,9 +140,11 @@ export interface XlsxEditorMenuProps {
   readonly children?: ReactNode;
 }
 
+// A workbook, a template, and their macro-enabled forms, by extension and media type.
 const ACCEPT =
-  '.xlsx,.xltx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,' +
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.template';
+  '.xlsx,.xltx,.xlsm,.xltm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,' +
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.template,' +
+  'application/vnd.ms-excel.sheet.macroEnabled.12,application/vnd.ms-excel.template.macroEnabled.12';
 
 const isLoading = (s: EditorSnapshot): boolean => s.status === 'loading';
 

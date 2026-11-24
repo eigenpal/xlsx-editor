@@ -6,6 +6,7 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { h, nextTick } from 'vue';
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import { buildXlsx, c, row } from '../../../scripts/fixtures/builder.ts';
 import { XlsxEditor, type XlsxEditorInstance } from '../src/index.ts';
 import { FONTS, change, mount, tabsShow, unmountAll } from './mount.ts';
@@ -36,6 +37,47 @@ async function open(bytes = workbook, tabs = 2) {
 
 const names = (view: Awaited<ReturnType<typeof open>>['view']) =>
   view.getAllByRole('tab').map((t) => t.textContent);
+
+/** `workbook` with a macro part: the editor keeps it as bytes and refuses sheet adds and moves. */
+function macroWorkbook(): Uint8Array {
+  const files = unzipSync(workbook);
+  const rels = strFromU8(files['xl/_rels/workbook.xml.rels']!).replace(
+    '</Relationships>',
+    `<Relationship Id="rIdMacros" Type="${MACRO_REL}" Target="vbaProject.bin"/></Relationships>`
+  );
+  files['xl/_rels/workbook.xml.rels'] = strToU8(rels);
+  files['xl/vbaProject.bin'] = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0]);
+  return zipSync(files);
+}
+const MACRO_REL = 'http://schemas.microsoft.com/office/2006/relationships/vbaProject';
+const ORDER_REASON =
+  'Sheets cannot be added or moved: the macros of the workbook can read a sheet by its position, and the editor cannot update that reference.';
+
+describe('SheetTabs in a workbook that holds macros', () => {
+  test('the add button is disabled with the reason of the macros, and adds no sheet', async () => {
+    const { view } = await open(macroWorkbook());
+    const add = view.getByRole('button', { name: 'Add a sheet' });
+    expect(add.getAttribute('aria-disabled')).toBe('true');
+    expect(add.getAttribute('title')).toBe(`Add a sheet: ${ORDER_REASON}`);
+    fireEvent.click(add);
+    await nextTick();
+    expect(names(view)).toEqual(['First', 'Second']);
+  });
+
+  test('Move left and Move right are disabled with the same reason, and move no sheet', async () => {
+    const { view } = await open(macroWorkbook());
+    fireEvent.contextMenu(view.getAllByRole('tab')[0]!);
+    await nextTick();
+    for (const name of ['Move left', 'Move right']) {
+      const row = view.getByRole('menuitem', { name });
+      expect(row.getAttribute('aria-disabled')).toBe('true');
+      expect(row.getAttribute('title')).toContain(ORDER_REASON);
+      fireEvent.click(row);
+      await nextTick();
+    }
+    expect(names(view)).toEqual(['First', 'Second']);
+  });
+});
 
 describe('SheetTabs actions', () => {
   test('the add button adds a sheet after the shown one and shows it', async () => {

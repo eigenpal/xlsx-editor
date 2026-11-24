@@ -533,7 +533,8 @@
     "not-worksheet": "the sheet {name}, which is not a worksheet",
     "defined-name": "the defined name {name}",
     "sheet-content": "content on sheet {name}",
-    "workbook-content": "content in the workbook"
+    "workbook-content": "content in the workbook",
+    "macros": "the macros of the workbook"
   },
   "hint": {
     "conditionalFormat": "Conditional formatting changes how this cell shows. This control reads and sets the cell format.",
@@ -571,6 +572,7 @@
     "lastSheet": "The sheet cannot be deleted: a workbook must keep one visible sheet.",
     "notWorksheet": "This sheet is not a worksheet, or its part is missing. The editor cannot show, rename, delete, or move it.",
     "sheetEditBlocked": "Sheets cannot be renamed or deleted: {subject} can refer to any sheet, and the editor cannot update that reference.",
+    "sheetOrderBlocked": "Sheets cannot be added or moved: {subject} can read a sheet by its position, and the editor cannot update that reference.",
     "composing": "Finish the text that the input method composes first.",
     "decimalsNoNumberSelection": "No selected cell holds a number, so there are no decimal places to change.",
     "decimalsNoNumber": "This cell does not hold a number, so it has no decimal places to change.",

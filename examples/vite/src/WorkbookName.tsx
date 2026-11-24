@@ -12,9 +12,10 @@
 
 import { useRef, useState, type KeyboardEvent, type RefObject } from 'react';
 import { useEditorState, type EditorSnapshot } from '@xlsx-editor.dev/react';
+import { fileKindOf } from './file-kinds.ts';
 import { NAME_FIELD_LABEL, renamedTo, shownExtension, shownName } from './workbook-names.ts';
 
-const kindOf = (snapshot: EditorSnapshot) => snapshot.workbookKind;
+const kindOf = (snapshot: EditorSnapshot) => fileKindOf(snapshot);
 
 /**
  * The name of the open workbook, with its extension muted, as the family demos show a file. With

@@ -1036,7 +1036,7 @@ type StructuralOps = {
 export const STRUCTURE_PERMIT: Readonly<Record<StructuralOpName, keyof SheetProtection>>;
 
 // @public
-export const STRUCTURE_SUBJECT_KINDS: readonly ['cell', 'wrapped-formula', 'cell-content', 'row', 'merged-range', 'columns', 'hyperlink', 'sheet-view', 'conditional-formatting', 'data-validation', 'filter', 'table', 'comment', 'drawing', 'linked-drawing', 'control', 'chart', 'pivot-table', 'other-sheet', 'not-worksheet', 'defined-name', 'sheet-content', 'workbook-content'];
+export const STRUCTURE_SUBJECT_KINDS: readonly ['cell', 'wrapped-formula', 'cell-content', 'row', 'merged-range', 'columns', 'hyperlink', 'sheet-view', 'conditional-formatting', 'data-validation', 'filter', 'table', 'comment', 'drawing', 'linked-drawing', 'control', 'chart', 'pivot-table', 'other-sheet', 'not-worksheet', 'defined-name', 'sheet-content', 'workbook-content', 'macros'];
 
 // @public
 export function structureBlocker(pkg: XlsxPackage, sheet: string): OpRejection | undefined;
@@ -1275,7 +1275,9 @@ export type WorkbookOp = {
 * count with `bad-position`. Each sheet op is refused with `locked` (rule `workbook`) when
 * `x:workbookProtection/@lockStructure` is true. Refused with `structure-blocked` when the add
 * changes the position of the sheet that the `@localSheetId` of a defined name inside
-* `mc:AlternateContent` names, because the editor does not rewrite each branch.
+* `mc:AlternateContent` names, because the editor does not rewrite each branch, and when the
+* workbook holds macros (`about` kind `macros`), because macro code can read a sheet by its
+* position.
 */
 | {
     readonly op: 'addSheet';
@@ -1319,7 +1321,8 @@ export type WorkbookOp = {
 * the sheet list, with `sheet-range-blocked` for a sheet range whose span the move
 * changes, and with `locked` when the workbook protection locks its structure. Refused with
 * `structure-blocked` when the move changes the position of the sheet that the `@localSheetId`
-* of a defined name inside `mc:AlternateContent` names.
+* of a defined name inside `mc:AlternateContent` names, and when the workbook holds macros
+* (`about` kind `macros`).
 */
 | {
     readonly op: 'moveSheet';

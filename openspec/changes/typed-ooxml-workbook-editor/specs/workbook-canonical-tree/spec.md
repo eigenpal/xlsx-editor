@@ -66,6 +66,11 @@ The system SHALL sanitize file-derived values at the parse boundary: hyperlink t
 - **WHEN** a workbook has an `x:externalLink` part
 - **THEN** opening the workbook makes no network request, and the part is preserved
 
+#### Scenario: A macro-enabled workbook or template
+
+- **WHEN** the main part of a package has the macro-enabled workbook or template content type, with an `x:workbook` root
+- **THEN** the workbook opens, and a save keeps the main-part content type and the macro part byte for byte. A package whose main part has the add-in content type is refused with `not-a-workbook`
+
 #### Scenario: Active content stays inert
 
 - **WHEN** a workbook holds `xl/vbaProject.bin`, an `x:ddeLink`, an OLE object, and an embedded control

@@ -112,6 +112,7 @@ export const DISABLED_REASON_KEYS = [
   'disabledReason.lastSheet',
   'disabledReason.notWorksheet',
   'disabledReason.sheetEditBlocked',
+  'disabledReason.sheetOrderBlocked',
   'disabledReason.composing',
   'disabledReason.decimalsNoNumberSelection',
   'disabledReason.decimalsNoNumber',

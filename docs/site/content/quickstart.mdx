@@ -64,7 +64,7 @@ export function App() {
         Open a workbook{' '}
         <input
           type="file"
-          accept=".xlsx,.xltx"
+          accept=".xlsx,.xltx,.xlsm,.xltm"
           onChange={async (event) => {
             const picked = event.target.files?.[0];
             if (!picked) return;
@@ -120,7 +120,7 @@ function save(bytes: Uint8Array<ArrayBuffer>, saved: SavedWorkbook) {
     <h1>Workbook</h1>
     <label>
       Open a workbook
-      <input type="file" accept=".xlsx,.xltx" @change="open" />
+      <input type="file" accept=".xlsx,.xltx,.xlsm,.xltm" @change="open" />
     </label>
     <XlsxEditor :document="file?.bytes" style="height: 600px" @save="save" />
   </main>
@@ -132,7 +132,7 @@ function save(bytes: Uint8Array<ArrayBuffer>, saved: SavedWorkbook) {
 
 A new `document` value opens that workbook. A pick with no file keeps the open workbook, because `undefined` closes it. A new open drops the unsaved edits, the undo history, and an open cell edit of the previous workbook. To ask before you open other bytes, track unsaved edits as [Unsaved edits](https://github.com/eigenpal/xlsx-editor/blob/main/packages/react/docs/layout-and-props.md#unsaved-edits) shows. The **Save** control is enabled only when you pass a save handler.
 
-`saved.stillOpen` is `false` when another open ended the workbook during the save. So the sample does not download those bytes under the name of the new file. The saved bytes keep the kind of the opened package: a template (`.xltx`) saves as a template.
+`saved.stillOpen` is `false` when another open ended the workbook during the save. So the sample does not download those bytes under the name of the new file. The saved bytes keep the kind of the opened package: a template (`.xltx`) saves as a template, and a macro-enabled workbook (`.xlsm`) saves as a macro-enabled workbook. When `snapshot().macroEnabled` is true, name the file `.xlsm` or `.xltm`. The sample gives each download the workbook media type; a host that serves other kinds picks the media type from the file extension.
 
 ## Edit cells
 
@@ -144,7 +144,7 @@ If the editor cannot store an edit, it keeps your text and shows the reason in t
 
 If a workbook does not open, the editor shows the reason. To read the reason in code, read the snapshot of each change: `onChange` in React, the `change` event in Vue. When the open fails, its `status` is `failed`, and `failure.code` is `package`, `read`, `fonts`, or `no-worksheet`. The code `read` means that the browser could not read a file that the user picked in File > Open. `failure.detail` gives the reason of the engine for your logs. Do not show the detail to users.
 
-The editor opens a workbook (`.xlsx`) or a template (`.xltx`) in the Transitional form of ECMA-376. Another package fails with the code `package`: for example, a macro-enabled workbook, or a workbook in the Strict form.
+The editor opens a workbook (`.xlsx`), a template (`.xltx`), or their macro-enabled forms (`.xlsm` and `.xltm`) in the Transitional form of ECMA-376. The editor never runs a macro: the macro part stays in the file as bytes. In a workbook that holds macros, the editor refuses each row or column insert or delete, and each sheet add, rename, delete, or move. The macros can refer to the cells and sheets that the edit changes, or read a sheet by its position, and the editor never rewrites macro code. Another package fails with the code `package`: for example, an add-in, or a workbook in the Strict form.
 
 A workbook past a package limit, or with a part past a limit that refuses the file, does not open. Other parts past a limit stay as bytes, and the workbook opens with a notice. [Workbook limits](/docs/workbook-limits) lists each limit and its value.
 

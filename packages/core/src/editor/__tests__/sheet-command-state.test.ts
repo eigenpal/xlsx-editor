@@ -81,6 +81,27 @@ describe('sheetCommandState', () => {
     expect(keyOf(sheetCommandState(one, 'delete', 0))).toBe('disabledReason.lastSheet');
   });
 
+  test('macros also disable add and the moves, as they can read a sheet by its position', () => {
+    const about = { kind: 'macros' } as const;
+    const macros = input({ sheetEditRefusal: { code: 'structure-blocked', about } });
+    for (const [c, at] of [
+      ['add', -1],
+      ['moveLeft', 2],
+      ['moveRight', 0],
+    ] as const)
+      expect([c, sheetCommandState(macros, c, at)]).toEqual([
+        c,
+        { enabled: false, disabledReason: { key: 'disabledReason.sheetOrderBlocked', about } },
+      ]);
+    expect(keyOf(sheetCommandState(macros, 'rename', 0))).toBe('disabledReason.sheetEditBlocked');
+    // View mode and a locked sheet list keep their own reasons.
+    expect(keyOf(sheetCommandState({ ...macros, mode: 'view' }, 'add', -1))).toBe(
+      'disabledReason.viewMode'
+    );
+    const locked = { ...macros, workbookProtection: { allowStructure: false } };
+    expect(keyOf(sheetCommandState(locked, 'add', -1))).toBe('disabledReason.workbookLocked');
+  });
+
   test('a chartsheet has every sheet command but add disabled, with chartsheet', () => {
     // S1 is a visible chartsheet between two worksheets.
     const chart = input({ sheets: [sheet(0), { ...sheet(1), worksheet: false }, sheet(2)] });

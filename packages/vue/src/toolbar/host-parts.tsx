@@ -43,6 +43,7 @@ import {
   CHROME_GROUPS,
   chromeSlotId,
   isToolbarButtonSlot,
+  takesToolbarIcon,
   notInToolbar,
   toolbarAsChildProblem,
   toolbarGroupHeading,
@@ -442,7 +443,7 @@ export function slotOverrideOf(
 ): SlotOverride | null {
   const button = isToolbarButtonSlot(props.slotId);
   const asChild = button && props.asChild ? asChildElement(children) : null;
-  const icon = button ? props.icon : undefined;
+  const icon = takesToolbarIcon(props.slotId) ? props.icon : undefined;
   if (icon == null && !asChild && !props.className) return null;
   return {
     slot: props.slotId,

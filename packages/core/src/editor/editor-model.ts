@@ -45,6 +45,7 @@ import {
   EN_US,
   sheetHasHiddenRules,
   sheetStale,
+  workbookTheme,
   type NumberLocale,
   type ResolvedCellFormat,
 } from '../cascade/index.ts';
@@ -374,6 +375,13 @@ export interface EditorSnapshot {
    * a notice that names them.
    */
   readonly partsPastLimit: readonly PartPastLimit[];
+  /**
+   * The color scheme of the workbook theme as `RRGGBB`, in theme index order: `lt1`, `dk1`,
+   * `lt2`, `dk2`, then the six accents (`a:clrScheme`, `CT_ColorScheme`, ECMA-376 Part 1,
+   * 20.1.6.2). An entry that the theme lacks is undefined. The list is empty with no workbook
+   * open or no theme part. The color picker reads it through `workbookThemeHexes`.
+   */
+  readonly themeColors: readonly (string | undefined)[];
 }
 
 /**
@@ -409,7 +417,7 @@ export interface PartPastLimit {
 /** The part of a snapshot that the whole workbook gives. */
 export type WorkbookState = Pick<
   EditorSnapshot,
-  'workbookKind' | 'workbookProtection' | 'sheetEditRefusal' | 'partsPastLimit'
+  'workbookKind' | 'workbookProtection' | 'sheetEditRefusal' | 'partsPastLimit' | 'themeColors'
 >;
 
 /** The workbook state with no workbook open. */
@@ -418,6 +426,7 @@ export const NO_WORKBOOK_STATE: WorkbookState = Object.freeze({
   workbookProtection: null,
   sheetEditRefusal: null,
   partsPastLimit: [],
+  themeColors: [],
 });
 
 const sheetEditRefusals = new WeakMap<XlsxPackage, EditRefusal | null>();
@@ -437,6 +446,8 @@ export function workbookState(pkg: XlsxPackage, index: WorkbookIndex): WorkbookS
     workbookProtection: readWorkbookProtection(pkg, index),
     sheetEditRefusal: refusal,
     partsPastLimit: partsPastLimit(pkg),
+    // The theme part is cached by its root, so the list keeps its identity.
+    themeColors: workbookTheme(pkg, index).palette,
   };
 }
 
@@ -547,6 +558,7 @@ export const EMPTY_SNAPSHOT: EditorSnapshot = Object.freeze({
   modeRequests: 0,
   revision: 0,
   workbookKind: null,
+  themeColors: [],
   partsPastLimit: [],
 });
 

@@ -2,8 +2,8 @@
 // Accessibility of the editor chrome in a high contrast theme, after
 // pptx-editor/packages/react/src/__tests__/chrome-a11y.test.tsx at 0057839b (EigenPal): a rule
 // of the forced-colors block names each state and sets its system colors, the element in each
-// state matches that rule and the element out of it does not, and each color swatch is a 24px
-// target. The Vue twin is packages/vue/test/chrome-a11y.test.ts. The stylesheet checks are
+// state matches that rule and the element out of it does not, and each color swatch has 24px of
+// room. The Vue twin is packages/vue/test/chrome-a11y.test.ts. The stylesheet checks are
 // shared, so they run in this file only. Difference from PPTX Editor: the stylesheet check
 // reads the declarations of each rule, not only its selector text.
 
@@ -236,7 +236,7 @@ describe('the stylesheet', () => {
     expect(inner.endsWith(')')).toBe(true);
     expect(selectorsOf(inner.slice(prefix.length, -1))).toEqual([
       ".xlsx-toolbar-row[role='menuitem']",
-      ".xlsx-toolbar-no-fill[aria-selected='true']",
+      ".xlsx-toolbar-color-clear[aria-pressed='true']",
       ".xlsx-toolbar-button[aria-pressed='true']",
       '.xlsx-toolbar-button[data-active]',
       ".xlsx-toolbar-row[aria-pressed='true']",
@@ -286,12 +286,14 @@ describe('the stylesheet', () => {
     // Every rule, also in the forced-colors blocks, that sizes the palette or a swatch.
     const sized = (selector: string, name: RegExp) =>
       declarationsOf(selector, appliedRules).filter((d) => name.test(d.slice(0, d.indexOf(':'))));
-    expect(sized('.xlsx-toolbar-palette', /^grid-template/)).toEqual([
-      'grid-template-columns: repeat(7, 24px)',
+    // A 20px swatch 4px from the next: each target has 24px of room (WCAG 2.5.8, spacing).
+    expect(sized('.xlsx-toolbar-color-grid', /^(grid-template|gap)/)).toEqual([
+      'grid-template-columns: repeat(10, 20px)',
+      'gap: 4px',
     ]);
     expect(
       sized('.xlsx-toolbar-swatch', /^(min-|max-)?(width|height|inline-size|block-size)$/)
-    ).toEqual(['width: 24px', 'height: 24px']);
+    ).toEqual(['width: 20px', 'height: 20px']);
   });
 });
 
@@ -355,18 +357,18 @@ describe('the chrome in each state matches its forced-colors rule', () => {
   test('the selected color swatch and the selected no fill', async () => {
     const { swatch, selectedSwatch, selectedNoFill, focusedSwatch } = FORCED_STATES;
     const view = await open();
-    fireEvent.click(view.getByRole('button', { name: 'Font color' }));
-    const red = view.getByRole('option', { name: 'Red' });
+    fireEvent.click(view.getByRole('button', { name: 'Font color options' }));
+    const red = view.getByRole('button', { name: 'Red' });
     expect(red.matches(swatch.selector)).toBe(true);
     expect(red.matches(selectedSwatch.selector)).toBe(false);
     fireEvent.click(red);
-    fireEvent.click(view.getByRole('button', { name: 'Font color' }));
-    expect(view.getByRole('option', { name: 'Red' }).matches(selectedSwatch.selector)).toBe(true);
-    expect(view.getByRole('option', { name: 'Blue' }).matches(selectedSwatch.selector)).toBe(false);
-    fireEvent.click(view.getByRole('button', { name: 'Fill color' }));
+    fireEvent.click(view.getByRole('button', { name: 'Font color options' }));
+    expect(view.getByRole('button', { name: 'Red' }).matches(selectedSwatch.selector)).toBe(true);
+    expect(view.getByRole('button', { name: 'Blue' }).matches(selectedSwatch.selector)).toBe(false);
+    fireEvent.click(view.getByRole('button', { name: 'Fill color options' }));
     // A cell with no fill: the no fill option is the selected one.
-    const none = view.getByRole('option', { name: 'No fill' });
-    expect(none.getAttribute('aria-selected')).toBe('true');
+    const none = view.getByRole('button', { name: 'No fill' });
+    expect(none.getAttribute('aria-pressed')).toBe('true');
     expect(none.matches(selectedNoFill.selector)).toBe(true);
     expect(none.matches(selectedSwatch.selector)).toBe(false);
     expect(none.matches(focusedSwatch.selector)).toBe(false);
@@ -377,11 +379,11 @@ describe('the chrome in each state matches its forced-colors rule', () => {
   test('a focused color swatch differs from the selected one', async () => {
     const { selectedSwatch, focusedSwatch } = FORCED_STATES;
     const view = await open();
-    fireEvent.click(view.getByRole('button', { name: 'Font color' }));
-    fireEvent.click(view.getByRole('option', { name: 'Red' }));
-    fireEvent.click(view.getByRole('button', { name: 'Font color' }));
-    const red = view.getByRole('option', { name: 'Red' });
-    const blue = view.getByRole('option', { name: 'Blue' });
+    fireEvent.click(view.getByRole('button', { name: 'Font color options' }));
+    fireEvent.click(view.getByRole('button', { name: 'Red' }));
+    fireEvent.click(view.getByRole('button', { name: 'Font color options' }));
+    const red = view.getByRole('button', { name: 'Red' });
+    const blue = view.getByRole('button', { name: 'Blue' });
     act(() => blue.focus());
     expect(blue.matches(focusedSwatch.selector)).toBe(true);
     expect(blue.matches(selectedSwatch.selector)).toBe(false);

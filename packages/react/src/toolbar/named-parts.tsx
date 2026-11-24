@@ -50,8 +50,23 @@ export interface ToolbarSlotPartProps {
   readonly overflowContent?: () => ReactNode;
 }
 
+/**
+ * Props for the named color parts (`Toolbar.FontColor`, `Toolbar.FillColor`), as DOCX Editor's
+ * `ToolbarColorSplitProps`: a value part, plus `icon`. @public
+ */
+export interface ToolbarColorSplitProps extends ToolbarSlotPartProps {
+  /**
+   * Replaces the glyph above the color bar, about 18 pixels. The bar is not replaceable: it
+   * still paints the color that the main half applies.
+   */
+  readonly icon?: ReactNode;
+}
+
 /** A named button part. @public */
 export type ToolbarPartComponent = (props: ToolbarPartProps) => ReactElement;
+
+/** A named color part. @public */
+export type ToolbarColorSplitComponent = (props: ToolbarColorSplitProps) => ReactElement;
 
 /** A named value part. @public */
 export type ToolbarSlotPartComponent = (props: ToolbarSlotPartProps) => ReactElement;
@@ -59,8 +74,8 @@ export type ToolbarSlotPartComponent = (props: ToolbarSlotPartProps) => ReactEle
 /**
  * Every named toolbar part, attached to `XlsxEditor.Toolbar` as statics: one for each slot of
  * the preset toolbar (`defaultChromeGroups()`). The slots that only the menu bar shows have menu
- * row parts instead. Button parts take `ToolbarPartProps`, value parts `ToolbarSlotPartProps`, as
- * in DOCX Editor. @public
+ * row parts instead. Button parts take `ToolbarPartProps`, value parts `ToolbarSlotPartProps`, and
+ * the color parts `ToolbarColorSplitProps`, as in DOCX Editor. @public
  */
 export interface ToolbarNamedParts {
   /** `history.undo`. */
@@ -78,9 +93,9 @@ export interface ToolbarNamedParts {
   /** `font.underline`. */
   readonly Underline: ToolbarPartComponent;
   /** `font.color`. */
-  readonly FontColor: ToolbarSlotPartComponent;
+  readonly FontColor: ToolbarColorSplitComponent;
   /** `fill.color`. */
-  readonly FillColor: ToolbarSlotPartComponent;
+  readonly FillColor: ToolbarColorSplitComponent;
   /** `borders.outline`. */
   readonly OutsideBorders: ToolbarPartComponent;
   /** `borders.all`. */

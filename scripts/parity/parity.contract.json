@@ -376,6 +376,8 @@
       "StatusMessageProps",
       "ToolbarAction",
       "ToolbarActionProps",
+      "ToolbarColorSplitComponent",
+      "ToolbarColorSplitProps",
       "ToolbarCommandState",
       "ToolbarHintKey",
       "ToolbarNamedParts",

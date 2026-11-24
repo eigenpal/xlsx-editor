@@ -112,6 +112,7 @@ const readySnapshot = (): EditorSnapshot => ({
   status: 'ready',
   failure: null,
   partsPastLimit: [],
+  themeColors: [],
   sheets: [],
   activeSheet: 0,
   selection: {

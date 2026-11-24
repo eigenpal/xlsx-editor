@@ -256,7 +256,6 @@ export interface FormatPatch {
     } | {
         readonly type: 'none';
     };
-    // (undocumented)
     readonly fontColor?: string;
     readonly fontName?: string;
     readonly fontSize?: number;

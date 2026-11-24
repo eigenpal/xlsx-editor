@@ -515,6 +515,24 @@ export function parseFontSize(text: string): string | null {
 export const isHexColor = (value: string | null | undefined): value is string =>
   !!value && /^[0-9A-Fa-f]{6}$/.test(value);
 
+// The perceived luminance and the near-white threshold are those of `isLightColor` in
+// docx-editor/packages/react/src/components/ui/ColorPicker.tsx at 60a86b48 (EigenPal).
+// Difference: a near-black threshold, for the dark theme, which DOCX Editor does not have.
+/**
+ * The tone of a color bar or a swatch: `light` for a color near white, `dark` for a color near
+ * black, otherwise undefined. It takes an edge on a toolbar of the same tone, so a white bar
+ * shows in the light theme and a black bar in the dark theme. @internal
+ */
+export function colorBarTone(value: string | null | undefined): 'light' | 'dark' | undefined {
+  if (!isHexColor(value)) return undefined;
+  const r = parseInt(value.slice(0, 2), 16);
+  const g = parseInt(value.slice(2, 4), 16);
+  const b = parseInt(value.slice(4, 6), 16);
+  const luminance = (r * 299 + g * 587 + b * 114) / 1000;
+  if (luminance > 230) return 'light';
+  return luminance < 40 ? 'dark' : undefined;
+}
+
 /**
  * The save key events that a listener of `listenSaveKey` has taken. The toolbar and the menu bar
  * each listen, and the first one takes the key, so one key saves once. A mark, not

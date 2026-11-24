@@ -440,7 +440,10 @@
   scrollbar-color: var(--doc-scrollbar-thumb) var(--doc-scrollbar-track);
 }
 /* The grid's focus ring: an overlay above the opaque sticky stage and the cell editor, so it
-   shows wherever the stage paints. It shows while the grid or its cell editor has the focus. */
+   shows wherever the stage paints. It shows only when the keyboard moves the focus to the grid
+   (`:focus-visible`). After a press on the grid (`data-no-focus-ring`, `grid-surface.ts`), it
+   shows no ring until the focus leaves the grid, and the cell editor has its own border. The
+   active cell border shows the focus in all cases (below). */
 .xlsx-surface::after {
   content: '';
   position: absolute;
@@ -448,7 +451,7 @@
   z-index: 4;
   pointer-events: none;
 }
-.xlsx-surface:focus-within::after {
+.xlsx-surface:not([data-no-focus-ring]):has(.xlsx-scroller:focus-visible)::after {
   box-shadow: inset 0 0 0 2px var(--doc-focus-ring);
 }
 /* Without the focus, the active cell keeps a muted border, so the focused grid stands out. */
@@ -1241,14 +1244,28 @@
   flex-direction: column;
   align-items: center;
 }
+/* The color bar under a color icon, after `S_COLOR_BAR` of
+ * docx-editor/packages/react/src/components/ui/ColorPicker.tsx at 60a86b48 (EigenPal): one solid
+ * 16 x 4px bar in the active cell's color that covers the bar of the icon itself. As
+ * `.pptx-toolbar__swatch` in PPTX Editor, it has no border. With no color, it is transparent, so
+ * the icon's own bar in the text color shows. */
 .xlsx-toolbar-color-bar {
   width: 16px;
-  height: 3px;
+  height: 4px;
   margin-top: -2px;
-  border: 1px solid var(--doc-border-dark);
+  border-radius: 1px;
 }
 .xlsx-toolbar-color-bar[data-none] {
   background: transparent;
+}
+/* An edge on a bar of the toolbar's own tone, as DOCX Editor outlines a light color: a white bar
+ * in the light theme, a black bar in the dark theme (`colorBarTone`). */
+.xlsx-toolbar-color-bar[data-tone='light'],
+.xlsx-editor.dark .xlsx-toolbar-color-bar[data-tone='dark'] {
+  box-shadow: 0 0 0 1px var(--doc-border-dark);
+}
+.xlsx-editor.dark .xlsx-toolbar-color-bar[data-tone='light'] {
+  box-shadow: none;
 }
 .xlsx-toolbar-popup,
 .xlsx-toolbar-panel {
@@ -1350,35 +1367,173 @@
 .xlsx-toolbar :is([data-slot='history.undo'], [data-slot='history.redo']) svg:dir(rtl) {
   transform: scaleX(-1);
 }
-/* Each swatch is a 24px target (WCAG 2.5.8), after PPTX Editor's color menus. */
-.xlsx-toolbar-palette {
+/* The color split button and its picker, after the `.docx-toolbar__colorsplit` and
+ * `.docx-toolbar__swatch-*` rules of docx-editor/packages/core/src/styles/editor.css at
+ * 8621cd09 (EigenPal): a main half that stacks the glyph over the color bar, a narrow caret
+ * half, and a panel with the clear row, the theme matrix, the standard row, and the custom hex
+ * field. Intended differences: 20px swatches 4px apart, so each target has 24px of room (WCAG
+ * 2.5.8), the selected mark in `--doc-primary`, and token colors in place of the clear chips'
+ * fixed ones (the chip color itself is a core constant, `CLEAR_CHIP_HEX`). */
+.xlsx-toolbar-colorsplit {
+  gap: 0;
+}
+.xlsx-toolbar-colorsplit-main {
+  flex-direction: column;
+  gap: 0;
+  min-width: 28px;
+  padding: 0 2px;
+}
+.xlsx-toolbar .xlsx-toolbar-colorsplit-caret {
+  min-width: 16px;
+  width: 16px;
+  padding: 0;
+}
+.xlsx-toolbar-colorsplit-caret[aria-expanded='true'] {
+  background: var(--doc-bg-hover);
+  color: var(--doc-text);
+}
+.xlsx-toolbar-color-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px 12px;
+}
+.xlsx-toolbar-color-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.xlsx-toolbar-color-heading {
+  font-size: 12px;
+  color: var(--doc-text-muted);
+  user-select: none;
+  white-space: nowrap;
+}
+.xlsx-toolbar-color-grid {
   display: grid;
-  grid-template-columns: repeat(7, 24px);
+  grid-template-columns: repeat(10, 20px);
   gap: 4px;
 }
-.xlsx-toolbar-swatch {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: 1px solid var(--doc-border-dark);
-  /* A fixed corner, as on `.pptx-swatch`: a host control radius would round a small swatch. */
-  border-radius: 4px;
+/* The base row stands apart from the tint and shade rows. */
+.xlsx-toolbar-color-grid-theme > .xlsx-toolbar-swatch:nth-child(-n + 10) {
+  margin-bottom: 4px;
+}
+.xlsx-toolbar-color-clear {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  margin: 0 -6px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--doc-radius-control, 7px);
+  background: transparent;
+  color: var(--doc-text);
+  font: inherit;
+  font-size: 13px;
+  text-align: start;
+  white-space: nowrap;
   cursor: pointer;
 }
-.xlsx-toolbar-swatch[aria-selected='true'],
-.xlsx-toolbar-no-fill[aria-selected='true'] {
+.xlsx-toolbar-color-chip {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px var(--doc-border-dark);
+}
+/* No fill: a white chip with a slash. */
+.xlsx-toolbar-color-chip-none {
+  background-image: linear-gradient(
+    to top right,
+    transparent calc(50% - 1px),
+    var(--doc-error) calc(50% - 1px),
+    var(--doc-error) calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+}
+.xlsx-toolbar-color-clear[aria-pressed='true'] {
+  background: var(--doc-bg-hover);
+}
+.xlsx-toolbar-swatch {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  /* A fixed corner, as on `.docx-toolbar__swatch`: a host control radius would round a small
+   * swatch. */
+  border-radius: 3px;
+  cursor: pointer;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+}
+/* A swatch of the panel's own tone takes an edge (`colorBarTone`), as DOCX Editor outlines a
+ * light swatch. */
+.xlsx-toolbar-swatch[data-tone='light'],
+.xlsx-editor.dark .xlsx-toolbar-swatch[data-tone='dark'] {
+  box-shadow: inset 0 0 0 1px var(--doc-border-dark);
+}
+.xlsx-editor.dark .xlsx-toolbar-swatch[data-tone='light'] {
+  box-shadow: none;
+}
+.xlsx-toolbar .xlsx-toolbar-swatch:hover {
+  transform: scale(1.15);
+  box-shadow: inset 0 0 0 1px var(--doc-text);
+}
+.xlsx-toolbar-swatch[aria-pressed='true'] {
   outline: 2px solid var(--doc-primary);
   outline-offset: 1px;
 }
-.xlsx-toolbar-no-fill {
-  grid-column: 1 / -1;
-  height: 26px;
+@media (prefers-reduced-motion: reduce) {
+  .xlsx-toolbar-swatch {
+    transition: none;
+  }
+  .xlsx-toolbar .xlsx-toolbar-swatch:hover {
+    transform: none;
+  }
+}
+.xlsx-toolbar-color-custom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.xlsx-toolbar-color-hash {
+  color: var(--doc-text-muted);
+  font-size: 13px;
+  user-select: none;
+}
+.xlsx-toolbar-color-hex {
+  width: 88px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--doc-border-input);
+  border-radius: var(--doc-radius-control, 7px);
+  background: var(--doc-surface);
+  color: var(--doc-text);
+  font: inherit;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+.xlsx-toolbar-color-hex:focus-visible {
+  outline: 2px solid var(--doc-focus-ring);
+  outline-offset: 1px;
+}
+.xlsx-toolbar .xlsx-toolbar-color-apply {
+  height: 28px;
+  padding: 0 12px;
   border: 1px solid var(--doc-border-input);
   border-radius: var(--doc-radius-control, 7px);
   background: transparent;
   color: var(--doc-text);
   font: inherit;
+  font-size: 13px;
   cursor: pointer;
+}
+.xlsx-toolbar .xlsx-toolbar-color-apply:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 .xlsx-toolbar-menu {
   min-width: 220px;
@@ -1471,6 +1626,11 @@
   flex: 1 1 0;
   min-width: 30px;
   max-width: 152px;
+}
+/* In a panel row, the label takes the free room, so the two halves of a color split button stay
+ * side by side at the end of the row. */
+.xlsx-toolbar-labelled.xlsx-toolbar-colorsplit > .xlsx-toolbar-row-label {
+  flex: 1 1 auto;
 }
 .xlsx-toolbar-popup[data-inline] {
   position: static;
@@ -1799,7 +1959,7 @@
   /* The grid: a focus ring in place of the inset shadow. The selection and the active cell draw
    * a system-colored line with a `Canvas` line inside it, so they show on any cell fill: the
    * canvas paints the file's colors, also white cells in a dark theme. */
-  .xlsx-surface:focus-within::after {
+  .xlsx-surface:not([data-no-focus-ring]):has(.xlsx-scroller:focus-visible)::after {
     box-shadow: none;
     outline: 2px solid Highlight;
     outline-offset: -2px;
@@ -1833,7 +1993,7 @@
   .xlsx-toolbar-row:is([aria-pressed='true'], [data-active]):not([aria-disabled='true']),
   .xlsx-sheet-tab[aria-selected='true'],
   .xlsx-toolbar-list [role='option'][aria-selected='true'],
-  .xlsx-toolbar .xlsx-toolbar-no-fill[aria-selected='true'],
+  .xlsx-toolbar .xlsx-toolbar-color-clear[aria-pressed='true'],
   .xlsx-toolbar-row[role='menuitem']:is(:hover, :focus-visible):not([aria-disabled='true']),
   .xlsx-sheet-menu-item:is(:hover, :focus-visible):not([aria-disabled]) {
     forced-color-adjust: none;
@@ -1845,7 +2005,7 @@
   .xlsx-toolbar
     button:is(:hover, :focus-visible):not(:disabled):not([aria-disabled='true']):is(
       .xlsx-toolbar-row[role='menuitem'],
-      .xlsx-toolbar-no-fill[aria-selected='true'],
+      .xlsx-toolbar-color-clear[aria-pressed='true'],
       .xlsx-toolbar-button[aria-pressed='true'],
       .xlsx-toolbar-button[data-active],
       .xlsx-toolbar-row[aria-pressed='true'],
@@ -1942,24 +2102,21 @@
    * Focus is a `CanvasText` ring in place of the outline, so it differs from the selected mark,
    * and the line inside keeps the selected mark while the swatch has focus. */
   .xlsx-toolbar-swatch,
+  .xlsx-toolbar-color-chip,
   .xlsx-toolbar-color-bar {
     forced-color-adjust: none;
-    border-color: CanvasText;
+    box-shadow: inset 0 0 0 1px CanvasText;
   }
-  .xlsx-toolbar .xlsx-toolbar-swatch[aria-selected='true'] {
+  .xlsx-toolbar .xlsx-toolbar-swatch[aria-pressed='true'] {
     outline: 3px solid Highlight;
     box-shadow:
       inset 0 0 0 2px Canvas,
       inset 0 0 0 4px Highlight;
   }
-  .xlsx-toolbar .xlsx-toolbar-no-fill {
-    border-color: CanvasText;
-  }
-  .xlsx-toolbar .xlsx-toolbar-no-fill[aria-selected='true'] {
+  .xlsx-toolbar .xlsx-toolbar-color-clear[aria-pressed='true'] {
     outline: none;
-    border-color: CanvasText;
   }
-  .xlsx-toolbar :is(.xlsx-toolbar-swatch, .xlsx-toolbar-no-fill):focus-visible {
+  .xlsx-toolbar :is(.xlsx-toolbar-swatch, .xlsx-toolbar-color-clear):focus-visible {
     outline: 2px solid CanvasText;
     outline-offset: 1px;
   }

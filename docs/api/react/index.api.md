@@ -327,6 +327,14 @@ export interface ToolbarActionProps {
     readonly onSelect?: () => void;
 }
 
+// @public
+export type ToolbarColorSplitComponent = (props: ToolbarColorSplitProps) => ReactElement;
+
+// @public
+export interface ToolbarColorSplitProps extends ToolbarSlotPartProps {
+    readonly icon?: ReactNode;
+}
+
 export { ToolbarCommandState }
 
 export { ToolbarHintKey }
@@ -347,8 +355,8 @@ export interface ToolbarNamedParts {
     readonly DecreaseDecimals: ToolbarPartComponent;
     readonly DeleteColumns: ToolbarPartComponent;
     readonly DeleteRows: ToolbarPartComponent;
-    readonly FillColor: ToolbarSlotPartComponent;
-    readonly FontColor: ToolbarSlotPartComponent;
+    readonly FillColor: ToolbarColorSplitComponent;
+    readonly FontColor: ToolbarColorSplitComponent;
     readonly FontFamily: ToolbarSlotPartComponent;
     readonly FontSize: ToolbarSlotPartComponent;
     readonly IncreaseDecimals: ToolbarPartComponent;

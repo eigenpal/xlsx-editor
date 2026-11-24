@@ -73,6 +73,9 @@ export function arrangeToolbar(input: {
 // @internal
 export function arrangeToolbarGroups(builtIn: readonly string[], hosts: readonly ToolbarHostGroupPlacement[]): readonly string[];
 
+// @public
+export const AUTO_COLOR = "auto";
+
 // @internal
 export function blockNextClick(from: Node): void;
 
@@ -602,6 +605,12 @@ export type ChromeTranslate = (key: string, params?: Readonly<Record<string, str
 export function chromeTranslator(base: TFunction, overrides: ReadonlyMap<string, string> | undefined, lang: string): ChromeTranslate;
 
 // @public
+export const CLEAR_CHIP_HEX: {
+    readonly auto: '000000';
+    readonly none: 'FFFFFF';
+};
+
+// @public
 export const CLIPBOARD_TYPE = "application/x-xlsx-editor";
 
 // @public
@@ -613,7 +622,7 @@ export interface ClipboardContent {
 // @internal
 export function collapseOrder(groups: readonly string[], order?: readonly string[], priorities?: ReadonlyMap<string, number>): readonly string[];
 
-// @public
+// @public @deprecated
 export const COLOR_CHOICES: readonly [{
     readonly value: '000000';
     readonly labelKey: 'colorPicker.colors.black';
@@ -659,7 +668,48 @@ export const COLOR_CHOICES: readonly [{
 }];
 
 // @public
+export const COLOR_PICKER_STANDARD_COLORS: readonly {
+    readonly hex: string;
+    readonly nameKey: string;
+}[];
+
+// @public
+export const COLOR_PICKER_THEME_SLOTS: readonly ColorPickerThemeSlot[];
+
+// @internal
+export function colorBarTone(value: string | null | undefined): 'light' | 'dark' | undefined;
+
+// @public
 export type ColorMode = 'light' | 'dark' | 'system';
+
+// @public
+export type ColorPick = ColorPickerThemeSlot | `${ColorPickerThemeSlot}:${number}` | `#${string}`;
+
+// @public
+export interface ColorPickerGrid {
+    // (undocumented)
+    readonly standard: readonly ColorSwatch[];
+    readonly theme: readonly (readonly ColorSwatch[])[];
+}
+
+// @public
+export function colorPickerGrid(themeHexes: readonly string[]): ColorPickerGrid;
+
+// @public
+export type ColorPickerThemeSlot = 'bg1' | 'tx1' | 'bg2' | 'tx2' | 'accent1' | 'accent2' | 'accent3' | 'accent4' | 'accent5' | 'accent6';
+
+// @public
+export function colorPickHex(pick: ColorPick, themeHexes: readonly string[]): string;
+
+// @public
+export function colorPickLabel(pick: ColorPick, t: (key: string, params?: Readonly<Record<string, string | number>>) => string): string;
+
+// @public
+export interface ColorSwatch {
+    readonly hex: string;
+    // (undocumented)
+    readonly pick: ColorPick;
+}
 
 // @public
 export function columnLetters(column: number): string;
@@ -690,6 +740,9 @@ export function createXlsxEditor(options?: XlsxEditorOptions): XlsxEditorInstanc
 
 // @public
 export const CUSTOM_NUMBER_FORMAT_PREFIX: 'custom:';
+
+// @public
+export const customHexDraft: (text: string) => string;
 
 // @public
 export const CUT_REFUSAL_CODES: readonly ["loading", "view-mode", "not-editable", "merged-range", "copy-too-large", "copy-conditional-limit", "copy-array-formula", "copy-unreadable-formula", "copy-wrapped-formula", "cut-wrapped-value", "cell-alternate-content", "shared-formula", "invalid-sheet"];
@@ -848,6 +901,7 @@ export interface EditorSnapshot {
     // (undocumented)
     readonly status: 'empty' | 'loading' | 'ready' | 'failed';
     readonly structureRefusal: EditRefusal | null;
+    readonly themeColors: readonly (string | undefined)[];
     readonly workbookKind: WorkbookKind | null;
     readonly workbookProtection: WorkbookProtection | null;
     readonly zoom: number;
@@ -925,6 +979,9 @@ export interface FieldKeys extends HistoryShortcutKeys {
 // @internal
 export function focusAfterRelease(from: Node, focus: () => void): void;
 
+// @public
+export function focusColorSwatch(grid: HTMLElement | null): void;
+
 // @internal
 export interface FocusMoveKey {
     // (undocumented)
@@ -992,7 +1049,6 @@ export interface FormatPatch {
     } | {
         readonly type: 'none';
     };
-    // (undocumented)
     readonly fontColor?: string;
     readonly fontName?: string;
     readonly fontSize?: number;
@@ -1072,6 +1128,9 @@ export function guardToolbarMousedown(e: ChromePress): void;
 
 // @internal
 export function hasOpenNestedPopup(panel: Element | null): boolean;
+
+// @public
+export function hexFromText(text: string): string | null;
 
 // @public
 export interface HistoryShortcutKeys {
@@ -1456,6 +1515,9 @@ export interface ModeProp {
 
 // @internal
 export function moveBarFocus(e: FocusMoveKey): void;
+
+// @public
+export function moveColorSwatchFocus(grid: HTMLElement | null, key: string): boolean;
 
 // @internal
 export function moveInSheetMenu(menu: HTMLElement, key: string): boolean;
@@ -1982,6 +2044,9 @@ export const tabsSlice: (s: EditorSnapshot) => {
 };
 
 // @internal
+export function takesToolbarIcon(slot: string): boolean;
+
+// @internal
 export function tidySeparators(entries: readonly ChromeMenuEntry[]): ChromeMenuEntry[];
 
 // @internal
@@ -2176,6 +2241,9 @@ export function workbookNumberFormatCodes(editor: XlsxEditorInstance): readonly 
 export interface WorkbookProtection {
     readonly allowStructure: boolean;
 }
+
+// @public
+export function workbookThemeHexes(colors: readonly (string | undefined)[] | undefined): readonly string[];
 
 // @public
 export interface XlsxEditorInstance {

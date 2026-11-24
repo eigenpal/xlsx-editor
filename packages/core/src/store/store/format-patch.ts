@@ -56,6 +56,10 @@ export interface FormatPatch {
    * sml.xsd) is an `xsd:double` with no bound.
    */
   readonly fontSize?: number;
+  /**
+   * `RRGGBB`, or `auto` for the automatic color: `x:color` with `@auto` true (`CT_Color`,
+   * ECMA-376 Part 1, 18.8.19, "the color is automatic and system color dependent").
+   */
   readonly fontColor?: string;
   /** A solid fill of one color, or no fill. */
   readonly fill?: { readonly type: 'solid'; readonly color: string } | { readonly type: 'none' };
@@ -137,8 +141,8 @@ function fontFillProblem(patch: FormatPatch): string | undefined {
   const size = patch.fontSize;
   if (size !== undefined && !(typeof size === 'number' && size >= 1 && size <= 409))
     return 'a font size is a number of points from 1 to 409';
-  if (patch.fontColor !== undefined && !isColor(patch.fontColor))
-    return 'a font color is six hex digits';
+  if (patch.fontColor !== undefined && patch.fontColor !== 'auto' && !isColor(patch.fontColor))
+    return 'a font color is six hex digits or auto';
   const fill = patch.fill;
   if (fill !== undefined) {
     if (typeof fill !== 'object' || fill === null) return 'a fill is solid or none';

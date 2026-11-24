@@ -768,7 +768,7 @@ export const supportFeatures: readonly SupportFeature[] = [
     name: 'Font color',
     category: 'editing',
     status: 'supported',
-    notes: FORMAT_EDIT_NOTE,
+    notes: `${FORMAT_EDIT_NOTE} The color picker writes six hex digits (\`x:color/@rgb\`), also for a theme color or one of its tints and shades. **Automatic** writes \`x:color/@auto\` (ECMA-376 Part 1, 18.8.19).`,
     evidence: { saveVerified: ['colors-fonts'], tests: FORMAT_EDIT_TESTS },
   },
   {
@@ -776,7 +776,7 @@ export const supportFeatures: readonly SupportFeature[] = [
     name: 'Fill color',
     category: 'editing',
     status: 'supported',
-    notes: FORMAT_EDIT_NOTE,
+    notes: `${FORMAT_EDIT_NOTE} The color picker writes a solid fill of six hex digits, also for a theme color or one of its tints and shades.`,
     evidence: { saveVerified: ['colors-fonts'], tests: FORMAT_EDIT_TESTS },
   },
   {

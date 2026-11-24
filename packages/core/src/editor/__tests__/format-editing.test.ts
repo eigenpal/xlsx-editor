@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { Window } from 'happy-dom';
 import { buildXlsx, c, row } from '../../../../../scripts/fixtures/builder.ts';
-import { createXlsxEditor, type XlsxEditorInstance } from '../index.ts';
+import { createXlsxEditor, runToolbarCommand, type XlsxEditorInstance } from '../index.ts';
 import { flushEditor } from './flush-editor.ts';
 import type { FontSource } from '../../layout/index.ts';
 import { readXlsx, styleLists, workbookIndex } from '../../store/index.ts';
@@ -258,5 +258,15 @@ describe('format commands', () => {
     const r = viewer.applyFormat({ bold: true });
     expect(r.ok ? null : r.refusal.code).toBe('not-editable');
     expect(viewer.toggleFormat('bold').ok).toBe(false);
+  });
+
+  test('the font color takes `auto`, the automatic color, and the fill color does not', async () => {
+    const { viewer } = await mount(sheet());
+    expect(runToolbarCommand(viewer, 'font.color', 'FF0000').ok).toBe(true);
+    expect(viewer.snapshot().activeFormat?.fontColor).toBe('FF0000');
+    expect(runToolbarCommand(viewer, 'font.color', 'auto').ok).toBe(true);
+    // The automatic font color paints black (`cascade/color.ts`).
+    expect(viewer.snapshot().activeFormat?.fontColor).toBe('000000');
+    expect(runToolbarCommand(viewer, 'fill.color', 'auto').ok).toBe(false);
   });
 });

@@ -67,11 +67,11 @@ The stylesheet supports high contrast themes with no prop. With a forced-colors 
 - The selected row and column headings and the guide line of a resize drag use `Highlight`.
 - Disabled controls use `GrayText`. A disabled toolbar button, field, or color trigger also keeps its fade to 35% opacity, as in the light and dark themes. A disabled control that has the focus does not fade.
 - The line between two toolbar groups uses `CanvasText`.
-- Color swatches and the color bar of the font color and fill color buttons keep their own colors (`forced-color-adjust: none`). The selected swatch gets a `Highlight` outline and a `Highlight` line inside its edge. A focused swatch gets a `CanvasText` ring in place of the outline, so it differs from the selected swatch. The line inside stays while the selected swatch has the focus.
+- Color swatches, the chip of **Automatic** and **No fill**, and the color bar of the font color and fill color buttons keep their own colors (`forced-color-adjust: none`), inside a `CanvasText` edge. The selected swatch gets a `Highlight` outline and a `Highlight` line inside its edge. A focused swatch gets a `CanvasText` ring in place of the outline, so it differs from the selected swatch. The line inside stays while the selected swatch has the focus.
 
 The workbook canvas keeps the workbook's own colors. If you override these states, use system colors in a `forced-colors` media query of your own.
 
-Each color swatch in the color lists is 24 by 24 CSS pixels, the minimum target size of Web Content Accessibility Guidelines (WCAG) 2.5.8. In the light and dark themes, the selected **No fill** gets the outline of a selected swatch.
+Each color swatch in the color picker is 20 by 20 CSS pixels, 4 pixels from the next, so each target has 24 CSS pixels of room, as the spacing rule of Web Content Accessibility Guidelines (WCAG) 2.5.8 allows. In the light and dark themes, the selected **No fill** row takes the hover fill.
 
 ## Unsaved edits
 

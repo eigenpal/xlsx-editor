@@ -377,6 +377,27 @@
   },
   "colorPicker": {
     "noFill": "No fill",
+    "automatic": "Automatic",
+    "themeColors": "Theme colors",
+    "theme": {
+      "background1": "Background 1",
+      "text1": "Text 1",
+      "background2": "Background 2",
+      "text2": "Text 2",
+      "accent1": "Accent 1",
+      "accent2": "Accent 2",
+      "accent3": "Accent 3",
+      "accent4": "Accent 4",
+      "accent5": "Accent 5",
+      "accent6": "Accent 6"
+    },
+    "standardColors": "Standard colors",
+    "customColor": "Custom color",
+    "hexColor": "Hex color",
+    "apply": "Apply",
+    "lighterPercent": "{color}, lighter {percent}%",
+    "darkerPercent": "{color}, darker {percent}%",
+    "colorOptions": "{label} options",
     "colors": {
       "black": "Black",
       "white": "White",

@@ -418,9 +418,17 @@ export class StyleRecords {
     return smlElement(this.#ids, local, parent, attrs, kids);
   }
 
+  /**
+   * A `CT_Color` element (ECMA-376 Part 1, 18.8.19): `@rgb` for `RRGGBB`, `@auto` for `auto`,
+   * and `indexed="64"`, the system foreground, without a color.
+   */
   #color(local: string, rgb: string | undefined): Element {
     return this.#el(local, 'generic', [
-      rgb === undefined ? plainAttr('indexed', '64') : plainAttr('rgb', `FF${rgb.toUpperCase()}`),
+      rgb === undefined
+        ? plainAttr('indexed', '64')
+        : rgb === 'auto'
+          ? plainAttr('auto', '1')
+          : plainAttr('rgb', `FF${rgb.toUpperCase()}`),
     ]);
   }
 

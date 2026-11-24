@@ -41,6 +41,7 @@ import {
   CHROME_GROUPS,
   chromeSlotId,
   isToolbarButtonSlot,
+  takesToolbarIcon,
   notInToolbar,
   toolbarAsChildProblem,
   toolbarGroupHeading,
@@ -92,8 +93,9 @@ export interface XlsxEditorToolbarSlotProps {
    */
   readonly hidden?: boolean;
   /**
-   * An icon in place of the registry icon, about 18 pixels, as the packaged icons. Button slots
-   * only: a list, a palette, or the dialog opener ignores it, with a development warning.
+   * An icon in place of the registry icon, about 18 pixels, as the packaged icons. Button slots,
+   * and the glyph above the color bar of `font.color` and `fill.color`: a list or the dialog
+   * opener ignores it, with a development warning.
    */
   readonly icon?: ReactNode;
   /**
@@ -281,7 +283,7 @@ export function XlsxEditorToolbarSlot(props: XlsxEditorToolbarSlotProps) {
 export function slotOverrideOf(props: XlsxEditorToolbarSlotProps): SlotOverride | null {
   const button = isToolbarButtonSlot(props.slotId);
   const asChild = button && props.asChild ? asChildElement(props.children) : null;
-  const icon = button ? props.icon : undefined;
+  const icon = takesToolbarIcon(props.slotId) ? props.icon : undefined;
   if (icon == null && !asChild && !props.className) return null;
   return {
     slot: props.slotId,

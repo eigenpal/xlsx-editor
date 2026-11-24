@@ -66,8 +66,62 @@ export function buildSurface(host: HTMLElement): SurfaceElements {
   const exitCue = div(doc, 'xlsx-exit-cue');
   exitCue.setAttribute('aria-hidden', 'true');
   root.append(scroller, live, exitCue);
+  trackPointerFocus(root);
   host.append(root);
   return { scroller, extent, stage, corner, columnHeads, rowHeads, grid, overlay, live, exitCue };
+}
+
+/**
+ * Mark the surface with `data-no-focus-ring` from a press on it until the focus leaves it. The
+ * grid focus ring shows only without this mark (`editor.css`). A press focuses the grid from
+ * script after `preventDefault()` (`grid-pointer.ts`), so `:focus-visible` alone takes that focus
+ * for a keyboard focus. The listeners are on the surface itself, so they go with it.
+ */
+function trackPointerFocus(root: HTMLElement): void {
+  root.addEventListener('pointerdown', () => root.setAttribute('data-no-focus-ring', ''), true);
+  const leave = () => {
+    if (!root.contains(root.ownerDocument.activeElement))
+      root.removeAttribute('data-no-focus-ring');
+  };
+  root.addEventListener('focusout', (e) => {
+    // A focus event's related target is an element or null. No `instanceof`: the surface can
+    // live in another window (`host-realm.ts`).
+    const next = e.relatedTarget as Node | null;
+    if (next) {
+      if (!root.contains(next)) root.removeAttribute('data-no-focus-ring');
+      return;
+    }
+    // No related target: the focused cell editor closed, and the grid takes the focus back from
+    // script after this event. Look again when the event is done.
+    queueMicrotask(leave);
+  });
+}
+
+/**
+ * Focus `target`, an element of a surface, from script. The focus takes the ring of the element
+ * that had the focus before, as a browser decides `:focus-visible` for a focus that script
+ * moves: after a key on a toolbar control, the grid shows its ring; after the open of a workbook
+ * or a press on the chrome, it shows none. A browser shows the ring for a script focus before
+ * any user input, so the mark (`data-no-focus-ring`) decides here. A focus inside the surface
+ * keeps the mark as it is.
+ */
+export function focusSurface(target: HTMLElement | null | undefined): void {
+  if (!target) return;
+  const root = target.closest('.xlsx-surface');
+  const before = target.ownerDocument.activeElement;
+  if (root && !(before && root.contains(before)) && !hasFocusRing(before))
+    root.setAttribute('data-no-focus-ring', '');
+  target.focus({ preventScroll: true });
+}
+
+/** Whether `el` shows a keyboard focus ring. A DOM without `:focus-visible` gives false. */
+function hasFocusRing(el: Element | null): boolean {
+  if (!el || el === el.ownerDocument.body) return false;
+  try {
+    return el.matches(':focus-visible');
+  } catch {
+    return false;
+  }
 }
 
 /** Show the cue of the armed exit from the grid with `text`, or hide it with null. */

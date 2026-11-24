@@ -285,9 +285,9 @@ The parts take these props:
 | --- | --- | --- | --- |
 | `Toolbar.Slot` | `slotId` | `ChromeSlotId` | The slot that the part names. Required. |
 | `Toolbar.Slot` | `hidden` | `boolean` | Removes the slot where it stands. |
-| `Toolbar.Slot` | `icon` | `ReactNode` | An icon in place of the registry icon. Button slots only. |
+| `Toolbar.Slot` | `icon` | `ReactNode` | An icon in place of the registry icon. Button slots, and the glyph above the color bar of `font.color` and `fill.color`. |
 | `Toolbar.Slot` | `asChild` | `boolean` | Renders the built-in control as the one element in the children. Button slots only. |
-| `Toolbar.Slot` | `className` | `string` | A class after the class of the control, or of the trigger of a list or a palette. |
+| `Toolbar.Slot` | `className` | `string` | A class after the class of the control, of the trigger of a list, or of the main half of a color control. |
 | `Toolbar.Slot` | `overflowContent` | `() => ReactNode` | Content for the slot's row in the **More** panel. |
 | `Toolbar.Slot` | `children` | `ReactNode` | Content that takes the place of the slot. Without children, the part renders the built-in control of the slot. |
 | `Toolbar.Group` | `id` | `string` | A built-in group id, such as `file`, or a new id for a host group. Required. |
@@ -341,7 +341,8 @@ In a development build, the toolbar prints a warning once for each part that can
 - A `Toolbar.Slot` with children whose slot the `hidden` list names.
 - A `Toolbar.Slot` with children whose group is hidden.
 - A `label`, `labelKey`, or `after` on a built-in group.
-- An `icon` or `asChild` on a list, a palette, or the dialog opener.
+- An `icon` on a list or the dialog opener.
+- An `asChild` on a list, a color control, or the dialog opener.
 - An `asChild` part whose children are not one element.
 - An `icon` or `className` on a `Toolbar.Slot` with content.
 - An `after` that names no group, that names its own group, or that leads into a cycle of anchors.
@@ -392,9 +393,9 @@ Inside a toolbar, `file.save` hands the bytes to the toolbar's `onSave`, also in
 | --- | --- |
 | Tab | Move to the next control of the toolbar. Each control is a stop, disabled controls too. |
 | Left arrow, Right arrow, Home, End | Move between the controls of the toolbar, your own controls too. The keys stop at the first and the last control. A key that your control handles and cancels does not move the focus. |
-| Enter, Space, or Down arrow on a list, palette, or menu button | Open it, with the keyboard on the selected item or the first item |
+| Enter, Space, or Down arrow on a list, a color caret, or a menu button | Open it, with the keyboard on the selected item or the first item |
 | Down arrow on an open list | Move the keyboard into it |
-| Up arrow, Down arrow, Home, End | Move between the items of an open list or menu. In a palette, Left arrow and Right arrow move too. |
+| Up arrow, Down arrow, Home, End | Move between the items of an open list or menu. In the color picker, Left arrow and Right arrow move by one swatch, Up arrow and Down arrow move by one row, and Up arrow from the first row reaches **Automatic** or **No fill**. |
 | Enter or Space on an item | Apply the item, and return the keyboard to the grid |
 | Escape | Close the list, and return the keyboard to its button |
 
@@ -460,4 +461,4 @@ To leave a field that keeps a key, press Tab.
 
 A press on a cell selects it, and a drag selects the cells that it covers. With Shift, a press or a drag extends the selection from its anchor to the pressed cell, and a press on a row or column heading extends it to whole rows or columns. The active cell stays when the new selection holds it; otherwise the anchor becomes the active cell.
 
-On a touch screen, a drag pans the sheet and a tap selects the cell under it. A two-finger pinch does not zoom the grid; use the zoom control. On a trackpad, a pinch zooms as Control and the mouse wheel do. The grid shows a focus ring while it has the keyboard; without the keyboard, the active cell keeps a muted border. The ring color is the `--doc-focus-ring` token, shared with DOCX Editor; its contrast against the chrome is below 3:1, and a change to it is made for the editor family as a whole.
+On a touch screen, a drag pans the sheet and a tap selects the cell under it. A two-finger pinch does not zoom the grid; use the zoom control. On a trackpad, a pinch zooms as Control and the mouse wheel do. The grid shows a focus ring when the keyboard moves the focus to it. A pointer click on a cell shows no ring. Without the focus, the active cell keeps a muted border. The ring color is the `--doc-focus-ring` token, shared with DOCX Editor; its contrast against the chrome is below 3:1, and a change to it is made for the editor family as a whole.

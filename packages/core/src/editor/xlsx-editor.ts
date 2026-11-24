@@ -20,7 +20,8 @@ import { createPictureStore } from '../output/index.ts';
 import { EditorFonts, type FontMeasurer } from './editor-fonts.ts';
 import type { FontReport } from './substitute-fonts.ts';
 import { hostTimers, hostWindowOf, registerEditorHost, type HostTimers } from './host-realm.ts';
-import { buildSurface, clearSurface, type StageBox, type SurfaceElements } from './grid-surface.ts';
+import { buildSurface, clearSurface, focusSurface } from './grid-surface.ts';
+import type { StageBox, SurfaceElements } from './grid-surface.ts';
 import { scrollViewToShow, viewStateOf } from './view-map.ts';
 import { bindSurface, layoutWindow, openingView, paintWindow } from './surface-render.ts';
 import type { SheetView } from './surface-render.ts';
@@ -475,7 +476,7 @@ class Editor implements XlsxEditorInstance {
   }
 
   focus(): void {
-    (this.edits.input ?? this.els?.scroller)?.focus({ preventScroll: true });
+    focusSurface(this.edits.input ?? this.els?.scroller);
   }
 
   dismissRefusal(): void {
@@ -673,8 +674,7 @@ class Editor implements XlsxEditorInstance {
     }
     const text = view ? this.selectionText() : undefined;
     const cell = this.live.changed(() => this.selectionText(true));
-    // A step on a sheet that was not shown names that sheet, also when the sheet is hidden or
-    // the step kept no selection; the selection then stays where it is.
+    // A step on a sheet not shown names it, also hidden or with no selection, and keeps selection.
     const name = s?.sheet ?? of ?? undefined;
     const shownName = this.opened?.index.sheets[this.active]?.name;
     const named = moved || name !== shownName ? name : undefined;

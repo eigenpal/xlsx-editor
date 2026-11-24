@@ -37,6 +37,11 @@ The layout lane SHALL lay out merged ranges as one cell rectangle, give hidden r
 - **WHEN** a sheet has a frozen pane with `ySplit="2"` and the viewport scrolls down 50 rows
 - **THEN** rows 1 and 2 keep their place, and the rows below them scroll
 
+#### Scenario: A frozen band that starts at row 10
+
+- **WHEN** a sheet has `x:sheetView/@topLeftCell="A10"` and a frozen pane with `ySplit="2"`
+- **THEN** rows 10 and 11 keep their place at the top, rows 1 to 9 do not show, and the rows from row 12 scroll
+
 ### Requirement: Cell text layout
 
 The layout lane SHALL lay out cell text with its alignment, wrapping, indent, and rotation, and SHALL let unwrapped text overflow into empty neighbor cells up to the first cell that holds a value or a formula. Each rule SHALL match a fixture and its reference PDF, as the quick reference requires, except where a scenario names a unit test and the known approximations name the case.

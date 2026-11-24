@@ -54,6 +54,7 @@ import { selectionBand, type FormatToggle } from '../automation/index.ts';
 import { selectionRanges } from '../automation/structure-commands.ts';
 import { MAX_COLS, MAX_ROWS, type StructuralOpName } from '../store/index.ts';
 import type { TabReturn } from './tab-return.ts';
+import type { HiddenLines } from './sheet-facts.ts';
 
 /** What the key table reads and calls on the editor. */
 export interface GridKeyHost {
@@ -61,7 +62,7 @@ export interface GridKeyHost {
   /** The moving corner of an extended selection. */
   readonly focusCell: GridPoint;
   readonly merges: Merges;
-  hidden(): { row(i: number): boolean; col(i: number): boolean };
+  hidden(): HiddenLines;
   readonly pageRows: number;
   /** The last row and column that hold content, -1 when none. */
   facts(): { lastRow: number; lastCol: number };
@@ -102,14 +103,21 @@ const DIRECTIONS: Readonly<Record<string, readonly [number, number]>> = {
 /**
  * The nearest shown row or column to `i`: `i` itself, else the first shown one in `dir`, else
  * the first shown one back. A hidden line takes no selection, as the arrows skip it (`step`).
- * The search is bounded.
+ * The search is bounded, and starts at `min`, the first line that can show.
  */
-function shownLine(i: number, dir: 1 | -1, hidden: (i: number) => boolean, count: number): number {
+function shownLine(
+  i: number,
+  dir: 1 | -1,
+  hidden: (i: number) => boolean,
+  count: number,
+  min = 0
+): number {
+  i = Math.max(i, Math.min(min, count - 1));
   if (!hidden(i)) return i;
   for (const d of [dir, -dir]) {
     for (let k = 1; k <= 4096; k += 1) {
       const at = i + d * k;
-      if (at < 0 || at >= count) break;
+      if (at < min || at >= count) break;
       if (!hidden(at)) return at;
     }
   }
@@ -120,20 +128,24 @@ function shownLine(i: number, dir: 1 | -1, hidden: (i: number) => boolean, count
  * The next active cell inside `range`, in reading order for Tab (by columns for Enter), with
  * a wrap at the range edges. A hidden cell is skipped, and so is a cell that a merged range
  * covers unless it is the top-left cell of that range: only that cell holds the value
- * (quick reference, `x:mergeCell`). The search is bounded.
+ * (quick reference, `x:mergeCell`). The search is bounded, and starts at the first row and
+ * column that can show (`HiddenLines`): the lines before a frozen band take no step.
  */
 export function cycleInRange(
   range: GridSelection['range'],
   at: GridPoint,
   byRow: boolean,
   dir: 1 | -1,
-  hidden: { row(i: number): boolean; col(i: number): boolean },
+  hidden: HiddenLines,
   merges: Merges = []
 ): GridPoint {
-  const top = Math.min(range.start.row, range.end.row);
   const bottom = Math.max(range.start.row, range.end.row);
-  const left = Math.min(range.start.col, range.end.col);
   const right = Math.max(range.start.col, range.end.col);
+  // A range that lies wholly before the band keeps its own first line.
+  const firstRow = (hidden.firstRow ?? 0) <= bottom ? (hidden.firstRow ?? 0) : 0;
+  const firstCol = (hidden.firstCol ?? 0) <= right ? (hidden.firstCol ?? 0) : 0;
+  const top = Math.max(Math.min(range.start.row, range.end.row), firstRow);
+  const left = Math.max(Math.min(range.start.col, range.end.col), firstCol);
   let { row, col } = at;
   for (let k = 0; k < 4096; k += 1) {
     if (byRow) {
@@ -219,7 +231,7 @@ export function commitMove(
   move: readonly [number, number],
   inRange: boolean,
   merges: Merges,
-  hidden: { row(i: number): boolean; col(i: number): boolean }
+  hidden: HiddenLines
 ): { at: GridPoint; keep: GridSelection | null } {
   if (inRange && (isMultiRange(sel) || cyclesIn(sel.range, cell, merges))) {
     const dir = (move[0] || move[1]) < 0 ? -1 : 1;
@@ -307,18 +319,20 @@ export function handleGridKey(host: GridKeyHost, e: KeyboardEvent, grid: EventTa
   } else if (e.key === 'PageDown' || e.key === 'PageUp') {
     const dir = e.key === 'PageDown' ? 1 : -1;
     const target = Math.min(MAX_ROWS - 1, Math.max(0, from.row + host.pageRows * dir));
-    to = { row: shownLine(target, dir, host.hidden().row, MAX_ROWS), col: from.col };
+    const hidden = host.hidden();
+    to = { row: shownLine(target, dir, hidden.row, MAX_ROWS, hidden.firstRow), col: from.col };
   } else if (e.key === 'Home') {
     // A hidden first row or column takes no selection: the first shown one does.
     const hidden = host.hidden();
-    const col = shownLine(0, 1, hidden.col, MAX_COLS);
-    to = mod ? { row: shownLine(0, 1, hidden.row, MAX_ROWS), col } : { row: from.row, col };
+    const col = shownLine(0, 1, hidden.col, MAX_COLS, hidden.firstCol);
+    const row = () => shownLine(0, 1, hidden.row, MAX_ROWS, hidden.firstRow);
+    to = mod ? { row: row(), col } : { row: from.row, col };
   } else if (e.key === 'End' && mod) {
     const facts = host.facts();
     const hidden = host.hidden();
     to = {
-      row: shownLine(Math.max(0, facts.lastRow), -1, hidden.row, MAX_ROWS),
-      col: shownLine(Math.max(0, facts.lastCol), -1, hidden.col, MAX_COLS),
+      row: shownLine(Math.max(0, facts.lastRow), -1, hidden.row, MAX_ROWS, hidden.firstRow),
+      col: shownLine(Math.max(0, facts.lastCol), -1, hidden.col, MAX_COLS, hidden.firstCol),
     };
   } else if (e.key === 'Tab' || e.key === 'Enter') {
     const back = e.shiftKey;

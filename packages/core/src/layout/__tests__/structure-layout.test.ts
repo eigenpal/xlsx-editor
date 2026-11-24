@@ -100,7 +100,43 @@ describe('layout of a frozen sheet after a structural edit', () => {
       const store = new WorkbookDocumentStore(frozen());
       expect(store.transact([edit]).ok).toBe(true);
       const live = layoutSheet(store.package, 'F', VIEW, { measurer, profile: SCREEN_PROFILE })!;
-      expect(live.frozen).toEqual({ rows, cols });
+      expect(live.frozen).toEqual({ rows, cols, firstRow: 0, firstCol: 0 });
+      const reopened = open(saveXlsx(store.package));
+      for (const screen of [false, true])
+        expect(painted(store.package, 'F', screen)).toBe(painted(reopened, 'F', screen));
+    });
+});
+
+describe('layout of a band that starts at row 10 after a structural edit', () => {
+  // The band starts at `x:sheetView/@topLeftCell` (ECMA-376 Part 1, 18.3.1.87): rows 10 and 11.
+  const scrolled = () =>
+    open(
+      buildXlsx({
+        sheets: [
+          {
+            name: 'F',
+            rows: row(1, [c('A1', 'Above')]) + row(10, [c('A10', 'Band')]),
+            viewAttrs: 'topLeftCell="A10"',
+            viewChildren:
+              '<pane ySplit="2" topLeftCell="A12" activePane="bottomLeft" state="frozen"/>' +
+              '<selection pane="bottomLeft" activeCell="A12" sqref="A12"/>',
+          },
+        ],
+      })
+    );
+  const cases: readonly (readonly [WorkbookOp, number, number])[] = [
+    [{ op: 'insertRows', sheet: 'F', start: 2, count: 3 }, 12, 2],
+    [{ op: 'insertRows', sheet: 'F', start: 11, count: 1 }, 9, 3],
+    [{ op: 'deleteRows', sheet: 'F', start: 9, count: 2 }, 8, 1],
+  ];
+  for (const [edit, firstRow, rows] of cases)
+    test(`${edit.op} ${'start' in edit ? edit.start : ''}: the band follows, and a reopen agrees`, () => {
+      const store = new WorkbookDocumentStore(scrolled());
+      expect(store.transact([edit]).ok).toBe(true);
+      const live = layoutSheet(store.package, 'F', VIEW, { measurer, profile: SCREEN_PROFILE })!;
+      expect(live.frozen).toEqual({ rows, cols: 0, firstRow, firstCol: 0 });
+      expect(live.panes[0]!.range.firstRow).toBe(firstRow);
+      expect(live.panes[1]!.range.firstRow).toBe(firstRow + rows);
       const reopened = open(saveXlsx(store.package));
       for (const screen of [false, true])
         expect(painted(store.package, 'F', screen)).toBe(painted(reopened, 'F', screen));

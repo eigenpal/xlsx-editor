@@ -37,6 +37,7 @@ import {
   stepAnnouncement,
   selectCell,
   openingSelection,
+  shownSelection,
   type Merges,
 } from './selection.ts';
 import type { CellEditMode, EditMove, EditTextOptions } from './cell-editor.ts';
@@ -54,7 +55,7 @@ import type { FormatToggle, MergeOptions } from '../automation/index.ts';
 import { selectionRanges } from '../automation/structure-commands.ts';
 import type { SavedWorkbook, SelectionRangeInput, XlsxEditorInstance } from './editor-instance.ts';
 import { rangesSelection, selectionSqref } from './selection-ranges.ts';
-import { dataEdge, hiddenLines, NONE_HIDDEN, sheetFacts, type HiddenLines } from './sheet-facts.ts';
+import { dataEdge, hiddenLinesOf, sheetFacts, type HiddenLines } from './sheet-facts.ts';
 import { ConditionalCut } from './conditional-cut.ts';
 import { WheelZoom } from './wheel-zoom.ts';
 import { cellAnnouncement, selectionAnnouncement } from './cell-announcement.ts';
@@ -395,7 +396,8 @@ class Editor implements XlsxEditorInstance {
     let view = o.views.get(sheet);
     if (view) return view;
     const opening = sheetOpening(o.pkg, o.index.sheets[sheet]!.partName);
-    view = openingView(opening, openingSelection(sheet, opening, this.mergesOf(sheet)));
+    const selection = openingSelection(sheet, opening, this.mergesOf(sheet), this.hidden());
+    view = openingView(opening, selection);
     o.views.set(sheet, view);
     return view;
   }
@@ -663,7 +665,8 @@ class Editor implements XlsxEditorInstance {
     if (moved) this.showSheet(sheet);
     const view = shown ? this.view() : undefined;
     if (s && view) {
-      ({ selection: view.selection, focus: view.focus } = historyGridSelection(s, this.active));
+      const h = historyGridSelection(s, this.active);
+      Object.assign(view, shownSelection(h.selection, h.focus, this.hidden(), this.merges));
       this.reveal(view.selection.active);
     }
     const text = view ? this.selectionText() : undefined;
@@ -900,9 +903,7 @@ class Editor implements XlsxEditorInstance {
 
   /** The hidden lines of the newest revision, also while the layout is stale or not built. */
   hidden(): HiddenLines {
-    const o = this.opened;
-    const part = o ? xmlPartOf(o.pkg, o.index.sheets[this.active]?.partName) : undefined;
-    return part ? hiddenLines(sheetIndex(part)) : NONE_HIDDEN;
+    return hiddenLinesOf(this.opened?.pkg, this.opened?.index.sheets[this.active]?.partName);
   }
 
   /** Visible rows in the window, for Page Up and Page Down. */
@@ -966,8 +967,7 @@ class Editor implements XlsxEditorInstance {
   setSelection(selection: GridSelection, focus: GridPoint, reveal?: GridPoint): void {
     const view = this.view();
     if (!view || !this.edits.commitOpenEdit().ok) return;
-    view.selection = selection;
-    view.focus = focus;
+    Object.assign(view, shownSelection(selection, focus, this.hidden(), this.merges));
     this.edits.clearRefusal();
     if (reveal) this.reveal(reveal);
     this.live.selected();

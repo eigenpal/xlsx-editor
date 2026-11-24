@@ -3,8 +3,16 @@
 // from a range that the file names, and cached per sheet index revision (AGENTS.md "Security").
 
 import type { GridPoint } from '../contracts/index.ts';
-import { MAX_COLS, MAX_ROWS, type SheetIndex } from '../store/index.ts';
+import {
+  MAX_COLS,
+  MAX_ROWS,
+  sheetIndex,
+  xmlPartOf,
+  type SheetIndex,
+  type XlsxPackage,
+} from '../store/index.ts';
 import { sheetGeometry, type GridMetrics, type SheetLayout } from '../layout/index.ts';
+import { frozenPanes } from '../layout/panes.ts';
 
 export interface SheetFacts {
   /** The last row and column that hold a cell, or -1 on an empty sheet. */
@@ -48,6 +56,12 @@ export function sheetFacts(sheet: SheetIndex): SheetFacts {
 export interface HiddenLines {
   row(i: number): boolean;
   col(i: number): boolean;
+  /**
+   * The first row and column that can show; every line before it is hidden (the lines before a
+   * frozen band). A search stops there, so its cost does not depend on the place of the band.
+   */
+  readonly firstRow?: number;
+  readonly firstCol?: number;
 }
 
 /**
@@ -64,15 +78,20 @@ const hiddenCache = new WeakMap<SheetIndex, HiddenLines>();
 
 /**
  * The hidden rows and columns of a sheet, read from its tree, so they hold for the newest
- * revision even before the next layout. Cached per sheet index revision.
+ * revision even before the next layout. Cached per sheet index revision. The rows and columns
+ * before a frozen band do not show (`layout/panes.ts`, approximation "Frozen band origin"), so
+ * they count as hidden, and the keys skip them.
  */
 export function hiddenLines(sheet: SheetIndex): HiddenLines {
   const hit = hiddenCache.get(sheet);
   if (hit) return hit;
   const g = sheetGeometry(sheet, NOMINAL);
+  const { firstRow, firstCol } = frozenPanes(sheet.root);
   const lines: HiddenLines = {
-    row: (i) => g.rows.sizeOf(i) === 0,
-    col: (i) => g.columns.sizeOf(i) === 0,
+    row: (i) => i < firstRow || g.rows.sizeOf(i) === 0,
+    col: (i) => i < firstCol || g.columns.sizeOf(i) === 0,
+    firstRow,
+    firstCol,
   };
   hiddenCache.set(sheet, lines);
   return lines;
@@ -95,6 +114,15 @@ const SEARCH = 4096;
 /** No hidden rows or columns. */
 export const NONE_HIDDEN: HiddenLines = { row: () => false, col: () => false };
 
+/** The hidden lines of the worksheet part `partName` of `pkg`, or none without such a part. */
+export function hiddenLinesOf(
+  pkg: XlsxPackage | undefined,
+  partName: string | undefined
+): HiddenLines {
+  const part = pkg ? xmlPartOf(pkg, partName) : undefined;
+  return part ? hiddenLines(sheetIndex(part)) : NONE_HIDDEN;
+}
+
 /**
  * The data edge from `at` in one direction, as a jump with the control key: the end of the run
  * of cells with values that `at` is in, or the start of the next run, or the sheet edge. A
@@ -107,10 +135,11 @@ export function dataEdge(
   at: GridPoint,
   dRow: number,
   dCol: number,
-  lines: { row(i: number): boolean; col(i: number): boolean } = NONE_HIDDEN
+  lines: HiddenLines = NONE_HIDDEN
 ): GridPoint {
   const vertical = dRow !== 0;
   const hidden = vertical ? lines.row : lines.col;
+  const min = (vertical ? lines.firstRow : lines.firstCol) ?? 0;
   const all = vertical ? facts.rowsOfCol.get(at.col) : facts.colsOfRow.get(at.row);
   const line = all ? all.filter((v) => !hidden(v)) : new Int32Array(0);
   const pos = vertical ? at.row : at.col;
@@ -120,8 +149,10 @@ export function dataEdge(
     vertical ? { row: v, col: at.col } : { row: at.row, col: v };
   /** The first shown line from `v` on in `d`, inside the sheet, or undefined. */
   const shown = (v: number, d: 1 | -1): number | undefined => {
+    // From before the first line that can show, a search forward starts at that line.
+    if (d > 0) v = Math.max(v, min);
     for (let k = 0; k < SEARCH; k += 1, v += d) {
-      if (v < 0 || v > max) return undefined;
+      if (v < min || v > max) return undefined;
       if (!hidden(v)) return v;
     }
     return undefined;
@@ -130,7 +161,7 @@ export function dataEdge(
     const i = lowerBound(line, v);
     return i < line.length && line[i] === v;
   };
-  const edge = () => set(shown(dir > 0 ? max : 0, dir > 0 ? -1 : 1) ?? pos);
+  const edge = () => set(shown(dir > 0 ? max : min, dir > 0 ? -1 : 1) ?? pos);
   const next = shown(pos + dir, dir as 1 | -1);
   if (next === undefined) return set(pos);
   if (line.length === 0) return edge();
@@ -156,7 +187,9 @@ const EXTRA_COLS = 20;
 
 /**
  * The size in points that the scroll extent covers: the content, the laid-out window, and the
- * moving corner of the selection, with room past them, clipped to the sheet.
+ * moving corner of the selection, with room past them, clipped to the sheet. The rows and
+ * columns before a frozen band do not show, so they take no room (`x:sheetView/@topLeftCell`,
+ * ECMA-376 Part 1, 18.3.1.87).
  */
 export function scrollExtent(
   layout: SheetLayout,
@@ -175,5 +208,9 @@ export function scrollExtent(
     g.columns.count,
     Math.max(facts.lastCol, lastCol, focus.col) + 1 + EXTRA_COLS
   );
-  return { width: g.columns.offsetOf(cols), height: g.rows.offsetOf(rows) };
+  const { firstRow, firstCol } = layout.frozen;
+  return {
+    width: Math.max(0, g.columns.offsetOf(cols) - g.columns.offsetOf(firstCol)),
+    height: Math.max(0, g.rows.offsetOf(rows) - g.rows.offsetOf(firstRow)),
+  };
 }

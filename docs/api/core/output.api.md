@@ -265,9 +265,9 @@ interface FontSource {
 
 // @public
 interface FrozenPanes {
-    // (undocumented)
     readonly cols: number;
-    // (undocumented)
+    readonly firstCol: number;
+    readonly firstRow: number;
     readonly rows: number;
 }
 

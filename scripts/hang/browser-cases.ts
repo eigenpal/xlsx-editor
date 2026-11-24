@@ -16,7 +16,8 @@ export const BROWSER_RUN: ReadonlyMap<string, string> = new Map([
   ['external-references', 'no request for a remote picture, workbook, link, or connection'],
   // The paint and the chrome of the page.
   ['sheets-many', 'the sheet tabs of 2000 worksheets in the chrome'],
-  ['view-hostile', 'the paint and the scroll of a hostile view, pane, and selection'],
+  ['view-hostile', 'the paint and the scroll of a hostile view and selection'],
+  ['frozen-split-huge', 'the paint and the scroll of a frozen pane split past the grid'],
   ['conditional-many', 'the paint of 20000 conditional formatting rules'],
   ['font-size-hostile', 'the paint of hostile font sizes, indents, and rotations'],
   ['merge-whole-sheet', 'the paint and the scroll of a merge over the whole grid'],

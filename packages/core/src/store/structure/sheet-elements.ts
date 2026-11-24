@@ -10,19 +10,23 @@
 // - `x:dimension`, `x:sheetView/@topLeftCell`, `x:pane/@topLeftCell`, and `x:selection` move. A
 //   view position that the edit deletes goes to the first row or column after the deletion.
 // - A frozen pane (`x:pane/@state` of `frozen` or `frozenSplit`, `ST_PaneState`; `CT_Pane`,
-//   sml.xsd, default `split`) keeps its band: the first `ySplit` rows and `xSplit` columns, as
-//   layout reads them (`layout/panes.ts`). An insertion inside the band grows it, and the top-left
-//   cell of the view keeps its place on that axis; a deletion inside it shrinks it. A split that
-//   reaches 0 goes, and the pane goes when both go. `x:pane/@topLeftCell` stays below and right of
-//   the band, and `@activePane` and each `x:selection/@pane` name only panes that remain
-//   (ECMA-376 Part 1, 18.3.1.66 and 18.18.52).
+//   sml.xsd, default `split`) keeps its band: `ySplit` rows and `xSplit` columns from the cell of
+//   `x:sheetView/@topLeftCell` (`CT_SheetView`, ECMA-376 Part 1, 18.3.1.87; approximation "Frozen
+//   band origin"), as layout reads them (`layout/panes.ts`). An insertion inside the band grows
+//   it, and the top-left cell of the view keeps its place on that axis; a deletion inside it
+//   shrinks it. An edit before the band moves the band with the top-left cell of the view. A
+//   split that reaches 0 goes, and the pane goes when both go. `x:pane/@topLeftCell` stays below
+//   and right of the band, and `@activePane` and each `x:selection/@pane` name only panes that
+//   remain (18.3.1.66 and 18.18.52). A frozen view whose `@topLeftCell` is not one cell
+//   reference keeps it: layout then starts the band at row 1 and column A, and a moved reference
+//   would move the band.
 //
 // A container left with no item is removed, because its schema needs one (`x:mergeCells`,
 // `x:cols`, `x:hyperlinks`). File-supplied counts are written from the items that remain.
 
 import type { Element, Node, XmlPart } from '../package/tree.ts';
 import { attr, intAttr } from '../package/query.ts';
-import { formatCellRef } from '../cell-ref.ts';
+import { formatCellRef, parseCellRef } from '../cell-ref.ts';
 import { IdSource, withAttr } from '../store/tree-edit.ts';
 import type { OpRejection } from '../store/ops.ts';
 import { axisLimit, movePosition, moveSpan, pushedOut, splits } from './axis.ts';
@@ -190,13 +194,26 @@ function moveSelection(ctx: ReferenceContext, el: Element): Element {
 
 type PaneName = 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
 
-/** The new size of a frozen band `[0, n)` after the edit. */
-function frozenBand(ctx: ReferenceContext, n: number): number {
+/** Whether the edit inserts lines inside a frozen band `[first, first + n)`. */
+const insertsInBand = (ctx: ReferenceContext, first: number, n: number): boolean =>
+  ctx.edit.kind === 'insert' && n > 0 && ctx.edit.at >= first && ctx.edit.at < first + n;
+
+/** The new size of a frozen band `[first, first + n)` after the edit. */
+function frozenBand(ctx: ReferenceContext, first: number, n: number): number {
   const e = ctx.edit;
   if (n <= 0) return 0;
-  if (e.kind === 'insert') return e.at < n ? Math.min(n + e.count, axisLimit(e.axis) - 1) : n;
-  const lost = Math.max(0, Math.min(n, e.at + e.count) - e.at);
+  if (e.kind === 'insert') {
+    const grown = Math.min(n + e.count, axisLimit(e.axis) - 1 - first);
+    return insertsInBand(ctx, first, n) ? Math.max(n, grown) : n;
+  }
+  const lost = Math.max(0, Math.min(first + n, e.at + e.count) - Math.max(first, e.at));
   return n - lost;
+}
+
+/** The first line of a frozen band on one axis: the cell of `x:sheetView/@topLeftCell`, or 0. */
+function bandStart(top: string | undefined, rows: boolean): number {
+  const cell = top === undefined ? null : parseCellRef(top);
+  return cell ? (rows ? cell.row : cell.col) : 0;
 }
 
 /** The pane that a pane name becomes when the vertical (`x`) or horizontal (`y`) split goes. */
@@ -242,13 +259,23 @@ function moveSheetView(ctx: ReferenceContext, name: string, view: Element): Rewr
   const pane = view.children.find((n): n is Element => n.type === 'element' && n.kind === 'pane');
   const rows = ctx.edit.axis === 'rows';
   const splitName = rows ? 'ySplit' : 'xSplit';
-  const band = splitOf(pane, splitName);
-  const nextBand = frozenBand(ctx, band);
   const top = attr(view, 'topLeftCell');
-  // The band grows from its top: the top-left cell of the view keeps its place.
-  const grows = nextBand > band;
-  const nextTop = grows ? top : viewCell(ctx, top);
+  const first = bandStart(top, rows);
+  // The band as layout reads it (`frozenPanes`): cut so that the body keeps a line in the grid.
+  const split = splitOf(pane, splitName);
+  const band = Math.min(split, Math.max(0, axisLimit(ctx.edit.axis) - 1 - first));
+  const nextBand = frozenBand(ctx, first, band);
+  // The band grows from its top: the top-left cell of the view keeps its place, also for an
+  // insertion at the first line of the band, as for a band at row 1 or column A. A frozen view
+  // whose top-left cell does not parse starts its band at row 1 and column A, so it keeps it.
+  // A pane with no split is not frozen, so its top-left cell still moves with the edit.
+  const frozen = splitOf(pane, 'xSplit') > 0 || splitOf(pane, 'ySplit') > 0;
+  const keep =
+    insertsInBand(ctx, first, band) || (frozen && top !== undefined && parseCellRef(top) === null);
+  const nextTop = keep ? top : viewCell(ctx, top);
   if (nextTop !== top) out = withAttr(out, 'topLeftCell', nextTop);
+  // The first line after the band, kept inside the grid: a split can name more lines than it has.
+  const nextEnd = Math.min(bandStart(nextTop, rows) + nextBand, axisLimit(ctx.edit.axis) - 1);
   let removedX = false;
   let removedY = false;
   let active = attr(pane, 'activePane');
@@ -258,11 +285,12 @@ function moveSheetView(ctx: ReferenceContext, name: string, view: Element): Rewr
       let n = viewCell(ctx, t);
       let p = el;
       if (band > 0) {
-        if (nextBand !== band) p = withAttr(p, splitName, nextBand ? String(nextBand) : undefined);
+        // A split past the grid is written as the count of the band, so the band stays put.
+        if (nextBand !== split) p = withAttr(p, splitName, nextBand ? String(nextBand) : undefined);
         // The first scrolling row or column is the first one after the band.
         const box = n === undefined ? undefined : parseBox(n);
-        if (box && (rows ? box.r0 : box.c0) < nextBand)
-          n = formatCellRef(rows ? { row: nextBand, col: box.c0 } : { row: box.r0, col: nextBand });
+        if (box && nextBand > 0 && (rows ? box.r0 : box.c0) < nextEnd)
+          n = formatCellRef(rows ? { row: nextEnd, col: box.c0 } : { row: box.r0, col: nextEnd });
         removedY = rows && nextBand === 0;
         removedX = !rows && nextBand === 0;
       }

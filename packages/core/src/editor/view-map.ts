@@ -1,9 +1,16 @@
 // The map between the painted window and the grid: which cell a point of the window shows, and
 // which rectangles of the window a range covers. The window has up to four panes (frozen rows,
 // frozen columns, both, and the scrolling body), as `layoutSheet` paints it. Points throughout.
+//
+// The frozen band of an axis is the span `first` to `end - 1` (`frozenSpan`): it starts at the
+// line of `x:sheetView/@topLeftCell` (`CT_SheetView`, ECMA-376 Part 1, 18.3.1.87), and holds
+// `x:pane/@ySplit` rows or `@xSplit` columns (`CT_Pane`, 18.3.1.66), as `layout/panes.ts` reads
+// them (approximation "Frozen band origin"). The band draws from the start of the window. The
+// lines before the band do not show. The body draws after the band, from line `end` at scroll 0.
 
 import type { GridPoint, GridRange } from '../contracts/index.ts';
 import type { AxisIndex, FrozenPanes, Rect, SheetGeometry } from '../layout/index.ts';
+import { frozenSpan, type FrozenSpan } from '../layout/panes.ts';
 
 /** What the map needs: the geometry, the frozen panes, and the scroll of the body. */
 export interface ViewState {
@@ -56,40 +63,48 @@ export function scrollViewToShow(
   view.scrollY = next.y;
 }
 
+/** The size of the frozen band of one axis, in points. */
+const bandSize = (axis: AxisIndex, band: FrozenSpan): number =>
+  axis.offsetOf(band.end) - axis.offsetOf(band.first);
+
 /** The index at `offset` of the window on one axis. */
-function indexAt(axis: AxisIndex, frozen: number, scroll: number, offset: number): number {
-  const frozenSize = axis.offsetOf(frozen);
-  if (offset < frozenSize) return axis.indexAt(offset);
-  return axis.indexAt(offset - frozenSize + axis.offsetOf(frozen) + Math.max(0, scroll));
+function indexAt(axis: AxisIndex, band: FrozenSpan, scroll: number, offset: number): number {
+  const frozenSize = bandSize(axis, band);
+  if (offset < frozenSize) return axis.indexAt(offset + axis.offsetOf(band.first));
+  return axis.indexAt(offset - frozenSize + axis.offsetOf(band.end) + Math.max(0, scroll));
 }
 
 /** The cell at a point of the window. */
 export function cellAtPoint(view: ViewState, x: number, y: number): GridPoint {
   return {
-    row: indexAt(view.geometry.rows, view.frozen.rows, view.scrollY, y),
-    col: indexAt(view.geometry.columns, view.frozen.cols, view.scrollX, x),
+    row: indexAt(view.geometry.rows, frozenSpan(view.frozen, 'rows'), view.scrollY, y),
+    col: indexAt(view.geometry.columns, frozenSpan(view.frozen, 'cols'), view.scrollX, x),
   };
 }
 
-/** The intervals of the window that indexes `first` to `last` cover on one axis. */
+/**
+ * The intervals of the window that indexes `first` to `last` cover on one axis. The indexes
+ * before the frozen band cover nothing.
+ */
 export function axisSpans(
   axis: AxisIndex,
-  frozen: number,
+  band: FrozenSpan,
   scroll: number,
   size: number,
   first: number,
   last: number
 ): [number, number][] {
   const out: [number, number][] = [];
-  const frozenSize = axis.offsetOf(frozen);
-  if (first < frozen) {
-    const a = axis.offsetOf(first);
-    const b = axis.offsetOf(Math.min(last, frozen - 1) + 1);
+  const frozenSize = bandSize(axis, band);
+  const bandStart = axis.offsetOf(band.first);
+  if (first < band.end) {
+    const a = axis.offsetOf(Math.max(first, band.first)) - bandStart;
+    const b = axis.offsetOf(Math.min(last, band.end - 1) + 1) - bandStart;
     if (b > a) out.push([a, Math.min(b, size)]);
   }
-  if (last >= frozen) {
-    const origin = frozenSize - axis.offsetOf(frozen) - Math.max(0, scroll);
-    const a = Math.max(frozenSize, origin + axis.offsetOf(Math.max(first, frozen)));
+  if (last >= band.end) {
+    const origin = frozenSize - axis.offsetOf(band.end) - Math.max(0, scroll);
+    const a = Math.max(frozenSize, origin + axis.offsetOf(Math.max(first, band.end)));
     const b = Math.min(size, origin + axis.offsetOf(last + 1));
     if (b > a) out.push([a, b]);
   }
@@ -100,7 +115,7 @@ export function axisSpans(
 export function rangeRects(view: ViewState, range: GridRange): Rect[] {
   const xs = axisSpans(
     view.geometry.columns,
-    view.frozen.cols,
+    frozenSpan(view.frozen, 'cols'),
     view.scrollX,
     view.width,
     range.start.col,
@@ -108,7 +123,7 @@ export function rangeRects(view: ViewState, range: GridRange): Rect[] {
   );
   const ys = axisSpans(
     view.geometry.rows,
-    view.frozen.rows,
+    frozenSpan(view.frozen, 'rows'),
     view.scrollY,
     view.height,
     range.start.row,
@@ -132,19 +147,22 @@ export interface OutlineEdge {
 /** Where the first and the last line of indexes `first` to `last` show, or null for neither. */
 function axisEnds(
   axis: AxisIndex,
-  frozen: number,
+  band: FrozenSpan,
   scroll: number,
   size: number,
   first: number,
   last: number
 ): { readonly start: number | null; readonly end: number | null } {
-  const frozenSize = axis.offsetOf(frozen);
-  const at = (line: number, inFrozen: boolean) =>
-    inFrozen ? axis.offsetOf(line) : axis.offsetOf(line) - Math.max(0, scroll);
-  const start = at(first, first < frozen);
-  const end = at(last + 1, last < frozen);
-  const startShows = start < size && (first < frozen || start >= frozenSize);
-  const endShows = end <= size && (last < frozen || end > frozenSize);
+  const frozenSize = bandSize(axis, band);
+  const inBand = (i: number) => i >= band.first && i < band.end;
+  // An index before the band does not show, so neither does its line.
+  const before = (i: number) => i < band.first;
+  const at = (line: number, frozen: boolean) =>
+    axis.offsetOf(line) - axis.offsetOf(band.first) - (frozen ? 0 : Math.max(0, scroll));
+  const start = at(first, inBand(first));
+  const end = at(last + 1, inBand(last));
+  const startShows = !before(first) && start < size && (inBand(first) || start >= frozenSize);
+  const endShows = !before(last) && end <= size && (inBand(last) || end > frozenSize);
   return { start: startShows ? start : null, end: endShows ? end : null };
 }
 
@@ -155,11 +173,13 @@ function axisEnds(
 export function rangeOutline(view: ViewState, range: GridRange): OutlineEdge[] {
   const { columns, rows } = view.geometry;
   const { start, end } = range;
-  const xs = axisSpans(columns, view.frozen.cols, view.scrollX, view.width, start.col, end.col);
-  const ys = axisSpans(rows, view.frozen.rows, view.scrollY, view.height, start.row, end.row);
+  const bandCols = frozenSpan(view.frozen, 'cols');
+  const bandRows = frozenSpan(view.frozen, 'rows');
+  const xs = axisSpans(columns, bandCols, view.scrollX, view.width, start.col, end.col);
+  const ys = axisSpans(rows, bandRows, view.scrollY, view.height, start.row, end.row);
   if (xs.length === 0 || ys.length === 0) return [];
-  const across = axisEnds(columns, view.frozen.cols, view.scrollX, view.width, start.col, end.col);
-  const down = axisEnds(rows, view.frozen.rows, view.scrollY, view.height, start.row, end.row);
+  const across = axisEnds(columns, bandCols, view.scrollX, view.width, start.col, end.col);
+  const down = axisEnds(rows, bandRows, view.scrollY, view.height, start.row, end.row);
   const edges: OutlineEdge[] = [];
   for (const [x0, x1] of xs) {
     const length = x1 - x0;
@@ -177,52 +197,58 @@ export function rangeOutline(view: ViewState, range: GridRange): OutlineEdge[] {
 /**
  * The scroll offsets, in points, that put `topLeft` at the top-left corner of the scrolling
  * pane: the opening scroll of a sheet (`x:pane/@topLeftCell` or `x:sheetView/@topLeftCell`;
- * `CT_Pane` and `CT_SheetView`, sml.xsd).
+ * `CT_Pane` and `CT_SheetView`, sml.xsd). The scrolling pane starts after the frozen band, so a
+ * cell before the end of the band gives a scroll of 0.
  */
 export function scrollToTopLeft(
   geometry: SheetGeometry,
   frozen: FrozenPanes,
   topLeft: GridPoint
 ): { x: number; y: number } {
+  const { columns, rows } = geometry;
+  const endCol = frozenSpan(frozen, 'cols').end;
+  const endRow = frozenSpan(frozen, 'rows').end;
   return {
-    x: Math.max(0, geometry.columns.offsetOf(topLeft.col) - geometry.columns.offsetOf(frozen.cols)),
-    y: Math.max(0, geometry.rows.offsetOf(topLeft.row) - geometry.rows.offsetOf(frozen.rows)),
+    x: Math.max(0, columns.offsetOf(topLeft.col) - columns.offsetOf(endCol)),
+    y: Math.max(0, rows.offsetOf(topLeft.row) - rows.offsetOf(endRow)),
   };
 }
 
 /**
  * The scroll that shows a cell in the body pane, or the current scroll when it shows already.
- * A cell in a frozen pane never scrolls.
+ * A cell in a frozen pane never scrolls. A cell before the frozen band cannot show, so it keeps
+ * the scroll too.
  */
 export function scrollToShow(view: ViewState, cell: GridPoint): { x: number; y: number } {
-  const axis = (a: AxisIndex, frozen: number, scroll: number, size: number, i: number): number => {
-    if (i < frozen) return scroll;
-    const frozenSize = a.offsetOf(frozen);
-    const start = a.offsetOf(i) - a.offsetOf(frozen);
+  const axis = (a: AxisIndex, band: FrozenSpan, scroll: number, size: number, i: number) => {
+    if (i < band.end) return scroll;
+    const frozenSize = bandSize(a, band);
+    const start = a.offsetOf(i) - a.offsetOf(band.end);
     const end = start + a.sizeOf(i);
     const room = Math.max(0, size - frozenSize);
     if (start < scroll) return start;
     if (end > scroll + room) return Math.max(0, Math.min(start, end - room));
     return scroll;
   };
+  const { columns, rows } = view.geometry;
   return {
-    x: axis(view.geometry.columns, view.frozen.cols, view.scrollX, view.width, cell.col),
-    y: axis(view.geometry.rows, view.frozen.rows, view.scrollY, view.height, cell.row),
+    x: axis(columns, frozenSpan(view.frozen, 'cols'), view.scrollX, view.width, cell.col),
+    y: axis(rows, frozenSpan(view.frozen, 'rows'), view.scrollY, view.height, cell.row),
   };
 }
 
 /** Where indexes `first` to `last` are on one axis of the window, not cut to the window. */
 function axisPlace(
   axis: AxisIndex,
-  frozen: number,
+  band: FrozenSpan,
   scroll: number,
   first: number,
   last: number
 ): [number, number] {
   const size = axis.offsetOf(last + 1) - axis.offsetOf(first);
-  if (first < frozen) return [axis.offsetOf(first), size];
-  const frozenSize = axis.offsetOf(frozen);
-  return [frozenSize + axis.offsetOf(first) - axis.offsetOf(frozen) - Math.max(0, scroll), size];
+  if (first < band.end) return [axis.offsetOf(first) - axis.offsetOf(band.first), size];
+  const body = bandSize(axis, band) - axis.offsetOf(band.end) - Math.max(0, scroll);
+  return [body + axis.offsetOf(first), size];
 }
 
 /**
@@ -233,14 +259,14 @@ function axisPlace(
 export function rangeRect(view: ViewState, range: GridRange): Rect {
   const [x, width] = axisPlace(
     view.geometry.columns,
-    view.frozen.cols,
+    frozenSpan(view.frozen, 'cols'),
     view.scrollX,
     range.start.col,
     range.end.col
   );
   const [y, height] = axisPlace(
     view.geometry.rows,
-    view.frozen.rows,
+    frozenSpan(view.frozen, 'rows'),
     view.scrollY,
     range.start.row,
     range.end.row

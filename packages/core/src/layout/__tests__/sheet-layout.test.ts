@@ -261,6 +261,31 @@ describe('the spec scenarios', () => {
     expect(textAt(l, 2, 0)).toBeUndefined();
     expect(l.frozenEdges).toEqual({ y: 28 });
   });
+
+  test('a band that starts at row 10 shows rows 10 and 11 at the top, and not rows 1 to 9', () => {
+    // `x:sheetView/@topLeftCell` is the first cell of the frozen band (ECMA-376 Part 1, 18.3.1.87).
+    const rows = Array.from({ length: 30 }, (_, i) =>
+      row(i + 1, [c(`A${i + 1}`, `r${i + 1}`)])
+    ).join('');
+    const pkg = sheetOf({
+      rows,
+      viewAttrs: 'topLeftCell="A10"',
+      viewChildren: '<pane ySplit="2" topLeftCell="A12" activePane="bottomLeft" state="frozen"/>',
+    });
+    const l = layout(pkg, 'S', { width: 300, height: 140, scrollX: 0, scrollY: 0 });
+    expect(l.frozen).toEqual({ rows: 2, cols: 0, firstRow: 9, firstCol: 0 });
+    expect(l.panes).toHaveLength(2);
+    expect(l.panes[0]!.rows.map((r) => [r.index, r.start])).toEqual([
+      [9, 0],
+      [10, 14],
+    ]);
+    expect(l.panes[0]!.clip).toEqual({ x: 0, y: 0, width: 300, height: 28 });
+    expect(l.panes[1]!.rows[0]).toMatchObject({ index: 11, start: 28 });
+    expect(l.panes[1]!.clip).toEqual({ x: 0, y: 28, width: 300, height: 112 });
+    expect(textAt(l, 9, 0)!.text.lines[0]!.baseline).toBe(11);
+    for (let r = 0; r < 9; r += 1) expect(textAt(l, r, 0)).toBeUndefined();
+    expect(l.frozenEdges).toEqual({ y: 28 });
+  });
 });
 
 describe('virtualized layout', () => {

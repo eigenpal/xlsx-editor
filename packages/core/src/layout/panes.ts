@@ -1,9 +1,15 @@
 // The visible window of a sheet (design D6): which rows and columns a viewport shows, the frozen
 // panes that stay in place, and the merged ranges that become one cell rectangle.
 //
-// A frozen pane comes from `x:sheetView/x:pane` (`CT_Pane`, sml.xsd) with `@state` (`ST_PaneState`,
-// default `split`) `frozen` or `frozenSplit`: `@xSplit` columns and `@ySplit` rows (each default 0)
-// stay in place while the rest scrolls. A `split` pane does not freeze. Merged ranges come from
+// A frozen pane comes from `x:sheetView/x:pane` (`CT_Pane`, sml.xsd, ECMA-376 Part 1, 18.3.1.66)
+// with `@state` (`ST_PaneState`, 18.18.53, default `split`) `frozen` or `frozenSplit`: `@xSplit`
+// columns and `@ySplit` rows (each default 0) stay in place while the rest scrolls. A `split` pane
+// does not freeze. The frozen band starts at `x:sheetView/@topLeftCell` (`CT_SheetView`,
+// 18.3.1.87), so `@topLeftCell="A10"` with `@ySplit="2"` freezes rows 10 and 11. The text of
+// 18.3.1.87 names the top-left visible cell, and then repeats the text of `x:pane/@topLeftCell`,
+// so the standard does not state where the band starts: approximation "Frozen band origin". The
+// rows and columns before the band do not show while the pane is frozen. The body starts at the
+// first row and column after the band, at scroll 0, and scrolls from there. Merged ranges come from
 // `x:mergeCells/x:mergeCell/@ref` (`CT_MergeCell`, `ST_Ref`). Both are read once per worksheet part
 // revision. A merged range is never expanded into its cells: a lookup tests the ranges, so a merge
 // of the whole grid costs one entry.
@@ -22,10 +28,45 @@ export interface CellRange {
   readonly lastCol: number;
 }
 
-/** Frozen rows and columns: the count of each that stays in place. */
+/**
+ * Frozen rows and columns: the count of each that stays in place, and the first of each. The
+ * frozen rows are `firstRow` to `firstRow + rows - 1`, and the frozen columns are `firstCol` to
+ * `firstCol + cols - 1` (0-based). An axis with no frozen line has a first line of 0.
+ */
 export interface FrozenPanes {
+  /** The count of frozen rows. */
   readonly rows: number;
+  /** The count of frozen columns. */
   readonly cols: number;
+  /** The first frozen row, 0-based: the row of `x:sheetView/@topLeftCell`, or 0. */
+  readonly firstRow: number;
+  /** The first frozen column, 0-based: the column of `x:sheetView/@topLeftCell`, or 0. */
+  readonly firstCol: number;
+}
+
+/** No frozen row or column. */
+export const NO_FROZEN_PANES: FrozenPanes = Object.freeze({
+  rows: 0,
+  cols: 0,
+  firstRow: 0,
+  firstCol: 0,
+});
+
+/** The frozen lines of one axis: `first` to `end - 1`, 0-based. `first === end` freezes none. */
+export interface FrozenSpan {
+  readonly first: number;
+  readonly end: number;
+}
+
+/**
+ * The frozen span of one axis. The lines before `first` do not show, and the scrolling pane
+ * starts at `end`. An axis with no frozen line has the span from 0 to 0, so it hides nothing.
+ */
+export function frozenSpan(frozen: FrozenPanes, axis: 'rows' | 'cols'): FrozenSpan {
+  const count = axis === 'rows' ? frozen.rows : frozen.cols;
+  if (count <= 0) return { first: 0, end: 0 };
+  const first = axis === 'rows' ? frozen.firstRow : frozen.firstCol;
+  return { first, end: first + count };
 }
 
 /** At most this many merged ranges are read from one sheet; the rest are a problem. */
@@ -33,18 +74,30 @@ export const MAX_MERGES = 100_000;
 
 /**
  * The frozen panes of the first `x:sheetView` of a worksheet (`CT_SheetView`), or zero rows and
- * columns.
+ * columns. The band starts at `x:sheetView/@topLeftCell` (ECMA-376 Part 1, 18.3.1.87; approximation
+ * "Frozen band origin"); a cell reference that does not parse, or no reference, starts it at row 1
+ * and column A. Each count is cut so that at least one row and one column of the body stay in the
+ * grid after the band, as a structural edit cuts a band that grows (`store/structure`). An axis
+ * with no room for the body freezes nothing.
  */
 export function frozenPanes(worksheet: Element): FrozenPanes {
   const view = child(child(worksheet, 'x:sheetViews'), 'x:sheetView');
   const pane = child(view, 'x:pane');
   const state = attr(pane, 'state');
-  if (!pane || (state !== 'frozen' && state !== 'frozenSplit')) return { rows: 0, cols: 0 };
-  const split = (name: string, max: number) => {
+  if (!pane || (state !== 'frozen' && state !== 'frozenSplit')) return NO_FROZEN_PANES;
+  const top = parseCellRef(attr(view, 'topLeftCell') ?? '');
+  const split = (name: string, first: number, max: number) => {
     const n = Number(attr(pane, name) ?? '0');
-    return Number.isInteger(n) && n > 0 ? Math.min(n, max) : 0;
+    return Number.isInteger(n) && n > 0 ? Math.max(0, Math.min(n, max - 1 - first)) : 0;
   };
-  return { rows: split('ySplit', MAX_ROWS), cols: split('xSplit', MAX_COLS) };
+  const rows = split('ySplit', top?.row ?? 0, MAX_ROWS);
+  const cols = split('xSplit', top?.col ?? 0, MAX_COLS);
+  return {
+    rows,
+    cols,
+    firstRow: rows > 0 ? (top?.row ?? 0) : 0,
+    firstCol: cols > 0 ? (top?.col ?? 0) : 0,
+  };
 }
 
 /** A range reference such as `B2:D4`, or a single cell, as a range; undefined when invalid. */
@@ -267,7 +320,8 @@ export interface Pane {
 /**
  * The panes that a viewport of `width` by `height` points shows, scrolled by `scrollX` and
  * `scrollY` points in the scrolling pane. Frozen rows and columns draw first, at the top and
- * left, and do not scroll. The scroll position starts after the frozen rows and columns.
+ * left, and do not scroll. The scroll position starts after the frozen rows and columns. The
+ * rows and columns before a frozen band do not show.
  */
 export function windowPanes(
   rows: AxisIndex,
@@ -280,10 +334,12 @@ export function windowPanes(
     readonly scrollY: number;
   }
 ): Pane[] {
-  const frozenHeight = rows.offsetOf(frozen.rows);
-  const frozenWidth = columns.offsetOf(frozen.cols);
-  const bodyY = rows.offsetOf(frozen.rows) + Math.max(0, viewport.scrollY);
-  const bodyX = columns.offsetOf(frozen.cols) + Math.max(0, viewport.scrollX);
+  const r = frozenSpan(frozen, 'rows');
+  const c = frozenSpan(frozen, 'cols');
+  const frozenHeight = rows.offsetOf(r.end) - rows.offsetOf(r.first);
+  const frozenWidth = columns.offsetOf(c.end) - columns.offsetOf(c.first);
+  const bodyY = rows.offsetOf(r.end) + Math.max(0, viewport.scrollY);
+  const bodyX = columns.offsetOf(c.end) + Math.max(0, viewport.scrollX);
   const bodyRows = visibleSpan(rows, bodyY, viewport.height - frozenHeight);
   const bodyCols = visibleSpan(columns, bodyX, viewport.width - frozenWidth);
   const panes: Pane[] = [];
@@ -298,8 +354,8 @@ export function windowPanes(
       x,
       y,
     });
-  const topRows = { first: 0, last: frozen.rows - 1 };
-  const leftCols = { first: 0, last: frozen.cols - 1 };
+  const topRows = { first: r.first, last: r.end - 1 };
+  const leftCols = { first: c.first, last: c.end - 1 };
   const shiftX = frozenWidth - (bodyX - columns.offsetOf(bodyCols.first));
   const shiftY = frozenHeight - (bodyY - rows.offsetOf(bodyRows.first));
   if (frozen.rows > 0 && frozen.cols > 0) pane(topRows, leftCols, 0, 0);

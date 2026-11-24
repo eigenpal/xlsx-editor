@@ -18,6 +18,7 @@
 
 import { FIRST_CELL } from './first-cells.ts';
 import { sheetNameCases } from './sheet-name-cases.ts';
+import { frozenPaneCases } from './frozen-pane-cases.ts';
 import { zipSync } from 'fflate';
 import { readZip, writeZip } from '../../packages/ooxml-core/src/zip.ts';
 import { buildXlsx, c, row, type FixtureSheet, type FixtureWorkbook } from '../fixtures/builder.ts';
@@ -859,6 +860,7 @@ const FILE_CASES: readonly HangCase[] = [
         })
       ),
   },
+  ...frozenPaneCases(sheet(plainRows)),
   {
     id: 'conditional-many',
     covers: '20000 conditional formatting rules that each cover the whole grid',

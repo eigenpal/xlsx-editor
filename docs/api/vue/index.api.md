@@ -1396,6 +1396,8 @@ export interface XlsxEditorMenuNamespace {
     readonly Format: XlsxEditorMenuPart;
     readonly Group: typeof XlsxEditorMenuGroup;
     // (undocumented)
+    readonly Headings: XlsxEditorMenuNamedRow;
+    // (undocumented)
     readonly IncreaseDecimals: XlsxEditorMenuNamedRow;
     // (undocumented)
     readonly Insert: XlsxEditorMenuPart;

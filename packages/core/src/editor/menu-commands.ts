@@ -1,9 +1,10 @@
 // The state and the run of the slots that only the menu bar shows: `file.open`, the clipboard
-// and select all (`edit`), the zoom (`view`), the new sheet (`sheet.add`), and the merge
-// commands (`merge`). `toolbarCommandState` and `runToolbarCommand` call this file for these
-// slots, so `toolbarCommandState` stays the one source of their enabled state. After the state
-// of the same slots in pptx-editor/packages/core/src/editor/chrome-adapter-state.ts and their run
-// in pptx-editor/packages/core/src/editor/chrome-actions.ts (`runClipboardSlot`) at fef01c93
+// and select all (`edit`), the zoom and the headings (`view`), the new sheet (`sheet.add`),
+// and the merge commands (`merge`). `toolbarCommandState` and `runToolbarCommand` call this
+// file for these slots, so `toolbarCommandState` stays the one source of their enabled state.
+// After the state of the same slots in
+// pptx-editor/packages/core/src/editor/chrome-adapter-state.ts and their run in
+// pptx-editor/packages/core/src/editor/chrome-actions.ts (`runClipboardSlot`) at fef01c93
 // (EigenPal). Differences:
 // - The state reads the snapshot and the host only, as every toolbar slot does here, and its
 //   reasons are catalog keys.
@@ -28,6 +29,11 @@
 //   library has no dialog that asks, so the row is disabled with
 //   `disabledReason.mergeDropsValues`, which names the cell and tells the user to clear those
 //   cells first: the menu bar never drops values without a question.
+// - Headings (`view.headings`) is checked while the shown sheet shows its row and column headings
+//   (`EditorSnapshot.headings`), and a press writes the other state (`setShowHeadings`). It
+//   writes the workbook, so view mode disables it. Protection does not: neither
+//   `x:sheetProtection` (ECMA-376 Part 1, 18.3.1.85) nor `x:workbookProtection` (18.2.29) names
+//   a view flag.
 
 import type { ChromeSlotId } from './chrome-controls.ts';
 import type { EditResult } from './cell-input.ts';
@@ -58,6 +64,7 @@ export const MENU_ONLY_SLOTS: ReadonlySet<ChromeSlotId> = new Set<ChromeSlotId>(
   'view.zoomIn',
   'view.zoomOut',
   'view.zoomReset',
+  'view.headings',
   'sheet.add',
   'merge.merge',
   'merge.mergeCenter',
@@ -110,6 +117,8 @@ export function menuSlotState(
   }
   if (snapshot.status !== 'ready' || !snapshot.selection)
     return off(id, { key: 'disabledReason.editorNotReady' });
+  // The headings row shows the state of the sheet also while it is disabled.
+  if (id === 'view.headings') return { ...headingsState(snapshot, id), active: snapshot.headings };
   if (snapshot.mode === 'view' && !VIEW_SAFE.has(id))
     return off(id, { key: 'disabledReason.viewMode' });
   switch (id) {
@@ -157,6 +166,13 @@ export function menuSlotState(
     return off(id, { key: 'disabledReason.locked' });
   if (id === 'edit.paste' && !host.readClipboard)
     return off(id, { key: 'disabledReason.noClipboard' });
+  return on(id);
+}
+
+/** The enabled state of `view.headings`, which writes the workbook. */
+function headingsState(snapshot: EditorSnapshot, id: ChromeSlotId): ToolbarCommandState {
+  if (snapshot.mode === 'view') return off(id, { key: 'disabledReason.viewMode' });
+  if (snapshot.editing && snapshot.composing) return off(id, { key: 'disabledReason.composing' });
   return on(id);
 }
 
@@ -218,6 +234,8 @@ export function runMenuSlot(
     case 'view.zoomReset':
       editor.setZoom(1);
       return { ok: true };
+    case 'view.headings':
+      return editor.setShowHeadings(!editor.snapshot().headings);
     case 'sheet.add':
       return editor.addSheet();
     case 'merge.merge':

@@ -687,6 +687,22 @@ export const supportFeatures: readonly SupportFeature[] = [
     },
   },
   {
+    id: 'editing.sheet-headings',
+    name: 'Show or hide the row and column headings',
+    category: 'editing',
+    status: 'partial',
+    notes:
+      'View > Headings and `setShowHeadings` write `x:sheetView/@showRowColHeaders` of the first sheet view of the shown sheet. A hide writes `0`, and a show removes the attribute. Undo, redo, and save keep the flag. View mode refuses the edit, and protection does not. The save check has no record of this edit yet.',
+    docsLink: '/docs/customization/menus',
+    evidence: {
+      fixtures: ['basic-values'],
+      tests: [
+        `${CORE}/store/__tests__/sheet-view.test.ts`,
+        `${CORE}/editor/__tests__/view-headings.test.ts`,
+      ],
+    },
+  },
+  {
     id: 'editing.formulas',
     name: 'Enter formulas',
     category: 'editing',

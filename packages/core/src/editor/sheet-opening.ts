@@ -13,6 +13,8 @@ import {
 import { frozenPanes } from '../layout/index.ts';
 import { NO_FROZEN_PANES } from '../layout/panes.ts';
 import { readSqref } from './selection-ranges.ts';
+import { firstSheetView, viewShowsHeadings } from '../store/store/sheet-view.ts';
+import type { WorkbookIndex } from '../store/workbook/workbook-index.ts';
 
 /** What a sheet opens with: its zoom, its active cell, its selection, and its top-left cell. */
 export interface SheetOpening {
@@ -41,7 +43,7 @@ export interface SheetOpening {
  */
 export function sheetOpening(pkg: XlsxPackage, partName: string | undefined): SheetOpening {
   const part = xmlPartOf(pkg, partName);
-  const view = part ? child(child(part.root, 'x:sheetViews'), 'x:sheetView') : undefined;
+  const view = firstSheetView(part?.root);
   const zoomRaw = Number(attr(view, 'zoomScale') ?? '100');
   const zoom = Number.isFinite(zoomRaw) && zoomRaw >= 10 && zoomRaw <= 400 ? zoomRaw / 100 : 1;
   const pane = child(view, 'x:pane');
@@ -56,7 +58,6 @@ export function sheetOpening(pkg: XlsxPackage, partName: string | undefined): Sh
   const point = (a: { row: number; col: number } | null): GridPoint =>
     a ? { row: a.row, col: a.col } : { row: 0, col: 0 };
   const paneTop = frozen ? cell(attr(pane, 'topLeftCell')) : null;
-  const headings = attr(view, 'showRowColHeaders');
   const ranges = readSqref(attr(sel, 'sqref'));
   // `@activeCellId` is an `xsd:unsignedInt`. It counts the ranges of the file, and a range that
   // does not read is left out, so the index applies only when its range holds the active cell;
@@ -79,8 +80,24 @@ export function sheetOpening(pkg: XlsxPackage, partName: string | undefined): Sh
     zoom,
     active,
     topLeft: point(paneTop ?? cell(attr(view, 'topLeftCell'))),
-    headings: headings === undefined || headings === '1' || headings === 'true',
+    headings: viewShowsHeadings(view),
     ranges,
     activeRange: index >= 0 && index < ranges.length ? index : undefined,
   };
+}
+
+/**
+ * Read the headings flag of each sheet view again from its part, after an edit, an undo, or a
+ * redo: `setShowHeadings` writes `x:sheetView/@showRowColHeaders` (ECMA-376 Part 1, 18.3.1.87).
+ * The views are keyed by sheet position.
+ */
+export function readHeadings(
+  views: ReadonlyMap<number, { headings: boolean }>,
+  pkg: XlsxPackage,
+  index: WorkbookIndex
+): void {
+  for (const [sheet, view] of views)
+    view.headings = viewShowsHeadings(
+      firstSheetView(xmlPartOf(pkg, index.sheets[sheet]?.partName)?.root)
+    );
 }

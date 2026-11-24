@@ -341,6 +341,8 @@ export const CHROME_GROUPS = [
       { id: 'zoomIn', labelKey: 'zoom.zoomIn', paths: null, kind: 'command' },
       { id: 'zoomOut', labelKey: 'zoom.zoomOut', paths: null, kind: 'command' },
       { id: 'zoomReset', labelKey: 'menu.zoomReset', paths: null, kind: 'command' },
+      // `x:sheetView/@showRowColHeaders` (`CT_SheetView`, ECMA-376 Part 1, 18.3.1.87).
+      { id: 'headings', labelKey: 'menu.headings', paths: null, kind: 'command', toggle: true },
     ],
   },
   {

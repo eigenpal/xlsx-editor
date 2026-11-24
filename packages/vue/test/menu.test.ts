@@ -330,6 +330,20 @@ describe('menu bar', () => {
     expect(focused()).toBe(trigger(bar, 'file'));
   });
 
+  test('View > Headings is a checked row that shows the headings, and undo hides them', async () => {
+    const { bar, viewer } = await open(() => h(XlsxEditorMenu));
+    const row = () => bar.querySelector<HTMLElement>('[data-slot="view.headings"]')!;
+    await click(trigger(bar, 'view'));
+    expect(row().getAttribute('role')).toBe('menuitemcheckbox');
+    expect(row().getAttribute('aria-checked')).toBe('false');
+    await click(row());
+    expect(viewer.snapshot().headings).toBe(true);
+    await click(trigger(bar, 'view'));
+    await waitFor(() => expect(row().getAttribute('aria-checked')).toBe('true'));
+    viewer.undo();
+    await waitFor(() => expect(row().getAttribute('aria-checked')).toBe('false'));
+  });
+
   test('View rows zoom, and Insert > Insert sheet adds a sheet', async () => {
     const { bar, viewer } = await open(() => h(XlsxEditorMenu));
     await click(trigger(bar, 'view'));

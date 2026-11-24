@@ -59,6 +59,7 @@ import { applySheetOp } from '../structure/sheet-ops.ts';
 import { restoreRows } from './restore-rows.ts';
 import { applyAxisSize, applyColumnWidths, applyFittedRowHeights } from './axis-size.ts';
 import { applyMerge } from './merge-cells.ts';
+import { applyShowHeadings } from './sheet-view.ts';
 import { withoutFittedHeight } from './format-range.ts';
 import { setCellValues } from './cell-batch.ts';
 import { setCellFormatIndexes } from './cell-format-index.ts';
@@ -308,7 +309,19 @@ export type WorkbookOp =
       readonly op: 'setFittedRowHeights';
       readonly sheet: string;
       readonly rows: readonly { readonly row: number; readonly height: number }[];
-    };
+    }
+  /**
+   * Show or hide the row and column headings of a worksheet: `x:sheetView/@showRowColHeaders` of
+   * its first sheet view (`CT_SheetView`, ECMA-376 Part 1, 18.3.1.87; default true). A hide
+   * writes `0`, and a sheet with no `x:sheetViews` gets one with a sheet view of the first
+   * workbook view. A show removes the attribute. A sheet whose flag already has the asked state
+   * changes nothing. An unknown sheet is refused with `unknown-sheet`. A hide on a sheet with no
+   * `x:sheetViews` and markup of another namespace before `x:sheetData`, such as
+   * `mc:AlternateContent`, is refused with `unsupported-package`. Protection does not
+   * refuse it: neither `x:sheetProtection` nor `x:workbookProtection` names a view flag
+   * (`sheet-view.ts`).
+   */
+  | { readonly op: 'setShowHeadings'; readonly sheet: string; readonly show: boolean };
 
 /**
  * The inverse ops: only undo and redo apply them, because they put back content of an earlier
@@ -755,6 +768,7 @@ function applyOp(pkg: XlsxPackage, op: HistoryOp, openedParts?: ReadonlySet<stri
   if (op.op === 'mergeCells' || op.op === 'unmergeCells') return applyMerge(pkg, op);
   if (op.op === 'setColumnWidths') return applyColumnWidths(pkg, op);
   if (op.op === 'setFittedRowHeights') return applyFittedRowHeights(pkg, op);
+  if (op.op === 'setShowHeadings') return applyShowHeadings(pkg, op);
   const target = sheetTarget(pkg, op.sheet);
   if ('code' in target) return { ok: false, rejection: target };
   if (op.op === 'setDimension') {

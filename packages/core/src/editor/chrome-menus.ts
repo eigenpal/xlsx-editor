@@ -9,8 +9,9 @@
 //
 // Differences from DOCX Editor:
 // - The menus of a workbook editor. A row exists only for a command that the editor runs: there
-//   is no print, page setup, find, or export row, and no View row for headings, gridlines, or
-//   frozen panes, which the editor reads from the workbook but does not edit.
+//   is no print, page setup, find, or export row, and no View row for gridlines or frozen panes,
+//   which the editor reads from the workbook but does not edit. View > Headings writes the
+//   headings flag of the sheet view (`setShowHeadings`).
 // - A row's shortcut is a key chord (`Mod+Z`), not a catalog key of fixed text, so the bar shows
 //   it for the platform (`menuShortcutText`): Command where the Command key is the shortcut
 //   modifier, Control elsewhere. A
@@ -121,7 +122,13 @@ export const CHROME_MENUS: readonly ChromeMenu[] = [
     labelKey: 'menu.view',
     // Zoom out shows no chord: on a selection of whole rows or columns, Control or Command
     // and - deletes them (`grid-keys.ts`), so the row would name a key that can delete cells.
-    entries: [item('view.zoomIn', 'Mod+='), item('view.zoomOut'), item('view.zoomReset', 'Mod+0')],
+    entries: [
+      item('view.zoomIn', 'Mod+='),
+      item('view.zoomOut'),
+      item('view.zoomReset', 'Mod+0'),
+      SEPARATOR,
+      item('view.headings'),
+    ],
   },
   {
     id: 'insert',

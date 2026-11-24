@@ -479,6 +479,7 @@ export interface XlsxEditorMenuNamespace {
   readonly ZoomIn: XlsxEditorMenuNamedRow;
   readonly ZoomOut: XlsxEditorMenuNamedRow;
   readonly ZoomReset: XlsxEditorMenuNamedRow;
+  readonly Headings: XlsxEditorMenuNamedRow;
   readonly InsertRows: XlsxEditorMenuNamedRow;
   readonly InsertColumns: XlsxEditorMenuNamedRow;
   readonly InsertSheet: XlsxEditorMenuNamedRow;

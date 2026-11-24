@@ -888,6 +888,22 @@ type WorkbookOp = {
         readonly row: number;
         readonly height: number;
     }[];
+}
+/**
+* Show or hide the row and column headings of a worksheet: `x:sheetView/@showRowColHeaders` of
+* its first sheet view (`CT_SheetView`, ECMA-376 Part 1, 18.3.1.87; default true). A hide
+* writes `0`, and a sheet with no `x:sheetViews` gets one with a sheet view of the first
+* workbook view. A show removes the attribute. A sheet whose flag already has the asked state
+* changes nothing. An unknown sheet is refused with `unknown-sheet`. A hide on a sheet with no
+* `x:sheetViews` and markup of another namespace before `x:sheetData`, such as
+* `mc:AlternateContent`, is refused with `unsupported-package`. Protection does not
+* refuse it: neither `x:sheetProtection` nor `x:workbookProtection` names a view flag
+* (`sheet-view.ts`).
+*/
+| {
+    readonly op: 'setShowHeadings';
+    readonly sheet: string;
+    readonly show: boolean;
 };
 
 // @public

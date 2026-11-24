@@ -514,6 +514,7 @@ const enJson: {
         paste: string;
         selectAll: string;
         zoomReset: string;
+        headings: string;
         addSheet: string;
         keys: {
             ctrl: string;

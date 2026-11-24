@@ -66,11 +66,13 @@ In your own layout, place `XlsxEditor.Menu` (React) or `XlsxEditorMenu` (Vue) in
 | --- | --- |
 | File | Open, Save |
 | Edit | Undo, Redo, Cut, Copy, Paste, Clear (contents, formats, all), Delete rows, Delete columns, Select all |
-| View | Zoom in, Zoom out, Zoom to 100% |
+| View | Zoom in, Zoom out, Zoom to 100%, Headings |
 | Insert | Insert rows, Insert columns, Insert sheet |
 | Format | Bold, Italic, Underline, Alignment, Wrap text, Merge cells, Merge and center, Unmerge cells, Borders, More number formats, Increase and Decrease decimals, Clear formats |
 
 A row shows the shortcut that the editor binds, for the platform: Command where the Command key is the shortcut modifier, and Control elsewhere. Zoom out shows no shortcut, because Control or Command and `-` deletes the selected rows or columns when whole rows or columns are selected. A disabled row stays focusable, and its title and accessible description give the reason. A submenu, such as Edit > Clear, is disabled with the reason of its first row when every row in it is disabled, for example in view mode. A checked row, such as Bold on a bold cell, shows a check mark. The alignment rows are one-of sets (`menuitemradio`): the check mark is on the alignment of the active cell. In view mode, Open, Copy, Select all, and the zoom rows stay enabled.
+
+View > Headings shows or hides the row and column headings of the shown sheet. The check mark shows the headings flag of the sheet view, `x:sheetView/@showRowColHeaders`. A press writes the flag in the workbook, so undo, redo, and save keep it. View mode disables the row. Sheet protection and workbook protection do not, because they do not cover this flag. A host calls `editor.setShowHeadings(show)` for the same change, and reads `snapshot().headings`.
 
 The slots `file.open`, `edit.*`, `view.*`, `sheet.add`, and `merge.*` are only in the menu bar. The preset toolbar does not show them. You can place one in a toolbar group with `Toolbar.Slot`. Paste reads the clipboard there too. Open is disabled there, because only the menu bar has a file picker.
 

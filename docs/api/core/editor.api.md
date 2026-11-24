@@ -395,6 +395,12 @@ export const CHROME_GROUPS: readonly [{
         readonly labelKey: 'menu.zoomReset';
         readonly paths: null;
         readonly kind: 'command';
+    }, {
+        readonly id: 'headings';
+        readonly labelKey: 'menu.headings';
+        readonly paths: null;
+        readonly kind: 'command';
+        readonly toggle: true;
     }];
 }, {
     readonly id: 'sheet';
@@ -908,6 +914,7 @@ export interface EditorSnapshot {
     // (undocumented)
     readonly failure: EditorFailure | null;
     readonly formatRefusal: EditRefusal | null;
+    readonly headings: boolean;
     readonly macroEnabled: boolean;
     readonly mode: EditorMode;
     readonly modeRequests: number;
@@ -1367,6 +1374,7 @@ export const MENU_NAMED_PARTS: {
     readonly ZoomIn: MenuNamedRow;
     readonly ZoomOut: MenuNamedRow;
     readonly ZoomReset: MenuNamedRow;
+    readonly Headings: MenuNamedRow;
     readonly InsertRows: MenuNamedRow;
     readonly InsertColumns: MenuNamedRow;
     readonly InsertSheet: MenuNamedRow;
@@ -2475,6 +2483,7 @@ export interface XlsxEditorInstance {
     setMode(mode: EditorMode): boolean;
     setNumberLocale(locale: NumberLocale | undefined): void;
     setRowHeight(first: number, last: number, height: number): EditResult;
+    setShowHeadings(show: boolean): EditResult;
     setZoom(zoom: number): void;
     // (undocumented)
     snapshot(): EditorSnapshot;

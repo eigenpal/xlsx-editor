@@ -45,7 +45,7 @@ import { goTo } from './go-to.ts';
 import { saveInSlices } from './editor-save.ts';
 import { LivePreviews, type SheetPreviewOptions } from './sheet-preview.ts';
 import { readError, readWorkbookForLoad, registerPickedLoad } from './load-steps.ts';
-import { sheetOpening } from './sheet-opening.ts';
+import { readHeadings, sheetOpening } from './sheet-opening.ts';
 import { CellEditing, registerEditing, type EditTarget } from './cell-editing.ts';
 import { LiveAnnouncer } from './live-announcer.ts';
 import { commitMove } from './grid-keys.ts';
@@ -187,11 +187,7 @@ export class Editor implements XlsxEditorInstance {
     registerEditing(this, this.edits);
     registerPickedLoad(this, (bytes) => this.loadBytes(bytes, true));
     this.pointer = new GridPointer({
-      painted: () => {
-        const o = this.opened;
-        const part = o ? xmlPartOf(o.pkg, o.index.sheets[this.active]?.partName) : undefined;
-        return paintedGrid(this.els, this.box, this.layout, this.view(), part);
-      },
+      painted: () => paintedGrid(this.els, this.box, this.layout, this.view(), this.part()),
       // A drag ends when the open, the shown sheet, the revision, the zoom, or the mode changes.
       state: () =>
         `${this.loadToken}:${this.active}:${this.opened?.store.revision ?? -1}:${this.view()?.zoom}:${this.state.mode}`,
@@ -252,6 +248,7 @@ export class Editor implements XlsxEditorInstance {
       selectionRef: view ? selectionSqref(view.selection) : null,
       ...this.conditionalCut.apply(sheet, o?.store, o?.index.sheets[this.active]?.partName),
       zoom: view?.zoom ?? 1,
+      headings: view?.headings ?? true,
       editing: this.edits.editing,
       editText: this.edits.draft,
       editChanged: this.edits.changed,
@@ -411,9 +408,11 @@ export class Editor implements XlsxEditorInstance {
     return view;
   }
 
+  private part = (sheet = this.active) =>
+    xmlPartOf(this.opened?.pkg ?? { parts: new Map() }, this.opened?.index.sheets[sheet]?.partName);
+
   private mergesOf(sheet: number): Merges {
-    const o = this.opened;
-    const part = xmlPartOf(o?.pkg ?? { parts: new Map() }, o?.index.sheets[sheet]?.partName);
+    const part = this.part(sheet);
     return part ? mergedRanges(part.root).ranges : [];
   }
 
@@ -504,6 +503,7 @@ export class Editor implements XlsxEditorInstance {
     const next = followSheets(o, store.package, index, this.active);
     this.opened = { ...o, pkg: store.package, index, sheets: next.sheets, views: next.views };
     this.active = next.active;
+    readHeadings(next.views, store.package, index);
     if (index.sheets[this.active]?.partName !== shown && this.active >= 0) {
       this.ensureView(this.active);
       this.scroll.restore();
@@ -574,6 +574,11 @@ export class Editor implements XlsxEditorInstance {
 
   unmergeCells(): EditResult {
     return this.edits.merge('unmerge');
+  }
+
+  setShowHeadings(show: boolean): EditResult {
+    const sheet = this.opened?.index.sheets[this.active]?.name ?? '';
+    return this.edits.run([{ op: 'setShowHeadings', sheet, show }]);
   }
 
   addSheet(name?: string): EditResult {
@@ -760,12 +765,7 @@ export class Editor implements XlsxEditorInstance {
       live: this.live,
       menus: this.events,
       // Mod+wheel and a trackpad pinch zoom (`WheelZoom`); a plain wheel scrolls.
-      onWheel: (e) => {
-        const step = this.wheelZoom.step(e);
-        if (step === undefined) return;
-        e.preventDefault();
-        if (step !== 0) this.zoomStep(step);
-      },
+      onWheel: (e) => this.wheelZoom.handle(e, (step) => this.zoomStep(step)),
     });
     const win = hostWindowOf(element);
     if (typeof win.ResizeObserver === 'function') {

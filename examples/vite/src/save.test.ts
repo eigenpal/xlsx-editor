@@ -1,5 +1,5 @@
 // The save of the demo: a failed save shows an error, and a good save after it clears it; the
-// saved name gets one `-edited` end; a browser with no picker downloads the copy.
+// saved name gets one `-edited` end, and a name that the user gave is the file name; a browser with no picker downloads the copy.
 
 import { describe, expect, spyOn, test } from 'bun:test';
 import {
@@ -9,6 +9,7 @@ import {
   SAVE_READY,
   SAVE_REPEAT_MS,
   savedName,
+  saveFileName,
   savedNoticeStays,
   saveRefused,
   saveRepeatGuard,
@@ -92,6 +93,12 @@ describe('the save of the demo', () => {
     expect(savedName('book-edited.xlsx', '.xlsx')).toBe('book-edited.xlsx');
     expect(savedName('tmpl.xltx', '.xltx')).toBe('tmpl-edited.xltx');
     expect(savedName('', '.xlsx')).toBe('workbook-edited.xlsx');
+  });
+
+  test('a name that the user gave is the file name, with the extension of the kind', () => {
+    expect(saveFileName('book.xlsx', null, '.xlsx')).toBe('book-edited.xlsx');
+    expect(saveFileName('book.xlsx', 'Budget 2026', '.xlsx')).toBe('Budget 2026.xlsx');
+    expect(saveFileName('tmpl.xltx', 'Plan', '.xltx')).toBe('Plan.xltx');
   });
 
   test('the "Saved" notice stays until the revision moves past the saved one', () => {

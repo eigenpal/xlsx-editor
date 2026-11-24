@@ -4,7 +4,9 @@
 // and downloads the saved copy. The shell is the React demo's (examples/vite/src/demo.css): the
 // top bar with the brand lockup, the React | Vue switcher, the name of the open workbook with
 // its muted extension, the editor's menu bar, Show all headings, View only, the theme toggle, Open a file, and Save;
-// then the toolbar, and the formula bar, grid, and footer in one card. The demo's own text is
+// then the toolbar, and the formula bar, grid, and footer in one card. The workbook name is a
+// text field, as in the React demo: a click edits it, File > Rename workbook focuses it, and
+// the download takes the name that the user gave. The demo's own text is
 // English and stays out of `packages/i18n` (AGENTS.md, "i18n").
 //
 // The open, headings, and save logic is in `session.ts`, as the React demo does it: an open
@@ -41,7 +43,12 @@ import { SHOW_ADAPTER_SWITCHER } from '../../vite/src/adapters.ts';
 import { downloadBlob } from '../../vite/src/download.ts';
 import { chromeLocale } from '../../vite/src/chrome-locale.ts';
 import { initialTheme, rememberTheme, type Theme } from '../../vite/src/theme.ts';
-import { shownName } from '../../vite/src/workbook-names.ts';
+import {
+  NAME_FIELD_LABEL,
+  RENAME_ROW_LABEL,
+  shownExtension,
+  shownName,
+} from '../../vite/src/workbook-names.ts';
 import { SAMPLE_URL } from '../../vite/src/workbooks.ts';
 import AdapterSwitcher from './AdapterSwitcher.vue';
 import BrandLogo from './BrandLogo.vue';
@@ -52,8 +59,12 @@ import { DemoSession, initialSessionState } from './session.ts';
 const editor = useTemplateRef<XlsxEditorRef>('editor');
 // The file input of Open a file, which File > Open of the menu bar also opens.
 const openInput = useTemplateRef<HTMLInputElement>('openInput');
+// The workbook name field in the top bar, which File > Rename workbook focuses.
+const nameField = useTemplateRef<HTMLInputElement>('nameField');
 // The status of the editor, so the grid shows idle until a workbook is ready.
 const status = shallowRef<EditorSnapshot['status']>('empty');
+// The package kind of the open workbook, for the extension that Save writes.
+const kind = shallowRef<EditorSnapshot['workbookKind']>(null);
 const viewOnly = shallowRef(false);
 // The shell's light or dark theme, as in the React demo: `?theme=`, else the theme picked
 // before, else light. A pick is kept for the next visit.
@@ -82,6 +93,46 @@ const session = new DemoSession(
 const state = session.state;
 // The name of the open workbook for the top bar, or null before one is ready.
 const shown = computed(() => (state.label === null ? null : shownName(state.label)));
+// The name in the field: the name that the user gave, else the name of the file.
+const name = computed(() => state.chosen ?? shown.value?.name ?? '');
+// The extension after the name: the one that Save writes for the package kind.
+const ext = computed(() => (shown.value ? shownExtension(shown.value, kind.value) : ''));
+// The text in the field during an edit, or null when no edit runs.
+const draft = shallowRef<string | null>(null);
+// Set by Escape, so the blur that follows keeps the name before the edit.
+let cancelRename = false;
+
+/** Ends an edit of the name: keeps the typed name, unless Escape ended the edit. */
+function commitName() {
+  const typed = draft.value;
+  draft.value = null;
+  if (cancelRename || typed === null) {
+    cancelRename = false;
+    return;
+  }
+  session.rename(typed);
+}
+
+/** Enter keeps the typed name, and Escape puts back the name before the edit. */
+function onNameKey(e: KeyboardEvent) {
+  if (e.isComposing || (e.key !== 'Enter' && e.key !== 'Escape')) return;
+  e.preventDefault();
+  cancelRename = e.key === 'Escape';
+  (e.currentTarget as HTMLInputElement).blur();
+  editor.value?.focus();
+}
+
+/** File > Rename workbook: focuses the name field and selects the name. */
+function startRename() {
+  nameField.value?.focus();
+  nameField.value?.select();
+}
+
+/** Keeps the status and the package kind of the editor. */
+function onChange(s: EditorSnapshot) {
+  status.value = s.status;
+  kind.value = s.workbookKind;
+}
 
 function pick(event: Event) {
   const input = event.target as HTMLInputElement;
@@ -135,7 +186,7 @@ void session.openSample(async () => {
     :color-mode="theme"
     :locale="locale"
     @ready="attached"
-    @change="(s: EditorSnapshot) => (status = s.status)"
+    @change="onChange"
   >
     <!-- The page has its own landmarks, such as the top bar's banner, so the viewport renders
          no region of its own. -->
@@ -144,21 +195,48 @@ void session.openSample(async () => {
         <BrandLogo />
         <AdapterSwitcher v-if="SHOW_ADAPTER_SWITCHER" current="vue" :theme="theme" />
         <span class="demo-topbar__divider" />
+        <!-- The name is a text field: a click edits it, Enter and a move of the focus away keep
+             the typed name, and Escape puts back the name before the edit. -->
         <div class="demo-file">
           <template v-if="shown">
-            <span class="demo-file__name" :title="shown.name + shown.ext">{{ shown.name }}</span>
-            <span v-if="shown.ext" class="demo-file__ext">{{ shown.ext }}</span>
+            <input
+              ref="nameField"
+              class="demo-file__name"
+              :aria-label="NAME_FIELD_LABEL"
+              :title="name + ext"
+              spellcheck="false"
+              autocomplete="off"
+              maxlength="64"
+              :value="draft ?? name"
+              @focus="draft = name"
+              @input="draft = ($event.target as HTMLInputElement).value"
+              @blur="commitName"
+              @keydown="onNameKey"
+            />
+            <span v-if="ext" class="demo-file__ext">{{ ext }}</span>
           </template>
         </div>
         <!-- The menu bar after the name, as in the React demo: File > Open runs the demo's own
-             Open, and File > Save its save. -->
+             Open, File > Save its save, and File > Rename workbook focuses the name field. -->
         <XlsxEditorMenu
           class-name="demo-menubar"
           :opening="state.opening || state.switching"
           :on-open="() => openInput?.click()"
           :on-save="toolbarSave"
           :on-save-start="toolbarSaveStart"
-        />
+        >
+          <XlsxEditorMenu.File>
+            <XlsxEditorMenu.Separator />
+            <XlsxEditorMenu.Row
+              :label="RENAME_ROW_LABEL"
+              :disabled="state.label === null"
+              disabled-reason="No workbook is open."
+              @select="startRename"
+            >
+              <template #icon><Icon name="text_fields" /></template>
+            </XlsxEditorMenu.Row>
+          </XlsxEditorMenu.File>
+        </XlsxEditorMenu>
         <div class="demo-topbar__actions">
           <span class="demo-busy" role="status">{{
             state.switching

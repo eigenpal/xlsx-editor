@@ -27,3 +27,35 @@ export function shownName(label: string): ShownName {
   if (!ext || ext.index === 0) return { name: shown, ext: '' };
   return { name: shown.slice(0, ext.index), ext: ext[0].toLowerCase() };
 }
+
+/**
+ * The extension after the name in the top bar: the extension that Save writes for the package
+ * `kind`, else, before the kind is known, the file's own `.xlsx` or `.xltx`, else none.
+ */
+export function shownExtension(shown: ShownName, kind: 'workbook' | 'template' | null): string {
+  if (kind === 'template') return '.xltx';
+  return kind === 'workbook' ? '.xlsx' : shown.ext;
+}
+
+/** The name of a workbook whose name the user cleared, when it had no name before. */
+export const UNTITLED = 'Untitled workbook';
+
+/** The accessible name of the workbook name field in the top bar. */
+export const NAME_FIELD_LABEL = 'Workbook name';
+
+/** The label of the File menu row that starts an edit of the workbook name. */
+export const RENAME_ROW_LABEL = 'Rename workbook';
+
+/**
+ * The workbook name after an edit in the top bar, with no extension. The name loses control
+ * characters, bidirectional format controls, the spaces at its ends, and an `.xlsx` or `.xltx`
+ * extension that the user typed, because the extension shows apart. An empty name keeps the
+ * name `before`, or with no name before, takes the untitled name.
+ */
+export function renamedTo(typed: string, before: string): string {
+  const name = displayName(typed)
+    .trim()
+    .replace(/\.(xlsx|xltx)$/i, '')
+    .trimEnd();
+  return name || before.trim() || UNTITLED;
+}

@@ -7,7 +7,9 @@
 // option. A pill switches the editor to view mode. The page shell, its top bar, and its light and
 // dark theme follow the PPTX Editor and DOCX Editor demos (`demo.css`): the brand lockup, the React
 // | Vue switcher, the name of the open workbook with its muted extension, the menu bar, then the
-// actions. The demo's own text is English and stays out of `packages/i18n` (AGENTS.md, "i18n").
+// actions. The name is a text field, as the deck name of the PPTX Editor demo: a click edits it,
+// and File > Rename workbook focuses it. Save suggests the name that the user gave. The demo's
+// own text is English and stays out of `packages/i18n` (AGENTS.md, "i18n").
 //
 // The demo reads each file before the editor gets it, so a file that does not read leaves the
 // open workbook, its name, and its flags as they were. It opens a file with
@@ -39,11 +41,12 @@ import { readForOpen, whyNotOpen } from './open-check.ts';
 import { runInTasks } from './steps-in-tasks.ts';
 import { SAMPLE } from './sample.ts';
 import { SAMPLE_URL } from './workbooks.ts';
-import { shownName, titleOf } from './workbook-names.ts';
+import { RENAME_ROW_LABEL, titleOf } from './workbook-names.ts';
+import { WorkbookName } from './WorkbookName.tsx';
 import {
   keptSaveHolds,
   saveFile,
-  savedName,
+  saveFileName,
   savedNoticeStays as messageStays,
   savePicker,
   saveRepeatGuard,
@@ -109,6 +112,8 @@ interface ReadySave {
   /** The number of the load that the bytes belong to. */
   readonly loadAt: number;
   readonly label: string;
+  /** The name that the user gave the workbook in the top bar, or null. */
+  readonly chosen: string | null;
   readonly kind: WorkbookKind | null | undefined;
 }
 
@@ -144,6 +149,9 @@ export function App() {
   // The workbook that the top bar names: none until a workbook is ready, so a sample that does
   // not download is not named.
   const [name, setName] = useState<string | null>(null);
+  // The name that the user gave the open workbook in the top bar, with no extension, or null.
+  // Each open starts with none.
+  const [chosen, setChosen] = useState<string | null>(null);
   // One message at a time: a new message of either kind replaces the one before it.
   const [message, setMessage] = useState<{ text: string; kind: 'notice' | 'error' } | null>(null);
   // Show the row and column headings of every sheet, also in a file that hides them, so whole
@@ -166,6 +174,9 @@ export function App() {
   // The name and heading flags of the workbook that the editor shows.
   // None until a workbook is ready.
   const nameNow = useRef<string | null>(null);
+  const chosenNow = useRef<string | null>(null);
+  // The workbook name field in the top bar, which File > Rename workbook focuses.
+  const nameField = useRef<HTMLInputElement>(null);
   const flags = useRef<HeadingFlags>(new Map());
   // The opens from the end of their download or file read to the end of their load, and the
   // headings switches during their save and rewrite.
@@ -315,7 +326,7 @@ export function App() {
       return (
         !hasUnsavedEdits() ||
         window.confirm(
-          `Open ${titleOf(label)}? The edits to ${titleOf(nameNow.current ?? SAMPLE)} are lost unless you saved them to a file.`
+          `Open ${titleOf(label)}? The edits to ${titleOf(chosenNow.current ?? nameNow.current ?? SAMPLE)} are lost unless you saved them to a file.`
         ) ||
         keepEdits()
       );
@@ -403,6 +414,8 @@ export function App() {
       flags.current = opened;
       nameNow.current = label;
       setName(label);
+      chosenNow.current = null;
+      setChosen(null);
       markClean(result.revision);
       // A newer pick can have its own message, such as a download that failed.
       if (!newest || pick !== picks.current) return;
@@ -616,11 +629,15 @@ export function App() {
     }
   };
 
-  /** The options of the file dialog for the workbook `label`. */
-  const saveOptions = (label: string, kind: WorkbookKind | null | undefined) => {
+  /** The options of the file dialog for the workbook `label`, or the name that the user gave. */
+  const saveOptions = (
+    label: string,
+    chosenName: string | null,
+    kind: WorkbookKind | null | undefined
+  ) => {
     const file = KIND_FILE[kind ?? 'workbook'];
     return {
-      suggestedName: savedName(label, file.ext),
+      suggestedName: saveFileName(label, chosenName, file.ext),
       types: [{ description: file.label, accept: { [file.type]: [file.ext] } }],
     };
   };
@@ -643,7 +660,7 @@ export function App() {
     const write = async () => {
       // Inside the guard: a dropped repeat keeps the message of the save before it.
       clearMessages();
-      const options = saveOptions(save.label, save.kind);
+      const options = saveOptions(save.label, save.chosen, save.kind);
       const outcome = await saveFile(picker, save.bytes, options, hasUnsavedEdits());
       if (outcome.late) readySave.current = save;
       wroteFile.current = outcome.written;
@@ -698,7 +715,8 @@ export function App() {
       return;
     }
     const kind = snapshot.workbookKind;
-    await writeSave({ bytes, revision: result.revision, loadAt, label, kind });
+    const chosenName = chosenNow.current;
+    await writeSave({ bytes, revision: result.revision, loadAt, label, chosen: chosenName, kind });
   };
 
   /**
@@ -800,16 +818,40 @@ export function App() {
           <BrandLogo />
           {SHOW_ADAPTER_SWITCHER ? <AdapterSwitcher current="react" theme={theme} /> : null}
           <span className="demo-topbar__divider" />
-          <WorkbookName label={name} />
+          <WorkbookName
+            label={name}
+            chosen={chosen}
+            field={nameField}
+            onRename={(next) => {
+              chosenNow.current = next;
+              setChosen(next);
+            }}
+            onDone={() => editor.current?.focus()}
+          />
           {/* The menu bar after the name, as the family demos place theirs. File > Open runs the
-              demo's own Open, which asks first over unsaved edits, and File > Save its save. */}
+              demo's own Open, which asks first over unsaved edits, and File > Save its save.
+              File > Rename workbook focuses the name field, as in the PPTX Editor demo. */}
           <XlsxEditor.Menu
             className="demo-menubar"
             opening={openingShown}
             onOpen={() => openInput.current?.click()}
             onSaveStart={onToolbarSaveStart}
             onSave={(bytes, saved) => void saveOnce(() => onSave(bytes, saved))}
-          />
+          >
+            <XlsxEditor.Menu.File>
+              <XlsxEditor.Menu.Separator />
+              <XlsxEditor.Menu.Row
+                label={RENAME_ROW_LABEL}
+                icon={<Icon name="text_fields" />}
+                disabled={name === null}
+                disabledReason="No workbook is open."
+                onSelect={() => {
+                  nameField.current?.focus();
+                  nameField.current?.select();
+                }}
+              />
+            </XlsxEditor.Menu.File>
+          </XlsxEditor.Menu>
           <div className="demo-topbar__actions">
             <span className="demo-busy" role="status">
               {busyText}
@@ -920,23 +962,6 @@ export function App() {
 }
 
 const statusOf = (snapshot: EditorSnapshot) => snapshot.status;
-
-/**
- * The name of the open workbook, with its extension muted, as the family demos show a file. With
- * no workbook ready, the place stays empty.
- */
-function WorkbookName({ label }: { label: string | null }) {
-  if (label === null) return <div className="demo-file" />;
-  const shown = shownName(label);
-  return (
-    <div className="demo-file">
-      <span className="demo-file__name" title={shown.name + shown.ext}>
-        {shown.name}
-      </span>
-      {shown.ext ? <span className="demo-file__ext">{shown.ext}</span> : null}
-    </div>
-  );
-}
 
 /** The formula bar, the grid, and the footer with the sheet tabs and the zoom, in one card. */
 function Workbench() {

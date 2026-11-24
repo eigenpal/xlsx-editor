@@ -52,6 +52,14 @@ export const savedName = (name: string, ext: string): string =>
   `${name.replace(/\.(xlsx|xltx)$/i, '').replace(/-edited$/i, '') || 'workbook'}-edited${ext}`;
 
 /**
+ * The suggested file name of a save. A name that the user gave the workbook in the top bar
+ * (`chosen`) is the file name, with `ext`. With no such name, it is `savedName`, so a save does
+ * not suggest the name of the opened file.
+ */
+export const saveFileName = (label: string, chosen: string | null, ext: string): string =>
+  chosen === null ? savedName(label, ext) : `${chosen}${ext}`;
+
+/**
  * The notice of a started download. The page cannot confirm that the file arrives, so it names
  * the question before the page closes only when `unsaved` edits make the page ask.
  */

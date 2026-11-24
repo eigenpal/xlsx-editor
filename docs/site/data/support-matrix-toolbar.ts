@@ -20,6 +20,9 @@ export const TOOLBAR_FEATURES: readonly SupportFeature[] = [
     evidence: {
       tests: [
         `${CORE}/editor/__tests__/toolbar-arrange.test.ts`,
+        `${CORE}/editor/__tests__/toolbar-fit.test.ts`,
+        `packages/react/src/__tests__/toolbar-panel.test.tsx`,
+        `packages/vue/test/toolbar-panel.test.ts`,
         `packages/react/src/__tests__/toolbar-customize.test.tsx`,
         `packages/vue/test/toolbar-customize.test.ts`,
       ],
@@ -31,12 +34,14 @@ export const TOOLBAR_FEATURES: readonly SupportFeature[] = [
     category: 'viewer',
     status: 'supported',
     notes:
-      '`Toolbar.Action` is a host button with the toolbar style and the mousedown guard. A disabled action stays focusable and gives its reason. In a collapsed group, it is a row of the overflow panel. `Toolbar.Separator` draws a rule.',
+      '`Toolbar.Action` is a host button with the toolbar style and the mousedown guard. A disabled action stays focusable and gives its reason. In a collapsed group, it is a row of the overflow panel. Outside the toolbar, inside the viewport, it keeps the button states. `Icon` draws a chrome icon or host path data for it. `Toolbar.Separator` draws a rule.',
     docsLink: '/docs/customization/toolbar',
     evidence: {
       tests: [
         `packages/react/src/__tests__/toolbar-customize.test.tsx`,
         `packages/vue/test/toolbar-customize.test.ts`,
+        `packages/react/src/__tests__/icon.test.tsx`,
+        `packages/vue/test/icon.test.ts`,
       ],
     },
   },
@@ -46,7 +51,7 @@ export const TOOLBAR_FEATURES: readonly SupportFeature[] = [
     category: 'viewer',
     status: 'supported',
     notes:
-      'Groups leave the bar in priority order, one whole group at a time. A host group without a `priority` leaves first. A `pinned` group stays at every width. `overflowContent` sets what a group or a slot shows in the overflow panel.',
+      'Groups leave the bar in priority order, one whole group at a time. Before that, the font family and number format fields move to the overflow panel, and come back when they fit. A host group without a `priority` leaves first. A `pinned` group stays at every width. `overflowContent` sets what a group or a slot shows in the overflow panel.',
     docsLink: '/docs/customization/toolbar',
     evidence: {
       tests: [

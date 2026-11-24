@@ -32,7 +32,7 @@ const TIPS = [
   'Insert and delete rows and columns from the toolbar.',
   'Undo and redo each edit from the toolbar or the keyboard.',
   'Open the other sheets with the tabs under the grid.',
-  'Select Save at the top of the page, or in the toolbar, to write the edited workbook to a file. If your browser cannot ask where to save, Save downloads the file.',
+  'Save the workbook to write your edits to a file. The file keeps the parts that the editor does not change.',
   'Formulas show stored results. After an edit, a notice says that they can be out of date.',
 ];
 

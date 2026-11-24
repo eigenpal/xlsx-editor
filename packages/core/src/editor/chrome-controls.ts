@@ -66,6 +66,11 @@ export interface ChromeControl<Id extends string = string> {
    * Editor's flag of the same name. The menu bar places it.
    */
   readonly defaultToolbar?: false;
+  /**
+   * A wide field. In a bar that is too short, it leaves for the "More" panel before its group
+   * does, and the rest of its group stays in the bar.
+   */
+  readonly wide?: true;
 }
 
 /**
@@ -119,6 +124,7 @@ export const CHROME_GROUPS = [
         labelKey: 'font.selectAriaLabel',
         paths: null,
         kind: 'value',
+        wide: true,
       },
       { id: 'size', shape: 'dropdown', labelKey: 'fontSize.label', paths: null, kind: 'value' },
       {
@@ -243,6 +249,7 @@ export const CHROME_GROUPS = [
         labelKey: 'numberFormat.label',
         paths: null,
         kind: 'value',
+        wide: true,
       },
       {
         id: 'custom',

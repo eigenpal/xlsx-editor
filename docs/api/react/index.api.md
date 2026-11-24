@@ -10,6 +10,7 @@ import { ChromeDisabledReason } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroup } from '@xlsx-editor.dev/core/editor';
 import { ChromeGroupId } from '@xlsx-editor.dev/core/editor';
 import { ChromeHint } from '@xlsx-editor.dev/core/editor';
+import { ChromeIconName } from '@xlsx-editor.dev/core/editor';
 import { ChromeMenuEntry } from '@xlsx-editor.dev/core/editor';
 import { ChromeMenuId } from '@xlsx-editor.dev/core/editor';
 import { ChromeMenuItemEntry } from '@xlsx-editor.dev/core/editor';
@@ -94,6 +95,7 @@ import { SheetCommand } from '@xlsx-editor.dev/core/editor';
 import { SheetCommandInput } from '@xlsx-editor.dev/core/editor';
 import { SheetCommandState } from '@xlsx-editor.dev/core/editor';
 import { sheetCommandState } from '@xlsx-editor.dev/core/editor';
+import { SheetPreviewOptions } from '@xlsx-editor.dev/core/editor';
 import { SheetProtection } from '@xlsx-editor.dev/core/editor';
 import { TFunction } from '@xlsx-editor.dev/i18n';
 import { ToolbarCommandState } from '@xlsx-editor.dev/core/editor';
@@ -116,6 +118,8 @@ export { ChromeGroup }
 export { ChromeGroupId }
 
 export { ChromeHint }
+
+export { ChromeIconName }
 
 export { ChromeMenuEntry }
 
@@ -222,6 +226,16 @@ export { GridRange }
 export { GridSelection }
 
 // @public
+export function Icon(input: IconProps): react.JSX.Element;
+
+// @public
+export interface IconProps {
+    readonly className?: string;
+    readonly name?: ChromeIconName;
+    readonly paths?: readonly string[];
+}
+
+// @public
 export function LocaleProvider(input: LocaleProviderProps): ReactElement;
 
 // @public
@@ -312,6 +326,19 @@ export { SheetCommandInput }
 export { SheetCommandState }
 
 export { sheetCommandState }
+
+// @public
+export function SheetPreview(input: SheetPreviewProps): react.JSX.Element;
+
+export { SheetPreviewOptions }
+
+// @public
+export interface SheetPreviewProps {
+    readonly className?: string;
+    readonly label?: string;
+    readonly sheet?: number;
+    readonly zoom?: number;
+}
 
 export { SheetProtection }
 
@@ -803,6 +830,7 @@ export interface XlsxEditorNamespace extends ForwardRefExoticComponent<XlsxEdito
     readonly Menu: typeof XlsxEditorMenu;
     // (undocumented)
     readonly Root: typeof XlsxEditorRoot;
+    readonly SheetPreview: typeof SheetPreview;
     // (undocumented)
     readonly SheetTabs: typeof SheetTabs;
     // (undocumented)

@@ -121,5 +121,9 @@ export const ICON_PATHS = {
   add: ['M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z'],
 } as const satisfies Readonly<Record<string, readonly string[]>>;
 
-/** The name of an icon of the toolbar. */
+/**
+ * The name of an icon of the toolbar and the menu bar, for the adapters' `Icon` part.
+ *
+ * @public
+ */
 export type IconName = keyof typeof ICON_PATHS;

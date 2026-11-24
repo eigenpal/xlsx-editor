@@ -36,7 +36,7 @@ import {
 import { StatusMessage, ZoomControl } from './chrome.tsx';
 import { FormulaBar } from './FormulaBar.tsx';
 import { SheetTabs } from './SheetTabs.tsx';
-import { hasListener, useEditorState } from './context.ts';
+import { hasListener } from './context.ts';
 import { XlsxEditorToolbar } from './toolbar/Toolbar.tsx';
 import { XlsxEditorMenu, type XlsxEditorMenuProps } from './menu/Menu.tsx';
 import { XlsxEditorContextMenu, type XlsxEditorContextMenuProps } from './menu/ContextMenu.tsx';
@@ -96,8 +96,6 @@ const xlsxEditorProps = {
  */
 export type XlsxEditorProps = ExtractPublicPropTypes<typeof xlsxEditorProps>;
 
-const statusOf = (snapshot: EditorSnapshot) => snapshot.status;
-
 /** The chrome and the grid, inside the viewport. */
 const Body = defineComponent({
   name: 'XlsxEditorBody',
@@ -121,8 +119,6 @@ const Body = defineComponent({
     },
   },
   setup(props) {
-    // The status alone: the body renders again only when it changes, not on each key of an edit.
-    const status = useEditorState(statusOf);
     const dir = useChromeDir();
     return () => [
       props.menu !== false
@@ -140,7 +136,7 @@ const Body = defineComponent({
       }),
       h(FormulaBar),
       h(StatusMessage),
-      h(XlsxEditorContent, status.value === 'ready' ? {} : { className: 'xlsx-canvas-idle' }),
+      h(XlsxEditorContent),
       h('div', { class: 'xlsx-footer', dir: dir.value }, [h(SheetTabs), h(ZoomControl)]),
       props.contextMenu !== false
         ? h(XlsxEditorContextMenu, typeof props.contextMenu === 'object' ? props.contextMenu : {})

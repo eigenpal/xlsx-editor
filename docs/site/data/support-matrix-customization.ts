@@ -10,6 +10,22 @@ const CORE = 'packages/core/src';
 
 export const CUSTOMIZATION_FEATURES: readonly SupportFeature[] = [
   {
+    id: 'viewer.sheet-preview',
+    name: 'Sheet preview for host surfaces',
+    category: 'viewer',
+    status: 'supported',
+    notes:
+      'The `SheetPreview` part and `editor.renderPreview` paint the top-left window of a worksheet, with no headings and no selection. The preview paints again after an edit, a sheet change, or a size change. It shows the stored values and evaluates no formula. A chart sheet gives no preview.',
+    docsLink: '/docs/customization/layout',
+    evidence: {
+      tests: [
+        `${CORE}/editor/__tests__/sheet-preview.test.ts`,
+        'packages/react/src/__tests__/sheet-preview.test.tsx',
+        'packages/vue/test/sheet-preview.test.ts',
+      ],
+    },
+  },
+  {
     id: 'viewer.chrome-theme',
     name: 'Chrome color mode and theme scope',
     category: 'viewer',

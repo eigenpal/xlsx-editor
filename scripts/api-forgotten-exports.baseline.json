@@ -154,7 +154,9 @@
     "index": [
       "XlsxEditor",
       "formulaBarProps",
+      "iconProps",
       "localeProviderProps",
+      "sheetPreviewProps",
       "sheetTabsProps",
       "statusMessageProps",
       "xlsxEditorContentProps",

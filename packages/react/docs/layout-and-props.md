@@ -20,9 +20,22 @@ While a workbook is open, it is a strip above the grid. The strip takes no room 
 
 In development, `XlsxEditor.Root` logs one warning when the layout has `XlsxEditor.Content` and no `XlsxEditor.StatusMessage`.
 
+## Sheet preview
+
+`XlsxEditor.SheetPreview` paints the top-left window of a sheet for a surface of your own, such as a card in a chat. Place it anywhere inside `XlsxEditor.Root`. It paints again after an edit, a sheet change, or a size change.
+
+| Prop | Type | Default | What |
+| --- | --- | --- | --- |
+| `sheet` | `number` | the shown sheet | The position of the sheet in `snapshot().sheets`. |
+| `zoom` | `number` | `0.6` | The scale, from 0.1 to 4. |
+| `label` | `string` | none | The accessible name. With it, the preview has the `img` role. Without it, the preview is hidden from assistive technology. |
+| `className` | `string` | none | Appended after `xlsx-sheet-preview`. Give the size here. |
+
+Without a framework, call `editor.renderPreview(element, { sheet, width, height, zoom })`. It returns `false` and changes nothing when no workbook is ready or the sheet is not a worksheet. It does not follow edits, so call it again after a `change` event.
+
 ## Named exports
 
-Each part is also a named export: `XlsxEditorRoot`, `XlsxEditorViewport`, `XlsxEditorContent`, `XlsxEditorToolbar`, `XlsxEditorToolbarSlot`, `XlsxEditorToolbarGroup`, `ToolbarAction`, `ToolbarSeparator`, `FormulaBar`, `SheetTabs`, `ZoomControl`, and `StatusMessage`. The `XlsxEditorNamespace` type describes `XlsxEditor` with its parts, and the `XlsxEditorToolbarNamespace` type describes `XlsxEditor.Toolbar` with its parts.
+Each part is also a named export: `XlsxEditorRoot`, `XlsxEditorViewport`, `XlsxEditorContent`, `XlsxEditorToolbar`, `XlsxEditorToolbarSlot`, `XlsxEditorToolbarGroup`, `ToolbarAction`, `ToolbarSeparator`, `FormulaBar`, `SheetTabs`, `SheetPreview`, `ZoomControl`, and `StatusMessage`. The `Icon` export draws a chrome icon for a control of your own. The `XlsxEditorNamespace` type describes `XlsxEditor` with its parts, and the `XlsxEditorToolbarNamespace` type describes `XlsxEditor.Toolbar` with its parts.
 
 ## Root props
 

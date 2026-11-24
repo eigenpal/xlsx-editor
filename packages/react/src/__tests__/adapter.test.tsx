@@ -388,6 +388,25 @@ describe('XlsxEditor', () => {
     expect(handle!.getEditor()!.snapshot().mode).toBe('view');
   });
 
+  test('a custom layout hides the grid until a workbook is ready, and keeps its class', async () => {
+    const view = render(
+      <XlsxEditor.Root fonts={FONTS}>
+        <XlsxEditor.StatusMessage />
+        <XlsxEditor.Content className="host-grid" />
+      </XlsxEditor.Root>
+    );
+    const grid = () => view.container.querySelector('.xlsx-canvas')!;
+    // No workbook: the status message shows alone.
+    expect(grid().className).toBe('xlsx-canvas xlsx-canvas-idle host-grid');
+    view.rerender(
+      <XlsxEditor.Root fonts={FONTS} document={workbook}>
+        <XlsxEditor.StatusMessage />
+        <XlsxEditor.Content className="host-grid" />
+      </XlsxEditor.Root>
+    );
+    await waitFor(() => expect(grid().className).toBe('xlsx-canvas host-grid'));
+  });
+
   test('in development, a layout with the grid and no StatusMessage gets one warning', async () => {
     const warnings: string[] = [];
     const warn = console.warn;

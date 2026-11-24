@@ -4,7 +4,8 @@
 // docx-editor/packages/react/src/editor/toolbar/DocxEditorToolbar.tsx at a0825f1f (EigenPal);
 // the header there explains the rules and the differences from DOCX Editor. The default
 // arrangement is derived from `defaultChromeGroups()` (`toolbarGroups`), the bar measures itself and
-// moves the groups that do not fit, in collapse order, into a "More" panel (`measureToolbar`,
+// moves the wide fields and then the groups that do not fit, in collapse order, into a "More"
+// panel (`measureToolbarFit`,
 // `observeToolbar`), the arrow keys move between its controls (`moveBarFocus`), Control or
 // Command and S runs the save (`listenSaveKey`), and the parts in its default slot change the
 // bar (`host-parts.tsx`, `named-parts.tsx`, `action.tsx`, and `arrangeToolbar` in core).
@@ -38,7 +39,10 @@ import {
   guardToolbarMousedown,
   listenSaveKey,
   markChromeDirection,
-  measureToolbar,
+  measureToolbarFit,
+  TOOLBAR_FIT_ALL,
+  trimToolbarGroup,
+  type ToolbarFit,
   moveBarFocus,
   observeToolbar,
   runToolbarCommand,
@@ -71,6 +75,13 @@ import {
   warnToolbarProblems,
   type ToolbarChildren,
 } from './host-parts.tsx';
+
+/** Whether two fits send the same groups and fields to the "More" panel. */
+function sameFit(a: ToolbarFit, b: ToolbarFit): boolean {
+  const same = (x: readonly string[], y: readonly string[]) =>
+    x.length === y.length && x.every((id, i) => id === y[i]);
+  return same(a.collapsed, b.collapsed) && same(a.trimmed, b.trimmed);
+}
 
 /** The names of the parts in the problems that the toolbar prints. */
 const PART_NAMES = { slot: 'XlsxEditorToolbar.Slot', group: 'XlsxEditorToolbar.Group' } as const;
@@ -359,24 +370,23 @@ const XlsxEditorToolbarRoot = defineComponent({
       flush: 'post',
     });
     const widths = new Map<string, number>();
-    // The ids of the groups in the "More" panel, in bar order (`toolbarCollapse`).
-    const collapsed = shallowRef<readonly string[]>([]);
+    // The groups in the "More" panel, and the groups that send only their wide fields there, in
+    // bar order (`toolbarFit`).
+    const fit = shallowRef<ToolbarFit>(TOOLBAR_FIT_ALL);
     // A new locale or a new set of groups changes the widths: measure every group again.
     let measuredFor: { t: TFunction; groups: readonly ArrangedToolbarGroup[] } | null = null;
     watch(
-      [() => props.overflow && props.preset, groups, collapsed, translator, bar, hasFixed],
+      [() => props.overflow && props.preset, groups, fit, translator, bar, hasFixed],
       ([measuring, all, , tr, el], _old, onCleanup) => {
         if (measuredFor?.t !== tr || measuredFor.groups !== all) widths.clear();
         measuredFor = { t: tr, groups: all };
         if (!el || !measuring) {
-          if (collapsed.value.length > 0) collapsed.value = [];
+          if (fit.value !== TOOLBAR_FIT_ALL) fit.value = TOOLBAR_FIT_ALL;
           return;
         }
         const measure = (): void => {
-          const next = measureToolbar(el, all, widths);
-          const now = collapsed.value;
-          if (now.length !== next.length || now.some((id, i) => id !== next[i]))
-            collapsed.value = next;
+          const next = measureToolbarFit(el, all, widths, fit.value.trimmed);
+          if (!sameFit(fit.value, next)) fit.value = next;
         };
         measure();
         // The bar and each shown group: a group grows when its fonts load or its value changes.
@@ -402,11 +412,16 @@ const XlsxEditorToolbarRoot = defineComponent({
         if (next.key !== arranged.value.key) arranged.value = next;
         const all = next.groups;
         const sets: SlotSets = { replaced: next.replaced, customized: next.customized };
-        const out = new Set(collapsed.value);
-        const rest = all.filter((g) => out.has(g.id));
+        const out = new Set(fit.value.collapsed);
+        const short = new Set(fit.value.trimmed);
+        // A trimmed group shows in the bar without its wide fields, and they show in the panel
+        // under the group's heading, in bar order with the groups that left whole.
+        const rest = all
+          .filter((g) => out.has(g.id) || short.has(g.id))
+          .map((g) => (short.has(g.id) ? trimToolbarGroup(g, 'panel') : g));
         const items: unknown[] = all
           .filter((g) => !out.has(g.id))
-          .map((g) => barGroup(t, g, parts, sets));
+          .map((g) => barGroup(t, short.has(g.id) ? trimToolbarGroup(g, 'bar') : g, parts, sets));
         if (rest.length > 0)
           items.push(<MorePanel key="more" groups={rest} parts={parts} sets={sets} />);
         // Loose children, and the content of a `Toolbar.Slot` that names no slot, never

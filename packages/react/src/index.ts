@@ -16,6 +16,7 @@ import { XlsxEditorContent, XlsxEditorRoot, XlsxEditorViewport } from './XlsxEdi
 import { StatusMessage, ZoomControl } from './chrome.tsx';
 import { FormulaBar } from './FormulaBar.tsx';
 import { SheetTabs } from './SheetTabs.tsx';
+import { SheetPreview } from './SheetPreview.tsx';
 import { XlsxEditorToolbar } from './toolbar/Toolbar.tsx';
 import { XlsxEditorMenu } from './menu/Menu.tsx';
 import { XlsxEditorContextMenu } from './menu/ContextMenu.tsx';
@@ -38,6 +39,8 @@ export interface XlsxEditorNamespace extends ForwardRefExoticComponent<
   readonly ContextMenu: typeof XlsxEditorContextMenu;
   readonly FormulaBar: typeof FormulaBar;
   readonly SheetTabs: typeof SheetTabs;
+  /** A preview of a sheet for a host surface, inside `Root`. */
+  readonly SheetPreview: typeof SheetPreview;
   readonly ZoomControl: typeof ZoomControl;
   readonly StatusMessage: typeof StatusMessage;
 }
@@ -52,6 +55,7 @@ export const XlsxEditor: XlsxEditorNamespace = Object.assign(XlsxEditorDefault, 
   ContextMenu: XlsxEditorContextMenu,
   FormulaBar,
   SheetTabs,
+  SheetPreview,
   ZoomControl,
   StatusMessage,
 });
@@ -86,6 +90,8 @@ export type {
   ToolbarSlotPartComponent,
   ToolbarSlotPartProps,
 } from './toolbar/named-parts.tsx';
+export { Icon, type IconProps } from './Icon.tsx';
+export { SheetPreview, type SheetPreviewProps } from './SheetPreview.tsx';
 export {
   StatusMessage,
   type StatusMessageProps,
@@ -197,6 +203,7 @@ export type {
   ChromeGroup,
   ChromeGroupId,
   ChromeHint,
+  ChromeIconName,
   ChromeMenuEntry,
   ChromeMenuId,
   ChromeMenuItemEntry,
@@ -244,6 +251,7 @@ export type {
   SheetCommand,
   SheetCommandInput,
   SheetCommandState,
+  SheetPreviewOptions,
   ToolbarCommandState,
   ToolbarHintKey,
   WorkbookKind,

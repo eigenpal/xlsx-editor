@@ -1155,33 +1155,53 @@
     color 0.15s ease,
     transform 0.16s cubic-bezier(0.23, 1, 0.32, 1);
 }
+/* The preview of a sheet (`SheetPreview`): the host gives the size, and the canvas fills the
+ * top-left of the box. Outside the editor scope, so a host card can hold it. */
+.xlsx-sheet-preview {
+  display: block;
+  overflow: hidden;
+}
+.xlsx-sheet-preview canvas {
+  display: block;
+}
+/* The host's own icons (`Icon`): the size and color of the toolbar icons. */
+.xlsx-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: currentColor;
+}
 .xlsx-toolbar svg {
   width: 18px;
   height: 18px;
   flex: 0 0 auto;
   fill: currentColor;
 }
-.xlsx-toolbar button:hover:not(:disabled):not([aria-disabled='true']) {
+/* The states of a toolbar control also apply to a `Toolbar.Action` that a host puts outside the
+ * toolbar, such as in a panel header: each state rule also names `.xlsx-toolbar-button`, and the
+ * rules that named `.xlsx-toolbar` first name `.xlsx-editor`, which has the same weight. */
+.xlsx-toolbar button:hover:not(:disabled):not([aria-disabled='true']),
+.xlsx-toolbar-button:hover:not(:disabled):not([aria-disabled='true']) {
   background: var(--doc-bg-hover);
 }
 /* A bar control's glyph is muted at rest and takes the text color on hover. A panel row keeps
  * its own color, so the active row stays marked. `:where` keeps this rule below a pressed
  * toggle's hover rule. */
-.xlsx-toolbar
+.xlsx-editor
   :where(.xlsx-toolbar-button, .xlsx-toolbar-select, .xlsx-toolbar-color):hover:not(:disabled):not(
     [aria-disabled='true']
   ) {
   color: var(--doc-text);
 }
-.xlsx-toolbar
+.xlsx-editor
   :is(.xlsx-toolbar-button, .xlsx-toolbar-color):active:not(:disabled):not([aria-disabled='true']) {
   transform: scale(0.94);
 }
 @media (prefers-reduced-motion: reduce) {
-  .xlsx-toolbar :is(.xlsx-toolbar-button, .xlsx-toolbar-select, .xlsx-toolbar-color) {
+  .xlsx-editor :is(.xlsx-toolbar-button, .xlsx-toolbar-select, .xlsx-toolbar-color) {
     transition: none;
   }
-  .xlsx-toolbar
+  .xlsx-editor
     :is(.xlsx-toolbar-button, .xlsx-toolbar-color):active:not(:disabled):not(
       [aria-disabled='true']
     ) {
@@ -1189,12 +1209,14 @@
   }
 }
 .xlsx-toolbar button:focus-visible,
+.xlsx-toolbar-button:focus-visible,
 .xlsx-toolbar [role='option']:focus-visible {
   outline: 2px solid var(--doc-focus-ring);
   outline-offset: 1px;
 }
 .xlsx-toolbar button:disabled,
-.xlsx-toolbar button[aria-disabled='true'] {
+.xlsx-toolbar button[aria-disabled='true'],
+.xlsx-toolbar-button:is(:disabled, [aria-disabled='true']) {
   cursor: default;
 }
 /* Disabled controls, after the `.pptx-toolbar__button:disabled` and `.pptx-toolbar__field:disabled`
@@ -1210,11 +1232,13 @@
 }
 /* A disabled control stays focusable. The fade must not fade its focus ring, after
  * `.pptx-editor [aria-disabled='true']:focus-visible` at the same commit. */
-.xlsx-toolbar [aria-disabled='true']:focus-visible {
+.xlsx-toolbar [aria-disabled='true']:focus-visible,
+.xlsx-toolbar-button[aria-disabled='true']:focus-visible {
   opacity: 1;
   color: var(--doc-text-subtle);
 }
 .xlsx-toolbar-button[data-active],
+.xlsx-toolbar-button[data-active]:hover:not(:disabled):not([aria-disabled='true']),
 .xlsx-toolbar
   button.xlsx-toolbar-button[data-active]:hover:not(:disabled):not([aria-disabled='true']) {
   background: var(--doc-toggle-active-bg);

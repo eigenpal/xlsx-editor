@@ -273,7 +273,7 @@ Pass the parts as direct children of the toolbar or of a Fragment. The toolbar d
 
 The last part for a slot or a group wins. If a slot is in the `hidden` list, the list wins over a `Toolbar.Slot` with children. In a menu group, such as Clear, the replaced slot's content shows after the menu, and the menu keeps the other slots.
 
-The bar moves whole groups into the **More** panel in collapse order. The built-in groups leave from the end of the bar: `file` has the priority 10, and `history` 90. A host group with no `priority` leaves before every built-in group. A lower `priority` leaves first, and a `pinned` group stays at every width. In the panel, the content of a `Toolbar.Slot` and of a `Toolbar.Group` shows in the section of its group, or their `overflowContent` when they have it.
+When the bar is too short, it first moves its wide fields into the **More** panel: the font family field and the number format field. The rest of each group stays in the bar, and the field shows in the panel under the heading of its group. Then the bar moves whole groups into the panel in collapse order, and gives a wide field back to a group that stays when there is room. The built-in groups leave from the end of the bar: `file` has the priority 10, and `history` 90. A host group with no `priority` leaves before every built-in group. A lower `priority` leaves first, and a `pinned` group stays at every width. In the panel, the content of a `Toolbar.Slot` and of a `Toolbar.Group` shows in the section of its group, or their `overflowContent` when they have it.
 
 - `XlsxEditor.Toolbar.Action` is a button for an action of your own, with `label`, `icon`, `onSelect`, `active`, `disabled`, and `disabledReason`. A disabled action stays focusable and gives its reason. In a group in the **More** panel, it is a row with its icon and label.
 - `XlsxEditor.Toolbar.Separator` draws a rule between two controls.
@@ -350,6 +350,8 @@ In a development build, the toolbar prints a warning once for each part that can
 - An `after` that names a group that stands last because its own anchors name no group.
 
 ### Controls of your own
+
+`XlsxEditor.Toolbar.Action` also works outside the toolbar, inside `XlsxEditor.Viewport`, for example in the header of a side panel. It keeps the hover, pressed, disabled, and focus states of a toolbar button. Draw its icon with `Icon`: `<Icon name="file_download" />` for an icon of the chrome, or `<Icon paths={[...]} />` for Material Symbols path data of your own. `Icon` is decorative, so the action around it gives the name.
 
 To place controls of your own anywhere in the layout, call `useEditorCommand(slot)` inside `XlsxEditor.Root`. It returns the same state that the toolbar shows:
 

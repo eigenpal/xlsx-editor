@@ -45,7 +45,10 @@ import {
   chromeSlotId,
   guardToolbarMousedown,
   listenSaveKey,
-  measureToolbar,
+  measureToolbarFit,
+  TOOLBAR_FIT_ALL,
+  trimToolbarGroup,
+  type ToolbarFit,
   moveBarFocus,
   markChromeDirection,
   observeToolbar,
@@ -311,12 +314,13 @@ function MorePanel({
 /** The children of a toolbar with no parts. */
 const NO_PARTS: ToolbarChildren = readToolbarChildren(null);
 
-/** No group in the "More" panel. */
-const NONE: readonly string[] = [];
-
 /** Whether two lists of ids are equal. */
 const sameIds = (a: readonly string[], b: readonly string[]): boolean =>
   a.length === b.length && a.every((id, i) => id === b[i]);
+
+/** Whether two fits send the same groups and fields to the "More" panel. */
+const sameFit = (a: ToolbarFit, b: ToolbarFit): boolean =>
+  sameIds(a.collapsed, b.collapsed) && sameIds(a.trimmed, b.trimmed);
 
 /**
  * The editing toolbar: every group of the chrome registry in bar order, changed by its parts.
@@ -410,8 +414,9 @@ function XlsxEditorToolbarRoot({
     return listenSaveKey(el, () => runToolbarCommand(editor, 'file.save', undefined, host));
   }, [editor, saves, host]);
   const widths = useRef(new Map<string, number>());
-  // The ids of the groups in the "More" panel, in bar order (`toolbarCollapse`).
-  const [collapsed, setCollapsed] = useState<readonly string[]>(NONE);
+  // The groups in the "More" panel, and the groups that send only their wide fields there, in
+  // bar order (`toolbarFit`).
+  const [fit, setFit] = useState<ToolbarFit>(TOOLBAR_FIT_ALL);
 
   // Mark the bar's computed direction for the mirrored icons (`markChromeDirection`).
   useLayoutEffect(() => markChromeDirection(bar.current), [dir]);
@@ -424,30 +429,35 @@ function XlsxEditorToolbarRoot({
   useLayoutEffect(() => {
     const el = bar.current;
     if (!el || !measuring) {
-      setCollapsed(NONE);
+      setFit(TOOLBAR_FIT_ALL);
       return undefined;
     }
     const measure = () => {
-      const next = measureToolbar(el, groups, widths.current);
-      setCollapsed((current) => (sameIds(current, next) ? current : next));
+      const next = measureToolbarFit(el, groups, widths.current, fit.trimmed);
+      setFit((current) => (sameFit(current, next) ? current : next));
     };
     measure();
     // The bar and each shown group: a group grows when its fonts load or its value changes.
     return observeToolbar(el, measure);
-  }, [measuring, groups, collapsed, t, hasFixed]);
+  }, [measuring, groups, fit, t, hasFixed]);
 
   const { replaced, customized } = arrangement;
   let body: ReactNode;
   if (!preset) body = children;
   else {
-    const out = new Set(collapsed);
-    const rest = groups.filter((g) => out.has(g.id));
+    const out = new Set(fit.collapsed);
+    const short = new Set(fit.trimmed);
+    // A trimmed group shows in the bar without its wide fields, and they show in the panel
+    // under the group's heading, in bar order with the groups that left whole.
+    const rest = groups
+      .filter((g) => out.has(g.id) || short.has(g.id))
+      .map((g) => (short.has(g.id) ? trimToolbarGroup(g, 'panel') : g));
     const items: ReactNode[] = groups
       .filter((g) => !out.has(g.id))
       .map((g) => (
         <BarGroup
           key={`group:${g.id}`}
-          group={g}
+          group={short.has(g.id) ? trimToolbarGroup(g, 'bar') : g}
           parts={parts}
           replaced={replaced}
           customized={customized}

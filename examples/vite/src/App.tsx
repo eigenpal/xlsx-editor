@@ -22,7 +22,6 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import {
   XlsxEditor,
-  useEditorState,
   type EditorSnapshot,
   type SavedWorkbook,
   type XlsxEditorRef,
@@ -764,20 +763,16 @@ export function App() {
   );
 }
 
-const statusOf = (snapshot: EditorSnapshot) => snapshot.status;
-
 /**
  * The formula bar, the grid, the footer with the sheet tabs and the zoom, and the grid context
  * menu, in one card.
  */
 function Workbench() {
-  // The status alone: this renders again only when it changes, not on each key of an edit.
-  const status = useEditorState(statusOf);
   return (
     <div className="demo-canvas">
       <XlsxEditor.FormulaBar />
       <XlsxEditor.StatusMessage />
-      <XlsxEditor.Content className={status === 'ready' ? undefined : 'xlsx-canvas-idle'} />
+      <XlsxEditor.Content />
       <div className="xlsx-footer">
         <XlsxEditor.SheetTabs />
         <XlsxEditor.ZoomControl />

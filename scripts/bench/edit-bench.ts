@@ -81,7 +81,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { Window } from 'happy-dom';
-import { createXlsxEditor, flushEditor } from '../../packages/core/src/editor/xlsx-editor.ts';
+import { createXlsxEditor, flushEditor } from '../../packages/core/src/editor/create-editor.ts';
 import { names, positive, readFlags, stopOnUsageError, UsageError } from './args.ts';
 import { median, p95, WORKBOOKS, type WorkbookName } from './measure.ts';
 import { rowHeightTestRecorder } from '../../packages/core/src/layout/row-height.ts';

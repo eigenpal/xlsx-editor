@@ -59,6 +59,7 @@ import {
   modeWaitsKey,
   provideXlsxEditor,
   rootModeKey,
+  useEditorState,
   useLayoutPart,
   useTranslation,
   useXlsxEditor,
@@ -355,12 +356,20 @@ const xlsxEditorContentProps = {
 /** The props of `XlsxEditorContent`, the twin of React's `XlsxEditorContentProps`. @public */
 export type XlsxEditorContentProps = ExtractPublicPropTypes<typeof xlsxEditorContentProps>;
 
-/** The grid: attaches the editor's surface to its element. @public */
+/** Whether the editor shows a workbook, so the grid has something to show. */
+const showsWorkbook = (snapshot: EditorSnapshot): boolean => snapshot.status === 'ready';
+
+/**
+ * The grid: attaches the editor's surface to its element. While no workbook is ready (empty,
+ * loading, or failed), the grid is hidden, so a custom layout shows only `StatusMessage` in that
+ * state, as the composed editor does. @public
+ */
 export const XlsxEditorContent = defineComponent({
   name: 'XlsxEditorContent',
   props: xlsxEditorContentProps,
   setup(props) {
     const editor = useXlsxEditor();
+    const ready = useEditorState(showsWorkbook);
     // Inside a root only: the root's layout check counts the grid.
     if (inject(layoutPartsKey, null)) useLayoutPart('grids');
     const host = shallowRef<HTMLDivElement | null>(null);
@@ -388,7 +397,9 @@ export const XlsxEditorContent = defineComponent({
     return () =>
       h('div', {
         ref: host,
-        class: `xlsx-canvas${props.className ? ` ${props.className}` : ''}`,
+        class: ['xlsx-canvas', ready.value ? null : 'xlsx-canvas-idle', props.className]
+          .filter(Boolean)
+          .join(' '),
       });
   },
 });

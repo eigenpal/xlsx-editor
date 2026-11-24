@@ -153,6 +153,7 @@ bun run check:api-changeset --base origin/main
 bun run fidelity
 bun run fidelity:check-gaps
 bun run test:e2e
+bun run test:e2e:chat
 bun run test:hang:browser
 ```
 

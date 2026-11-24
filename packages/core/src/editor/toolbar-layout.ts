@@ -41,6 +41,38 @@ export interface ToolbarFitGroup {
   readonly priority?: number | undefined;
   /** A pinned group stays in the bar at every width. */
   readonly pinned?: boolean | undefined;
+  /** The built-in group with its shown controls, whose `wide` fields can leave first. */
+  readonly chrome?: ChromeGroup | null | undefined;
+}
+
+/**
+ * Where the groups of a bar go: the ids of the groups that leave for the "More" panel
+ * (`collapsed`), and the ids of the groups that stay but send their wide fields there
+ * (`trimmed`), each in bar order. @internal
+ */
+export interface ToolbarFit {
+  readonly collapsed: readonly string[];
+  readonly trimmed: readonly string[];
+}
+
+/** Nothing leaves. Shared, so an answer with nothing hidden keeps one identity. @internal */
+export const TOOLBAR_FIT_ALL: ToolbarFit = { collapsed: [], trimmed: [] };
+
+/** The slots of the wide fields (`ChromeControl.wide`) of a group. @internal */
+export function wideSlots(group: ToolbarFitGroup): readonly ChromeSlotId[] {
+  const chrome = group.chrome;
+  return chrome ? chrome.controls.filter((c) => c.wide).map((c) => chromeSlotId(chrome, c)) : [];
+}
+
+/**
+ * The part of a trimmed group (`ToolbarFit.trimmed`) for the bar (every control but the wide
+ * fields) or for the "More" panel (the wide fields only). @internal
+ */
+export function trimToolbarGroup<G extends ToolbarFitGroup>(group: G, part: 'bar' | 'panel'): G {
+  const chrome = group.chrome;
+  if (!chrome) return group;
+  const controls = chrome.controls.filter((c) => (part === 'panel') === !!c.wide);
+  return { ...group, chrome: { ...chrome, controls } };
 }
 
 /** Nothing collapses. Shared, so an answer with nothing hidden keeps one identity. */
@@ -87,6 +119,66 @@ export function toolbarCollapse(
 }
 
 /**
+ * Where the groups go in a bar whose content box is `width` pixels wide, with `gap` pixels
+ * between two items. `widths` holds the width of each group with all its controls, and `savings`
+ * the room that a group gives back when its wide fields leave (their widths and gaps). Nothing
+ * leaves while a group has no measured width, nor when every group fits.
+ *
+ * The rule, in three steps: wide fields leave first, group by group in `collapseOrder`, until
+ * the bar fits; then whole groups leave in `collapseOrder` (`toolbarCollapse`); then a group
+ * that stays gets its wide fields back, from the last group in `collapseOrder` to the first,
+ * while they fit. The More button is charged as soon as anything leaves. So in a short bar the
+ * font size, bold, italic, underline, and color stay in the bar, and the font family field moves
+ * to the panel. @internal
+ */
+export function toolbarFit(
+  groups: readonly ToolbarFitGroup[],
+  widths: ReadonlyMap<string, number>,
+  savings: ReadonlyMap<string, number>,
+  width: number,
+  gap = 0
+): ToolbarFit {
+  if (groups.some((g) => !widths.has(g.id))) return TOOLBAR_FIT_ALL;
+  const size = (id: string) => widths.get(id) ?? 0;
+  const total = groups.reduce((a, g) => a + size(g.id), 0) + gap * Math.max(0, groups.length - 1);
+  if (width <= 0 || total <= width) return TOOLBAR_FIT_ALL;
+  const priorities = new Map<string, number>();
+  for (const g of groups)
+    if (g.priority !== undefined && !Number.isNaN(g.priority)) priorities.set(g.id, g.priority);
+  const pinned = new Set(groups.filter((g) => g.pinned).map((g) => g.id));
+  const order = collapseOrder(
+    groups.map((g) => g.id),
+    TOOLBAR_COLLAPSE_ORDER,
+    priorities
+  );
+  const saving = (id: string) => Math.max(0, savings.get(id) ?? 0);
+  let used = MORE_WIDTH + gap + total;
+  const trimmed = new Set<string>();
+  for (const id of order) {
+    if (used <= width) break;
+    if (saving(id) <= 0) continue;
+    trimmed.add(id);
+    used -= saving(id);
+  }
+  const hidden = new Set<string>();
+  for (const id of order) {
+    if (used <= width) break;
+    if (pinned.has(id)) continue;
+    hidden.add(id);
+    used -= gap + size(id) - (trimmed.delete(id) ? saving(id) : 0);
+  }
+  for (const id of [...order].reverse()) {
+    if (!trimmed.has(id) || used + saving(id) > width) continue;
+    trimmed.delete(id);
+    used += saving(id);
+  }
+  return {
+    collapsed: groups.filter((g) => hidden.has(g.id)).map((g) => g.id),
+    trimmed: groups.filter((g) => trimmed.has(g.id)).map((g) => g.id),
+  };
+}
+
+/**
  * How many groups, from the start, fit in a bar whose content box is `width` pixels wide, with
  * `gap` pixels between two items. Each group after the first is charged its gap, as DOCX
  * Editor's `useToolbarOverflow.ts` charges `groupGaps`, and so is the More button. @internal
@@ -126,30 +218,74 @@ export const TOOLBAR_FIXED_ATTRIBUTE = 'data-toolbar-fixed';
 
 /**
  * Measure the groups that the bar `el` shows into `widths`, and return the ids of the groups of
- * `groups` that leave the bar so the rest fit beside the fixed block (`TOOLBAR_FIXED_ATTRIBUTE`),
- * by `toolbarCollapse`. @internal
+ * `groups` that leave the bar so the rest fit beside the fixed block (`TOOLBAR_FIXED_ATTRIBUTE`).
+ * It is `measureToolbarFit` with no trimmed group, for its `collapsed` ids. @internal
  */
 export function measureToolbar(
   el: HTMLElement,
   groups: readonly ToolbarFitGroup[],
   widths: Map<string, number>
 ): readonly string[] {
+  return measureToolbarFit(el, groups, widths).collapsed;
+}
+
+/** The key of a group's saving in the width map of `measureToolbarFit`. */
+const savingKey = (id: string) => `wide:${id}`;
+
+/**
+ * Measure the groups that the bar `el` shows into `widths`, and return where the groups go
+ * (`toolbarFit`) so they fit beside the fixed block (`TOOLBAR_FIXED_ATTRIBUTE`). `trimmed` is
+ * the current `ToolbarFit.trimmed`: those groups show without their wide fields, so their full
+ * width is the shown width and the saving that was measured while their fields showed. A
+ * group's saving is the width of each wide field (its `data-slot`) with the gap of the group.
+ * `widths` keeps every measure across calls, as the cache of the bar. @internal
+ */
+export function measureToolbarFit(
+  el: HTMLElement,
+  groups: readonly ToolbarFitGroup[],
+  widths: Map<string, number>,
+  trimmed: readonly string[] = []
+): ToolbarFit {
   // A box is in window pixels and the bar's space in its CSS pixels, which differ inside a host
   // that scales the editor.
   const scale = windowScale(el).x;
+  const view = el.ownerDocument.defaultView;
+  const byId = new Map(groups.map((g) => [g.id, g]));
+  const short = new Set(trimmed);
   // Only the groups of the bar: host content can carry a `data-group` of its own.
-  for (const g of el.querySelectorAll<HTMLElement>(':scope > [data-group]'))
-    widths.set(g.dataset.group ?? '', g.getBoundingClientRect().width / scale);
+  for (const g of el.querySelectorAll<HTMLElement>(':scope > [data-group]')) {
+    const id = g.dataset.group ?? '';
+    const shown = g.getBoundingClientRect().width / scale;
+    if (short.has(id)) {
+      const saving = widths.get(savingKey(id));
+      // A trimmed group whose fields were never measured: measure it whole on the next render.
+      if (saving === undefined) widths.delete(id);
+      else widths.set(id, shown + saving);
+      continue;
+    }
+    widths.set(id, shown);
+    const group = byId.get(id);
+    if (!group) continue;
+    const gapStyle = parseFloat(view?.getComputedStyle(g).columnGap ?? '');
+    const inner = Number.isFinite(gapStyle) ? gapStyle : 0;
+    let saving = 0;
+    for (const slot of wideSlots(group)) {
+      const field = g.querySelector<HTMLElement>(`[data-slot="${slot}"]`);
+      if (field) saving += field.getBoundingClientRect().width / scale + inner;
+    }
+    widths.set(savingKey(id), saving);
+  }
+  const savings = new Map(groups.map((g) => [g.id, widths.get(savingKey(g.id)) ?? 0]));
   const space = barSpace(el);
   const fixed = el.querySelector(`:scope > [${TOOLBAR_FIXED_ATTRIBUTE}]`);
-  // `toolbarCollapse` reads a width of 0 or less as a bar with no measure yet, which shows every
+  // `toolbarFit` reads a width of 0 or less as a bar with no measure yet, which shows every
   // group. A measured bar that the fixed block fills keeps a width of 1, so it shows only the
   // pinned groups.
   const width =
     fixed && space.width > 0
       ? Math.max(1, space.width - fixed.getBoundingClientRect().width / scale - space.gap)
       : space.width;
-  return toolbarCollapse(groups, widths, width, space.gap);
+  return toolbarFit(groups, widths, savings, width, space.gap);
 }
 
 /**

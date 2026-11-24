@@ -24,7 +24,9 @@ export {
   type ColorMode,
   type ResolvedColorMode,
 } from './color-mode.ts';
-export { createXlsxEditor, type XlsxEditorInstance } from './xlsx-editor.ts';
+export type { XlsxEditorInstance } from './xlsx-editor.ts';
+export { createXlsxEditor } from './create-editor.ts';
+export type { SheetPreviewOptions } from './sheet-preview.ts';
 export type { DocumentChange, EditorEvents } from './editor-events.ts';
 export type { SavedWorkbook, SelectionRangeInput } from './editor-instance.ts';
 export {
@@ -229,7 +231,7 @@ export {
   type PopupEntryKey,
   type PopupEntryResult,
 } from './popup-keys.ts';
-export { ICON_PATHS as CHROME_ICON_PATHS } from './icon-paths.ts';
+export { ICON_PATHS as CHROME_ICON_PATHS, type IconName as ChromeIconName } from './icon-paths.ts';
 export { relabelEditor } from './cell-editing.ts';
 export { scrollIntoNearestScroller } from './scroll-nearest.ts';
 // Adapter support: the framework-neutral parts of the React and Vue chrome. Not a stable API.
@@ -292,6 +294,7 @@ export {
   colorBarTone,
   listenSaveKey,
   measureToolbar,
+  measureToolbarFit,
   moveBarFocus,
   movePopupFocus,
   observeToolbar,
@@ -300,9 +303,14 @@ export {
   popupTriggerAction,
   TOOLBAR_FIXED_ATTRIBUTE,
   TOOLBAR_PANEL_ITEMS,
+  TOOLBAR_FIT_ALL,
   toolbarCollapse,
+  toolbarFit,
   toolbarGroups,
+  trimToolbarGroup,
+  wideSlots,
   type FocusMoveKey,
+  type ToolbarFit,
   type ToolbarFitGroup,
 } from './toolbar-layout.ts';
 export {

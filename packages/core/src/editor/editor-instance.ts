@@ -16,6 +16,7 @@ import type {
 } from './editor-model.ts';
 import type { NumberLocale } from '../cascade/index.ts';
 import type { FontReport } from './substitute-fonts.ts';
+import type { SheetPreviewOptions } from './sheet-preview.ts';
 import type { EditorEvents } from './editor-events.ts';
 
 /**
@@ -649,6 +650,23 @@ export interface XlsxEditorInstance {
    * save, and gets its own copy of the bytes. Resolves to `null` when the save is refused.
    */
   saveInTasks(): Promise<SavedWorkbook | null>;
+  /**
+   * Paint a preview of a sheet into `element`, in place of its children: the top-left window of
+   * the sheet at `options.zoom` (0.6 by default), with the layout and paint of the grid, and no
+   * headings, selection, or frozen pane lines. The preview is one `canvas`, hidden from assistive
+   * technology, so give `element` a name or hide it. It does not follow edits: paint it again
+   * after a `change` event, a sheet change, or a new size. The editor paints it again by itself
+   * when a font face or a picture finishes loading, and when the fonts or the number locale
+   * change, until `element` leaves the document. Returns false, and changes nothing, when no workbook is ready, when the sheet is not a
+   * worksheet, or when `element` has no size and `options` give none. The cost depends on the
+   * cells of the window, not on the sheet size.
+   *
+   * @example
+   * ```ts
+   * editor.renderPreview(card, { sheet: 0, width: 320, height: 120 });
+   * ```
+   */
+  renderPreview(element: HTMLElement, options?: SheetPreviewOptions): boolean;
   /**
    * Unmount and release the editor. An open edit is committed, or its refusal is announced.
    * While an input method composes, the edit is dropped with `edit-dropped`, and the listeners

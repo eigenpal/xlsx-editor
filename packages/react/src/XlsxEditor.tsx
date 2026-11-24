@@ -5,7 +5,7 @@
 // `contextMenu` prop mounts the grid context menu, as DOCX Editor's prop of the same name.
 
 import { forwardRef, type CSSProperties } from 'react';
-import type { EditorSnapshot, SavedWorkbook } from '@xlsx-editor.dev/core/editor';
+import type { SavedWorkbook } from '@xlsx-editor.dev/core/editor';
 import {
   XlsxEditorContent,
   XlsxEditorRoot,
@@ -16,7 +16,6 @@ import {
 import { StatusMessage, ZoomControl } from './chrome.tsx';
 import { FormulaBar } from './FormulaBar.tsx';
 import { SheetTabs } from './SheetTabs.tsx';
-import { useEditorState } from './context.ts';
 import { XlsxEditorToolbar } from './toolbar/Toolbar.tsx';
 import { useChromeDir } from './locale.tsx';
 import { XlsxEditorMenu, type XlsxEditorMenuProps } from './menu/Menu.tsx';
@@ -71,8 +70,6 @@ export interface XlsxEditorProps extends Omit<XlsxEditorRootProps, 'children'> {
   readonly contextMenu?: boolean | XlsxEditorContextMenuProps;
 }
 
-const statusOf = (snapshot: EditorSnapshot) => snapshot.status;
-
 function Body({
   onSave,
   onSaveStart,
@@ -80,8 +77,6 @@ function Body({
   menu = true,
   contextMenu = true,
 }: Pick<XlsxEditorProps, 'onSave' | 'onSaveStart' | 'opening' | 'menu' | 'contextMenu'>) {
-  // The status alone: the body renders again only when it changes, not on each key of an edit.
-  const status = useEditorState(statusOf);
   const dir = useChromeDir();
   return (
     <>
@@ -100,7 +95,7 @@ function Body({
       />
       <FormulaBar />
       <StatusMessage />
-      <XlsxEditorContent className={status === 'ready' ? undefined : 'xlsx-canvas-idle'} />
+      <XlsxEditorContent />
       <div className="xlsx-footer" dir={dir}>
         <SheetTabs />
         <ZoomControl />

@@ -56,6 +56,23 @@ export const LIMIT_FEATURES: readonly SupportFeature[] = [
     evidence: { tests: [LOAD_STEPS_TEST] },
   },
   {
+    id: 'viewer.sheet-name-limit',
+    name: 'Sheet name length limit',
+    category: 'viewer',
+    status: 'supported',
+    notes:
+      'A workbook with a stored sheet name of more than 32,767 UTF-16 code units does not open. `failure.limit` names `workbook.maxSheetNameLength`, and the editor shows that the file is too large or too complex to open. A stored sheet name of 32 to 32,767 UTF-16 code units opens. A new or renamed sheet name has at most 31 UTF-16 code units. The workbook limits page gives the values.',
+    docsLink: '/docs/workbook-limits',
+    evidence: {
+      tests: [
+        `${CORE}/store/__tests__/package-read.test.ts`,
+        LOAD_STEPS_TEST,
+        LIMIT_MESSAGES_TEST,
+        'scripts/hang/cases.test.ts',
+      ],
+    },
+  },
+  {
     id: 'viewer.failure-limit',
     name: 'The limit that a refused file passes',
     category: 'viewer',

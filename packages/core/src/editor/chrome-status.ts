@@ -63,6 +63,7 @@ const LIMIT_KEYS = {
   'xml.maxBytes': 'status.limits.xmlMaxBytes',
   'xml.maxElements': 'status.limits.xmlMaxElements',
   'xml.maxDepth': 'status.limits.xmlMaxDepth',
+  'workbook.maxSheetNameLength': 'status.limits.workbookMaxSheetNameLength',
 } as const satisfies Record<NonNullable<EditorFailure['limit']>, string>;
 
 /** The notice of a part past a limit, by what the workbook shows without it. */

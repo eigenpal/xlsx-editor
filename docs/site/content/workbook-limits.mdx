@@ -45,20 +45,27 @@ These limits do not guarantee enough memory. A workbook inside the limits can st
 
 `snapshot().partsPastLimit` lists each part that stays as bytes past a limit, with its `kind` (`styles`, `theme`, `drawing`, `relationships`, or `other`) and its `limit`. Only the styles part and the theme part that the workbook part links to get the kinds `styles` and `theme`. Another part with the same content type gets the kind `other`, because the workbook does not use it, so it locks no command.
 
+## Sheet name limit
+
+A workbook does not open when a sheet name in the workbook part has more than 32,767 UTF-16 code units, as the file stores the name (`MAX_STORED_SHEET_NAME`). The length counts the stored name: each `_xHHHH_` escape of `ST_Xstring` (ECMA-376 Part 1, 22.9.2.19) counts as its stored code units, not as the one character that it escapes. The standard states no length limit for a sheet name (`CT_Sheet`, 18.2.19). The limit is the most text that one cell holds, so a sheet name never holds more text than a cell. The load fails with the code `package` and the limit `workbook.maxSheetNameLength`. `readXlsx` gives the reason `workbook` with that limit.
+
+A stored sheet name of 32 to 32,767 UTF-16 code units opens. The editor writes a new or renamed sheet name of at most 31 UTF-16 code units.
+
 ## Refusal
 
-When a file passes a package limit, or a part that refuses the file passes an XML part limit, the load fails. The snapshot of the editor turns `failed` with the code `package`, and `failure.detail` holds the reason of the read. `readXlsx` gives the reason `zip`, or the reason `xml` with the name of the part. For the reason `xml`, `failure.part` names the part, such as `/xl/sharedStrings.xml`, and `failure.detail` also names it, for logs.
+When a file passes a package limit, a part that refuses the file passes an XML part limit, or a sheet name passes its limit, the load fails. The snapshot of the editor turns `failed` with the code `package`, and `failure.detail` holds the reason of the read. `readXlsx` gives the reason `zip`, the reason `xml` with the name of the part, or the reason `workbook`. For the reason `xml`, `failure.part` names the part, such as `/xl/sharedStrings.xml`, and `failure.detail` also names it, for logs.
 
-`failure.limit` names the limit that the file passed, with the names that DOCX Editor uses:
+`failure.limit` names the limit that the file passed. The `zip` and `xml` names are the names that DOCX Editor uses:
 
-| `failure.limit`     | Limit                               |
-| ------------------- | ----------------------------------- |
-| `zip.maxEntries`    | ZIP entries                         |
-| `zip.maxTotalBytes` | Uncompressed content of all entries |
-| `zip.maxRatio`      | Compression ratio                   |
-| `xml.maxBytes`      | Size of one XML part                |
-| `xml.maxElements`   | Elements of one XML part            |
-| `xml.maxDepth`      | Nested levels of one XML part       |
+| `failure.limit`               | Limit                               |
+| ----------------------------- | ----------------------------------- |
+| `zip.maxEntries`              | ZIP entries                         |
+| `zip.maxTotalBytes`           | Uncompressed content of all entries |
+| `zip.maxRatio`                | Compression ratio                   |
+| `xml.maxBytes`                | Size of one XML part                |
+| `xml.maxElements`             | Elements of one XML part            |
+| `xml.maxDepth`                | Nested levels of one XML part       |
+| `workbook.maxSheetNameLength` | Length of one sheet name            |
 
 A refused file with no `failure.limit` is not a valid package or workbook, for example a part that is not valid XML.
 

@@ -888,10 +888,10 @@ type WorkbookOp = {
 };
 
 // @public
-export type WorkbookOpenDiagnosticCode = 'open.zip-corrupt' | 'open.zip-invalid-entry-name' | 'open.zip-entry-limit' | 'open.zip-size-limit' | 'open.zip-ratio-limit' | 'open.xml-malformed' | 'open.xml-dtd-forbidden' | 'open.xml-part-size-limit' | 'open.xml-depth-limit' | 'open.xml-element-limit' | 'open.invalid-limits' | 'open.content-types-invalid' | 'open.missing-workbook' | 'open.failed';
+export type WorkbookOpenDiagnosticCode = 'open.zip-corrupt' | 'open.zip-invalid-entry-name' | 'open.zip-entry-limit' | 'open.zip-size-limit' | 'open.zip-ratio-limit' | 'open.xml-malformed' | 'open.xml-dtd-forbidden' | 'open.xml-part-size-limit' | 'open.xml-depth-limit' | 'open.xml-element-limit' | 'open.sheet-name-limit' | 'open.invalid-limits' | 'open.content-types-invalid' | 'open.missing-workbook' | 'open.failed';
 
 // @public
-export type WorkbookOpenLimit = 'zip.maxEntries' | 'zip.maxTotalBytes' | 'zip.maxRatio' | 'xml.maxBytes' | 'xml.maxElements' | 'xml.maxDepth';
+export type WorkbookOpenLimit = 'zip.maxEntries' | 'zip.maxTotalBytes' | 'zip.maxRatio' | 'xml.maxBytes' | 'xml.maxElements' | 'xml.maxDepth' | 'workbook.maxSheetNameLength';
 
 // (No @packageDocumentation comment for this package)
 

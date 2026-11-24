@@ -20,7 +20,7 @@ import { inheritedFormat } from '../workbook/inherited-format.ts';
 import { styleLists, workbookIndex } from '../workbook/workbook-index.ts';
 import { readFormulaInput } from '../formula/format.ts';
 import { formulaScope } from '../formula/references.ts';
-import { protectionRefusal } from './sheet-protection.ts';
+import { protectionChecks } from './sheet-protection.ts';
 import { encodeXstring } from '../workbook/xstring.ts';
 import type { FormulaWriteProblem } from '../formula/format.ts';
 import {
@@ -646,6 +646,8 @@ export function applyOps(
   const steps: (readonly HistoryOp[])[] = [];
   let value = false;
   let formula = false;
+  // The protection checks of the whole list, with one set of caches (`protectionChecks`).
+  const protectionRefusal = history ? undefined : protectionChecks();
   for (let i = 0; i < ops.length;) {
     const op = ops[i]!;
     // A run of restoreRow ops on one sheet (an undo of a many-row command), or of setCellValue
@@ -668,7 +670,7 @@ export function applyOps(
       }
     }
     // The protection of the sheet refuses an op before it applies (`sheet-protection.ts`).
-    for (let k = i; k < end && !history; k += 1) {
+    for (let k = i; k < end && protectionRefusal; k += 1) {
       const locked = protectionRefusal(current, ops[k] as WorkbookOp);
       if (locked) return { ok: false, rejection: locked };
     }

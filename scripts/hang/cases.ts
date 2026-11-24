@@ -17,6 +17,7 @@
 // Same role as pptx-editor/scripts/stress/hang-decks.ts at e22f3f3b (EigenPal), for workbooks.
 
 import { FIRST_CELL } from './first-cells.ts';
+import { sheetNameCases } from './sheet-name-cases.ts';
 import { zipSync } from 'fflate';
 import { readZip, writeZip } from '../../packages/ooxml-core/src/zip.ts';
 import { buildXlsx, c, row, type FixtureSheet, type FixtureWorkbook } from '../fixtures/builder.ts';
@@ -37,6 +38,12 @@ export interface HangCase {
   /** The hostile input or the fault. The report and each failure line show it. */
   readonly covers: string;
   readonly expect: HangExpectation;
+  /** The exact refusal of the read, for a case that must refuse with one reason. */
+  readonly refusedWith?: {
+    readonly reason: string;
+    readonly detail?: string;
+    readonly limit?: string;
+  };
   readonly network?: HangNetwork;
   /** The workbook to open. A case with none checks only the demo's own first open. */
   readonly bytes?: () => Uint8Array;
@@ -386,19 +393,7 @@ const FILE_CASES: readonly HangCase[] = [
     expect: 'open',
     bytes: relationshipTraversal,
   },
-  {
-    id: 'sheet-names-object-keys',
-    covers: 'worksheets are named __proto__, constructor, and prototype',
-    expect: 'open',
-    firstCell: 'first',
-    bytes: () =>
-      buildXlsx({
-        sheets: [
-          sheet(plainRows),
-          ...['__proto__', 'constructor', 'prototype'].map((name) => ({ name, rows: plainRows })),
-        ],
-      }),
-  },
+  ...sheetNameCases(sheet(plainRows), plainRows),
   {
     id: 'active-content-inert',
     covers: 'a DDE link, an OLE object, an embedded control, and a query table stay inert',

@@ -79,6 +79,22 @@ describe('the limit of a refused file', () => {
     expect(failure).toEqual({ code: 'package', detail: 'zip', limit: 'zip.maxEntries' });
   });
 
+  test('a sheet name past its limit names workbook.maxSheetNameLength', async () => {
+    const failure = await failureOf(
+      buildXlsx({
+        sheets: [
+          { name: 'First', rows: row(1, [c('A1', 1)]) },
+          { name: 'N'.repeat(32_768), rows: row(1, [c('A1', 2)]) },
+        ],
+      })
+    );
+    expect(failure).toEqual({
+      code: 'package',
+      detail: 'workbook',
+      limit: 'workbook.maxSheetNameLength',
+    });
+  });
+
   test('a package past the compression ratio names zip.maxRatio', async () => {
     const parts = unzipSync(workbook());
     parts['extra/zeros.bin'] = new Uint8Array(9 * 1024 * 1024);

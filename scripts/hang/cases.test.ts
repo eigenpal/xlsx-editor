@@ -52,6 +52,8 @@ describe('the hostile workbooks of the hang test', () => {
       'zip-leading-slash',
       'relationship-target-traversal',
       'sheet-names-object-keys',
+      'sheet-name-past-limit',
+      'sheet-name-at-limit',
       'active-content-inert',
       'dimension-whole-sheet',
       'sst-count-huge',

@@ -39,6 +39,15 @@ describe('openDiagnosticOf', () => {
       [xml('something-else'), 'open.failed'],
       [{ reason: 'no-content-types' }, 'open.content-types-invalid'],
       [{ reason: 'not-a-workbook', detail: '/secret.xml' }, 'open.missing-workbook'],
+      [
+        {
+          reason: 'workbook',
+          detail: 'sheet-name-too-long',
+          limit: 'workbook.maxSheetNameLength',
+        },
+        'open.sheet-name-limit',
+        'workbook.maxSheetNameLength',
+      ],
     ];
     for (const [error, code, limit] of cases) {
       const answer = openDiagnosticOf(error);

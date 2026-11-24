@@ -245,6 +245,8 @@ export interface EngineRun {
   readonly outcome: 'open' | 'refuse';
   /** The words of a refusal. */
   readonly refusal?: string;
+  /** The refusal of the read, when the read refused the file. */
+  readonly readError?: Readonly<Record<string, unknown>>;
   readonly firstCell?: string | null;
   readonly lastCell?: string | null;
   /** The stored rows and cells of the hostile sheet. */
@@ -311,7 +313,12 @@ export function runEngineCase(
   const bytes = testCase.bytes!();
   const read = readXlsx(bytes);
   const problem = whyNotOpen(read);
-  if (problem || !read.ok) return { outcome: 'refuse', refusal: problem ?? 'no reason' };
+  if (problem || !read.ok)
+    return {
+      outcome: 'refuse',
+      refusal: problem ?? 'no reason',
+      ...(read.ok ? {} : { readError: read.error }),
+    };
   const unreadParts = [...read.pkg.parts.values()]
     .filter((p) => p.kind === 'binary' && MODELED.test(p.partName))
     .map((p) => p.partName);
@@ -387,6 +394,13 @@ export function engineProblems(testCase: HangCase, run: EngineRun, caps: WindowC
   if (run.outcome === 'refuse') {
     if (run.refusal && showsException(run.refusal))
       problems.push(`the refusal shows an exception: ${run.refusal}`);
+    const wanted = testCase.refusedWith;
+    if (wanted)
+      for (const [key, value] of Object.entries(wanted))
+        if (run.readError?.[key] !== value)
+          problems.push(
+            `the read refused with ${key} ${String(run.readError?.[key])}, not ${value}`
+          );
     return problems;
   }
   if (testCase.firstCell !== undefined && !run.firstCell?.includes(testCase.firstCell))

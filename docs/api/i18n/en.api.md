@@ -120,6 +120,7 @@ const enJson: {
             xmlMaxBytes: string;
             xmlMaxElements: string;
             xmlMaxDepth: string;
+            workbookMaxSheetNameLength: string;
         };
         pastLimit: {
             styles: string;

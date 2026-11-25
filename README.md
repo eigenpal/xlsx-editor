@@ -15,6 +15,8 @@
   <a href="https://preview.xlsx-editor.dev/"><img src="https://img.shields.io/badge/Live_Demo-107C41?style=flat-square" alt="Demo" /></a>
 </p>
 
+> **Beta.** XLSX Editor is not ready for production use. The API can change in each release.
+
 **XLSX Editor** is a WYSIWYG editor and rendering engine for `.xlsx` workbooks. Use it to open, edit, render, and save workbooks in the browser. It uses the ECMA-376 (Office Open XML) format. It is part of the EigenPal editor family, with [DOCX Editor](https://www.docx-editor.dev/) and [PPTX Editor](https://www.pptx-editor.dev/).
 
 <p align="center">

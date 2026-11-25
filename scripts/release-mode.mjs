@@ -42,7 +42,8 @@ export function publicPackages(root) {
     .map(({ name, version }) => ({ name, version }));
 }
 
-// The dist-tag that `changeset publish` uses in prerelease mode, or null for `latest`.
+// The prerelease tag of `.changeset/pre.json`, or null outside prerelease mode.
+// `scripts/release-publish.mjs` picks the dist-tag of each release.
 export function prereleaseTag(root) {
   const path = join(root, '.changeset/pre.json');
   if (!existsSync(path)) return null;
@@ -57,8 +58,8 @@ export function releaseMode(root) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     const { mode } = releaseMode(process.cwd());
-    const tag = prereleaseTag(process.cwd()) ?? 'latest';
-    console.log(`Release mode: ${mode} (dist-tag: ${tag})`);
+    const tag = prereleaseTag(process.cwd());
+    console.log(`Release mode: ${mode} (${tag ? `prerelease: ${tag}` : 'stable'})`);
     if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `mode=${mode}\n`);
   } catch (error) {
     console.error(error.message);

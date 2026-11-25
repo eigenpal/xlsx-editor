@@ -104,7 +104,7 @@ The `Release` workflow (`.github/workflows/release.yml`) publishes `@xlsx-editor
 
 The workflow publishes through npm trusted publishing. No npm token exists. Each package trusts only `release.yml` in this repository.
 
-The packages are in prerelease mode. While `.changeset/pre.json` exists, each release is a beta version, for example `0.1.0-beta.0`, then `0.1.0-beta.1`. The workflow publishes a beta version to the `beta` dist-tag, never to `latest`. Install a beta with `npm install @xlsx-editor.dev/react@beta @xlsx-editor.dev/core@beta`. To make the next release stable, run `bun changeset pre exit` in a pull request.
+The packages are in prerelease mode. While `.changeset/pre.json` exists, each release is a beta version, for example `0.1.0-beta.0`, then `0.1.0-beta.1`. While a package has no stable version, the workflow publishes each beta version to the `latest` dist-tag (`scripts/release-publish.mjs`). The npm page and `npm install @xlsx-editor.dev/react @xlsx-editor.dev/core` then give the newest beta. After the first stable release, a beta version goes to the `beta` dist-tag, and `latest` stays on the stable version. To make the next release stable, run `bun changeset pre exit` in a pull request.
 
 ## Run tests
 

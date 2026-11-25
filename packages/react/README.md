@@ -16,6 +16,8 @@
 
 # @xlsx-editor.dev/react
 
+> **Beta.** XLSX Editor is not ready for production use. The API can change in each release.
+
 The React adapter for XLSX Editor. `XlsxEditor.Root` owns the engine instance, `.Viewport` scopes the styles, and `.Content` attaches the grid. The toolbar, formula bar, sheet tabs, and zoom control read the engine through hooks and hold no workbook state.
 
 ## Install

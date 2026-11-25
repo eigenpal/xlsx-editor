@@ -184,6 +184,6 @@ test('the release publishes the dist that the build job checked', () => {
   const publish = steps.findIndex((step) => step.id === 'changesets');
   expect(steps[download].with?.name).toBe('publish-dist');
   expect(publish).toBeGreaterThan(download);
-  expect(steps[publish].with?.['publish-script']).toBe('bunx changeset publish');
+  expect(steps[publish].with?.['publish-script']).toBe('node scripts/release-publish.mjs');
   expect(steps.some((step) => step.run?.includes('build:packages'))).toBe(false);
 });

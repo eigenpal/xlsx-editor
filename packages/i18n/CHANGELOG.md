@@ -1,5 +1,11 @@
 # @xlsx-editor.dev/i18n
 
+## 0.1.0-beta.2
+
+### Patch Changes
+
+- 4b61d19: The README of each package now states that the package is a beta and is not ready for production use.
+
 ## 0.1.0-beta.1
 
 ### Minor Changes

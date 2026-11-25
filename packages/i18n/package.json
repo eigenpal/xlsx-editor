@@ -1,6 +1,6 @@
 {
   "name": "@xlsx-editor.dev/i18n",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.2",
   "description": "Shared user-facing strings for the XLSX Editor chrome. English is the source of truth.",
   "type": "module",
   "sideEffects": false,

@@ -16,6 +16,8 @@
 
 # @xlsx-editor.dev/core
 
+> **Beta.** XLSX Editor is not ready for production use. The API can change in each release.
+
 The XLSX Editor engine. It reads a SpreadsheetML package into one canonical tree for each part, and resolves cell formats. It lays out the grid without the DOM and paints it on a canvas. It applies edits as typed ops and saves the package. The React and Vue adapters render what this package computes and hold no editing state.
 
 ## Install

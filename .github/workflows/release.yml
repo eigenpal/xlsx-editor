@@ -9,9 +9,11 @@ name: Release
 # 2. When that PR is merged, the same flow sees no pending changesets and publishes.
 #
 # Prerelease mode. While `.changeset/pre.json` exists, `changeset version` writes prerelease
-# versions (for example 0.1.0-beta.0, then 0.1.0-beta.1), and `changeset publish` publishes
-# them to the dist-tag that the file names (`beta`), never to `latest`. Run
-# `bun changeset pre exit` in a pull request to make the next release a stable one.
+# versions (for example 0.1.0-beta.0, then 0.1.0-beta.1). `scripts/release-publish.mjs`
+# publishes them to `latest` while a package has no stable version, so the npm page and a
+# plain `npm install` show the newest beta. After the first stable release, a beta goes to
+# the dist-tag that the file names (`beta`). Run `bun changeset pre exit` in a pull request
+# to make the next release a stable one.
 #
 # `mode` picks the path. On the publish path, `checks` and `build` must pass first, and
 # `release` publishes exactly the dist that `build` validated. On the PR-update path they
@@ -221,7 +223,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           version-script: bun run version-packages
-          publish-script: bunx changeset publish
+          publish-script: node scripts/release-publish.mjs
           pr-title: 'chore: release'
           commit-message: 'chore: release'
         env:

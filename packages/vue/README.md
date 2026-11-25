@@ -16,6 +16,8 @@
 
 # @xlsx-editor.dev/vue
 
+> **Beta.** XLSX Editor is not ready for production use. The API can change in each release.
+
 The Vue 3 adapter for XLSX Editor. It is the twin of `@xlsx-editor.dev/react`. `XlsxEditorRoot` owns the engine instance, `XlsxEditorViewport` scopes the styles, and `XlsxEditorContent` attaches the grid. The toolbar, formula bar, sheet tabs, and zoom control read the engine through composables and hold no workbook state.
 
 The Vue parts have the same props, markup, and behavior as the React parts. A part on React's `XlsxEditor.*` namespace is `XlsxEditor<Part>` or the part name in Vue, for example `XlsxEditorToolbar` or `FormulaBar`. A parity check maps each React prop, ref member, and export to its Vue twin.

@@ -16,6 +16,8 @@
 
 # @xlsx-editor.dev/i18n
 
+> **Beta.** XLSX Editor is not ready for production use. The API can change in each release.
+
 Shared user-facing strings for the XLSX Editor chrome. `en.json` is the source of truth, and the package ships the English catalog. A locale catalog mirrors its shape, and a `null` entry falls back to English.
 
 ## Install

@@ -34,6 +34,7 @@ import { canonicalFingerprint, bytesFingerprint } from '../package-write/seriali
 import { attr, children, elements } from './query.ts';
 import { CONTENT_TYPE, NS, REL } from './namespaces.ts';
 import { isWorkbookType, WORKBOOK_TYPES } from './main-part-type.ts';
+import { workbookBytes } from './workbook-bytes.ts';
 
 /** One part of the package. */
 export type PackagePart =
@@ -182,8 +183,14 @@ export function decodeXml(bytes: Uint8Array): string {
   return text;
 }
 
-/** Read a `.xlsx` at the trust boundary. Never throws. */
-export function readXlsx(bytes: Uint8Array, limits: ZipLimits = DEFAULT_ZIP_LIMITS): PackageResult {
+/**
+ * Read a `.xlsx` at the trust boundary. Never throws. The bytes are a `Uint8Array` or an
+ * `ArrayBuffer`, of this window or of another one.
+ */
+export function readXlsx(
+  bytes: Uint8Array | ArrayBuffer,
+  limits: ZipLimits = DEFAULT_ZIP_LIMITS
+): PackageResult {
   const steps = readXlsxSteps(bytes, limits);
   for (;;) {
     const next = steps.next();
@@ -197,10 +204,10 @@ export function readXlsx(bytes: Uint8Array, limits: ZipLimits = DEFAULT_ZIP_LIMI
  * turn. The result is the same either way.
  */
 export function* readXlsxSteps(
-  bytes: Uint8Array,
+  bytes: Uint8Array | ArrayBuffer,
   limits: ZipLimits = DEFAULT_ZIP_LIMITS
 ): Generator<void, PackageResult> {
-  const zip = readZip(bytes, limits);
+  const zip = readZip(workbookBytes(bytes), limits);
   if (!zip.ok) {
     const limit = zip.reason === 'too-large' ? zip.limit : undefined;
     return { ok: false, error: { reason: 'zip', detail: zip.reason, ...(limit ? { limit } : {}) } };

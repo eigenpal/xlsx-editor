@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
 import { strToU8, unzipSync, zipSync } from 'fflate';
 import {
   buildXlsx,
@@ -98,6 +99,42 @@ describe('bounded package read', () => {
       detail: 'sheet-name-too-long',
       limit: 'workbook.maxSheetNameLength',
     });
+  });
+});
+
+describe('the bytes that the read accepts', () => {
+  const bytes = buildXlsx({ sheets: [{ name: 'Data', rows: row(1, [c('A1', 'text')]) }] });
+  const names = (read: ReturnType<typeof readXlsx>): string[] =>
+    read.ok ? (workbookIndex(read.pkg)?.sheets.map((sheet) => sheet.name) ?? []) : [];
+
+  test('an ArrayBuffer reads as the same bytes in a Uint8Array', () => {
+    const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    expect(names(readXlsx(buffer as ArrayBuffer))).toEqual(['Data']);
+  });
+
+  test('an ArrayBuffer and a Uint8Array of another realm read', () => {
+    const buffer = runInNewContext(`new ArrayBuffer(${bytes.byteLength})`) as ArrayBuffer;
+    new Uint8Array(buffer).set(bytes);
+    expect(buffer instanceof ArrayBuffer).toBe(false);
+    expect(names(readXlsx(buffer))).toEqual(['Data']);
+
+    // The view starts after the first byte, so the read must keep its offset and length.
+    const view = runInNewContext(
+      `new Uint8Array(new ArrayBuffer(${bytes.byteLength + 2}), 1, ${bytes.byteLength})`
+    ) as Uint8Array;
+    view.set(bytes);
+    expect(view instanceof Uint8Array).toBe(false);
+    expect(names(readXlsx(view))).toEqual(['Data']);
+  });
+
+  test('a detached ArrayBuffer and a value of another type fail as a package', () => {
+    const detached = new ArrayBuffer(8);
+    structuredClone(detached, { transfer: [detached] });
+    for (const source of [detached, 'book.xlsx', null, { [Symbol.toStringTag]: 'Uint8Array' }]) {
+      const read = readXlsx(source as never);
+      expect(read.ok).toBe(false);
+      if (!read.ok) expect(read.error.reason).toBe('zip');
+    }
   });
 });
 

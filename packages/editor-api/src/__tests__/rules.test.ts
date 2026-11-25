@@ -9,6 +9,7 @@ Production use requires a commercial agreement: licensing@eigenpal.com
 // error never echoes, and the argument checks of each call.
 
 import { describe, expect, spyOn, test } from 'bun:test';
+import { runInNewContext } from 'node:vm';
 import { zipSync } from 'fflate';
 import { buildXlsx, c, row } from '../../../../scripts/fixtures/builder.ts';
 import {
@@ -886,12 +887,24 @@ describe('argument checks', () => {
         'range.whole-sheet'
       );
     await expectRefusal(XlsxEditor.createServer('book.xlsx' as never), 'InvalidArgument');
+    await expectRefusal(XlsxEditor.createServer(new ArrayBuffer(0)), 'InvalidArgument');
     await expectRefusal(
       XlsxEditor.createServer(new Uint8Array(0)),
       'InvalidArgument',
       'argument.not-accepted'
     );
     await expectRefusal(runtime.run('callback' as never), 'InvalidArgument');
+  });
+
+  test('createServer opens an ArrayBuffer, and the bytes of another realm', async () => {
+    const bytes = sampleWorkbook();
+    const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    const foreign = runInNewContext(`new Uint8Array(${bytes.byteLength})`) as Uint8Array;
+    foreign.set(bytes);
+    expect(foreign instanceof Uint8Array).toBe(false);
+    const expected = await valuesOf(await open(), 'A1');
+    for (const source of [buffer as ArrayBuffer, foreign])
+      expect(await valuesOf(await XlsxEditor.createServer(source), 'A1')).toEqual(expected);
   });
 
   test('a context of an ended run, and an object of another run, refuse', async () => {

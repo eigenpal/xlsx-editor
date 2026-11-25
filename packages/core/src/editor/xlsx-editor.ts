@@ -77,7 +77,7 @@ import { NO_WORKBOOK_STATE, workbookState } from './workbook-state.ts';
 
 export type { XlsxEditorInstance } from './editor-instance.ts';
 import type { Opened } from './opened-workbook.ts';
-import { workbookBytes } from './workbook-bytes.ts';
+import { workbookBytes } from '../store/package/workbook-bytes.ts';
 import { EditorListeners } from './editor-events.ts';
 
 /** The editor behind `createXlsxEditor` (`create-editor.ts`). @internal */

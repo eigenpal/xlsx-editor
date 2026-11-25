@@ -53,7 +53,7 @@ export interface XlsxEditorNamespace {
    * A runtime over XLSX bytes. It also offers `save()`. Malformed bytes refuse with
    * `InvalidArgument`, and bytes over a reader limit with `ResourceLimitExceeded`.
    */
-  createServer(bytes: Uint8Array): Promise<XlsxEditorServerRuntime>;
+  createServer(bytes: Uint8Array | ArrayBuffer): Promise<XlsxEditorServerRuntime>;
 }
 
 /**

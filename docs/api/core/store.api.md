@@ -808,10 +808,10 @@ export function readSheetProtection(root: Element_2 | undefined): SheetProtectio
 export function readWorkbookProtection(pkg: XlsxPackage, index: WorkbookIndex): WorkbookProtection | null;
 
 // @public
-export function readXlsx(bytes: Uint8Array, limits?: ZipLimits): PackageResult;
+export function readXlsx(bytes: Uint8Array | ArrayBuffer, limits?: ZipLimits): PackageResult;
 
 // @public
-export function readXlsxSteps(bytes: Uint8Array, limits?: ZipLimits): Generator<void, PackageResult>;
+export function readXlsxSteps(bytes: Uint8Array | ArrayBuffer, limits?: ZipLimits): Generator<void, PackageResult>;
 
 // @public
 export interface RefAxis {

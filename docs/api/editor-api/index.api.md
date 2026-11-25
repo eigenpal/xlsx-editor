@@ -240,7 +240,7 @@ export interface XlsxEditorInnerError {
 
 // @public
 export interface XlsxEditorNamespace {
-    createServer(bytes: Uint8Array): Promise<XlsxEditorServerRuntime>;
+    createServer(bytes: Uint8Array | ArrayBuffer): Promise<XlsxEditorServerRuntime>;
 }
 
 // @public

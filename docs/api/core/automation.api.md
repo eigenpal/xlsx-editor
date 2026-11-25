@@ -345,7 +345,7 @@ export interface MergeOptions {
 }
 
 // @public
-export function openAutomationHost(bytes: Uint8Array): AutomationOpenResult;
+export function openAutomationHost(bytes: Uint8Array | ArrayBuffer): AutomationOpenResult;
 
 // @public
 interface OpRejection {

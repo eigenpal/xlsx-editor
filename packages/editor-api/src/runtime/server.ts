@@ -20,9 +20,16 @@ import { createRuntime, type XlsxEditorServerRuntime } from './runtime.ts';
  * `zip.maxEntries`. Each refusal gives an open diagnostic, such as `open.xml-malformed`, in
  * `debugInfo.innerError`. No message carries file content.
  */
-export async function createServer(bytes: Uint8Array): Promise<XlsxEditorServerRuntime> {
-  if (!(bytes instanceof Uint8Array) || bytes.length === 0)
-    failArgument('createServer', 'the bytes of an XLSX file as a non-empty Uint8Array');
+export async function createServer(
+  bytes: Uint8Array | ArrayBuffer
+): Promise<XlsxEditorServerRuntime> {
+  // The tag check also accepts the bytes of another window, which `instanceof` misses.
+  const tag = Object.prototype.toString.call(bytes);
+  if ((tag !== '[object Uint8Array]' && tag !== '[object ArrayBuffer]') || bytes.byteLength === 0)
+    failArgument(
+      'createServer',
+      'the bytes of an XLSX file as a non-empty Uint8Array or ArrayBuffer'
+    );
   // The runtime keeps no reference to the caller's array.
   const opened = openAutomationHost(bytes.slice());
   if (opened.ok) return createRuntime(opened.host);
